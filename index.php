@@ -12,6 +12,9 @@ $cache = json_decode(file_get_contents("./functions/cache.json"),true);
 $dbcon = require("./functions/dbconnect.php");
 $url = $_SERVER['REQUEST_URI'];
 $SOLDER_BUILD='999';
+
+include('functions/mcVersionCompare.php');
+
 if (strpos($url, '?') !== false) {
     $url = substr($url, 0, strpos($url, "?"));
 }
@@ -1885,91 +1888,18 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                         } else {
                                             $modvq = mysqli_query($conn,"SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `id` = ".$bmod.")");
                                         }
-
-                                        // VERSION COMPARISON BLOCK //
-                                        $versionMismatch = false; // THIS SHOULD BE REFERENCED TO DETERMINE MISMATCH!
-                                        $versionNotEqual = false;
-                                        $versionNotInRange = false;
-                                        if ($moda['type']=="mod") {
-                                            $gt = false;
-                                            $gte = false;
-                                            $lt = false;
-                                            $lte = false;
-                                            if (empty($moda['mcversion'])) {
-                                            } else {
-                                                $mcversionArray = explode(',', str_replace(' ', '', $moda['mcversion']));
-                                                if (count($mcversionArray) == 1) {
-                                                    if (str_replace('(', '', str_replace('[', '', str_replace(')', '', str_replace(']', '', $moda['mcversion'])))) !== $user['minecraft']) {
-                                                        $versionNotEqual = true;
-                                                    }
-                                                } else {
-                                                    $firstVersion = $mcversionArray[0];
-                                                    $lastVersion = end($mcversionArray);
-                                                    $userVersion = $user['minecraft'];
-
-                                                    if ($firstVersion[0] == "(") {
-                                                        $firstVersion = substr($firstVersion, 1);
-                                                        if (empty($firstVersion)) {
-                                                            $firstVersion='0.0.0';
-                                                        }
-
-                                                        if (version_compare($userVersion, $firstVersion, '>')) {
-                                                            //error_log($userVersion.' > '.$firstVersion);
-                                                            $gt = true;
-                                                        }
-                                                    } else { // inclusive, [ or ''.
-                                                        if ($firstVersion[0] == "[") {
-                                                            $firstVersion = substr($firstVersion, 1);
-                                                        }
-                                                        if (empty($firstVersion)) {
-                                                            $firstVersion='0.0.0';
-                                                        }
-                                                        if (version_compare($userVersion, $firstVersion, '>=')) {
-                                                            //error_log($userVersion.' >= '.$firstVersion);
-                                                            $gte = true;
-                                                        }
-                                                    }
-                                                    if (substr($lastVersion, -1) == ")") {
-                                                        $lastVersion = substr($lastVersion, 0, -1);
-                                                        if (empty($lastVersion)) {
-                                                            $lastVersion='99.99.99';
-                                                        }
-                                                        if (version_compare($userVersion, $lastVersion, '<')) {
-                                                            //error_log($userVersion.' < '.$lastVersion);
-                                                            $lt = true;
-                                                        }
-                                                    } else {  // inclusive, ] or ''.
-                                                        if (substr($lastVersion, -1) == "]") {
-                                                            $lastVersion = substr($lastVersion, 0, -1);
-                                                        }
-                                                        if (empty($lastVersion)) {
-                                                            $lastVersion='99.99.99';
-                                                        }
-                                                        if (version_compare($userVersion, $lastVersion, '<=')) {
-                                                            //error_log($userVersion.' <= '.$lastVersion);
-                                                            $lte = true;
-                                                        }
-                                                    }
-                                                    if (!(($gt || $gte) && ($lt || $lte))) {
-                                                        $versionNotInRange = true;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        if ($versionNotEqual || $versionNotInRange) {
-                                            $versionMismatch = true;
-                                        }
-                                        // END VERSION COMPARISON BLOCK //
-
+                                    
+                                        // todo: check if mod is actually a moda['type']=='mod' and not something else.
+                                        $userModVersionOK = mcVersionCompare($moda['mcversion'], $user['minecraft']);
+                                        
                                         ?>
 
-                                    <tr <?php if ($versionMismatch){echo 'class="table-warning"';} ?> id="mod-<?php echo $moda['name'] ?>">
+                                    <tr <?php if (!$userModVersionOK){echo 'class="table-warning"';} ?> id="mod-<?php echo $moda['name'] ?>">
                                         <td scope="row"><?php
                                             echo $moda['pretty_name'];
 
-                                            if ($versionMismatch) {
-                                                //error_log($userVersion.': '.$firstVersion.','.$lastVersion);
-                                                echo ' <span id="warn-incompatible-'.$moda['name'].'">(For Minecraft '.$moda['mcversion'].' - May not be compatible!)</span>';
+                                            if (!$userModVersionOK) {
+                                                echo ' <span id="warn-incompatible-'.$moda['name'].'">(For Minecraft '.$moda['mcversion'].', you have '.$user['minecraft'].'. May not be compatible!)</span>';
                                             }
 
                                         ?></td>
