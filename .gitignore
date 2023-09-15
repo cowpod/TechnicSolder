@@ -7,3 +7,7 @@ functions/cache.json
 
 # IntelliJ
 .idea/
+
+# macOS
+.DS_Store
+._*
