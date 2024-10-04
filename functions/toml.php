@@ -55,6 +55,8 @@ function fast_str_len_compare($str, $len) {
     } 
 }
 
+// code is weird, and will likely break for toml files other than those found in minecraft mods.
+// specifically, the behaviour of nested tables is... awkward.
 function parseToml_actual_parse($arr) {
     // O(nm)
     $ret=[];
@@ -67,31 +69,43 @@ function parseToml_actual_parse($arr) {
             // [[ TABLE ]]
             $table_name=ltrim($element,'[[');
             $table_name=rtrim($table_name,']]');
-            $nested_table=explode('.',$table_name);
-            
-            if (sizeof($nested_table)>1) { // nested table
-                // start at root
-                $temp_nested_table_ref=&$ret; 
+            $nested_table_array=explode('.',$table_name);
+
+            // start at root
+            $temp_nested_table_ref=&$ret; 
                 
-                foreach($nested_table as $t) { 
-                    if (!array_key_exists($t, $temp_nested_table_ref)) $temp_nested_table_ref[$t]=[]; // create it if necessary
-                    
-                    // update pointer to nested table
-                    $temp_nested_table_ref = &$temp_nested_table_ref[$t];
+            foreach($nested_table_array as $t) { 
+                if (!array_key_exists($t, $temp_nested_table_ref)) {
+                    $temp_nested_table_ref[$t]=[]; 
                 }
                 
-                $table=&$temp_nested_table_ref;
-                unset($temp_nested_table_ref);
-                
-            } else { // regular table
-//                print('regular table: '.$table_name.'<br/>');
-                if (!array_key_exists($table_name, $ret)) {
-//                    print('create '.$table_name);
-                    $ret[$table_name]=[]; // create it if necessary
-                }
-                $table=&$ret[$table_name];
+                $temp_nested_table_ref = &$temp_nested_table_ref[$t]; 
             }
             
+            $table=&$temp_nested_table_ref[sizeof($temp_nested_table_ref)];
+            
+            unset($temp_nested_table_ref);
+
+        } else if (fast_str_len_compare($element, 2)>0 && $element[0]=='[' && $element[-1]==']') {
+            // [ TABLE ]
+            $table_name=ltrim($element,'[[');
+            $table_name=rtrim($table_name,']]');
+            $nested_table_array=explode('.',$table_name);
+            
+            // start at root
+            $temp_nested_table_ref=&$ret; 
+                
+            foreach($nested_table_array as $t) { 
+                if (!array_key_exists($t, $temp_nested_table_ref)) {
+                    $temp_nested_table_ref[$t]=[]; // create it if necessary. 
+                }
+                    
+                // update pointer to nested table
+                $temp_nested_table_ref = &$temp_nested_table_ref[$t];
+            }
+                
+            $table=&$temp_nested_table_ref;
+            unset($temp_nested_table_ref);
         } else {
             // KEY=VALUE
             $keyval = explode("=", $element, 2);
