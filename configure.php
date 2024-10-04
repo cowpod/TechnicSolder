@@ -1,7 +1,12 @@
 <?php
 error_reporting(E_ALL & ~E_NOTICE);
 session_start();
-$config = include("./functions/config.php");
+
+$config=['configured'=>false];
+if (file_exists('./functions/config.php')) {
+    $config = include("./functions/config.php");
+}
+
 $settings = include("./functions/settings.php");
 if (!isset($_GET['reconfig'])) {
     if ($config['configured']) {
@@ -17,11 +22,12 @@ if (!isset($_GET['reconfig'])) {
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <title>Configure Solder</title>
-        <?php if ($_SESSION['dark']=="on") {
+        <?php if (isset($_SESSION['dark']) && $_SESSION['dark']=="on") {
             echo '<link rel="stylesheet" href="https://bootswatch.com/4/superhero/bootstrap.min.css">';
         } else {
             echo '<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
@@ -44,7 +50,7 @@ if (!isset($_GET['reconfig'])) {
             }
         </style>
     </head>
-    <body style="<?php if ($_SESSION['dark']=="on") {
+    <body style="<?php if (isset($_SESSION['dark']) && $_SESSION['dark']=="on") {
         echo "background-color: #202429";
     } else {
         echo "background-color: #f0f4f9";
