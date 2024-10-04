@@ -1,5 +1,5 @@
 {
-	"version": "v1.5.0a1",
+	"version": "v1.4.0a1",
 	"stream": "Release",
 	"warns": "",
 	"ltcl": "Migrate to PHP8",
