@@ -148,7 +148,7 @@ function parseToml_actual_parse($arr) {
                     }
                     
                 } else {
-                    $table[$key]=$value;
+                    $table[$key]=trim($value,'"');
                 }
             }
         }
@@ -165,7 +165,7 @@ function parseToml($raw) {
     return ($parsed);
 }
 
-if ($_GET['a']=='test') {
+if (isset($_GET['a']) && $_GET['a']=='test') {
     $data=parseToml(file_get_contents('./test.toml'));
     header('Content-Type: application/json');
 //    print("<hr/>");
