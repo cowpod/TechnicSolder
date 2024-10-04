@@ -52,6 +52,7 @@ function processFile($zipExists, $md5) {
     global $conn;
     global $warn;
     global $fileInfo;
+
     $legacy=false;
     $mcmod=array();
     $result = @file_get_contents("zip://".realpath($fileJarInFolderLocation)."#META-INF/mods.toml");
@@ -88,13 +89,22 @@ function processFile($zipExists, $md5) {
     } else { # is 1.14+ mod
         $legacy=false;
         $mcmod = parseToml($result);
-        //error_log(json_encode($mcmod, JSON_PRETTY_PRINT));
+
+        // todo: technically it's possible to have multiple mods in one file, which the toml parser supports. however we (and the majority of others) don't support this.
+        if (sizeof($mcmod['mods'])==0) {
+            echo '{"status":"error","message":"Could not parse TOML->mods->0."}';
+            exit();
+        }
+        $mcmod['mods']=$mcmod['mods'][0]; // ..and as we're supporting legacy mods, we're doing it this !@$%# way 
+        // todo: don't do it this way.
+
         if (!$mcmod['mods']['modId']||!$mcmod['mods']['displayName']||!$mcmod['mods']['description']||!$mcmod['mods']['version']||!$mcmod['mods']['displayURL']||!($mcmod['mods']['author'] && $mcmod['mods']['authors'])) {
             $warn['b'] = true;
             $warn['level'] = "info";
             $warn['message'] = "There is some information missing in mcmod.info.";
         }
     }
+
     if ($zipExists) { // while we could put a file check here, it'd be redundant (it's checked before).
         // cached zip
     } else {
@@ -109,7 +119,9 @@ function processFile($zipExists, $md5) {
         }
         $zip->close();
     }
+
     if ($legacy) {
+        // legacy 1.14-
         if (!$mcmod['name']) {
             $pretty_name = mysqli_real_escape_string($conn, $fileNameShort);
         } else {
@@ -130,6 +142,7 @@ function processFile($zipExists, $md5) {
         $version = $mcmod['version'];
         $mcversion = $mcmod['mcversion'];
     } else {
+        // 'modern' 1.14+
         if (!$mcmod['mods']['displayName']) {
             $pretty_name = mysqli_real_escape_string($conn, $fileNameShort);
         } else {
@@ -144,37 +157,55 @@ function processFile($zipExists, $md5) {
                 $name = slugify($mcmod['mods']['modId']);
             }
         }
-        $link = empty($mcmod['mods']['displayURL'])? $mcmod[0]['displayURL'] : $mcmod['mods']['displayURL'];
-        $authorRoot=empty($mcmod[0]['authors'])? $mcmod[0]['author'] : $mcmod[0]['authors'];
-        $authorMods=empty($mcmod['mods']['authors'])? $mcmod['mods']['author'] : $mcmod['mods']['authors'];
-        $author = mysqli_real_escape_string($conn, empty($authorRoot)? $authorMods : $authorRoot);
+
+        $link = $mcmod['mods']['displayURL'];
+
+        $author = mysqli_real_escape_string($conn, empty($mcmod['mods']['author'])? $mcmod['mods']['authors'] : $mcmod['mods']['author']);
+
         $description = mysqli_real_escape_string($conn, $mcmod['mods']['description']);
-        $mcversion=$mcmod['dependencies.'.$mcmod['mods']['modId']]['versionRange'];
-        // let the user fill in if not absolutely certain.
-        /* if (empty($mcversion)) { //if there is no dependency specified, get from filename
-            // THIS SHOULD NEVER BE NECESSARY, BUT SOME MODS (OptiFine) DON'T HAVE A MINECRAFT DEPENDENCY LISTED
-            $divideDash=explode('-', $fileNameShort);
-            $mcversion=$divideDash[1].'.'.$divideDash[2]; // we get modname-1-16-5-1-1-1.jar. we don't know if it is 1-16 or 1-16-5, so it's safer to assume 1-16
-        } */
+
+        $mcversion="[1.0.0,)"; // (bad) placeholder
+        // attempt to pull out necessary dependency information from toml
+        for ($mcmod['dependencies'][$mcmod['mods']['modId']] as $dependency) {
+            if (is_array($dependency) && sizeof($dependency)==1) {
+                // nested?
+                $dependency=$dependency[0];
+            }
+            if (!is_array($dependency) {
+                continue; // ignore.
+            }
+
+            $dependency_modId=$dependency['modId'];
+            // $dependency_mandatory=$dependency['mandatory'];
+            $dependency_versionRange=$dependency['versionRange'];
+            // $dependency_ordering=$dependency['ordering'];
+            // $dependency_side=$dependency['side'];
+
+            if ($dependency_modId=='minecraft') {
+                // we currently just need the dependent minecraft version.
+                $mcversion=$dependency_versionRange;
+                break;
+            }
+
+            // todo: check other dependencies of this mod
+        }
+
         $version = $mcmod['mods']['version'];
+        // if needed, attempt to pull out version from filename
         if ($version == "\${file.jarVersion}" ) {
             $tmpFilename=explode('-', $fileNameShort);
             array_shift($tmpFilename);
             $tmpFilename = implode('.', $tmpFilename);
             $version=$tmpFilename;
         }
-        // let the user fill in if not absolutely certain. (except for above if)
-        /* if (empty($version)) { //if there is no dependency specified, get from filename
-            // THIS SHOULD NEVER BE NECESSARY, BUT SOME MODS (OptiFine) DON'T HAVE A MINECRAFT DEPENDENCY LISTED
-            $divideDash=explode('-', $fileNameShort);
-            $version=end($divideDash); // we get modname-1-16-5-1-1-1.jar. just take the last - as we don't know.
-        } */
     }
+
     if ($zipExists) {
         // cached zip, use given md5. (md5 is not checked empty(); should always be given if cached!)
     } else {
         $md5 = md5_file("../mods/".$fileInfo['filename'].".zip");
     }
+
     //$url = "http://".$config['host'].$config['dir']."mods/".$fileInfo['filename'].".zip";
     $res = mysqli_query($conn, "INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`) VALUES ('".$name."','".$pretty_name."','".$md5."','','".$link."','".$author."','".$description."','".$version."','".$mcversion."','".$fileNameZip."','mod')");
     if ($res) {
