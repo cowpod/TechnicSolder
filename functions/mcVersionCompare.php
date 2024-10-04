@@ -1,3 +1,4 @@
+<?php
 define('TRIMCHARS', '[(])');
 
 function mcVersionCompare($modVersion, $userVersion) {
@@ -38,3 +39,4 @@ function mcVersionCompare($modVersion, $userVersion) {
 	
 	return true;
 }
+?>

@@ -1,19 +1,29 @@
 <?php
 error_reporting(E_ALL & ~E_NOTICE);
 session_start();
-$config = include("./functions/config.php");
+
+$config=['configured'=>false];
+if (file_exists('./functions/config.php')) {
+    $config = require("./functions/config.php");
+}
+
 if ($config['configured']!==true) {
     header("Location: ".$config['dir']."configure.php");
     exit();
 }
 $settings = include("./functions/settings.php");
-$config = require("./functions/config.php");
-$cache = json_decode(file_get_contents("./functions/cache.json"),true);
+// $config = require("./functions/config.php");
+
+$cache=[];
+if (file_exists("./functions/cache.json")) {
+    $cache = json_decode(file_get_contents("./functions/cache.json"),true);
+}
+
 $dbcon = require("./functions/dbconnect.php");
 $url = $_SERVER['REQUEST_URI'];
 $SOLDER_BUILD='999';
 
-include('functions/mcVersionCompare.php');
+require('functions/mcVersionCompare.php');
 
 if (strpos($url, '?') !== false) {
     $url = substr($url, 0, strpos($url, "?"));
