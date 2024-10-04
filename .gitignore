@@ -9,5 +9,7 @@ functions/cache.json
 .idea/
 
 # macOS
+functions/.DS_Store
+functions/._*
 .DS_Store
 ._*
