@@ -88,7 +88,8 @@ function processFile($zipExists, $md5) {
         }
     } else { # is 1.14+ mod
         $legacy=false;
-        $mcmod = parseToml($result);
+        $toml=new Toml;
+        $mcmod = $toml->parse($result);
 
         // todo: technically it's possible to have multiple mods in one file, which the toml parser supports. however we (and the majority of others) don't support this.
         if (sizeof($mcmod['mods'])==0) {
