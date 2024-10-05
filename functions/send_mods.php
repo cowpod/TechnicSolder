@@ -16,7 +16,7 @@ if (!$fileJarInTmpLocation) {
     echo '{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') andupload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}';
     exit();
 }
-include('toml.php');
+require('toml.php');
 function slugify($text) {
   $text = preg_replace('~[^\pL\d]+~u', '-', $text);
   //$text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
@@ -113,7 +113,6 @@ function processFile($zipExists, $md5) {
             && (array_key_exists('author', $mcmod['mods']) || array_key_exists('authors', $mcmod['mods']))
             && array_key_exists('description', $mcmod['mods'])
         )) {
-
             $warn['b'] = true;
             $warn['level'] = "info";
             $warn['message'] = "There is some information missing in mcmod.info.";
@@ -168,13 +167,15 @@ function processFile($zipExists, $md5) {
                 $name = slugify($mcmod['mods']['modId']);
             }
         } else {
-            // file_put_contents("error.log", "getting slug from filename\n", FILE_APPEND);
             // get the slug from the filename
             $exploded_filename = explode("-", $fileInfo['filename']);
             if (sizeof($exploded_filename)>0) {
                 $name=$exploded_filename[0];
+            } else {
+                $warn['b'] = true;
+                $warn['level'] = "info";
+                $warn['message'] = "There is some information missing in mcmod.info.";
             }
-            // file_put_contents("error.log", "gotted slug from filename: ".$name."\n", FILE_APPEND);
         }
 
         $link = array_key_exists('displayURL', $mcmod['mods']) ? $mcmod['mods']['displayURL'] : "";
@@ -211,22 +212,32 @@ function processFile($zipExists, $md5) {
         }
 
         // see if loaderVersion matches something in forges...
-        if ($mcversion==="") {
+        if ($mcversion==="" && array_key_exists('loaderVersion',$mcmod)) {
             require('mcVersionCompare.php');
-            if (array_key_exists('loaderVersion',$mcmod)) {
-                $querystring = "SELECT version,mcversion FROM mods WHERE type='forge' ORDER BY version ASC";
-                $query = mysqli_query($conn, $querystring);
-                if (mysqli_num_rows($query)>0) { // if we even have any forges
-                    while ($row = mysqli_fetch_assoc($query)) {
-                        // file_put_contents("../status.log", "got a forge: ".JSON_ENCODE($row)."\n", FILE_APPEND);
-                        if (mcVersionCompare($row['version'],$mcmod['loaderVersion'])) {
-                            // file_put_contents("../status.log", "got mcversion: ".$row['mcversion']."\n", FILE_APPEND);
-                            $mcversion=$row['mcversion'];
-                            break;
-                        }
+            $querystring = "SELECT version,mcversion FROM mods WHERE type='forge' ORDER BY version ASC";
+            $query = mysqli_query($conn, $querystring);
+            if (mysqli_num_rows($query)>0) { // if we even have any forges
+                while ($row = mysqli_fetch_assoc($query)) {
+                    // file_put_contents("../status.log", "got a forge: ".JSON_ENCODE($row)."\n", FILE_APPEND);
+                    if (mcVersionCompare($row['version'],$mcmod['loaderVersion'])) {
+                        // file_put_contents("../status.log", "got mcversion: ".$row['mcversion']."\n", FILE_APPEND);
+                        $mcversion=$row['mcversion'];
+
+                        // this is still considered missing, since our forge versions specify a lower bound but no upper bound. ie. we may over estimate the compatible minecraft version.
+                        $warn['b'] = true;
+                        $warn['level'] = "info";
+                        $warn['message'] = "There is some information missing in mcmod.info.";
+                        break;
                     }
                 }
             }
+        }
+        
+        // if we're still missing mcversion, just report it to the user...
+        if ($mcversion==="") {
+            $warn['b'] = true;
+            $warn['level'] = "info";
+            $warn['message'] = "There is some information missing in mcmod.info.";
         }
 
         $version = $mcmod['mods']['version'];
@@ -236,6 +247,12 @@ function processFile($zipExists, $md5) {
             array_shift($tmpFilename);
             $tmpFilename = implode('.', $tmpFilename);
             $version = $tmpFilename;
+        }
+
+        if ($version == "\${file.jarVersion}") {
+            $warn['b'] = true;
+            $warn['level'] = "info";
+            $warn['message'] = "There is some information missing in mcmod.info.";
         }
     }
 
