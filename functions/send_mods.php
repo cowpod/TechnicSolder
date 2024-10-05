@@ -105,7 +105,7 @@ function processFile($zipExists, $md5) {
         // }
         // ]
 
-        // file_put_contents('toml_output.json', JSON_ENCODE($mcmod), FILE_APPEND);
+        file_put_contents('toml_output.json', JSON_ENCODE($mcmod), FILE_APPEND);
 
         if (! (array_key_exists('modId', $mcmod['mods'])
             && array_key_exists('version', $mcmod['mods'])
@@ -164,17 +164,17 @@ function processFile($zipExists, $md5) {
         $name = "";
         if (array_key_exists('modId', $mcmod['mods'])) {
             $name = $mcmod['mods']['modId'];
-        } else {
+        // } else {
             // if this doesn't exist (for a modern mod) we're f'ked.
             // file_put_contents('error.log', "couldn't find modId!\n", FILE_APPEND);
-            echo '{"status": "error","message":"Mod is missing mods.toml->modId! Is this even a mod file? If it is, please report this to the mod author."}';
+            // echo '{"status": "error","message":"Mod is missing mods.toml->modId! Is this even a mod file? If it is, please report this to the mod author."}';
             // exit();
-        // } else {
-        //     if (preg_match("/^[a-z0-9]+(?:-[a-z0-9]+)*$/", $mcmod['mods']['modId'])) {
-        //         $name = $mcmod['mods']['modId'];
-        //     } else {
-        //         $name = slugify($mcmod['mods']['modId']);
-            // }
+        } else {
+            if (preg_match("/^[a-z0-9]+(?:-[a-z0-9]+)*$/", $mcmod['mods']['modId'])) {
+                $name = $mcmod['mods']['modId'];
+            } else {
+                $name = slugify($mcmod['mods']['modId']);
+            }
         }
 
         $link = array_key_exists('displayURL', $mcmod['mods']) ? $mcmod['mods']['displayURL'] : "";
@@ -204,13 +204,13 @@ function processFile($zipExists, $md5) {
                     // todo: check other dependencies of this mod
                 }
             } else {
-                // file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
-                echo '{"status":"error","message":"Couldn\'t get mod dependencies! Specifically, dependencies->modId doesn\'t exist!"}}';
+                file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
+                // echo '{"status":"error","message":"Couldn\'t get mod dependencies! Specifically, dependencies->modId doesn\'t exist!"}}';
                 // exit();
             }
         } else {
-            // file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
-            echo '{"status":"error","message":"Couldn\'t get mod dependencies!}}';
+            file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
+            // echo '{"status":"error","message":"Couldn\'t get mod dependencies!}}';
             // exit();
         }
 
@@ -244,7 +244,7 @@ function processFile($zipExists, $md5) {
         ."', '".mysqli_real_escape_string($conn, $fileNameZip)
         ."', 'mod')";
     
-    // file_put_contents("error.log", $res_query_string, FILE_APPEND);
+    file_put_contents("error.log", $res_query_string, FILE_APPEND);
 
     $res = mysqli_query($conn, $res_query_string);
     if ($res) {
