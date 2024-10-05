@@ -2,19 +2,20 @@
 error_reporting(E_ALL & ~E_NOTICE);
 session_start();
 
-$SUPPORTED_JAVA_VERSIONS=[21,20,19,18,17,16,15,14,13,12,11,1.8,1.7,1.6];
+define('SUPPORTED_JAVA_VERSIONS', [21,20,19,18,17,16,15,14,13,12,11,1.8,1.7,1.6]);
+define('SOLDER_BUILD', '999');
 
 $config=['configured'=>false];
 if (file_exists('./functions/config.php')) {
-    $config = require("./functions/config.php");
+    $config = include("./functions/config.php");
 }
 
 if ($config['configured']!==true) {
     header("Location: ".$config['dir']."configure.php");
     exit();
 }
+
 $settings = include("./functions/settings.php");
-// $config = require("./functions/config.php");
 
 $cache=[];
 if (file_exists("./functions/cache.json")) {
@@ -453,7 +454,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 if (isset($cache[$modpack['name']])&&$cache[$modpack['name']]['time'] > time()-1800) {
                                     $info = $cache[$modpack['name']]['info'];
                                 } else {
-                                    if ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".$SOLDER_BUILD),true)) {
+                                    if ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
                                         $cache[$modpack['name']]['time'] = time();
                                         if(!empty($info['icon']['url'])){
                                             $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
@@ -734,7 +735,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <label for="java">Select java version</label>
                             <select name="java" class="form-control">
                                 <?php
-                                foreach ($SUPPORTED_JAVA_VERSIONS as $jv) {
+                                foreach (SUPPORTED_JAVA_VERSIONS as $jv) {
                                     $selected = isset($user['java']) && $user['java']==$jv ? "selected" : "";
                                     echo "<option value=".$jv." ".$selected.">".$jv."</option>";
                                 }
@@ -1208,7 +1209,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 if (isset($cache[$modpack['name']])&&$cache[$modpack['name']]['time'] > time()-1800) {
                     $info = $cache[$modpack['name']]['info'];
                 } else {
-                    if ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".$SOLDER_BUILD),true)) {
+                    if ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
                         $cache[$modpack['name']]['time'] = time();
                         $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
                         $cache[$modpack['name']]['info'] = $info;
@@ -1790,7 +1791,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <label for="java">Select java version</label>
                         <select name="java" class="form-control">
                                 <?php
-                                foreach ($SUPPORTED_JAVA_VERSIONS as $jv) {
+                                foreach (SUPPORTED_JAVA_VERSIONS as $jv) {
                                     $selected = isset($user['java']) && $user['java']==$jv ? "selected" : "";
                                     echo "<option value=".$jv." ".$selected.">".$jv."</option>";
                                 }
