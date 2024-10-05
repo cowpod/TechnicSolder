@@ -40,7 +40,7 @@ $fileInfo=array();
 if (!file_exists("../mods/mods-".$fileNameShort)) {
     mkdir("../mods/mods-".$fileNameShort);
 } else {
-    echo '{"status":"error","message":"Folder mods-'.$fileNameShort.' already exists!"}';
+    echo '{"status":"error","message":"Folder mods-'.$fileNameShort.' already exists! Please remove it and try again."}';
     exit();
 }
 function processFile($zipExists, $md5) {
@@ -105,7 +105,7 @@ function processFile($zipExists, $md5) {
         // }
         // ]
 
-        file_put_contents('toml_output.json', JSON_ENCODE($mcmod), FILE_APPEND);
+        // file_put_contents('toml_output.json', JSON_ENCODE($mcmod), FILE_APPEND);
 
         if (! (array_key_exists('modId', $mcmod['mods'])
             && array_key_exists('version', $mcmod['mods'])
@@ -163,18 +163,19 @@ function processFile($zipExists, $md5) {
 
         $name = "";
         if (array_key_exists('modId', $mcmod['mods'])) {
-            $name = $mcmod['mods']['modId'];
-        // } else {
-            // if this doesn't exist (for a modern mod) we're f'ked.
-            // file_put_contents('error.log', "couldn't find modId!\n", FILE_APPEND);
-            // echo '{"status": "error","message":"Mod is missing mods.toml->modId! Is this even a mod file? If it is, please report this to the mod author."}';
-            // exit();
-        } else {
             if (preg_match("/^[a-z0-9]+(?:-[a-z0-9]+)*$/", $mcmod['mods']['modId'])) {
                 $name = $mcmod['mods']['modId'];
             } else {
                 $name = slugify($mcmod['mods']['modId']);
             }
+        } else {
+            // file_put_contents("error.log", "getting slug from filename\n", FILE_APPEND);
+            // get the slug from the filename
+            $exploded_filename = explode("-", $fileInfo['filename']);
+            if (sizeof($exploded_filename)>0) {
+                $name=$exploded_filename[0];
+            }
+            // file_put_contents("error.log", "gotted slug from filename: ".$name."\n", FILE_APPEND);
         }
 
         $link = array_key_exists('displayURL', $mcmod['mods']) ? $mcmod['mods']['displayURL'] : "";
@@ -204,14 +205,10 @@ function processFile($zipExists, $md5) {
                     // todo: check other dependencies of this mod
                 }
             } else {
-                file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
-                // echo '{"status":"error","message":"Couldn\'t get mod dependencies! Specifically, dependencies->modId doesn\'t exist!"}}';
-                // exit();
+                // file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
             }
         } else {
-            file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
-            // echo '{"status":"error","message":"Couldn\'t get mod dependencies!}}';
-            // exit();
+            // file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
         }
 
         $version = $mcmod['mods']['version'];
@@ -220,7 +217,7 @@ function processFile($zipExists, $md5) {
             $tmpFilename=explode('-', $fileNameShort);
             array_shift($tmpFilename);
             $tmpFilename = implode('.', $tmpFilename);
-            $version=$tmpFilename;
+            $version = $tmpFilename;
         }
     }
 
@@ -244,7 +241,7 @@ function processFile($zipExists, $md5) {
         ."', '".mysqli_real_escape_string($conn, $fileNameZip)
         ."', 'mod')";
     
-    file_put_contents("error.log", $res_query_string, FILE_APPEND);
+    // file_put_contents("error.log", $res_query_string, FILE_APPEND);
 
     $res = mysqli_query($conn, $res_query_string);
     if ($res) {
