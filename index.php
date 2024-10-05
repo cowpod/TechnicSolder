@@ -2,6 +2,8 @@
 error_reporting(E_ALL & ~E_NOTICE);
 session_start();
 
+$SUPPORTED_JAVA_VERSIONS=[21,20,19,18,17,16,15,14,13,12,11,1.8,1.7,1.6];
+
 $config=['configured'=>false];
 if (file_exists('./functions/config.php')) {
     $config = require("./functions/config.php");
@@ -21,7 +23,6 @@ if (file_exists("./functions/cache.json")) {
 
 $dbcon = require("./functions/dbconnect.php");
 $url = $_SERVER['REQUEST_URI'];
-$SOLDER_BUILD='999';
 
 require('functions/mcVersionCompare.php');
 
@@ -732,13 +733,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <br />
                             <label for="java">Select java version</label>
                             <select name="java" class="form-control">
-                                <option <?php if (isset($user['java']) && $user['java']=="17"){ echo "selected"; } ?> value="17">17</option>
-                                <option <?php if (isset($user['java']) && $user['java']=="16"){ echo "selected"; } ?> value="16">16</option>
-                                <option <?php if (isset($user['java']) && $user['java']=="13"){ echo "selected"; } ?> value="13">13</option>
-                                <option <?php if (isset($user['java']) && $user['java']=="11"){ echo "selected"; } ?> value="11">11</option>
-                                <option <?php if (isset($user['java']) && $user['java']=="1.8"){ echo "selected"; } ?> value="1.8">1.8</option>
-                                <option <?php if (isset($user['java']) && $user['java']=="1.7"){ echo "selected"; } ?> value="1.7">1.7</option>
-                                <option <?php if (isset($user['java']) && $user['java']=="1.6"){ echo "selected"; } ?> value="1.6">1.6</option>
+                                <?php
+                                foreach ($SUPPORTED_JAVA_VERSIONS as $jv) {
+                                    $selected = isset($user['java']) && $user['java']==$jv ? "selected" : "";
+                                    echo "<option value=".$jv." ".$selected.">".$jv."</option>";
+                                }
+                                ?>
                             </select> <br />
                             <label for="memory">Memory (RAM in MB)</label>
                             <input required class="form-control" type="number" id="memory" name="memory" value="2048" min="1024" max="65536" placeholder="2048" step="512">
@@ -1789,13 +1789,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <br />
                         <label for="java">Select java version</label>
                         <select name="java" class="form-control">
-                            <option <?php if ($user['java']=="17"){ echo "selected"; } ?> value="17">17</option>
-                            <option <?php if ($user['java']=="16"){ echo "selected"; } ?> value="16">16</option>
-                            <option <?php if ($user['java']=="13"){ echo "selected"; } ?> value="13">13</option>
-                            <option <?php if ($user['java']=="11"){ echo "selected"; } ?> value="11">11</option>
-                            <option <?php if ($user['java']=="1.8"){ echo "selected"; } ?> value="1.8">1.8</option>
-                            <option <?php if ($user['java']=="1.7"){ echo "selected"; } ?> value="1.7">1.7</option>
-                            <option <?php if ($user['java']=="1.6"){ echo "selected"; } ?> value="1.6">1.6</option>
+                                <?php
+                                foreach ($SUPPORTED_JAVA_VERSIONS as $jv) {
+                                    $selected = isset($user['java']) && $user['java']==$jv ? "selected" : "";
+                                    echo "<option value=".$jv." ".$selected.">".$jv."</option>";
+                                }
+                                ?>
                         </select> <br />
                         <label for="memory">Memory (RAM in MB)</label>
                         <input class="form-control" type="number" id="memory" name="memory" value="<?php echo $user['memory'] ?>" min="1024" max="65536" placeholder="2048" step="512">
