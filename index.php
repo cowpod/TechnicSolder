@@ -1,19 +1,31 @@
 <?php
 error_reporting(E_ALL & ~E_NOTICE);
 session_start();
-$config = include("./functions/config.php");
+
+define('SUPPORTED_JAVA_VERSIONS', [21,20,19,18,17,16,15,14,13,12,11,1.8,1.7,1.6]);
+define('SOLDER_BUILD', '999');
+
+$config=['configured'=>false];
+if (file_exists('./functions/config.php')) {
+    $config = include("./functions/config.php");
+}
+
 if ($config['configured']!==true) {
     header("Location: ".$config['dir']."configure.php");
     exit();
 }
+
 $settings = include("./functions/settings.php");
-$config = require("./functions/config.php");
-$cache = json_decode(file_get_contents("./functions/cache.json"),true);
+
+$cache=[];
+if (file_exists("./functions/cache.json")) {
+    $cache = json_decode(file_get_contents("./functions/cache.json"),true);
+}
+
 $dbcon = require("./functions/dbconnect.php");
 $url = $_SERVER['REQUEST_URI'];
-$SOLDER_BUILD='999';
 
-include('functions/mcVersionCompare.php');
+require('functions/mcVersionCompare.php');
 
 if (strpos($url, '?') !== false) {
     $url = substr($url, 0, strpos($url, "?"));
@@ -39,6 +51,10 @@ if (isset($_GET['logout']) && $_GET['logout']) {
     header("Location: ".$config['dir']."login");
     exit();
 }
+
+$user=[];
+$modslist=[];
+
 if (isset($_POST['email']) && isset($_POST['password']) && $_POST['email'] !== "" && $_POST['password'] !== "") {
     if (!isset($config['encrypted']) || !$config['encrypted']) {
         if ($_POST['email']==$config['mail'] && $_POST['password']==$config['pass']) {
@@ -438,9 +454,11 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 if (isset($cache[$modpack['name']])&&$cache[$modpack['name']]['time'] > time()-1800) {
                                     $info = $cache[$modpack['name']]['info'];
                                 } else {
-                                    if ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".$SOLDER_BUILD),true)) {
+                                    if ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
                                         $cache[$modpack['name']]['time'] = time();
-                                        $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
+                                        if(!empty($info['icon']['url'])){
+                                            $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
+                                        }
                                         $cache[$modpack['name']]['info'] = $info;
                                         $ws = json_encode($cache);
                                         file_put_contents("./functions/cache.json", $ws);
@@ -716,13 +734,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <br />
                             <label for="java">Select java version</label>
                             <select name="java" class="form-control">
-                                <option <?php if ($user['java']=="17"){ echo "selected"; } ?> value="17">17</option>
-                                <option <?php if ($user['java']=="16"){ echo "selected"; } ?> value="16">16</option>
-                                <option <?php if ($user['java']=="13"){ echo "selected"; } ?> value="13">13</option>
-                                <option <?php if ($user['java']=="11"){ echo "selected"; } ?> value="11">11</option>
-                                <option <?php if ($user['java']=="1.8"){ echo "selected"; } ?> value="1.8">1.8</option>
-                                <option <?php if ($user['java']=="1.7"){ echo "selected"; } ?> value="1.7">1.7</option>
-                                <option <?php if ($user['java']=="1.6"){ echo "selected"; } ?> value="1.6">1.6</option>
+                                <?php
+                                foreach (SUPPORTED_JAVA_VERSIONS as $jv) {
+                                    $selected = isset($user['java']) && $user['java']==$jv ? "selected" : "";
+                                    echo "<option value=".$jv." ".$selected.">".$jv."</option>";
+                                }
+                                ?>
                             </select> <br />
                             <label for="memory">Memory (RAM in MB)</label>
                             <input required class="form-control" type="number" id="memory" name="memory" value="2048" min="1024" max="65536" placeholder="2048" step="512">
@@ -730,7 +747,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <label for="versions">Select minecraft version</label>
                             <select required id="versions" name="versions" class="form-control">
                             <?php
-
+                            // select all forge versions
                             $vres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `type` = 'forge'");
                             if (mysqli_num_rows($vres)!==0) {
                                 while($version = mysqli_fetch_array($vres)) {
@@ -1192,7 +1209,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 if (isset($cache[$modpack['name']])&&$cache[$modpack['name']]['time'] > time()-1800) {
                     $info = $cache[$modpack['name']]['info'];
                 } else {
-                    if ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".$SOLDER_BUILD),true)) {
+                    if ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
                         $cache[$modpack['name']]['time'] = time();
                         $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
                         $cache[$modpack['name']]['info'] = $info;
@@ -1680,6 +1697,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             if ($modslist[0]==""){
                 unset($modslist[0]);
             }
+
             if (isset($_POST['java'])) {
                 if ($_POST['forgec']!=="none"||empty($modslist)) {
                     if ($_POST['forgec']=="wipe"||empty($modslist)) {
@@ -1703,14 +1721,16 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 mysqli_query($conn, "UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$user['modpack']);
             }
 
-            $bres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `id` = ".mysqli_real_escape_string($conn,$_GET['id']));
-            if ($bres) {
-                $user = mysqli_fetch_array($bres);
-            }
-            $modslist= explode(',', $user['mods']);
-            if ($modslist[0]==""){
-                unset($modslist[0]);
-            }
+            // redundant query and $user array fetch
+            // $bres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `id` = ".mysqli_real_escape_string($conn,$_GET['id']));
+            // if ($bres) {
+            //     $user = mysqli_fetch_array($bres);
+            // }
+            // $modslist = explode(',', $user['mods']);
+            // if ($modslist[0]==""){
+            //     unset($modslist[0]);
+            // }
+
             $pack = mysqli_query($conn, "SELECT * FROM `modpacks` WHERE `id` = ".$user['modpack']);
             $mpack = mysqli_fetch_array($pack);
             ?>
@@ -1770,13 +1790,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <br />
                         <label for="java">Select java version</label>
                         <select name="java" class="form-control">
-                            <option <?php if ($user['java']=="17"){ echo "selected"; } ?> value="17">17</option>
-                            <option <?php if ($user['java']=="16"){ echo "selected"; } ?> value="16">16</option>
-                            <option <?php if ($user['java']=="13"){ echo "selected"; } ?> value="13">13</option>
-                            <option <?php if ($user['java']=="11"){ echo "selected"; } ?> value="11">11</option>
-                            <option <?php if ($user['java']=="1.8"){ echo "selected"; } ?> value="1.8">1.8</option>
-                            <option <?php if ($user['java']=="1.7"){ echo "selected"; } ?> value="1.7">1.7</option>
-                            <option <?php if ($user['java']=="1.6"){ echo "selected"; } ?> value="1.6">1.6</option>
+                                <?php
+                                foreach (SUPPORTED_JAVA_VERSIONS as $jv) {
+                                    $selected = isset($user['java']) && $user['java']==$jv ? "selected" : "";
+                                    echo "<option value=".$jv." ".$selected.">".$jv."</option>";
+                                }
+                                ?>
                         </select> <br />
                         <label for="memory">Memory (RAM in MB)</label>
                         <input class="form-control" type="number" id="memory" name="memory" value="<?php echo $user['memory'] ?>" min="1024" max="65536" placeholder="2048" step="512">
@@ -3660,7 +3679,7 @@ function stringify(items) {
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
-                        <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal"
+                        <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">
                                 Delete
                           </button>
                       </div>

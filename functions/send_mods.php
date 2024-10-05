@@ -16,7 +16,7 @@ if (!$fileJarInTmpLocation) {
     echo '{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') andupload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}';
     exit();
 }
-include('toml.php');
+require('toml.php');
 function slugify($text) {
   $text = preg_replace('~[^\pL\d]+~u', '-', $text);
   //$text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
@@ -40,7 +40,7 @@ $fileInfo=array();
 if (!file_exists("../mods/mods-".$fileNameShort)) {
     mkdir("../mods/mods-".$fileNameShort);
 } else {
-    echo '{"status":"error","message":"Folder mods-'.$fileNameShort.' already exists!"}';
+    echo '{"status":"error","message":"Folder mods-'.$fileNameShort.' already exists! Please remove it and try again."}';
     exit();
 }
 function processFile($zipExists, $md5) {
@@ -88,17 +88,32 @@ function processFile($zipExists, $md5) {
         }
     } else { # is 1.14+ mod
         $legacy=false;
-        $mcmod = parseToml($result);
+        $toml=new Toml;
+        $mcmod = $toml->parse($result);
 
         // todo: technically it's possible to have multiple mods in one file, which the toml parser supports. however we (and the majority of others) don't support this.
         if (sizeof($mcmod['mods'])==0) {
             echo '{"status":"error","message":"Could not parse TOML->mods->0."}';
-            exit();
+            // exit();
         }
-        $mcmod['mods']=$mcmod['mods'][0]; // ..and as we're supporting legacy mods, we're doing it this !@$%# way 
+        $mcmod['mods']=$mcmod['mods'][0]; 
+        // ..and as we're supporting legacy mods, we're doing it this !@$%# way 
         // todo: don't do it this way.
+        // this is because the toml spec says [[]] means an array. for us this means mods=>[{...}], aka
+        // mods => [
+        //    0 => {
+        //      'modId'=>...
+        // }
+        // ]
 
-        if (!$mcmod['mods']['modId']||!$mcmod['mods']['displayName']||!$mcmod['mods']['description']||!$mcmod['mods']['version']||!$mcmod['mods']['displayURL']||!($mcmod['mods']['author'] && $mcmod['mods']['authors'])) {
+        // file_put_contents('toml_output.json', JSON_ENCODE($mcmod), FILE_APPEND);
+
+        if (! (array_key_exists('modId', $mcmod['mods'])
+            && array_key_exists('version', $mcmod['mods'])
+            && array_key_exists('displayName', $mcmod['mods'])
+            && (array_key_exists('author', $mcmod['mods']) || array_key_exists('authors', $mcmod['mods']))
+            && array_key_exists('description', $mcmod['mods'])
+        )) {
             $warn['b'] = true;
             $warn['level'] = "info";
             $warn['message'] = "There is some information missing in mcmod.info.";
@@ -111,7 +126,7 @@ function processFile($zipExists, $md5) {
         $zip = new ZipArchive();
         if ($zip->open($fileZipLocation, ZIPARCHIVE::CREATE) !== TRUE) {
             echo '{"status":"error","message":"Could not open archive"}';
-            exit();
+            // exit();
         }
         $zip->addEmptyDir('mods');
         if (is_file($fileJarInFolderLocation)) {
@@ -123,9 +138,9 @@ function processFile($zipExists, $md5) {
     if ($legacy) {
         // legacy 1.14-
         if (!$mcmod['name']) {
-            $pretty_name = mysqli_real_escape_string($conn, $fileNameShort);
+            $pretty_name = $fileNameShort;
         } else {
-            $pretty_name = mysqli_real_escape_string($conn, $mcmod['name']);
+            $pretty_name = $mcmod['name'];
         }
         if (!$mcmod['modid']) {
             $name = slugify($pretty_name);
@@ -137,57 +152,93 @@ function processFile($zipExists, $md5) {
             }
         }
         $link = $mcmod['url'];
-        $author = mysqli_real_escape_string($conn, implode(', ', $mcmod['authorList']));
-        $description = mysqli_real_escape_string($conn, $mcmod['description']);
+        $author = implode(', ', $mcmod['authorList']);
+        $description = $mcmod['description'];
         $version = $mcmod['version'];
         $mcversion = $mcmod['mcversion'];
     } else {
         // 'modern' 1.14+
-        if (!$mcmod['mods']['displayName']) {
-            $pretty_name = mysqli_real_escape_string($conn, $fileNameShort);
-        } else {
-            $pretty_name = mysqli_real_escape_string($conn, $mcmod['mods']['displayName']);
-        }
-        if (!$mcmod['mods']['modId']) {
-            $name = slugify($pretty_name);
-        } else {
-            if (preg_match("^[a-z0-9]+(?:-[a-z0-9]+)*$", $mcmod['mods']['modId'])) {
+        $pretty_name = array_key_exists('displayName', $mcmod['mods']) ? $mcmod['mods']['displayName'] : "";
+
+        $name = "";
+        if (array_key_exists('modId', $mcmod['mods'])) {
+            if (preg_match("/^[a-z0-9]+(?:-[a-z0-9]+)*$/", $mcmod['mods']['modId'])) {
                 $name = $mcmod['mods']['modId'];
             } else {
                 $name = slugify($mcmod['mods']['modId']);
             }
+        } else {
+            // get the slug from the filename
+            $exploded_filename = explode("-", $fileInfo['filename']);
+            if (sizeof($exploded_filename)>0) {
+                $name=$exploded_filename[0];
+            } else {
+                $warn['b'] = true;
+                $warn['level'] = "info";
+                $warn['message'] = "There is some information missing in mcmod.info.";
+            }
         }
 
-        $link = $mcmod['mods']['displayURL'];
+        $link = array_key_exists('displayURL', $mcmod['mods']) ? $mcmod['mods']['displayURL'] : "";
 
-        $author = mysqli_real_escape_string($conn, empty($mcmod['mods']['author'])? $mcmod['mods']['authors'] : $mcmod['mods']['author']);
+        $author = array_key_exists('author', $mcmod['mods']) ? $mcmod['mods']['author'] : $mcmod['mods']['authors'];
 
-        $description = mysqli_real_escape_string($conn, $mcmod['mods']['description']);
+        $description = array_key_exists('description', $mcmod['mods']) ? $mcmod['mods']['description'] : "";
 
-        $mcversion="[1.0.0,)"; // (bad) placeholder
+        $mcversion=""; // (bad) placeholder
         // attempt to pull out necessary dependency information from toml
-        for ($mcmod['dependencies'][$mcmod['mods']['modId']] as $dependency) {
-            if (is_array($dependency) && sizeof($dependency)==1) {
-                // nested?
-                $dependency=$dependency[0];
-            }
-            if (!is_array($dependency) {
-                continue; // ignore.
-            }
+        if (array_key_exists('dependencies', $mcmod)) {
+            if (array_key_exists($name, $mcmod['dependencies'])) {
+                foreach ($mcmod['dependencies'][$name] as $dependency) {
 
-            $dependency_modId=$dependency['modId'];
-            // $dependency_mandatory=$dependency['mandatory'];
-            $dependency_versionRange=$dependency['versionRange'];
-            // $dependency_ordering=$dependency['ordering'];
-            // $dependency_side=$dependency['side'];
+                    $dependency_modId=$dependency['modId'];
+                    // $dependency_mandatory=$dependency['mandatory'];
+                    $dependency_versionRange=$dependency['versionRange'];
+                    // $dependency_ordering=$dependency['ordering'];
+                    // $dependency_side=$dependency['side'];
 
-            if ($dependency_modId=='minecraft') {
-                // we currently just need the dependent minecraft version.
-                $mcversion=$dependency_versionRange;
-                break;
+                    if ($dependency_modId=='minecraft') {
+                        // we currently just need the dependent minecraft version.
+                        $mcversion=$dependency_versionRange;
+                        break;
+                    }
+
+                    // todo: check other dependencies of this mod
+                }
+            } else {
+                // file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
             }
+        } else {
+            // file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
+        }
 
-            // todo: check other dependencies of this mod
+        // see if loaderVersion matches something in forges...
+        if ($mcversion==="" && array_key_exists('loaderVersion',$mcmod)) {
+            require('mcVersionCompare.php');
+            $querystring = "SELECT version,mcversion FROM mods WHERE type='forge' ORDER BY version ASC";
+            $query = mysqli_query($conn, $querystring);
+            if (mysqli_num_rows($query)>0) { // if we even have any forges
+                while ($row = mysqli_fetch_assoc($query)) {
+                    // file_put_contents("../status.log", "got a forge: ".JSON_ENCODE($row)."\n", FILE_APPEND);
+                    if (mcVersionCompare($row['version'],$mcmod['loaderVersion'])) {
+                        // file_put_contents("../status.log", "got mcversion: ".$row['mcversion']."\n", FILE_APPEND);
+                        $mcversion=$row['mcversion'];
+
+                        // this is still considered missing, since our forge versions specify a lower bound but no upper bound. ie. we may over estimate the compatible minecraft version.
+                        $warn['b'] = true;
+                        $warn['level'] = "info";
+                        $warn['message'] = "There is some information missing in mcmod.info.";
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // if we're still missing mcversion, just report it to the user...
+        if ($mcversion==="") {
+            $warn['b'] = true;
+            $warn['level'] = "info";
+            $warn['message'] = "There is some information missing in mcmod.info.";
         }
 
         $version = $mcmod['mods']['version'];
@@ -196,7 +247,13 @@ function processFile($zipExists, $md5) {
             $tmpFilename=explode('-', $fileNameShort);
             array_shift($tmpFilename);
             $tmpFilename = implode('.', $tmpFilename);
-            $version=$tmpFilename;
+            $version = $tmpFilename;
+        }
+
+        if ($version == "\${file.jarVersion}") {
+            $warn['b'] = true;
+            $warn['level'] = "info";
+            $warn['message'] = "There is some information missing in mcmod.info.";
         }
     }
 
@@ -207,7 +264,22 @@ function processFile($zipExists, $md5) {
     }
 
     //$url = "http://".$config['host'].$config['dir']."mods/".$fileInfo['filename'].".zip";
-    $res = mysqli_query($conn, "INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`) VALUES ('".$name."','".$pretty_name."','".$md5."','','".$link."','".$author."','".$description."','".$version."','".$mcversion."','".$fileNameZip."','mod')");
+
+    $res_query_string="INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`) VALUES ("."'"   .mysqli_real_escape_string($conn, $name)
+        ."', '".mysqli_real_escape_string($conn, $pretty_name)
+        ."', '".mysqli_real_escape_string($conn, $md5)
+        ."', '".mysqli_real_escape_string($conn, "")
+        ."', '".mysqli_real_escape_string($conn, $link)
+        ."', '".mysqli_real_escape_string($conn, $author)
+        ."', '".mysqli_real_escape_string($conn, $description)
+        ."', '".mysqli_real_escape_string($conn, $version)
+        ."', '".mysqli_real_escape_string($conn, $mcversion)
+        ."', '".mysqli_real_escape_string($conn, $fileNameZip)
+        ."', 'mod')";
+    
+    // file_put_contents("error.log", $res_query_string, FILE_APPEND);
+
+    $res = mysqli_query($conn, $res_query_string);
     if ($res) {
         if (@$warn['b']==true) {
             if ($warn['level']=="info") {
