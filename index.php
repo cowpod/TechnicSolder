@@ -49,6 +49,10 @@ if (isset($_GET['logout']) && $_GET['logout']) {
     header("Location: ".$config['dir']."login");
     exit();
 }
+
+$user=[];
+$modslist=[];
+
 if (isset($_POST['email']) && isset($_POST['password']) && $_POST['email'] !== "" && $_POST['password'] !== "") {
     if (!isset($config['encrypted']) || !$config['encrypted']) {
         if ($_POST['email']==$config['mail'] && $_POST['password']==$config['pass']) {
@@ -726,13 +730,13 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <br />
                             <label for="java">Select java version</label>
                             <select name="java" class="form-control">
-                                <option <?php if ($user['java']=="17"){ echo "selected"; } ?> value="17">17</option>
-                                <option <?php if ($user['java']=="16"){ echo "selected"; } ?> value="16">16</option>
-                                <option <?php if ($user['java']=="13"){ echo "selected"; } ?> value="13">13</option>
-                                <option <?php if ($user['java']=="11"){ echo "selected"; } ?> value="11">11</option>
-                                <option <?php if ($user['java']=="1.8"){ echo "selected"; } ?> value="1.8">1.8</option>
-                                <option <?php if ($user['java']=="1.7"){ echo "selected"; } ?> value="1.7">1.7</option>
-                                <option <?php if ($user['java']=="1.6"){ echo "selected"; } ?> value="1.6">1.6</option>
+                                <option <?php if (isset($user['java']) && $user['java']=="17"){ echo "selected"; } ?> value="17">17</option>
+                                <option <?php if (isset($user['java']) && $user['java']=="16"){ echo "selected"; } ?> value="16">16</option>
+                                <option <?php if (isset($user['java']) && $user['java']=="13"){ echo "selected"; } ?> value="13">13</option>
+                                <option <?php if (isset($user['java']) && $user['java']=="11"){ echo "selected"; } ?> value="11">11</option>
+                                <option <?php if (isset($user['java']) && $user['java']=="1.8"){ echo "selected"; } ?> value="1.8">1.8</option>
+                                <option <?php if (isset($user['java']) && $user['java']=="1.7"){ echo "selected"; } ?> value="1.7">1.7</option>
+                                <option <?php if (isset($user['java']) && $user['java']=="1.6"){ echo "selected"; } ?> value="1.6">1.6</option>
                             </select> <br />
                             <label for="memory">Memory (RAM in MB)</label>
                             <input required class="form-control" type="number" id="memory" name="memory" value="2048" min="1024" max="65536" placeholder="2048" step="512">
@@ -740,7 +744,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <label for="versions">Select minecraft version</label>
                             <select required id="versions" name="versions" class="form-control">
                             <?php
-
+                            // select all forge versions
                             $vres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `type` = 'forge'");
                             if (mysqli_num_rows($vres)!==0) {
                                 while($version = mysqli_fetch_array($vres)) {
