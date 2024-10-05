@@ -1694,6 +1694,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             if ($modslist[0]==""){
                 unset($modslist[0]);
             }
+
             if (isset($_POST['java'])) {
                 if ($_POST['forgec']!=="none"||empty($modslist)) {
                     if ($_POST['forgec']=="wipe"||empty($modslist)) {
@@ -1717,14 +1718,16 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 mysqli_query($conn, "UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$user['modpack']);
             }
 
-            $bres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `id` = ".mysqli_real_escape_string($conn,$_GET['id']));
-            if ($bres) {
-                $user = mysqli_fetch_array($bres);
-            }
-            $modslist= explode(',', $user['mods']);
-            if ($modslist[0]==""){
-                unset($modslist[0]);
-            }
+            // redundant query and $user array fetch
+            // $bres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `id` = ".mysqli_real_escape_string($conn,$_GET['id']));
+            // if ($bres) {
+            //     $user = mysqli_fetch_array($bres);
+            // }
+            // $modslist = explode(',', $user['mods']);
+            // if ($modslist[0]==""){
+            //     unset($modslist[0]);
+            // }
+
             $pack = mysqli_query($conn, "SELECT * FROM `modpacks` WHERE `id` = ".$user['modpack']);
             $mpack = mysqli_fetch_array($pack);
             ?>
