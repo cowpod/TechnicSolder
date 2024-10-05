@@ -454,7 +454,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 } else {
                                     if ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".$SOLDER_BUILD),true)) {
                                         $cache[$modpack['name']]['time'] = time();
-                                        $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
+                                        if(!empty($info['icon']['url'])){
+                                            $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
+                                        }
                                         $cache[$modpack['name']]['info'] = $info;
                                         $ws = json_encode($cache);
                                         file_put_contents("./functions/cache.json", $ws);
