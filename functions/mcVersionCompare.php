@@ -1,5 +1,4 @@
 <?php
-define('TRIMCHARS', '[(])');
 
 function mcVersionCompare($modVersion, $userVersion) {
 	// compares two minecraft versions. 
@@ -14,7 +13,7 @@ function mcVersionCompare($modVersion, $userVersion) {
 	// or [a,] into '[a' and ']'
 	
 	foreach ($explodedModVersion as $endpoint) {
-		$trimmed=trim($endpoint, TRIMCHARS);
+		$trimmed=trim($endpoint, '[(])');
 		if (str_contains($endpoint, '[')) {
 			// left side [
 			if (! version_compare($userVersion, $trimmed, '>='))

@@ -110,7 +110,6 @@ function processFile($zipExists, $md5) {
         if (! (array_key_exists('modId', $mcmod['mods'])
             && array_key_exists('version', $mcmod['mods'])
             && array_key_exists('displayName', $mcmod['mods'])
-            && array_key_exists('displayURL', $mcmod['mods'])
             && (array_key_exists('author', $mcmod['mods']) || array_key_exists('authors', $mcmod['mods']))
             && array_key_exists('description', $mcmod['mods'])
         )) {
@@ -184,7 +183,7 @@ function processFile($zipExists, $md5) {
 
         $description = array_key_exists('description', $mcmod['mods']) ? $mcmod['mods']['description'] : "";
 
-        $mcversion="[1.0.0,)"; // (bad) placeholder
+        $mcversion=""; // (bad) placeholder
         // attempt to pull out necessary dependency information from toml
         if (array_key_exists('dependencies', $mcmod)) {
             if (array_key_exists($name, $mcmod['dependencies'])) {
@@ -209,6 +208,25 @@ function processFile($zipExists, $md5) {
             }
         } else {
             // file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
+        }
+
+        // see if loaderVersion matches something in forges...
+        if ($mcversion==="") {
+            require('mcVersionCompare.php');
+            if (array_key_exists('loaderVersion',$mcmod)) {
+                $querystring = "SELECT version,mcversion FROM mods WHERE type='forge' ORDER BY version ASC";
+                $query = mysqli_query($conn, $querystring);
+                if (mysqli_num_rows($query)>0) { // if we even have any forges
+                    while ($row = mysqli_fetch_assoc($query)) {
+                        // file_put_contents("../status.log", "got a forge: ".JSON_ENCODE($row)."\n", FILE_APPEND);
+                        if (mcVersionCompare($row['version'],$mcmod['loaderVersion'])) {
+                            // file_put_contents("../status.log", "got mcversion: ".$row['mcversion']."\n", FILE_APPEND);
+                            $mcversion=$row['mcversion'];
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         $version = $mcmod['mods']['version'];
