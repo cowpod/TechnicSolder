@@ -12,14 +12,13 @@ class Db {
 		    error_log("db.php: __construct(): Missing configuration!");
 		}
 
-		if (! (isset($conf['db-host']) 
-			&& isset($conf['db-user'])
-			&& isset($conf['db-pass'])
-			&& isset($conf['db-name']))) {
-			// die("Configuration is missing database information!");
+		if (! (isset($this->conf['db-host']) 
+			&& isset($this->conf['db-user'])
+			&& isset($this->conf['db-pass'])
+			&& isset($this->conf['db-name']))) {
 		    error_log("db.php: __construct(): Configuration is missing some database information!");
 		}
-
+		
 		// doesn't matter if we're missing config.php - assume we're setting up or testing
 		return true;
 	}
