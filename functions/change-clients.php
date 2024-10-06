@@ -1,7 +1,7 @@
 <?php
 session_start();
 $config = require("./config.php");
-require("dbconnect.php");
+
 if (empty($_GET['id'])) {
     die("Modpack not specified.");
 }
@@ -12,10 +12,13 @@ if (substr($_SESSION['perms'], 0, 1)!=="1") {
     echo 'Insufficient permission!';
     exit();
 }
+
+require("db.php");
+$db=new Db;
+$db->connect();
+
 $clients = implode(",", $_GET['client']);
-mysqli_query(
-    $conn,
-    "UPDATE `modpacks` SET `clients` = '".mysqli_real_escape_string($conn, $clients)."' WHERE `id`=".$_GET['id']
+$db->query("UPDATE `modpacks` SET `clients` = '".$db->sanitize($clients)."' WHERE `id`=".$_GET['id']
 );
 header("Location: ".$config['dir']."modpack?id=".$_GET['id']);
 exit();

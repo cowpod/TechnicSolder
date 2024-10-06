@@ -7,9 +7,13 @@ if (!$_GET['id']) {
     die('ID not provided');
 }
 $config = require("config.php");
-require("dbconnect.php");
-$q = mysqli_query($conn, "SELECT `filename` FROM `mods` WHERE `id` = ".mysqli_real_escape_string($conn,$_GET['id']));
-$fileName = mysqli_fetch_array($q)['filename'];
+
+require("db.php");
+$db=new Db;
+$db->connect();
+
+$q = $db->query("SELECT `filename` FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
+$fileName = ($q)['filename'];
 $fileInfo = pathinfo("../mods/".$fileName);
 $exisingzip = new ZipArchive();
 $exisingzip->open("../mods/".$fileName);

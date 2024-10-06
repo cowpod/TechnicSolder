@@ -1,7 +1,7 @@
 <?php
 session_start();
 $config = require("./config.php");
-require("dbconnect.php");
+
 if (empty($_GET['id'])) {
     die("Modpack not specified.");
 }
@@ -12,7 +12,14 @@ if (substr($_SESSION['perms'],0,1)!=="1") {
     echo 'Insufficient permission!';
     exit();
 }
-mysqli_query($conn, "DELETE FROM `builds` WHERE `modpack` = '".mysqli_real_escape_string($conn,$_GET['id'])."'");
-mysqli_query($conn, "DELETE FROM `modpacks` WHERE `id` = '".mysqli_real_escape_string($conn,$_GET['id'])."'");
+
+require("db.php");
+$db=new Db;
+$db->connect();
+
+$db->query("DELETE FROM `builds` WHERE `modpack` = '".$db->sanitize($_GET['id'])."'");
+$db->query("DELETE FROM `modpacks` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
+
+$db->disconnect();
 header("Location: ".$config['dir']."dashboard");
 exit();

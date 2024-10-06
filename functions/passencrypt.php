@@ -1,20 +1,26 @@
 <?php
 session_start();
 $config = require("./config.php");
-require("dbconnect.php");
+
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired.");
 }
 if ($_SESSION['user']!==$config['mail']) {
     die("insufficient permission!");
 }
-//$sql = mysqli_query($conn,"UPDATE `users` SET `display_name` = '".$_POST['display_name']."', `perms` = '".$_POST['perms']."' WHERE `name` = '".$_POST['name']."'");
+
+require("db.php");
+$db=new Db;
+
+//$sql = $db->query("UPDATE `users` SET `display_name` = '".$_POST['display_name']."', `perms` = '".$_POST['perms']."' WHERE `name` = '".$_POST['name']."'");
 if (!isset($config['encrypted'])||$config['encrypted']==false) {
-    $users = mysqli_query($conn,"SELECT * FROM `users`");
-    while ($user = mysqli_fetch_array($users)) {
+    $db->connect();
+    $users = $db->query("SELECT * FROM `users`");
+    $db->disconnect();
+    foreach ($users as $user) {
         // OLD HASHING METHOD (INSECURE)
-        // mysqli_query($conn,"UPDATE `users` SET `pass` = '".hash("sha256",$user['pass']."Solder.cf")."' WHERE `name` = '".$user['name']."'");
-        mysqli_query($conn, "UPDATE `users` SET `pass` = '".password_hash($user['pass'], PASSWORD_DEFAULT)."' WHERE `name` = '".$user['name']."'");
+        // $db->query("UPDATE `users` SET `pass` = '".hash("sha256",$user['pass']."Solder.cf")."' WHERE `name` = '".$user['name']."'");
+        $db->query( "UPDATE `users` SET `pass` = '".password_hash($user['pass'], PASSWORD_DEFAULT)."' WHERE `name` = '".$user['name']."'");
     }
     // OLD HASHING METHOD (INSECURE)
     // $mainpass = hash("sha256",$config['pass']."Solder.cf");

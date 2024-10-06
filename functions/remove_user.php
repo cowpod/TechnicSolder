@@ -1,7 +1,7 @@
 <?php
 session_start();
 $config = require("./config.php");
-require("dbconnect.php");
+
 if (empty($_POST['id'])) {
     die("id not specified.");
 }
@@ -11,7 +11,15 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
 if ($_SESSION['user']!==$config['mail']) {
     die("insufficient permission!");
 }
-$sql = mysqli_query($conn,"DELETE FROM `users` WHERE `id` = ".$_POST['id']);
+
+require("db.php");
+$db=new Db;
+$db->connect();
+
+$sql = $db->query("DELETE FROM `users` WHERE `id` = ".$_POST['id']);
+
+$db->disconnect();
+
 if ($sql) {
     echo '<span class="text-success">User removed.</span>';
 } else {

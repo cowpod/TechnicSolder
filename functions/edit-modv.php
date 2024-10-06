@@ -1,8 +1,7 @@
 <?php
 session_start();
 $config = require("./config.php");
-global $conn;
-require("dbconnect.php");
+
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
 }
@@ -13,19 +12,25 @@ if (substr($_SESSION['perms'], 4, 1)!=="1") {
 if (empty($_GET['id'])) {
     die("Mod not specified.");
 }
-$result = mysqli_query($conn, "SELECT * FROM `mods` WHERE `id` = ".$_GET['id']);
-$mod = mysqli_fetch_array($result);
-mysqli_query(
-    $conn,
-    "UPDATE `mods`
-    SET `link` = '".mysqli_real_escape_string($conn, $_POST['link'])."',
-    `author` = '".mysqli_real_escape_string($conn, $_POST['author'])."',
-    `donlink` = '".mysqli_real_escape_string($conn, $_POST['donlink'])."',
-    `version` = '".mysqli_real_escape_string($conn, $_POST['version'])."',
-    `mcversion` = '".mysqli_real_escape_string($conn, $_POST['mcversion'])."',
-    `url` = '".mysqli_real_escape_string($conn, $_POST['url'])."',
-    `md5` = '".mysqli_real_escape_string($conn, $_POST['md5'])."'
-    WHERE `id` = ".mysqli_real_escape_string($conn, $_GET['id'])
+
+global $db;
+require("db.php");
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
+}
+
+$result = $db->query("SELECT * FROM `mods` WHERE `id` = ".$_GET['id']);
+$mod = ($result);
+$db->query("UPDATE `mods`
+    SET `link` = '".$db->sanitize($_POST['link'])."',
+    `author` = '".  $db->sanitize($_POST['author'])."',
+    `donlink` = '". $db->sanitize($_POST['donlink'])."',
+    `version` = '". $db->sanitize($_POST['version'])."',
+    `mcversion` = '".$db->sanitize($_POST['mcversion'])."',
+    `url` = '".     $db->sanitize($_POST['url'])."',
+    `md5` = '".     $db->sanitize($_POST['md5'])."'
+    WHERE `id` = ". $db->sanitize($_GET['id'])
 );
 
 if ($_POST['submit']=="Save and close") {

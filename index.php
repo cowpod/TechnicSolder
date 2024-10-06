@@ -22,7 +22,12 @@ if (file_exists("./functions/cache.json")) {
     $cache = json_decode(file_get_contents("./functions/cache.json"),true);
 }
 
-$dbcon = require("./functions/dbconnect.php");
+require("./functions/db.php");
+$db = new Db;
+if (!$db->connect()) {
+    die("Couldn't connect to database!");
+}
+
 $url = $_SERVER['REQUEST_URI'];
 
 require('functions/mcVersionCompare.php');
@@ -62,8 +67,8 @@ if (isset($_POST['email']) && isset($_POST['password']) && $_POST['email'] !== "
             $_SESSION['name'] = $config['author'];
             $_SESSION['perms'] = "1111111";
         } else {
-            $user = mysqli_query($conn, "SELECT * FROM `users` WHERE `name` = '". addslashes($_POST['email']) ."'");
-            $user = mysqli_fetch_array($user);
+            $user = $db->query("SELECT * FROM `users` WHERE `name` = '". addslashes($_POST['email']) ."'");
+            $user = ($user);
             if ($user['pass']==$_POST['password']) {
                 $_SESSION['user'] = $_POST['email'];
                 $_SESSION['name'] = $user['display_name'];
@@ -81,8 +86,8 @@ if (isset($_POST['email']) && isset($_POST['password']) && $_POST['email'] !== "
             $_SESSION['name'] = $config['author'];
             $_SESSION['perms'] = "1111111";
         } else {
-            $user = mysqli_query($conn, "SELECT * FROM `users` WHERE `name` = '". addslashes($_POST['email']) ."'");
-            $user = mysqli_fetch_array($user);
+            $user = $db->query("SELECT * FROM `users` WHERE `name` = '". addslashes($_POST['email']) ."'");
+            $user = ($user);
             if (password_verify($_POST['password'], $user['pass'])) {
             // OLD PASSWORD AUTH METHOD (INSECURE):
             //if ($user['pass']==hash("sha256",$_POST['password']."Solder.cf")) {
@@ -369,8 +374,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             <span style="cursor: pointer;" class="dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <?php if ($_SESSION['user']!==$config['mail']) { ?>
                 <img class="img-thumbnail" style="width: 40px;height: 40px" src="data:image/png;base64,<?php
-                        $sql = mysqli_query($conn,"SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
-                        $icon = mysqli_fetch_array($sql);
+                        $sql = $db->query("SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
+                        $icon = ($sql);
                         echo $icon['icon'];
                          ?>">
                         <?php } ?>
@@ -445,12 +450,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <div style="overflow:auto;height: calc( 100% - 62px )">
                         <p class="text-muted">MODPACKS</p>
                         <?php
-                        $result = mysqli_query($conn, "SELECT * FROM `modpacks`");
+                        $result = $db->query("SELECT * FROM `modpacks`");
                         $totaldownloads=0;
                         $totalruns=0;
                         $totallikes=0;
-                        if (mysqli_num_rows($result)!==0) {
-                            while($modpack=mysqli_fetch_array($result)){
+                        if (sizeof($result)!==0) {
+                            foreach($result as $modpack){
                                 if (isset($cache[$modpack['name']])&&$cache[$modpack['name']]['time'] > time()-1800) {
                                     $info = $cache[$modpack['name']]['info'];
                                 } else {
@@ -748,9 +753,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <select required id="versions" name="versions" class="form-control">
                             <?php
                             // select all forge versions
-                            $vres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `type` = 'forge'");
-                            if (mysqli_num_rows($vres)!==0) {
-                                while($version = mysqli_fetch_array($vres)) {
+                            $vres = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge'");
+                            if (sizeof($vres)!==0) {
+                                foreach($vres as $version) {
                                     ?><option <?php if ($modslist[0]==$version['id']){ echo "selected"; } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - Forge <?php echo $version['version'] ?></option><?php
                                 }
                                 echo "</select>";
@@ -1159,9 +1164,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             <?php
         }
         elseif (uri("/modpack")){
-            $mpres = mysqli_query($conn, "SELECT * FROM `modpacks` WHERE `id` = ".mysqli_real_escape_string($conn, $_GET['id']));
+            $mpres = $db->query("SELECT * FROM `modpacks` WHERE `id` = ".$db->sanitize($_GET['id']));
             if ($mpres) {
-            $modpack = mysqli_fetch_array($mpres);
+            $modpack = ($mpres);
 
             ?>
             <script>document.title = 'Modpack - <?php echo addslashes($modpack['display_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -1175,10 +1180,10 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 $packapi = include($link);
                 $packdata = json_decode($packapi,true);
                 $latest=false;
-                $latestres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `modpack` = ".mysqli_real_escape_string($conn, $_GET['id'])." AND `name` = '".$packdata['latest']."'");
-                if (mysqli_num_rows($latestres)!==0) {
+                $latestres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `name` = '".$packdata['latest']."'");
+                if (sizeof($latestres)!==0) {
                     $latest=true;
-                    $user = mysqli_fetch_array($latestres);
+                    $user = ($latestres);
                 }
                 ?>
                 <li <?php if (!$latest){ echo "style='display:none'"; } ?> id="latest-v-li" class="nav-item">
@@ -1190,10 +1195,10 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 <div style="width:30px"></div>
                     <?php
                 $rec=false;
-                $recres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `modpack` = ".mysqli_real_escape_string($conn, $_GET['id'])." AND `name` = '".$packdata['recommended']."'");
-                if (mysqli_num_rows($recres)!==0) {
+                $recres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `name` = '".$packdata['recommended']."'");
+                if (sizeof($recres)!==0) {
                     $rec=true;
-                    $user = mysqli_fetch_array($recres);
+                    $user = ($recres);
                 }
                 ?>
                 <li <?php if (!$rec){ echo "style='display:none'"; } ?> id="rec-v-li" class="nav-item">
@@ -1420,7 +1425,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
 
 
                     if (!$modpack['public']) {
-                    $clients = mysqli_query($conn, "SELECT * FROM `clients`");
+                    $clients = $db->query("SELECT * FROM `clients`");
                 ?>
 
 
@@ -1429,7 +1434,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <hr>
                     <form method="GET" action="./functions/change-clients.php">
                     <input hidden name="id" value="<?php echo $_GET['id'] ?>">
-                    <?php if (mysqli_num_rows($clients)<1) {
+                    <?php if (sizeof($clients)<1) {
                         ?>
                         <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
                         <br />
@@ -1437,7 +1442,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     } ?>
                     <?php
                     $clientlist = explode(',', $modpack['clients']);
-                    while ($client = mysqli_fetch_array($clients)) {
+                    foreach ($clients as $client) {
                         ?>
                         <div class="custom-control custom-checkbox">
                             <input <?php if (in_array($client['id'],$clientlist)){echo "checked";} ?> type="checkbox" name="client[]" value="<?php echo $client['id'] ?>" class="custom-control-input" id="client-<?php echo $client['id'] ?>">
@@ -1446,7 +1451,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <?php
                     }
                     ?>
-                    <?php if (mysqli_num_rows($clients)>0) { ?> <input class="btn btn-primary" type="submit" name="submit" value="Save"> <?php } ?>
+                    <?php if (sizeof($clients)>0) { ?> <input class="btn btn-primary" type="submit" name="submit" value="Save"> <?php } ?>
                 </form>
                 </div>
             <?php }
@@ -1472,24 +1477,24 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <input hidden type="text" name="id" value="<?php echo $_GET['id'] ?>">
                         <?php
                             $sbn = array();
-                            $allbuildnames = mysqli_query($conn, "SELECT `name` FROM `builds` WHERE `modpack` = ".$modpack['id']);
-                            while($bn = mysqli_fetch_array($allbuildnames)) {
+                            $allbuildnames = $db->query("SELECT `name` FROM `builds` WHERE `modpack` = ".$modpack['id']);
+                            foreach($allbuildnames as $bn) {
                                 array_push($sbn, $bn['name']);
                             }
                             $mpab = array();
-                            $allbuilds = mysqli_query($conn, "SELECT `id`,`name`,`modpack` FROM `builds`");
-                            while($b = mysqli_fetch_array($allbuilds)) {
+                            $allbuilds = $db->query("SELECT `id`,`name`,`modpack` FROM `builds`");
+                            foreach($allbuilds as $b) {
                                 $ba = array(
                                     "id" => $b['id'],
                                     "name" => $b['name'],
                                     "mpid" =>  $b['modpack'],
-                                    "mpname" => mysqli_fetch_array(mysqli_query($conn, "SELECT `display_name` FROM `modpacks` WHERE `id` = ".$b['modpack']))['display_name']
+                                    "mpname" => ($db->query("SELECT `display_name` FROM `modpacks` WHERE `id` = ".$b['modpack']))['display_name']
                                 );
                                 array_push($mpab, $ba);
                             }
                             $mps = array();
-                            $allmps = mysqli_query($conn, "SELECT `id`,`display_name` FROM `modpacks`");
-                            while($mp = mysqli_fetch_array($allmps)) {
+                            $allmps = $db->query("SELECT `id`,`display_name` FROM `modpacks`");
+                            foreach($allmps as $mp) {
                                 $mpa = array(
                                     "id" => $mp['id'],
                                     "name" => $mp['display_name']
@@ -1575,8 +1580,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         </thead>
                         <tbody id="table-builds">
                             <?php
-                            $users = mysqli_query($conn, "SELECT * FROM `builds` WHERE `modpack` = ".mysqli_real_escape_string($conn, $_GET['id'])." ORDER BY `id` DESC");
-                            while($user = mysqli_fetch_array($users)) {
+                            $users = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC");
+                            foreach($users as $user) {
                             ?>
                             <tr rec="<?php if ($packdata['recommended']==$user['name']){ echo "true"; } else { echo "false"; } ?>" id="b-<?php echo $user['id'] ?>">
                                 <td scope="row"><?php echo $user['name'] ?></td>
@@ -1689,9 +1694,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             }
         }
         elseif (uri('/build')) {
-            $bres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `id` = ".mysqli_real_escape_string($conn,$_GET['id']));
+            $bres = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
             if ($bres) {
-                $user = mysqli_fetch_array($bres);
+                $user = ($bres);
             }
             $modslist = explode(',', $user['mods']);
             if ($modslist[0]==""){
@@ -1701,11 +1706,11 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             if (isset($_POST['java'])) {
                 if ($_POST['forgec']!=="none"||empty($modslist)) {
                     if ($_POST['forgec']=="wipe"||empty($modslist)) {
-                        mysqli_query($conn, "UPDATE `builds` SET `mods` = '".mysqli_real_escape_string($conn,$_POST['versions'])."' WHERE `id` = ".mysqli_real_escape_string($conn,$_GET['id']));
+                        $db->query("UPDATE `builds` SET `mods` = '".$db->sanitize($_POST['versions'])."' WHERE `id` = ".$db->sanitize($_GET['id']));
                     } else {
                         $modslist2 = $modslist;
                         $modslist2[0] = $_POST['versions'];
-                        mysqli_query($conn, "UPDATE `builds` SET `mods` = '".mysqli_real_escape_string($conn,implode(',',$modslist2))."' WHERE `id` = ".mysqli_real_escape_string($conn,$_GET['id']));
+                        $db->query("UPDATE `builds` SET `mods` = '".$db->sanitize(implode(',',$modslist2))."' WHERE `id` = ".$db->sanitize($_GET['id']));
 
 
                     }
@@ -1714,25 +1719,25 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 if ($_POST['ispublic']=="on") {
                     $ispublic = 1;
                 }
-                $minecraft = mysqli_fetch_array(mysqli_query($conn, "SELECT * FROM `mods` WHERE `id` = ".mysqli_real_escape_string($conn,$_POST['versions'])));
-                mysqli_query($conn, "UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".mysqli_real_escape_string($conn,$_POST['java'])."', `memory` = '".mysqli_real_escape_string($conn,$_POST['memory'])."', `public` = ".$ispublic." WHERE `id` = ".mysqli_real_escape_string($conn,$_GET['id']));
-                $lpq = mysqli_query($conn, "SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$user['modpack']." ORDER BY `id` DESC");
-                $latest_public = mysqli_fetch_array($lpq);
-                mysqli_query($conn, "UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$user['modpack']);
+                $minecraft = ($db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_POST['versions'])));
+                $db->query("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic." WHERE `id` = ".$db->sanitize($_GET['id']));
+                $lpq = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$user['modpack']." ORDER BY `id` DESC");
+                $latest_public = ($lpq);
+                $db->query("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$user['modpack']);
             }
 
             // redundant query and $user array fetch
-            // $bres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `id` = ".mysqli_real_escape_string($conn,$_GET['id']));
+            // $bres = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
             // if ($bres) {
-            //     $user = mysqli_fetch_array($bres);
+            //     $user = ($bres);
             // }
             // $modslist = explode(',', $user['mods']);
             // if ($modslist[0]==""){
             //     unset($modslist[0]);
             // }
 
-            $pack = mysqli_query($conn, "SELECT * FROM `modpacks` WHERE `id` = ".$user['modpack']);
-            $mpack = mysqli_fetch_array($pack);
+            $pack = $db->query("SELECT * FROM `modpacks` WHERE `id` = ".$user['modpack']);
+            $mpack = ($pack);
             ?>
             <script>document.title = '<?php echo addslashes($mpack['display_name'])." ".addslashes($user['name'])  ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <ul class="nav justify-content-end info-versions">
@@ -1758,9 +1763,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <select id="versions" name="versions" class="form-control">
                             <?php
 
-                            $vres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `type` = 'forge'");
-                            if (mysqli_num_rows($vres)!==0) {
-                                while($version = mysqli_fetch_array($vres)) {
+                            $vres = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge'");
+                            if (sizeof($vres)!==0) {
+                                foreach($vres as $version) {
                                     ?><option <?php if ($modslist[0]==$version['id']){ echo "selected"; } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - Forge <?php echo $version['version'] ?></option><?php
                                 }
                                 echo "</select>";
@@ -1826,13 +1831,13 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                 </div>
                 <?php if (!$user['public']) {
-                    $clients = mysqli_query($conn, "SELECT * FROM `clients`");
+                    $clients = $db->query("SELECT * FROM `clients`");
                     ?>
                 <div class="card">
                     <h2>Allowed clients</h2>
                     <form method="GET" action="./functions/change-clients-build.php">
                     <input hidden name="id" value="<?php echo $_GET['id'] ?>">
-                    <?php if (mysqli_num_rows($clients)<1) {
+                    <?php if (sizeof($clients)<1) {
                         ?>
                         <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
                         <br />
@@ -1840,7 +1845,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     } ?>
                     <?php
                     $clientlist = explode(',', $user['clients']);
-                    while ($client = mysqli_fetch_array($clients)) {
+                    foreach ($clients as $client) {
                         ?>
                         <div class="custom-control custom-checkbox">
                             <input <?php if (in_array($client['id'],$clientlist)){echo "checked";} ?> type="checkbox" name="client[]" value="<?php echo $client['id'] ?>" class="custom-control-input" id="client-<?php echo $client['id'] ?>">
@@ -1849,7 +1854,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <?php
                     }
                     ?>
-                    <?php if (mysqli_num_rows($clients)>0) { ?> <input class="btn btn-primary" type="submit" name="submit" value="Save"> <?php } ?>
+                    <?php if (sizeof($clients)>0) { ?> <input class="btn btn-primary" type="submit" name="submit" value="Save"> <?php } ?>
                 </form>
                 </div>
             <?php } ?>
@@ -1899,13 +1904,13 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 $modsluglist = Array();
                                 foreach($modslist as $bmod) {
                                     if ($bmod) {
-                                        $modq = mysqli_query($conn,"SELECT * FROM `mods` WHERE `id` = ".$bmod);
-                                        $moda = mysqli_fetch_array($modq);
+                                        $modq = $db->query("SELECT * FROM `mods` WHERE `id` = ".$bmod);
+                                        $moda = ($modq);
                                         array_push($modsluglist, $moda['name']);
                                         if ($_SESSION['showall']) {
-                                            $modvq = mysqli_query($conn,"SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."'");
+                                            $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."'");
                                         } else {
-                                            $modvq = mysqli_query($conn,"SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `id` = ".$bmod.")");
+                                            $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `id` = ".$bmod.")");
                                         }
                                     
                                         // todo: check if mod is actually a moda['type']=='mod' and not something else.
@@ -1927,7 +1932,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                                 echo $moda['version'];
                                             } else { ?>
                                                 <select class="form-control" onchange="changeversion(this.value,<?php echo $moda['id'] ?>,'<?php echo $moda['name'] ?>',<?php if ($moda['mcversion']!==$user['minecraft'] && $moda['type']=="mod" ){echo 'false';} else { echo 'true'; } ?>);" name="bmversions" id="bmversions-<?php echo $moda['name'] ?>"><?php
-                                                while ($mv = mysqli_fetch_array($modvq)) {
+                                                foreach ($modvq as $mv) {
                                                     if ($mv['id'] == $moda['id']) {
                                                         echo "<option selected value='".$mv['id']."'>".$mv['version']."</option>";
                                                     } else {
@@ -2001,12 +2006,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <tbody>
                             <?php
                             if ($_SESSION['showall']) {
-                                $mres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `type` = 'mod'");
+                                $mres = $db->query("SELECT * FROM `mods` WHERE `type` = 'mod'");
                             } else {
-                                $mres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `type` = 'mod' AND `mcversion` = '".$user['minecraft']."'");
+                                $mres = $db->query("SELECT * FROM `mods` WHERE `type` = 'mod' AND `mcversion` = '".$user['minecraft']."'");
                             }
 
-                            if (mysqli_num_rows($mres)!==0) {
+                            if (sizeof($mres)!==0) {
                                 ?>
                                 <script type="text/javascript">
                                     $("#search").on('keyup',function(){
@@ -2074,16 +2079,16 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 if ($mres){
                                     $modsi = array();
                                     $modslugs = array();
-                                    while($mod = mysqli_fetch_array($mres)){
+                                    foreach($mres as $mod){
                                         if ($_SESSION['showall']) {
-                                            $modversionsq = mysqli_query($conn, "SELECT `id`,`version` FROM `mods` WHERE `type` = 'mod' AND `name` = '".$mod['name']."' ORDER BY `version` DESC");
+                                            $modversionsq = $db->query("SELECT `id`,`version` FROM `mods` WHERE `type` = 'mod' AND `name` = '".$mod['name']."' ORDER BY `version` DESC");
                                         } else {
-                                            $modversionsq = mysqli_query($conn, "SELECT `id`,`version` FROM `mods` WHERE `type` = 'mod' AND `name` = '".$mod['name']."' AND `mcversion` = '".$user['minecraft']."' ORDER BY `version` DESC");
+                                            $modversionsq = $db->query("SELECT `id`,`version` FROM `mods` WHERE `type` = 'mod' AND `name` = '".$mod['name']."' AND `mcversion` = '".$user['minecraft']."' ORDER BY `version` DESC");
                                         }
 
                                         $modversions = array();
                                         if (!in_array($mod['name'], $modsluglist)) {
-                                            while($modversionsa = mysqli_fetch_array($modversionsq)) {
+                                            foreach($modversionsq as $modversionsa) {
                                                 $modversions[$modversionsa['id']] = $modversionsa['version'];
                                             }
                                             $modarray = array(
@@ -2140,8 +2145,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             </thead>
                             <tbody>
                             <?php
-                            $mres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `type` = 'other'");
-                            if (mysqli_num_rows($mres)!==0) {
+                            $mres = $db->query("SELECT * FROM `mods` WHERE `type` = 'other'");
+                            if (sizeof($mres)!==0) {
                                 ?>
                                 <script type="text/javascript">
                                     function add_o(id) {
@@ -2159,7 +2164,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                     }
                                 </script>
                                 <?php
-                                while($mod = mysqli_fetch_array($mres)) {
+                                foreach($mres as $mod) {
                                     if (!in_array($mod['id'], $modslist)) {
                                         ?>
                                         <tr>
@@ -2260,21 +2265,16 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </thead>
                     <tbody id="table-mods">
                         <?php
-                        $mods = mysqli_query($conn, "SELECT * FROM `mods` WHERE `type` = 'mod' ORDER BY `id` DESC");
+                        $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'mod' ORDER BY `id` DESC");
                         if ($mods){
                             $modsi = array();
                             $modslugs = array();
-                            while ($mod = mysqli_fetch_array($mods)) {
-                                $modversionsq = mysqli_query(
-                                        $conn,
-                                        "SELECT `version`,`author` FROM `mods` 
-                                                WHERE `type` = 'mod' AND `name` = '".$mod['name']."' 
-                                                ORDER BY `version` DESC"
-                                );
+                            foreach ($mods as $mod) {
+                                $modversionsq = $db->query("SELECT `version`,`author` FROM `mods` WHERE `type` = 'mod' AND `name` = '".$mod['name']."' ORDER BY `version` DESC");
                                 $modversions = array();
                                 $modauthors = array();
 
-                                while ($modversionsa = mysqli_fetch_array($modversionsq)) {
+                                foreach ($modversionsq as $modversionsa) {
                                     array_push($modversions, $modversionsa['version']);
                                     foreach (explode(", ", $modversionsa['author']) as $a) {
                                         if (!in_array($a, $modauthors)) {
@@ -2467,9 +2467,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         ?>
         <div class="main">
             <?php
-            $mres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `id` = ".mysqli_real_escape_string($conn, $_GET['id']));
+            $mres = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
             if ($mres) {
-                $mod = mysqli_fetch_array($mres);
+                $mod = ($mres);
             }
             ?>
             <script>document.title = 'Add Mod - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -2589,9 +2589,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </thead>
                     <tbody id="forge-available">
                         <?php
-                        $mods = mysqli_query($conn, "SELECT * FROM `mods` WHERE `type` = 'forge' ORDER BY `id` DESC");
+                        $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge' ORDER BY `id` DESC");
                         if ($mods){
-                            while ($mod = mysqli_fetch_array($mods)){
+                            foreach ($mods as $mod){
                             ?>
                             <tr id="mod-row-<?php echo $mod['id'] ?>">
                                 <td scope="row"><?php echo $mod['mcversion'] ?></td>
@@ -2871,9 +2871,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </thead>
                     <tbody id="table-mods">
                         <?php
-                        $mods = mysqli_query($conn, "SELECT * FROM `mods` WHERE `type` = 'other' ORDER BY `id` DESC");
+                        $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'other' ORDER BY `id` DESC");
                         if ($mods){
-                            while ($mod = mysqli_fetch_array($mods)) {
+                            foreach ($mods as $mod) {
                             ?>
                                 <tr id="mod-row-<?php echo $mod['id'] ?>">
                                     <td scope="row"><?php echo $mod['pretty_name'] ?></td>
@@ -3037,8 +3037,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
 
             return $bytes;
             }
-            $mres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `id` = '".mysqli_real_escape_string($conn, $_GET['id'])."'");
-            $file = mysqli_fetch_array($mres);
+            $mres = $db->query("SELECT * FROM `mods` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
+            $file = ($mres);
             ?>
             <script>
                 document.title = 'File - <?php echo addslashes($file['name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';
@@ -3127,7 +3127,7 @@ function stringify(items) {
         ?>
         <div class="main">
             <?php
-            $mres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `name` = '".mysqli_real_escape_string($conn, $_GET['id'])."'");
+            $mres = $db->query("SELECT * FROM `mods` WHERE `name` = '".$db->sanitize($_GET['id'])."'");
             ?>
             <script>document.title = 'Mod - <?php echo addslashes($_GET['id']) ?> - <?php echo addslashes($_SESSION['name']) ?>';
             function remove_box(id,version,name) {
@@ -3163,7 +3163,7 @@ function stringify(items) {
                     </thead>
                     <tbody id="table-mods">
                     <?php
-                    while ($mod = mysqli_fetch_array($mres)) {
+                    foreach ($mres as $mod) {
                         $modpn = $mod['pretty_name'];
                         $modd = $mod['description'];
                         ?>
@@ -3248,9 +3248,9 @@ function stringify(items) {
         ?>
         <div class="main">
             <?php
-            $mres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `id` = ".mysqli_real_escape_string($conn, $_GET['id']));
+            $mres = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
             if ($mres) {
-                $mod = mysqli_fetch_array($mres);
+                $mod = ($mres);
             }
             ?>
             <script>document.title = 'Solder.cf - Mod - <?php echo addslashes($mod['pretty_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -3514,8 +3514,8 @@ function stringify(items) {
                     <hr />
                     <h2>User Picture</h2>
                     <img class="img-thumbnail" style="width: 64px;height: 64px" src="data:image/png;base64,<?php
-                    $sql = mysqli_query($conn, "SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
-                    $icon = mysqli_fetch_array($sql);
+                    $sql = $db->query("SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
+                    $icon = ($sql);
                     echo $icon['icon'];
                      ?>">
                      <br/>
@@ -3647,8 +3647,8 @@ function stringify(items) {
                     </thead>
                     <tbody>
                         <?php
-                        $users = mysqli_query($conn, "SELECT * FROM `users`");
-                        while ($user = mysqli_fetch_array($users)) {
+                        $users = $db->query("SELECT * FROM `users`");
+                        foreach ($users as $user) {
                             ?>
                             <tr>
                                 <td scope="row"><?php echo $user['display_name'] ?></td>
@@ -4127,8 +4127,8 @@ function stringify(items) {
                     </thead>
                     <tbody>
                         <?php
-                        $users = mysqli_query($conn, "SELECT * FROM `clients`");
-                        while ($user = mysqli_fetch_array($users)) {
+                        $users = $db->query("SELECT * FROM `clients`");
+                        foreach ($users as $user) {
                             ?>
                             <tr id="mod-row-<?php echo $user['id'] ?>">
                                 <td scope="row"><?php echo $user['name'] ?></td>

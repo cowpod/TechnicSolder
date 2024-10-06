@@ -1,7 +1,6 @@
 <?php
 session_start();
-global $conn;
-require("dbconnect.php");
+
 if (empty($_POST['pretty_name'])) {
     die("Name not specified.");
 }
@@ -26,21 +25,27 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
 if (substr($_SESSION['perms'], 3, 1)!=="1") {
     die("Insufficient permission!");
 }
-mysqli_query(
-    $conn,
-    "INSERT INTO `mods`
+
+global $db;
+require("db.php");
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
+}
+
+$db->query("INSERT INTO `mods`
     (`name`, `pretty_name`, `md5`, `url`, `link`, `author`, `donlink`, `description`, `version`, `mcversion`, `type`)
     VALUES
-        ('".mysqli_real_escape_string($conn, $_POST['name'])."',
-         '".mysqli_real_escape_string($conn, $_POST['pretty_name'])."',
-         '".mysqli_real_escape_string($conn, $_POST['md5'])."',
-         '".mysqli_real_escape_string($conn, $_POST['url'])."',
-         '".mysqli_real_escape_string($conn, $_POST['link'])."',
-         '".mysqli_real_escape_string($conn, $_POST['author'])."',
-         '".mysqli_real_escape_string($conn, $_POST['donlink'])."',
-         '".mysqli_real_escape_string($conn, $_POST['dscription'])."',
-         '".mysqli_real_escape_string($conn, $_POST['version'])."',
-         '".mysqli_real_escape_string($conn, $_POST['mcversion'])."',
+        ('".$db->sanitize($_POST['name'])."',
+         '".$db->sanitize($_POST['pretty_name'])."',
+         '".$db->sanitize($_POST['md5'])."',
+         '".$db->sanitize($_POST['url'])."',
+         '".$db->sanitize($_POST['link'])."',
+         '".$db->sanitize($_POST['author'])."',
+         '".$db->sanitize($_POST['donlink'])."',
+         '".$db->sanitize($_POST['dscription'])."',
+         '".$db->sanitize($_POST['version'])."',
+         '".$db->sanitize($_POST['mcversion'])."',
          'mod')
     "
 );

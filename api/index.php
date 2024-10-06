@@ -13,7 +13,7 @@ if (substr($url, -1)=="/" & substr($url, -4)!=="api/") {
     }
 }
 $config = require("../functions/config.php");
-$dbcon = require("../functions/dbconnect.php");
+
 function uri($url, $uri)
 {
     $length = strlen($uri);
@@ -22,6 +22,7 @@ function uri($url, $uri)
     }
     return (substr($url, -$length) === $uri);
 }
+
 if(uri($url,"api/")){
 	print '{"api":"Solder.cf","version":"v1.3.4","stream":"Release"}';
 	exit();
@@ -38,18 +39,23 @@ if (uri($url,"api/verify/".substr($url, strrpos($url, '/') + 1))) {
     print '{"error":"Invalid key provided."}';
     exit();
 }
+
+require("../functions/db.php");
+$db=new Db;
+$db->connect();
+
 if (uri($url,"api/modpack")) {
     if (isset($_GET['include'])) {
         if ($_GET['include'] == "full") {
-            $result = mysqli_query($conn, "SELECT * FROM `modpacks`");
+            $result = $db->query("SELECT * FROM `modpacks`");
             $modpacks = array();
-            while($modpack=mysqli_fetch_array($result)) {
-                $buildsres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
+            foreach($result as $modpack) {
+                $buildsres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
                 $builds = [];
-                while($build=mysqli_fetch_array($buildsres)) {
+                foreach($buildsres as $build) {
                     $clients = [];
-                    $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$build['clients'].")");
-                    while($client=mysqli_fetch_array($clientsq)) {
+                    $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$build['clients'].")");
+                    foreach($clientsq as $client) {
                         array_push($clients, $client['UUID']);
                     }
                     if ($build['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
@@ -57,8 +63,8 @@ if (uri($url,"api/modpack")) {
                     }
                 }
                 $clients = [];
-                $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
-                while($client=mysqli_fetch_array($clientsq)) {
+                $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
+                foreach($clientsq as $client) {
                     array_push($clients, $client['UUID']);
                 }
                 if ($modpack['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
@@ -84,11 +90,11 @@ if (uri($url,"api/modpack")) {
             }
         } else {
             $modpacks = array();
-            $result = mysqli_query($conn, "SELECT * FROM `modpacks`");
-            while($modpack=mysqli_fetch_array($result)) {
+            $result = $db->query("SELECT * FROM `modpacks`");
+            foreach($result as $modpack) {
                 $clients = [];
-                $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
-                while($client=mysqli_fetch_array($clientsq)) {
+                $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
+                foreach($clientsq as $client) {
                     array_push($clients, $client['UUID']);
                 }
                 if ($modpack['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
@@ -104,11 +110,11 @@ if (uri($url,"api/modpack")) {
         }
     } else {
         $modpacks = array();
-        $result = mysqli_query($conn, "SELECT * FROM `modpacks`");
-        while($modpack=mysqli_fetch_array($result)) {
+        $result = $db->query("SELECT * FROM `modpacks`");
+        foreach($result as $modpack) {
             $clients = [];
-            $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
-            while($client=mysqli_fetch_array($clientsq)) {
+            $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
+            foreach($clientsq as $client) {
                 array_push($clients, $client['UUID']);
             }
             if ($modpack['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
@@ -126,21 +132,21 @@ if (uri($url,"api/modpack")) {
     exit();
 }
 if (uri($url,"api/modpack/".substr($url, strrpos($url, '/') + 1))) {
-    $result = mysqli_query($conn, "SELECT * FROM `modpacks`");
-    while($modpack=mysqli_fetch_array($result)) {
+    $result = $db->query("SELECT * FROM `modpacks`");
+    foreach($result as $modpack) {
         if (uri($url,"api/modpack/".$modpack['name'])) {
             $clients = [];
-            $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
-            while($client=mysqli_fetch_array($clientsq)) {
+            $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
+            foreach($clientsq as $client) {
                 array_push($clients, $client['UUID']);
             }
             if ($modpack['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
-                $buildsres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
+                $buildsres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
                 $builds = [];
-                while($build=mysqli_fetch_array($buildsres)) {
+                foreach($buildsres as $build) {
                     $clients = [];
-                    $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$build['clients'].")");
-                    while($client=mysqli_fetch_array($clientsq)) {
+                    $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$build['clients'].")");
+                    foreach($clientsq as $client) {
                         array_push($clients, $client['UUID']);
                     }
                     if ($build['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
@@ -173,15 +179,15 @@ if (uri($url,"api/modpack/".substr($url, strrpos($url, '/') + 1))) {
     print '{"error":"Modpack does not exist"}';
     exit();
 }
-$result = mysqli_query($conn, "SELECT * FROM `modpacks`");
-while($modpack=mysqli_fetch_array($result)) {
+$result = $db->query("SELECT * FROM `modpacks`");
+foreach($result as $modpack) {
     if (uri($url,"api/modpack/".$modpack['name']."/".substr($url, strrpos($url, '/') + 1))) {
-        $buildsres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
-        while($build=mysqli_fetch_array($buildsres)) {
+        $buildsres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
+        foreach($buildsres as $build) {
             if (uri($url,"api/modpack/".$modpack['name']."/".$build['name'])) {
                 $clients = [];
-                $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$build['clients'].")");
-                while($client=mysqli_fetch_array($clientsq)) {
+                $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$build['clients'].")");
+                foreach($clientsq as $client) {
                     array_push($clients, $client['UUID']);
                 }
                 if ($build['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
@@ -190,8 +196,8 @@ while($modpack=mysqli_fetch_array($result)) {
                     $modnumber = 0;
                     foreach($modslist as $mod) {
                         if ($mod !== "") {
-                            $modsres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `id` = ".$mod);
-                            $modinfo=mysqli_fetch_array($modsres);
+                            $modsres = $db->query("SELECT * FROM `mods` WHERE `id` = ".$mod);
+                            $modinfo=($modsres);
                             if ($modinfo['name']!== null && $modinfo['type'] !== null) {
                                 if (isset($_GET['include'])) {
                                     if ($_GET['include']=="mods") {

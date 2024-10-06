@@ -2,12 +2,12 @@
 header('Content-Type: application/json');
 session_start();
 $config = require("config.php");
-global $conn;
-require("dbconnect.php");
+
 if (substr($_SESSION['perms'], 5, 1)!=="1") {
     echo '{"status":"error","message":"Insufficient permission!"}';
     exit();
 }
+
 $link = $_GET['link'];
 $version = $_GET['version'];
 $mcversion = $_GET['mcversion'];
@@ -20,6 +20,14 @@ if (!file_exists("../forges/modpack-".$version)) {
     echo '{"status":"error","message":"Folder modpack-'.$version.' already exists!"}';
     exit();
 }
+
+global $db;
+require("db.php");
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
+}
+
 if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_contents($link))) {
     $zip = new ZipArchive();
     if ($zip->open("../forges/forge-".$version.".zip", ZIPARCHIVE::CREATE) !== true) {
@@ -36,9 +44,8 @@ if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_con
     rmdir("../forges/modpack-".$version);
     $md5 = md5_file("../forges/forge-".$version.".zip");
     $url = "http://".$config['host'].$config['dir']."forges/forge-".$version.".zip";
-    $res = mysqli_query(
-        $conn,
-        "INSERT INTO `mods`
+
+    $res = $db->query("INSERT INTO `mods`
         (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`)
         VALUES
             (
@@ -55,6 +62,7 @@ if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_con
               'forge-".$version.".zip',
               'forge')"
     );
+
     if ($res) {
         echo '{"status":"succ","message":"Mod has been saved."}';
         exit();

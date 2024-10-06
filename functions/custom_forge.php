@@ -2,13 +2,13 @@
 header('Content-Type: application/json');
 session_start();
 $config = require("config.php");
-global $conn;
-require("dbconnect.php");
+
 if (substr($_SESSION['perms'], 5, 1)!=="1") {
     echo '{"status":"error","message":"Insufficient permission!"}';
     echo $_SESSION['perms'];
     exit();
 }
+
 $fileName = $_FILES["file"]["name"];
 $fileTmpLoc = $_FILES["file"]["tmp_name"];
 if (!$fileTmpLoc) {
@@ -18,6 +18,14 @@ if (!$fileTmpLoc) {
     //(current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}';
     exit();
 }
+
+global $db;
+require("db.php");
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
+}
+
 function slugify($text)
 {
   $text = preg_replace('~[^\pL\d]+~u', '-', $text);
@@ -59,9 +67,7 @@ if (move_uploaded_file($fileTmpLoc, "../forges/modpack-".$version."/modpack.jar"
     rmdir("../forges/modpack-".$version);
     $md5 = md5_file("../forges/forge-".$version.".zip");
     $url = "http://".$config['host'].$config['dir']."forges/forge-".$version.".zip";
-    $res = mysqli_query(
-        $conn,
-        "INSERT INTO `mods`
+    $res = $db->query("INSERT INTO `mods`
                 (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`)
                 VALUES ('forge','Minecraft Forge (Custom)',
                         '".$md5."',

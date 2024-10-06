@@ -1,18 +1,11 @@
 <?php
-define('DBHOST', $_POST['db-host']);
-define('DBUSER', $_POST['db-user']);
-define('DBPASS', $_POST['db-pass']);
-define('DBNAME', $_POST['db-name']);
+require("db.php");
+$db=new Db;
 
-try {
-    $conn = mysqli_connect(DBHOST, DBUSER, DBPASS, DBNAME);
-} catch (mysqli_sql_exception $e) {
-    die('error'); // no details?
-    error_log("Connection failed : ".$e);
+if ($db->test($_POST['db-host'], $_POST['db-user'], $_POST['db-pass'], $_POST['db-name'])) {
+	print('success');
+	return('success');
+} else {
+	print('error');
+	return('error');
 }
-
-// if (!$conn) {
-//     die('error');
-// } else {
-    die('success'); //???
-// }

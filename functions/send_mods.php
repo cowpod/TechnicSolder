@@ -9,7 +9,11 @@ if (substr($_SESSION['perms'],3,1)!=="1") {
     exit();
 }
 $config = require("config.php");
-require("dbconnect.php");
+
+require("db.php");
+$db=new Db;
+$db->connect();
+
 $fileName = $_FILES["fiels"]["name"];
 $fileJarInTmpLocation = $_FILES["fiels"]["tmp_name"];
 if (!$fileJarInTmpLocation) {
@@ -17,6 +21,7 @@ if (!$fileJarInTmpLocation) {
     exit();
 }
 require('toml.php');
+
 function slugify($text) {
   $text = preg_replace('~[^\pL\d]+~u', '-', $text);
   //$text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
@@ -216,9 +221,9 @@ function processFile($zipExists, $md5) {
         if ($mcversion==="" && array_key_exists('loaderVersion',$mcmod)) {
             require('mcVersionCompare.php');
             $querystring = "SELECT version,mcversion FROM mods WHERE type='forge' ORDER BY version ASC";
-            $query = mysqli_query($conn, $querystring);
-            if (mysqli_num_rows($query)>0) { // if we even have any forges
-                while ($row = mysqli_fetch_assoc($query)) {
+            $query = $db->query($querystring);
+            if (sizeof($query)>0) { // if we even have any forges
+                foreach ($query as $row) {
                     // file_put_contents("../status.log", "got a forge: ".JSON_ENCODE($row)."\n", FILE_APPEND);
                     if (mcVersionCompare($row['version'],$mcmod['loaderVersion'])) {
                         // file_put_contents("../status.log", "got mcversion: ".$row['mcversion']."\n", FILE_APPEND);
@@ -265,31 +270,31 @@ function processFile($zipExists, $md5) {
 
     //$url = "http://".$config['host'].$config['dir']."mods/".$fileInfo['filename'].".zip";
 
-    $res_query_string="INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`) VALUES ("."'"   .mysqli_real_escape_string($conn, $name)
-        ."', '".mysqli_real_escape_string($conn, $pretty_name)
-        ."', '".mysqli_real_escape_string($conn, $md5)
-        ."', '".mysqli_real_escape_string($conn, "")
-        ."', '".mysqli_real_escape_string($conn, $link)
-        ."', '".mysqli_real_escape_string($conn, $author)
-        ."', '".mysqli_real_escape_string($conn, $description)
-        ."', '".mysqli_real_escape_string($conn, $version)
-        ."', '".mysqli_real_escape_string($conn, $mcversion)
-        ."', '".mysqli_real_escape_string($conn, $fileNameZip)
+    $res_query_string="INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`) VALUES ("."'"   .$db->sanitize($name)
+        ."', '".$db->sanitize($pretty_name)
+        ."', '".$db->sanitize($md5)
+        ."', '".$db->sanitize("")
+        ."', '".$db->sanitize($link)
+        ."', '".$db->sanitize($author)
+        ."', '".$db->sanitize($description)
+        ."', '".$db->sanitize($version)
+        ."', '".$db->sanitize($mcversion)
+        ."', '".$db->sanitize($fileNameZip)
         ."', 'mod')";
     
     // file_put_contents("error.log", $res_query_string, FILE_APPEND);
 
-    $res = mysqli_query($conn, $res_query_string);
+    $res = $db->query($res_query_string);
     if ($res) {
         if (@$warn['b']==true) {
             if ($warn['level']=="info") {
-                echo '{"status":"info","message":"'.$warn['message'].'","modid":'.mysqli_insert_id($conn).'}';
+                echo '{"status":"info","message":"'.$warn['message'].'","modid":'.$db->insert_id().'}';
             } else {
-                echo '{"status":"warn","message":"'.$warn['message'].'","modid":'.mysqli_insert_id($conn).'}';
+                echo '{"status":"warn","message":"'.$warn['message'].'","modid":'.$db->insert_id().'}';
             }
 
         } else {
-            echo '{"status":"succ","message":"Mod has been uploaded and saved.","modid":'.mysqli_insert_id($conn).'}';
+            echo '{"status":"succ","message":"Mod has been uploaded and saved.","modid":'.$db->insert_id().'}';
         }
     } else {
         echo '{"status":"error","message":"Mod could not be added to database"}';
@@ -305,9 +310,9 @@ if (move_uploaded_file($fileJarInTmpLocation, $fileJarInFolderLocation)) {
             echo '{"status":"error","message":"File with name \''.$fileName.'\' already exists!","md51":"'.$md5_1.'","md52":"'.$md5_2.'","zip":"'.$fileJarInFolderLocation.'"}';
             //exit();
         } else {
-            $fq = mysqli_query($conn, "SELECT `id` FROM `mods` WHERE `filename` = '".$fileNameZip."'");
-            if (mysqli_num_rows($fq)==1) {
-                echo '{"status":"info","message":"This mod is already in the database.","modid":'.mysqli_fetch_array($fq)['id'].'}';
+            $fq = $db->query("SELECT `id` FROM `mods` WHERE `filename` = '".$fileNameZip."'");
+            if (sizeof($fq)==1) {
+                echo '{"status":"info","message":"This mod is already in the database.","modid":'.($fq)['id'].'}';
             } else {
                 processFile(true, $md5_1); // use existing zip
             }

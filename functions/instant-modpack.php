@@ -1,8 +1,7 @@
 <?php
 session_start();
 $config = require("config.php");
-global $conn;
-require("dbconnect.php");
+
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
 }
@@ -14,15 +13,21 @@ if (substr($_SESSION['perms'], 1, 1)!=="1") {
     echo 'You do not have permission to create builds!';
     exit();
 }
-$mpdname = mysqli_real_escape_string($conn, $_POST['display_name']);
-$mpname = mysqli_real_escape_string($conn, $_POST['name']);
-$bmods = mysqli_real_escape_string($conn, $_POST['modlist']);
-$bjava = mysqli_real_escape_string($conn, $_POST['java']);
-$bmemory = mysqli_real_escape_string($conn, $_POST['memory']);
-$bforge = mysqli_real_escape_string($conn, $_POST['versions']);
-mysqli_query(
-    $conn,
-    "INSERT INTO modpacks(`name`,
+
+global $db;
+require("db.php");
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
+}
+
+$mpdname = $db->sanitize($_POST['display_name']);
+$mpname = $db->sanitize($_POST['name']);
+$bmods = $db->sanitize($_POST['modlist']);
+$bjava = $db->sanitize($_POST['java']);
+$bmemory = $db->sanitize($_POST['memory']);
+$bforge = $db->sanitize($_POST['versions']);
+$db->query("INSERT INTO modpacks(`name`,
                      `display_name`,
                      `icon`,
                      `icon_md5`,
@@ -46,15 +51,13 @@ mysqli_query(
     '1.0'
     )"
 );
-$mpq = mysqli_query($conn, "SELECT `id` FROM `modpacks` ORDER BY `id` DESC LIMIT 1");
-$mp = mysqli_fetch_array($mpq);
+$mpq = $db->query("SELECT `id` FROM `modpacks` ORDER BY `id` DESC LIMIT 1");
+$mp = ($mpq);
 $mpi =  intval($mp['id']);
-$fq = mysqli_query($conn, "SELECT `mcversion` FROM `mods` WHERE `id` = ". $bforge);
-$f = mysqli_fetch_array($fq);
+$fq = $db->query("SELECT `mcversion` FROM `mods` WHERE `id` = ". $bforge);
+$f = ($fq);
 $minecraft =  $f['mcversion'];
-mysqli_query(
-    $conn,
-    "INSERT INTO builds(`name`,`modpack`,`public`,`mods`,`java`,`memory`,`minecraft`)
+$db->query("INSERT INTO builds(`name`,`modpack`,`public`,`mods`,`java`,`memory`,`minecraft`)
     VALUES ('1.0','".$mpi."',1,'".$bforge.",".$bmods."','".$bjava."','".$bmemory."','".$minecraft."')"
 );
 header("Location: ".$config['dir']."modpack?id=".$mpi);

@@ -2,6 +2,7 @@
 /*
 TOML Parser
 O(n(m+t)), where n = number of lines in file, m = chars in line, t = number of nested tables (aaa.bbb.ccc. etc. up to m) specified in a line.
+todo: make static?
 */
 
 class Toml {

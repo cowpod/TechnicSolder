@@ -1,6 +1,6 @@
 <?php
 session_start();
-require("dbconnect.php");
+
 if (empty($_GET['id'])) {
     die("Mod not specified.");
 }
@@ -13,7 +13,12 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
 if (substr($_SESSION['perms'], 1, 1)!=="1") {
     die("Insufficient permission!");
 }
-$modsq = mysqli_query($conn, "SELECT `mods` FROM `builds` WHERE `id` = ".$_GET['bid']);
-$mods = mysqli_fetch_array($modsq);
-mysqli_query($conn, "UPDATE `builds` SET `mods` = '".$mods['mods'].",".$_GET['id']."' WHERE `id` = ".$_GET['bid']);
+
+require("db.php");
+$db=new Db;
+$db->connect();
+
+$modsq = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$_GET['bid']);
+$mods = ($modsq);
+$db->query("UPDATE `builds` SET `mods` = '".$mods['mods'].",".$_GET['id']."' WHERE `id` = ".$_GET['bid']);
 exit();

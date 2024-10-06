@@ -1,7 +1,7 @@
 <?php
 session_start();
 $config = require("./config.php");
-require("dbconnect.php");
+
 if (empty($_GET['id'])) {
     die("Modpack not specified.");
 }
@@ -18,18 +18,25 @@ if (substr($_SESSION['perms'],1,1)!=="1") {
     echo 'Insufficient permission!';
     exit();
 }
+
+require("db.php");
+$db=new Db;
+$db->connect();
+
 if ($_GET['type']=="update") {
-    mysqli_query($conn, "INSERT INTO builds(`name`,`minecraft`,`java`,`mods`,`modpack`,`public`) SELECT `name`,`minecraft`,`java`,`mods`,`modpack`,`public` FROM `builds` WHERE `modpack` = '".$_GET['id']."' ORDER BY `id` DESC LIMIT 1");
-    mysqli_query($conn, "UPDATE `builds` SET `name` = '".mysqli_real_escape_string($conn, $_GET['name'])."' WHERE `modpack` = ".mysqli_real_escape_string($conn, $_GET['id'])." ORDER BY `id` DESC LIMIT 1");
-    //mysqli_query($conn, "UPDATE `modpacks` SET `latest` = '".mysqli_real_escape_string($conn, $_GET['name'])."' WHERE `id` = ".mysqli_real_escape_string($conn, $_GET['id']));
-    mysqli_query($conn, "UPDATE `builds` SET `public` = 0 WHERE `modpack` = ".mysqli_real_escape_string($conn, $_GET['id'])." ORDER BY `id` DESC LIMIT 1");
+    $db->query("INSERT INTO builds(`name`,`minecraft`,`java`,`mods`,`modpack`,`public`) SELECT `name`,`minecraft`,`java`,`mods`,`modpack`,`public` FROM `builds` WHERE `modpack` = '".$_GET['id']."' ORDER BY `id` DESC LIMIT 1");
+    $db->query("UPDATE `builds` SET `name` = '".$db->sanitize($_GET['name'])."' WHERE `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC LIMIT 1");
+    //$db->query("UPDATE `modpacks` SET `latest` = '".$db->sanitize($_GET['name'])."' WHERE `id` = ".$db->sanitize($_GET['id']));
+    $db->query("UPDATE `builds` SET `public` = 0 WHERE `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC LIMIT 1");
 } else {
-    mysqli_query($conn, "INSERT INTO builds(`name`,`modpack`,`public`) VALUES ('".mysqli_real_escape_string($conn, $_GET['name'])."','".mysqli_real_escape_string($conn, $_GET['id'])."',0)");
-    //mysqli_query($conn, "UPDATE `modpacks` SET `latest` = '".mysqli_real_escape_string($conn, $_GET['name'])."' WHERE `id` = ".mysqli_real_escape_string($conn, $_GET['id']));
+    $db->query("INSERT INTO builds(`name`,`modpack`,`public`) VALUES ('".$db->sanitize($_GET['name'])."','".$db->sanitize($_GET['id'])."',0)");
+    //$db->query("UPDATE `modpacks` SET `latest` = '".$db->sanitize($_GET['name'])."' WHERE `id` = ".$db->sanitize($_GET['id']));
 
 }
-$lpq = mysqli_query($conn, "SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".mysqli_real_escape_string($conn, $_GET['id'])." ORDER BY `id` DESC");
-$latest_public = mysqli_fetch_array($lpq);
-mysqli_query($conn, "UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".mysqli_real_escape_string($conn, $_GET['id']));
+$lpq = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC");
+$latest_public = ($lpq);
+$db->query("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$db->sanitize($_GET['id']));
+
+$db->disconnect();
 header("Location: ".$config['dir']."modpack?id=".$_GET['id']);
 exit();
