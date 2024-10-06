@@ -10,9 +10,12 @@ if (substr($_SESSION['perms'],3,1)!=="1") {
 }
 $config = require("config.php");
 
+global $db;
 require("db.php");
-$db=new Db;
-$db->connect();
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
+}
 
 $fileName = $_FILES["fiels"]["name"];
 $fileJarInTmpLocation = $_FILES["fiels"]["tmp_name"];
@@ -54,7 +57,7 @@ function processFile($zipExists, $md5) {
     global $fileNameShort;
     global $fileJarInFolderLocation;
     global $fileZipLocation;
-    global $conn;
+    global $db;
     global $warn;
     global $fileInfo;
 

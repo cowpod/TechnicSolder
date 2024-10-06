@@ -79,7 +79,13 @@ class Db {
 
 
 	public function disconnect(){
-		return mysqli_close($this->conn);
+		$ret=false;
+		try {
+			$ret=mysqli_close($this->conn);
+		} catch (mysqli_sql_exception $e) {
+			error_log("db.php: disconnect(): already closed? ".$e);
+		}
+		return $ret;
 	}
 
 	public function query($querystring) {
@@ -98,6 +104,7 @@ class Db {
 		$ret;
 		$result;
 
+		error_log("db.php: query(): ".$querystring);
 		try {
 			$result = mysqli_query($this->conn, $querystring);
 		} catch (mysqli_sql_exception $e) {
@@ -107,21 +114,34 @@ class Db {
 		    return [];
 		}
 
-		if (!$result) {
-			// die("SQL query error: ".mysqli_error($result));
+		if ($result===false) {
 		    error_log("db.php: query(): SQL query error: ".mysqli_error($result));
 		    if ($one_time_connection) $this->disconnect();
 		    return [];
 		}
 
-    	if (mysqli_num_rows($result) == 0) {
+		if ($result===true) {
+			// success! got a boolean TRUE
+			error_log("db.php: query(): got result TRUE");
+			if ($one_time_connection) $this->disconnect();
+			return [];
+		}
+
+		// otherwise, we got an object.
+		
+		if (mysqli_num_rows($result) == 0) {
+			// got 0 rows
+			error_log("db.php: query(): got 0 rows");
 		    if ($one_time_connection) $this->disconnect();
     		return [];
-    	}
-
-    	while($row = mysqli_fetch_array($result)) {
-    		array_push($ret, $row);
-    	}
+    	} else {
+			error_log("db.php: query(): got rows, printing...");
+			while($row = mysqli_fetch_array($result)) {
+				if (empty($row)) continue;
+				error_log("db.php: query(): got row: '".$row."'");
+				array_push($ret, $row);
+			}
+		}
 
 		if ($one_time_connection) $this->disconnect();
     	return $ret;
