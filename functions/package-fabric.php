@@ -18,7 +18,7 @@ if (!file_exists("../forges/modpack-".$version)) {
     exit();
 }
 
-require("db.php");
+require_once("db.php");
 $db=new Db;
 
 if (file_put_contents("../forges/modpack-".$version."/version.json", file_get_contents("https://meta.fabricmc.net/v2/versions/loader/".$mcversion."/".urlencode($version)."/profile/json"))) {

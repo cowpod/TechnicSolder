@@ -12,7 +12,7 @@ if ($_SESSION['user']!==$config['mail']) {
     die("insufficient permission!");
 }
 
-require("db.php");
+require_once("db.php");
 $db=new Db;
 $db->connect();
 

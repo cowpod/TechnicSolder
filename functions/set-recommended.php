@@ -13,13 +13,18 @@ if (substr($_SESSION['perms'],2,1)!=="1") {
     exit();
 }
 
-require("db.php");
+require_once("db.php");
 $db=new Db;
 $db->connect();
 
 $bq = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
-$build = ($bq);
+if ($bq) {
+    assert(sizeof($bq)==1);
+    $build = $bq[0];
+}
+
 $db->query("UPDATE `modpacks` SET `recommended` = '".$build['name']."' WHERE `id` = ".$build['modpack']);
+
 $response = array(
     "name" => $build['name'],
     "mc" => $build['minecraft']

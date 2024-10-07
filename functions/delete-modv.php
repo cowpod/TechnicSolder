@@ -13,12 +13,15 @@ if (substr($_SESSION['perms'], 4, 1)!=="1") {
     exit();
 }
 
-require("db.php");
+require_once("db.php");
 $db=new Db;
 $db->connect();
 
 $modq = $db->query("SELECT * FROM `mods` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
-$mod = ($modq);
+if ($modq) {
+    assert(sizeof($modq)==1);
+    $mod = $modq[0];
+}
 unlink("../".$mod['type']."s/".$mod['filename']);
 $db->query("DELETE FROM `mods` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
 exit();

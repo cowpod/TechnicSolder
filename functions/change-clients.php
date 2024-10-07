@@ -13,7 +13,7 @@ if (substr($_SESSION['perms'], 0, 1)!=="1") {
     exit();
 }
 
-require("db.php");
+require_once("db.php");
 $db=new Db;
 $db->connect();
 

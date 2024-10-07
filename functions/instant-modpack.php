@@ -15,7 +15,7 @@ if (substr($_SESSION['perms'], 1, 1)!=="1") {
 }
 
 global $db;
-require("db.php");
+require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
@@ -27,17 +27,7 @@ $bmods = $db->sanitize($_POST['modlist']);
 $bjava = $db->sanitize($_POST['java']);
 $bmemory = $db->sanitize($_POST['memory']);
 $bforge = $db->sanitize($_POST['versions']);
-$db->query("INSERT INTO modpacks(`name`,
-                     `display_name`,
-                     `icon`,
-                     `icon_md5`,
-                     `logo`,
-                     `logo_md5`,
-                     `background`,
-                     `background_md5`,
-                     `public`,
-                     `recommended`,
-                     `latest`)
+$db->query("INSERT INTO modpacks(`name`, `display_name`, `icon`, `icon_md5`, `logo`, `logo_md5`, `background`, `background_md5`, `public`, `recommended`, `latest`) 
     VALUES ('".$mpname."',
     '".$mpdname."',
     'http://".$config['host'].$config['dir']."resources/default/icon.png',
@@ -48,17 +38,23 @@ $db->query("INSERT INTO modpacks(`name`,
     '88F838780B89D7C7CD10FE6C3DBCDD39',
     1,
     '1.0',
-    '1.0'
-    )"
-);
+    '1.0')");
+
 $mpq = $db->query("SELECT `id` FROM `modpacks` ORDER BY `id` DESC LIMIT 1");
-$mp = ($mpq);
-$mpi =  intval($mp['id']);
+if ($mpq) {
+    assert(sizeof($mpq)==1);
+    $mp = $mpq[0];
+}
+$mpi = intval($mp['id']);
+
 $fq = $db->query("SELECT `mcversion` FROM `mods` WHERE `id` = ". $bforge);
-$f = ($fq);
+if ($fq) {
+    assert(sizeof($fq)==1);
+    $f = $fq[0];
+}
 $minecraft =  $f['mcversion'];
-$db->query("INSERT INTO builds(`name`,`modpack`,`public`,`mods`,`java`,`memory`,`minecraft`)
-    VALUES ('1.0','".$mpi."',1,'".$bforge.",".$bmods."','".$bjava."','".$bmemory."','".$minecraft."')"
-);
+$db->query("INSERT INTO builds(`name`,`modpack`,`public`,`mods`,`java`,`memory`,`minecraft`) 
+    VALUES ('1.0','".$mpi."',1,'".$bforge.",".$bmods."','".$bjava."','".$bmemory."','".$minecraft."')");
+    
 header("Location: ".$config['dir']."modpack?id=".$mpi);
 exit();

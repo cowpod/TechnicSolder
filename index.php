@@ -22,7 +22,7 @@ if (file_exists("./functions/cache.json")) {
     $cache = json_decode(file_get_contents("./functions/cache.json"),true);
 }
 
-require("./functions/db.php");
+require_once("./functions/db.php");
 $db = new Db;
 if (!$db->connect()) {
     die("Couldn't connect to database!");
@@ -30,7 +30,8 @@ if (!$db->connect()) {
 
 $url = $_SERVER['REQUEST_URI'];
 
-require('functions/mcVersionCompare.php');
+require('functions/interval_range_utils.php');
+require('functions/number_suffix_string.php');
 
 if (strpos($url, '?') !== false) {
     $url = substr($url, 0, strpos($url, "?"));
@@ -456,6 +457,10 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         $totallikes=0;
                         if (sizeof($result)!==0) {
                             foreach($result as $modpack){
+                                if (empty($modpack['name'])) {
+                                    // error_log("modpacks: modpack name isn't set, so can't query technic api on stats! skipping.");
+                                    continue;
+                                }
                                 if (isset($cache[$modpack['name']])&&$cache[$modpack['name']]['time'] > time()-1800) {
                                     $info = $cache[$modpack['name']]['info'];
                                 } else {
@@ -477,6 +482,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 } else {
                                     $info_icon = $modpack['icon'];
                                 }
+
+                                // happens if we have a new modpack
+                                if (empty($info['downloads']) && empty($info['runs']) && empty($info['ratings'])) {
+                                    $info=['downloads'=>0,'runs'=>0,'ratings'=>0];
+                                }
+
                                 $totaldownloads = $totaldownloads + $info['downloads'];
                                 $totalruns = $totalruns + $info['runs'];
                                 $totallikes = $totallikes + $info['ratings'];
@@ -567,7 +578,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         $newversion = $version;
                     }
                 }
-                if ($version['version']!==$newversion['version']) {
+                if (version_compare($newversion['version'], $version['version'], '>')) {
                 ?>
                 <div class="card alert-info <?php if ($_SESSION['dark']=="on"){echo "text-white";} ?>">
                     <p>Version <strong><?php echo $newversion['version'] ?></strong> is now available!</p>
@@ -588,81 +599,17 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </div>
                 <?php
             } else {
-                if ($totaldownloads>99999999) {
-                    $downloadsbig = number_format($totaldownloads/1000000,0)."M";
-                    $downloadssmall = number_format($totaldownloads/1000000000,1)."G";
-                } elseif ($totaldownloads>9999999) {
-                    $downloadsbig = number_format($totaldownloads/1000000,0)."M";
-                    $downloadssmall = number_format($totaldownloads/1000000,0)."M";
-                } elseif ($totaldownloads>999999) {
-                    $downloadsbig = number_format($totaldownloads/1000000,1)."M";
-                    $downloadssmall = number_format($totaldownloads/1000000,1)."M";
-                } elseif ($totaldownloads>99999) {
-                    $downloadsbig = number_format($totaldownloads/1000,0)."K";
-                    $downloadssmall = number_format($totaldownloads/1000000,1)."M";
-                } elseif ($totaldownloads>9999) {
-                    $downloadsbig = number_format($totaldownloads/1000,1)."K";
-                    $downloadssmall = number_format($totaldownloads/1000,0)."K";
-                } elseif ($totaldownloads>999) {
-                    $downloadsbig = number_format($totaldownloads,0);
-                    $downloadssmall = number_format($totaldownloads/1000,1)."K";
-                } elseif ($totaldownloads>99) {
-                    $downloadsbig = number_format($totaldownloads,0);
-                    $downloadssmall = number_format($totaldownloads/1000,1)."K";
-                } else {
-                    $downloadsbig = $totaldownloads;
-                    $downloadssmall = $totaldownloads;
-                }
-                if ($totalruns>99999999) {
-                    $runsbig = number_format($totalruns/1000000,0)."M";
-                    $runssmall = number_format($totalruns/1000000000,1)."G";
-                } elseif ($totalruns>9999999) {
-                    $runsbig = number_format($totalruns/1000000,0)."M";
-                    $runssmall = number_format($totalruns/1000000,0)."M";
-                } elseif ($totalruns>999999) {
-                    $runsbig = number_format($totalruns/1000000,1)."M";
-                    $runssmall = number_format($totalruns/1000000,1)."M";
-                } elseif ($totalruns>99999) {
-                    $runsbig = number_format($totalruns/1000,0)."K";
-                    $runssmall = number_format($totalruns/1000000,1)."M";
-                } elseif ($totalruns>9999) {
-                    $runsbig = number_format($totalruns/1000,1)."K";
-                    $runssmall = number_format($totalruns/1000,0)."K";
-                } elseif ($totalruns>999) {
-                    $runsbig = number_format($totalruns,0);
-                    $runssmall = number_format($totalruns/1000,1)."K";
-                } elseif ($totalruns>99) {
-                    $runsbig = number_format($totalruns,0);
-                    $runssmall = number_format($totalruns/1000,1)."K";
-                } else {
-                    $runsbig = $totalruns;
-                    $runssmall = $totalruns;
-                }
-                if ($totallikes>99999999) {
-                    $likesbig = number_format($totallikes/1000000,0)."M";
-                    $likessmall = number_format($totallikes/1000000000,1)."G";
-                } elseif ($totallikes>9999999) {
-                    $likesbig = number_format($totallikes/1000000,0)."M";
-                    $likessmall = number_format($totallikes/1000000,0)."M";
-                } elseif ($totallikes>999999) {
-                    $likesbig = number_format($totallikes/1000000,1)."M";
-                    $likessmall = number_format($totallikes/1000000,1)."M";
-                } elseif ($totallikes>99999) {
-                    $likesbig = number_format($totallikes/1000,0)."K";
-                    $likessmall = number_format($totallikes/1000000,1)."M";
-                } elseif ($totallikes>9999) {
-                    $likesbig = number_format($totallikes/1000,1)."K";
-                    $likessmall = number_format($totallikes/1000,0)."K";
-                } elseif ($totallikes>999) {
-                    $likesbig = number_format($totallikes,0);
-                    $likessmall = number_format($totallikes/1000,1)."K";
-                } elseif ($totallikes>99) {
-                    $likesbig = number_format($totallikes,0);
-                    $likessmall = number_format($totallikes/1000,1)."K";
-                } else {
-                    $likesbig = $totallikes;
-                    $likessmall = $totallikes;
-                }
+                $num_downloads=number_suffix_string($totaldownloads);
+                $downloadsbig = $num_downloads['big'];
+                $downloadssmall = $num_downloads['small'];
+
+                $num_runs=number_suffix_string($totalruns);
+                $runsbig = $num_runs['big'];
+                $runssmall = $num_runs['small'];
+
+                $num_likes=number_suffix_string($totallikes);
+                $likesbig = $num_likes['big'];
+                $likessmall = $num_likes['small'];
 
                 ?>
                     <div style="margin-left: 0;margin-right: 0" class="row">
@@ -722,6 +669,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <?php
                     }
                 ?>
+                <!--todo: check the compatibility of instant modpack's mods-->
                 <div class="card">
                     <center>
                         <p class="display-4"><span id="welcome" >Welcome to </span>Solder<span class="text-muted">.cf</span></p>
@@ -756,7 +704,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             $vres = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge'");
                             if (sizeof($vres)!==0) {
                                 foreach($vres as $version) {
-                                    ?><option <?php if ($modslist[0]==$version['id']){ echo "selected"; } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - Forge <?php echo $version['version'] ?></option><?php
+                                    ?><option <?php if (!empty($modslist)&&$modslist[0]==$version['id']){ echo "selected"; } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - Forge <?php echo $version['version'] ?></option><?php
                                 }
                                 echo "</select>";
                             } else {
@@ -869,7 +817,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                                     response = JSON.parse(request.response);
                                                     if (response.modid) {
                                                         if (! $('#modlist').val().split(",").includes(response.modid.toString())) {
-                                                            addedmodslist.push(response.modid);
+                                                            addedmodslist.push(response.name);
                                                         }
                                                     }
                                                     if ( mn == modcount ) {
@@ -1153,7 +1101,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                     }
                                 }
                             };
-                            request.open("GET", "./functions/platform.php?slug="+link);
+                            request.open("GET", "./functions/platform.php?slug="+link+"&build=<?php echo SOLDER_BUILD ?>");
                             request.send();
                         }
                     </script>
@@ -1164,10 +1112,15 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             <?php
         }
         elseif (uri("/modpack")){
-            $mpres = $db->query("SELECT * FROM `modpacks` WHERE `id` = ".$db->sanitize($_GET['id']));
-            if ($mpres) {
-            $modpack = ($mpres);
-
+            if (!isset($_GET['id'])) {
+                // exit();
+            }
+            $modpack = $db->query("SELECT * FROM `modpacks` WHERE `id` = ".$db->sanitize($_GET['id']));
+            if (!$modpack || sizeof($modpack)!=1) {
+                error_log("couldn't get info on modpack id=".$_GET['id']);
+                // exit();
+            } else {
+                $modpack=$modpack[0];
             ?>
             <script>document.title = 'Modpack - <?php echo addslashes($modpack['display_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <ul class="nav justify-content-end info-versions">
@@ -1178,12 +1131,17 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 $link = dirname(__FILE__).'/api/mp.php';
                 $_GET['name'] = $modpack['name'];
                 $packapi = include($link);
-                $packdata = json_decode($packapi,true);
+                $packdata = json_decode($packapi, true);
+
                 $latest=false;
-                $latestres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `name` = '".$packdata['latest']."'");
-                if (sizeof($latestres)!==0) {
-                    $latest=true;
-                    $user = ($latestres);
+                if ($packdata['latest']!=null) {
+                    $latestres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `name` = '".$packdata['latest']."'");
+                    if (sizeof($latestres)!==0) {
+                        $latest=true;
+                        $user = $latestres[0];
+                    }
+                } else {
+                    $user=['name'=>'null', 'minecraft'=>'null'];
                 }
                 ?>
                 <li <?php if (!$latest){ echo "style='display:none'"; } ?> id="latest-v-li" class="nav-item">
@@ -1194,11 +1152,16 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </li>
                 <div style="width:30px"></div>
                     <?php
+
                 $rec=false;
-                $recres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `name` = '".$packdata['recommended']."'");
-                if (sizeof($recres)!==0) {
-                    $rec=true;
-                    $user = ($recres);
+                if ($packdata['recommended']!=null) {
+                    $recres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `name` = '".$packdata['recommended']."'");
+                    if (sizeof($recres)!==0) {
+                        $rec=true;
+                        $user = $recres[0];
+                    }
+                } else {
+                    $user=['name'=>'null', 'minecraft'=>'null'];
                 }
                 ?>
                 <li <?php if (!$rec){ echo "style='display:none'"; } ?> id="rec-v-li" class="nav-item">
@@ -1214,9 +1177,11 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 if (isset($cache[$modpack['name']])&&$cache[$modpack['name']]['time'] > time()-1800) {
                     $info = $cache[$modpack['name']]['info'];
                 } else {
-                    if ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
+                    if (!empty($modpack['name']) && $info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
                         $cache[$modpack['name']]['time'] = time();
-                        $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
+                        if(!empty($info['icon']['url'])){
+                            $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
+                        }
                         $cache[$modpack['name']]['info'] = $info;
                         $ws = json_encode($cache);
                         file_put_contents("./functions/cache.json", $ws);
@@ -1229,6 +1194,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <?php
                     }
                 }
+
+                // happens if we have a new modpack
+                if (empty($info['downloads']) && empty($info['runs']) && empty($info['ratings'])) {
+                    $info=['downloads'=>0,'runs'=>0,'ratings'=>0];
+                }
+
                 if (substr($_SESSION['perms'],0,1)=="1") { ?>
                 <div class="card">
                     <h2>Edit Modpack</h2>
@@ -1308,81 +1279,19 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 $totaldownloads = $info['downloads'];
                 $totalruns = $info['runs'];
                 $totallikes = $info['ratings'];
-                if ($totaldownloads>99999999) {
-                    $downloadsbig = number_format($totaldownloads/1000000,0)."M";
-                    $downloadssmall = number_format($totaldownloads/1000000000,1)."G";
-                } elseif ($totaldownloads>9999999) {
-                    $downloadsbig = number_format($totaldownloads/1000000,0)."M";
-                    $downloadssmall = number_format($totaldownloads/1000000,0)."M";
-                } elseif ($totaldownloads>999999) {
-                    $downloadsbig = number_format($totaldownloads/1000000,1)."M";
-                    $downloadssmall = number_format($totaldownloads/1000000,1)."M";
-                } elseif ($totaldownloads>99999) {
-                    $downloadsbig = number_format($totaldownloads/1000,0)."K";
-                    $downloadssmall = number_format($totaldownloads/1000000,1)."M";
-                } elseif ($totaldownloads>9999) {
-                    $downloadsbig = number_format($totaldownloads/1000,1)."K";
-                    $downloadssmall = number_format($totaldownloads/1000,0)."K";
-                } elseif ($totaldownloads>999) {
-                    $downloadsbig = number_format($totaldownloads,0);
-                    $downloadssmall = number_format($totaldownloads/1000,1)."K";
-                } elseif ($totaldownloads>99) {
-                    $downloadsbig = number_format($totaldownloads,0);
-                    $downloadssmall = number_format($totaldownloads/1000,1)."K";
-                } else {
-                    $downloadsbig = $totaldownloads;
-                    $downloadssmall = $totaldownloads;
-                }
-                if ($totalruns>99999999) {
-                    $runsbig = number_format($totalruns/1000000,0)."M";
-                    $runssmall = number_format($totalruns/1000000000,1)."G";
-                } elseif ($totalruns>9999999) {
-                    $runsbig = number_format($totalruns/1000000,0)."M";
-                    $runssmall = number_format($totalruns/1000000,0)."M";
-                } elseif ($totalruns>999999) {
-                    $runsbig = number_format($totalruns/1000000,1)."M";
-                    $runssmall = number_format($totalruns/1000000,1)."M";
-                } elseif ($totalruns>99999) {
-                    $runsbig = number_format($totalruns/1000,0)."K";
-                    $runssmall = number_format($totalruns/1000000,1)."M";
-                } elseif ($totalruns>9999) {
-                    $runsbig = number_format($totalruns/1000,1)."K";
-                    $runssmall = number_format($totalruns/1000,0)."K";
-                } elseif ($totalruns>999) {
-                    $runsbig = number_format($totalruns,0);
-                    $runssmall = number_format($totalruns/1000,1)."K";
-                } elseif ($totalruns>99) {
-                    $runsbig = number_format($totalruns,0);
-                    $runssmall = number_format($totalruns/1000,1)."K";
-                } else {
-                    $runsbig = $totalruns;
-                    $runssmall = $totalruns;
-                }
-                if ($totallikes>99999999) {
-                    $likesbig = number_format($totallikes/1000000,0)."M";
-                    $likessmall = number_format($totallikes/1000000000,1)."G";
-                } elseif ($totallikes>9999999) {
-                    $likesbig = number_format($totallikes/1000000,0)."M";
-                    $likessmall = number_format($totallikes/1000000,0)."M";
-                } elseif ($totallikes>999999) {
-                    $likesbig = number_format($totallikes/1000000,1)."M";
-                    $likessmall = number_format($totallikes/1000000,1)."M";
-                } elseif ($totallikes>99999) {
-                    $likesbig = number_format($totallikes/1000,0)."K";
-                    $likessmall = number_format($totallikes/1000000,1)."M";
-                } elseif ($totallikes>9999) {
-                    $likesbig = number_format($totallikes/1000,1)."K";
-                    $likessmall = number_format($totallikes/1000,0)."K";
-                } elseif ($totallikes>999) {
-                    $likesbig = number_format($totallikes,0);
-                    $likessmall = number_format($totallikes/1000,1)."K";
-                } elseif ($totallikes>99) {
-                    $likesbig = number_format($totallikes,0);
-                    $likessmall = number_format($totallikes/1000,1)."K";
-                } else {
-                    $likesbig = $totallikes;
-                    $likessmall = $totallikes;
-                }
+
+                $num_downloads=number_suffix_string($totaldownloads);
+                $downloadsbig = $num_downloads['big'];
+                $downloadssmall = $num_downloads['small'];
+
+                $num_runs=number_suffix_string($totalruns);
+                $runsbig = $num_runs['big'];
+                $runssmall = $num_runs['small'];
+
+                $num_likes=number_suffix_string($totallikes);
+                $likesbig = $num_likes['big'];
+                $likessmall = $num_likes['small'];
+                
                 if (isset($runsbig)) {
                 ?>
                     <div style="margin-left: 0;margin-right: 0" class="row">
@@ -1484,14 +1393,20 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             $mpab = array();
                             $allbuilds = $db->query("SELECT `id`,`name`,`modpack` FROM `builds`");
                             foreach($allbuilds as $b) {
+                                $display_nameq=$db->query("SELECT `display_name` FROM `modpacks` WHERE `id` = ".$b['modpack']);
+                                if($display_nameq) {
+                                    assert(sizeof($display_nameq)==1);
+                                    $display_name=$display_nameq[0]['display_name'];
+                                }
                                 $ba = array(
                                     "id" => $b['id'],
                                     "name" => $b['name'],
                                     "mpid" =>  $b['modpack'],
-                                    "mpname" => ($db->query("SELECT `display_name` FROM `modpacks` WHERE `id` = ".$b['modpack']))['display_name']
+                                    "mpname" => $display_name
                                 );
                                 array_push($mpab, $ba);
                             }
+                            // error_log(json_encode($mpab));
                             $mps = array();
                             $allmps = $db->query("SELECT `id`,`display_name` FROM `modpacks`");
                             foreach($allmps as $mp) {
@@ -1694,9 +1609,10 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             }
         }
         elseif (uri('/build')) {
-            $bres = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
-            if ($bres) {
-                $user = ($bres);
+            $user = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
+            if ($user) {
+                assert(sizeof($user)==1);
+                $user = $user[0];
             }
             $modslist = explode(',', $user['mods']);
             if ($modslist[0]==""){
@@ -1719,25 +1635,34 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 if ($_POST['ispublic']=="on") {
                     $ispublic = 1;
                 }
-                $minecraft = ($db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_POST['versions'])));
+                $minecraft = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_POST['versions']));
+                if ($minecraft) {
+                    assert(sizeof($minecraft)==1);
+                    $minecraft=$minecraft[0];
+                }
                 $db->query("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic." WHERE `id` = ".$db->sanitize($_GET['id']));
-                $lpq = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$user['modpack']." ORDER BY `id` DESC");
-                $latest_public = ($lpq);
+                $latest_public = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$user['modpack']." ORDER BY `id` DESC");
+                if ($latest_public) {
+                    assert(sizeof($latest_public==1));
+                    $latest_public = $latest_public[0];
+                }
                 $db->query("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$user['modpack']);
             }
 
-            // redundant query and $user array fetch
-            // $bres = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
-            // if ($bres) {
-            //     $user = ($bres);
-            // }
-            // $modslist = explode(',', $user['mods']);
-            // if ($modslist[0]==""){
-            //     unset($modslist[0]);
-            // }
+            $user = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
+            if ($user && sizeof($user)==1) {
+                $user = $user[0];
+            }
+            $modslist = explode(',', $user['mods']);
+            if ($modslist[0]==""){
+                unset($modslist[0]);
+            }
 
-            $pack = $db->query("SELECT * FROM `modpacks` WHERE `id` = ".$user['modpack']);
-            $mpack = ($pack);
+            $mpack = $db->query("SELECT * FROM `modpacks` WHERE `id` = ".$user['modpack']);
+            if ($mpack) {
+                assert(sizeof($mpack)==1);
+                $mpack = $mpack[0];
+            }
             ?>
             <script>document.title = '<?php echo addslashes($mpack['display_name'])." ".addslashes($user['name'])  ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <ul class="nav justify-content-end info-versions">
@@ -1766,7 +1691,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             $vres = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge'");
                             if (sizeof($vres)!==0) {
                                 foreach($vres as $version) {
-                                    ?><option <?php if ($modslist[0]==$version['id']){ echo "selected"; } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - Forge <?php echo $version['version'] ?></option><?php
+                                    ?><option <?php if (sizeof($modslist)>0 && $modslist[0]==$version['id']){ echo "selected"; } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - Forge <?php echo $version['version'] ?></option><?php
                                 }
                                 echo "</select>";
                             } else {
@@ -1779,7 +1704,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                     $('#editBuild').modal('show');
                                 });
                                 function fnone(){
-                                    $('#versions').val('<?php echo $modslist[0] ?>');
+                                    $('#versions').val('<?php if (sizeof($modslist)>0) echo $modslist[0] ?>');
                                     $('#forgec').val('none');
                                 };
                                 function fchange(){
@@ -1904,17 +1829,33 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 $modsluglist = Array();
                                 foreach($modslist as $bmod) {
                                     if ($bmod) {
-                                        $modq = $db->query("SELECT * FROM `mods` WHERE `id` = ".$bmod);
-                                        $moda = ($modq);
+                                        $moda = $db->query("SELECT * FROM `mods` WHERE `id` = ".$bmod);
+                                        if ($moda) {
+                                            assert($sizeof($moda)==1);
+                                            $moda = $moda[0];
+                                        }
                                         array_push($modsluglist, $moda['name']);
-                                        if ($_SESSION['showall']) {
+
+                                        $mcvrange=mcversion_to_range($moda['mcversion']);
+                                        $min=$mcvrange['min'];
+                                        $max=$mcvrange['max'];
+
+                                        if (isset($_SESSION['showall']) && $_SESSION['showall']) {
                                             $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."'");
                                         } else {
-                                            $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `id` = ".$bmod.")");
+                                            if ($min!=null && $max!=null) { // both min,max specified
+                                                $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR (`mcversion_low` >= '".$min."' AND `mcversion_high` < '".$max."') OR `id` = ".$bmod.")");
+                                            } elseif ($min!=null) { // just min specified
+                                                $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `mcversion_low` >= '".$min."' OR `id` = ".$bmod.")");
+                                            } elseif ($max!=null) { // just max specified
+                                                $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `mcversion_high` < '".$max."' OR `id` = ".$bmod.")");
+                                            } else { // exact version specified
+                                                $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `id` = ".$bmod.")");
+                                            }
                                         }
                                     
                                         // todo: check if mod is actually a moda['type']=='mod' and not something else.
-                                        $userModVersionOK = mcVersionCompare($moda['mcversion'], $user['minecraft']);
+                                        $userModVersionOK = in_range($moda['mcversion'], $user['minecraft']);
                                         
                                         ?>
 
@@ -1966,14 +1907,14 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                     <?php if (substr($_SESSION['perms'],1,1)=="1") { ?>
                     <div class="card">
-                        <h2>Mods <?php if (!$_SESSION['showall']){ ?> for Minecraft <?php echo $user['minecraft'];} ?></h2>
+                        <h2>Mods <?php if (!isset($SESSION['showall'])||!$_SESSION['showall']){ ?> for Minecraft <?php echo $user['minecraft'];} ?></h2>
                         <hr>
                         <button onclick="window.location.href = window.location.href" class="btn btn-primary">Refresh</button>
                         <br />
                         <input id="search" type="text" placeholder="Search..." class="form-control">
                         <br />
                         <div class="custom-control custom-checkbox">
-                            <input <?php if ($_SESSION['showall']){echo "checked";} ?> type="checkbox" name="showall" class="custom-control-input" id="showall">
+                            <input <?php if (isset($_SESSION['showall'])&&$_SESSION['showall']){echo "checked";} ?> type="checkbox" name="showall" class="custom-control-input" id="showall">
                             <label class="custom-control-label" for="showall">Show all</label>
                         </div>
                         <script type="text/javascript">
@@ -2005,10 +1946,10 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             </thead>
                             <tbody>
                             <?php
-                            if ($_SESSION['showall']) {
+                            if (isset($_SESSION['showall'])&&$_SESSION['showall']) {
                                 $mres = $db->query("SELECT * FROM `mods` WHERE `type` = 'mod'");
                             } else {
-                                $mres = $db->query("SELECT * FROM `mods` WHERE `type` = 'mod' AND `mcversion` = '".$user['minecraft']."'");
+                                $mres = $db->query("SELECT * FROM `mods` WHERE `type` = 'mod' AND (`mcversion` = '".$user['minecraft']."' OR ('".$user['minecraft']."' >= `mcversion_low` AND '".$user['minecraft']."' < `mcversion_high`))");
                             }
 
                             if (sizeof($mres)!==0) {
@@ -2083,7 +2024,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                         if ($_SESSION['showall']) {
                                             $modversionsq = $db->query("SELECT `id`,`version` FROM `mods` WHERE `type` = 'mod' AND `name` = '".$mod['name']."' ORDER BY `version` DESC");
                                         } else {
-                                            $modversionsq = $db->query("SELECT `id`,`version` FROM `mods` WHERE `type` = 'mod' AND `name` = '".$mod['name']."' AND `mcversion` = '".$user['minecraft']."' ORDER BY `version` DESC");
+                                            $modversionsq = $db->query("SELECT `id`,`version` FROM `mods` WHERE `type` = 'mod' AND `name` = '".$mod['name']."' AND (`mcversion` = '".$user['minecraft']."' OR ('".$user['minecraft']."' >= `mcversion_low` AND '".$user['minecraft']."' < `mcversion_high`)) ORDER BY `version` DESC");
                                         }
 
                                         $modversions = array();
@@ -2096,7 +2037,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                                 "name" => $mod['name'],
                                                 "pretty_name" => $mod['pretty_name'],
                                                 "versions" => $modversions,
-                                                "author" => $modauthors,
+                                                "author" => $mod['author'],
                                                 "mcversion" => $mod['mcversion']
                                             );
 
@@ -2469,7 +2410,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             <?php
             $mres = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
             if ($mres) {
-                $mod = ($mres);
+                assert(sizeof($mres)==1);
+                $mod = $mres[0];
             }
             ?>
             <script>document.title = 'Add Mod - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -3250,7 +3192,8 @@ function stringify(items) {
             <?php
             $mres = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
             if ($mres) {
-                $mod = ($mres);
+                assert(sizeof($mres)==1);
+                $mod = $mres[0];
             }
             ?>
             <script>document.title = 'Solder.cf - Mod - <?php echo addslashes($mod['pretty_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>

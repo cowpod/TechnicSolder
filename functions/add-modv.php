@@ -27,27 +27,25 @@ if (substr($_SESSION['perms'], 3, 1)!=="1") {
 }
 
 global $db;
-require("db.php");
+require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
 }
 
 $db->query("INSERT INTO `mods`
-    (`name`, `pretty_name`, `md5`, `url`, `link`, `author`, `donlink`, `description`, `version`, `mcversion`, `type`)
-    VALUES
-        ('".$db->sanitize($_POST['name'])."',
-         '".$db->sanitize($_POST['pretty_name'])."',
-         '".$db->sanitize($_POST['md5'])."',
-         '".$db->sanitize($_POST['url'])."',
-         '".$db->sanitize($_POST['link'])."',
-         '".$db->sanitize($_POST['author'])."',
-         '".$db->sanitize($_POST['donlink'])."',
-         '".$db->sanitize($_POST['dscription'])."',
-         '".$db->sanitize($_POST['version'])."',
-         '".$db->sanitize($_POST['mcversion'])."',
-         'mod')
-    "
-);
+    (`name`, `pretty_name`, `md5`, `url`, `link`, `author`, `donlink`, `description`, `version`, `mcversion`, `type`) VALUES ( 
+        '".$db->sanitize($_POST['name'])."',
+        '".$db->sanitize($_POST['pretty_name'])."',
+        '".$db->sanitize($_POST['md5'])."',
+        '".$db->sanitize($_POST['url'])."',
+        '".$db->sanitize($_POST['link'])."',
+        '".$db->sanitize($_POST['author'])."',
+        '".$db->sanitize($_POST['donlink'])."',
+        '".$db->sanitize($_POST['dscription'])."',
+        '".$db->sanitize($_POST['version'])."',
+        '".$db->sanitize($_POST['mcversion'])."',
+        'mod')");
+
 header("Location: ../lib-mods");
 exit();

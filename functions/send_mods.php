@@ -11,7 +11,7 @@ if (substr($_SESSION['perms'],3,1)!=="1") {
 $config = require("config.php");
 
 global $db;
-require("db.php");
+require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
@@ -51,6 +51,7 @@ if (!file_exists("../mods/mods-".$fileNameShort)) {
     echo '{"status":"error","message":"Folder mods-'.$fileNameShort.' already exists! Please remove it and try again."}';
     exit();
 }
+$name="";
 function processFile($zipExists, $md5) {
     global $fileName;
     global $fileNameZip;
@@ -60,59 +61,24 @@ function processFile($zipExists, $md5) {
     global $db;
     global $warn;
     global $fileInfo;
+    global $name;
 
     $legacy=false;
     $mcmod=array();
-    $result = @file_get_contents("zip://".realpath($fileJarInFolderLocation)."#META-INF/mods.toml");
-    if (!$result) {
-        # fail 1.14+ or fabric mod check
-        $result = file_get_contents("zip://".realpath($fileJarInFolderLocation)."#mcmod.info");
-        if (!$result) {
-            # fail legacy mod check
-            $warn['b'] = true;
-            $warn['level'] = "warn";
-            $warn['message'] = "File does not contain mod info. Manual configuration required.";
-        } elseif (file_get_contents("zip://".realpath("../mods/mods-".$fileName."/".$fileName)."#fabric.mod.json")) {
-            # is a fabric mod
-            $result = file_get_contents("zip://" . realpath("../mods/mods-" . $fileName . "/" . $fileName) . "#fabric.mod.json");
-            $q = json_decode(preg_replace('/\r|\n/', '', trim($result)), true);
-            $mcmod = $q;
-            $mcmod["modid"] = $mcmod["id"];
-            $mcmod["url"] = $mcmod["contact"]["sources"];
-            if (!$mcmod['modid'] || !$mcmod['name'] || !$mcmod['description'] || !$mcmod['version'] || !$mcmod['mcversion'] || !$mcmod['url'] || !$mcmod['authorList']) {
-                $warn['b'] = true;
-                $warn['level'] = "info";
-                $warn['message'] = "There is some information missing in fabric.mod.json.";
-            }
-        } else {
-            # is legacy mod
-            $legacy=true;
-            $mcmod = json_decode(preg_replace('/\r|\n/','',trim($result)),true)[0];
-            if (!$mcmod['modid']||!$mcmod['name']||!$mcmod['description']||!$mcmod['version']||!$mcmod['mcversion']||!$mcmod['url']||!$mcmod['authorList']) {
-                $warn['b'] = true;
-                $warn['level'] = "info";
-                $warn['message'] = "There is some information missing in mcmod.info.";
-            }
-        }
-    } else { # is 1.14+ mod
-        $legacy=false;
-        $toml=new Toml;
-        $mcmod = $toml->parse($result);
+    
+    // error_log('pf start');
+
+    if (@$result=file_get_contents("zip://".realpath($fileJarInFolderLocation)."#META-INF/mods.toml")) {
+        // is a 1.14+ forge mod
+        // error_log("FORGE");
 
         // todo: technically it's possible to have multiple mods in one file, which the toml parser supports. however we (and the majority of others) don't support this.
+        $toml = new Toml;
+        $mcmod = $toml->parse($result);
         if (sizeof($mcmod['mods'])==0) {
             echo '{"status":"error","message":"Could not parse TOML->mods->0."}';
-            // exit();
         }
         $mcmod['mods']=$mcmod['mods'][0]; 
-        // ..and as we're supporting legacy mods, we're doing it this !@$%# way 
-        // todo: don't do it this way.
-        // this is because the toml spec says [[]] means an array. for us this means mods=>[{...}], aka
-        // mods => [
-        //    0 => {
-        //      'modId'=>...
-        // }
-        // ]
 
         // file_put_contents('toml_output.json', JSON_ENCODE($mcmod), FILE_APPEND);
 
@@ -120,21 +86,88 @@ function processFile($zipExists, $md5) {
             && array_key_exists('version', $mcmod['mods'])
             && array_key_exists('displayName', $mcmod['mods'])
             && (array_key_exists('author', $mcmod['mods']) || array_key_exists('authors', $mcmod['mods']))
-            && array_key_exists('description', $mcmod['mods'])
-        )) {
+            && array_key_exists('description', $mcmod['mods']))) {
             $warn['b'] = true;
             $warn['level'] = "info";
             $warn['message'] = "There is some information missing in mcmod.info.";
         }
+    } elseif (@$result=file_get_contents("zip://".realpath("../mods/mods-".$fileName."/".$fileName)."#fabric.mod.json")) {
+        // is a fabric mod
+        // error_log("FABRIC");
+
+        $result = file_get_contents("zip://" . realpath("../mods/mods-" . $fileName . "/" . $fileName) . "#fabric.mod.json");
+        $q = json_decode(preg_replace('/\r|\n/', '', trim($result)), true);
+        $mcmod = $q;
+
+        // fill $mcmod['mods']
+        $mcmod['mods']=[];
+        $mcmod['mods']["modId"] = $mcmod["id"];
+        $mcmod['mods']["url"] = $mcmod["contact"]["sources"];
+        $mcmod['mods']["version"] = $mcmod["version"];
+        $mcmod['mods']["displayName"] = $mcmod["name"];
+        $mcmod['mods']["authors"] = $mcmod["authors"];
+        $mcmod['mods']["displayURL"] = implode("\n", $mcmod["contact"]);
+
+        // fill $mcmod['dependencies'][$mcmod['mods']['modId']]
+        $mcmod['dependencies']=[];
+        $mcmod['dependencies'][$mcmod['id']]=[];
+        foreach (array_keys($mcmod['depends']) as $depId) {
+            $depMcVersion=$mcmod['depends'][$depId];
+            $newdep=[];
+            $newdep['modId']=$depId;
+
+            // >=
+            $matches=[];
+            if (preg_match("/^>=(.*)/", $depMcVersion, $matches)) {
+                $newdep['versionRange']="[".$matches[1].",)";
+            }
+            // <=
+            elseif (preg_match("/<=(.*)/", $depMcVersion, $matches)) {
+                $v=$matches[1];
+                $newdep['versionRange']="(,".$matches[1]."]";
+            }
+            // ~
+            elseif (preg_match("/^~(.*)/", $depMcVersion, $matches)) {
+                $newdep['versionRange']=$matches[1];
+            }
+
+            array_push($mcmod['dependencies'][$mcmod['id']], $newdep);
+        }
+
+        // error_log(json_encode($mcmod));
+        
+        if (!$mcmod['modid'] || !$mcmod['name'] || !$mcmod['description'] || !$mcmod['version'] || !$mcmod['mcversion'] || !$mcmod['url'] || !$mcmod['authorList']) {
+            $warn['b'] = true;
+            $warn['level'] = "info";
+            $warn['message'] = "There is some information missing in fabric.mod.json.";
+        }
+    } elseif (@$result=file_get_contents("zip://".realpath($fileJarInFolderLocation)."#mcmod.info")) {
+        // is legacy mod
+        // error_log("LEGACY");
+
+        $legacy=true;
+        $mcmod = json_decode(preg_replace('/\r|\n/','',trim($result)),true)[0];
+        if (!$mcmod['modid']||!$mcmod['name']||!$mcmod['description']||!$mcmod['version']||!$mcmod['mcversion']||!$mcmod['url']||!$mcmod['authorList']) {
+            $warn['b'] = true;
+            $warn['level'] = "info";
+            $warn['message'] = "There is some information missing in mcmod.info.";
+        }
+    } else {
+        // we don't know what type of mod this is...
+        // error_log("IDFK");
+
+        $warn['b'] = true;
+        $warn['level'] = "warn";
+        $warn['message'] = "File does not contain any type of known mod info. Manual configuration required.";
     }
 
-    if ($zipExists) { // while we could put a file check here, it'd be redundant (it's checked before).
-        // cached zip
-    } else {
+
+    // error_log('pf zipcheck');
+
+    if (!$zipExists) {
         $zip = new ZipArchive();
         if ($zip->open($fileZipLocation, ZIPARCHIVE::CREATE) !== TRUE) {
             echo '{"status":"error","message":"Could not open archive"}';
-            // exit();
         }
         $zip->addEmptyDir('mods');
         if (is_file($fileJarInFolderLocation)) {
@@ -143,8 +176,12 @@ function processFile($zipExists, $md5) {
         $zip->close();
     }
 
+
     if ($legacy) {
-        // legacy 1.14-
+        // legacy forge 1.14-
+
+        // error_log('legacy');
+
         if (!$mcmod['name']) {
             $pretty_name = $fileNameShort;
         } else {
@@ -164,8 +201,9 @@ function processFile($zipExists, $md5) {
         $description = $mcmod['description'];
         $version = $mcmod['version'];
         $mcversion = $mcmod['mcversion'];
-    } else {
-        // 'modern' 1.14+
+    } else { // forge 1.14+, fabric
+        // error_log('forge/fabric');
+
         $pretty_name = array_key_exists('displayName', $mcmod['mods']) ? $mcmod['mods']['displayName'] : "";
 
         $name = "";
@@ -222,13 +260,13 @@ function processFile($zipExists, $md5) {
 
         // see if loaderVersion matches something in forges...
         if ($mcversion==="" && array_key_exists('loaderVersion',$mcmod)) {
-            require('mcVersionCompare.php');
+            require('interval_range_utils.php');
             $querystring = "SELECT version,mcversion FROM mods WHERE type='forge' ORDER BY version ASC";
             $query = $db->query($querystring);
             if (sizeof($query)>0) { // if we even have any forges
                 foreach ($query as $row) {
                     // file_put_contents("../status.log", "got a forge: ".JSON_ENCODE($row)."\n", FILE_APPEND);
-                    if (mcVersionCompare($row['version'],$mcmod['loaderVersion'])) {
+                    if (in_range($row['version'], $mcmod['loaderVersion'])) {
                         // file_put_contents("../status.log", "got mcversion: ".$row['mcversion']."\n", FILE_APPEND);
                         $mcversion=$row['mcversion'];
 
@@ -265,9 +303,8 @@ function processFile($zipExists, $md5) {
         }
     }
 
-    if ($zipExists) {
-        // cached zip, use given md5. (md5 is not checked empty(); should always be given if cached!)
-    } else {
+    // calculate md5 if we just created the zip
+    if (!$zipExists) {
         $md5 = md5_file("../mods/".$fileInfo['filename'].".zip");
     }
 
@@ -297,7 +334,7 @@ function processFile($zipExists, $md5) {
             }
 
         } else {
-            echo '{"status":"succ","message":"Mod has been uploaded and saved.","modid":'.$db->insert_id().'}';
+            echo '{"status":"succ","message":"Mod has been uploaded and saved.","modid":'.$db->insert_id().',"name":"'.$fileName.'"}';
         }
     } else {
         echo '{"status":"error","message":"Mod could not be added to database"}';
@@ -311,11 +348,11 @@ if (move_uploaded_file($fileJarInTmpLocation, $fileJarInFolderLocation)) {
         $md5_2 = md5_file("zip://".realpath($fileZipLocation)."#mods/".$fileName);
         if ($md5_1 !== $md5_2) {
             echo '{"status":"error","message":"File with name \''.$fileName.'\' already exists!","md51":"'.$md5_1.'","md52":"'.$md5_2.'","zip":"'.$fileJarInFolderLocation.'"}';
-            //exit();
         } else {
             $fq = $db->query("SELECT `id` FROM `mods` WHERE `filename` = '".$fileNameZip."'");
             if (sizeof($fq)==1) {
-                echo '{"status":"info","message":"This mod is already in the database.","modid":'.($fq)['id'].'}';
+                $fq=$fq[0];
+                echo '{"status":"info","message":"This mod is already in the database.","modid":'.$fq['id'].',"name":"'.$fileName.'"}';
             } else {
                 processFile(true, $md5_1); // use existing zip
             }

@@ -9,7 +9,7 @@ if ($_SESSION['user']!==$config['mail']) {
     die("insufficient permission!");
 }
 
-require("db.php");
+require_once("db.php");
 $db=new Db;
 
 //$sql = $db->query("UPDATE `users` SET `display_name` = '".$_POST['display_name']."', `perms` = '".$_POST['perms']."' WHERE `name` = '".$_POST['name']."'");

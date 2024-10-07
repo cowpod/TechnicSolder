@@ -6,7 +6,7 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
 }
 
-require("db.php");
+require_once("db.php");
 $db=new Db;
 $db->connect();
 

@@ -19,7 +19,7 @@ if (substr($_SESSION['perms'], 1, 1)!=="1") {
 }
 
 global $db;
-require("db.php");
+require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
@@ -27,7 +27,10 @@ if (!isset($db)){
 
 $modsq = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$db->sanitize($_GET['bid'])
 );
-$mods = ($modsq);
+if ($modsq) {
+    assert(sizeof($modsq)==1);
+    $mods = $modsq[0];
+}
 $modslist = explode(',', $mods['mods']);
 $nmodlist = array_diff($modslist, [$_GET['mod']]);
 array_push($nmodlist, $_GET['id']);

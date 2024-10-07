@@ -13,19 +13,18 @@ if (substr($_SESSION['perms'], 1, 1)!=="1") {
 }
 
 global $db;
-require("db.php");
+require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
 }
 
 $db->query("DELETE FROM `builds` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
-$bq = $db->query("SELECT * FROM `builds`
-    WHERE `modpack` = '".$db->sanitize($_GET['pack'])."' AND `public` = 1
-    ORDER BY `id` DESC LIMIT 1"
-);
+$bq = $db->query("SELECT * FROM `builds` WHERE `modpack` = '".$db->sanitize($_GET['pack'])."' AND `public` = 1 ORDER BY `id` DESC LIMIT 1");
+
 if ($bq) {
-    $build = ($bq);
+    assert(sizeof($bq)==1);
+    $build = $bq[0];
     //$db->query("UPDATE `modpacks` SET `latest` = '".$build['name']."' WHERE `id` = '".$build['modpack']."'");
     $response = array(
         "exists" => true,
@@ -37,13 +36,13 @@ if ($bq) {
         "exists" => false
     );
 }
-$lpq = $db->query("SELECT `name`,`modpack`,`public` FROM `builds`
-            WHERE `public` = 1 AND `modpack` = ".$db->sanitize($_GET['pack'])." ORDER BY `id` DESC"
-);
-$latest_public = ($lpq);
-$db->query("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."'
-    WHERE `id` = ".$db->sanitize($_GET['pack'])
-);
+$lpq = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$db->sanitize($_GET['pack'])." ORDER BY `id` DESC");
+if ($lpq) {
+    assert(sizeof($lpq)==1);
+    $latest_public = $lpq[0];
+}
+
+$db->query("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."'WHERE `id` = ".$db->sanitize($_GET['pack']));
 
 echo json_encode($response);
 exit();

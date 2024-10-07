@@ -14,14 +14,17 @@ if (empty($_GET['id'])) {
 }
 
 global $db;
-require("db.php");
+require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
 }
 
 $result = $db->query("SELECT * FROM `mods` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
-$mod = ($result);
+if ($result) {
+    assert(sizeof($result)==1);
+    $mod = $result[0];
+}
 $db->query("UPDATE `mods`
     SET `name` = '".$db->sanitize($_POST['name'])."',
     `pretty_name` = '".$db->sanitize($_POST['pretty_name'])."',

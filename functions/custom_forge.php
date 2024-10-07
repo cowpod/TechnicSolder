@@ -20,25 +20,25 @@ if (!$fileTmpLoc) {
 }
 
 global $db;
-require("db.php");
+require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
 }
 
-function slugify($text)
-{
-  $text = preg_replace('~[^\pL\d]+~u', '-', $text);
-  //$text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
-  $text = preg_replace('~[^-\w]+~', '', $text);
-  $text = trim($text, '-');
-  $text = preg_replace('~-+~', '-', $text);
-  $text = strtolower($text);
-  if (empty($text)) {
-    return 'n-a';
-  }
-  return $text;
+function slugify($text) {
+    $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+    //$text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+    $text = preg_replace('~[^-\w]+~', '', $text);
+    $text = trim($text, '-');
+    $text = preg_replace('~-+~', '-', $text);
+    $text = strtolower($text);
+    if (empty($text)) {
+        return 'n-a';
+    }
+    return $text;
 }
+
 $version = slugify($_POST['version']);
 $mcversion = $_POST['mcversion'];
 if ($mcversion == "1.7.10-1.7.10") {

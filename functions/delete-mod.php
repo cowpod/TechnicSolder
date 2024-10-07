@@ -14,14 +14,13 @@ if (substr($_SESSION['perms'], 4, 1)!=="1") {
 }
 
 global $db;
-require("db.php");
+require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
 }
 
-$modq = $db->query("SELECT * FROM `mods` WHERE `name` = '".$db->sanitize($_GET['id'])."'"
-);
+$modq = $db->query("SELECT * FROM `mods` WHERE `name` = '".$db->sanitize($_GET['id'])."'");
 foreach ($modq as $mod) {
     unlink("../".$mod['type']."s/".$mod['filename']);
 }

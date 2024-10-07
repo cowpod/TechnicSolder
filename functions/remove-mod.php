@@ -15,12 +15,15 @@ if (substr($_SESSION['perms'],1,1)!=="1") {
     exit();
 }
 
-require("db.php");
+require_once("db.php");
 $db=new Db;
 $db->connect();
 
 $modsq = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$db->sanitize($_GET['bid']));
-$mods = ($modsq);
+if ($modsq) {
+    assert(sizeof($modsq)==1);
+    $mods = $modsq[0];
+}
 $modslist = explode(',', $mods['mods']);
 $nmodlist = array_diff($modslist, [$_GET['id']]);
 $modslist = implode(',', $nmodlist);

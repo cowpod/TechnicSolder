@@ -14,7 +14,7 @@ if (substr($_SESSION['perms'], 1, 1)!=="1") {
 }
 
 global $db;
-require("db.php");
+require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();

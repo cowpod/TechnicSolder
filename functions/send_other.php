@@ -35,7 +35,7 @@ if (file_exists("../others/".$fileName)) {
 }
 
 $config = require("config.php");
-require("db.php");
+require_once("db.php");
 $db=new Db;
 
 if (move_uploaded_file($fileTmpLoc, "../others/".$fileName)) {
@@ -47,13 +47,13 @@ if (move_uploaded_file($fileTmpLoc, "../others/".$fileName)) {
     $url = "http://".$config['host'].$config['dir']."others/".$fileName;
     $md5 = md5_file("../others/".$fileName);
 
-    $res = $db->query($conn, "INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`author`,`description`,`filename`,`type`) VALUES ('".$name."','".$pretty_name."','".$md5."','".$url."','".$author."','Custom file by ".$author."','".$fileName."','other')");
+    $res = $db->query("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`author`,`description`,`filename`,`type`) VALUES ('".$name."','".$pretty_name."','".$md5."','".$url."','".$author."','Custom file by ".$author."','".$fileName."','other')");
 
     $db->disconnect();
 
     if ($res) {
-            echo '{"status":"succ","message":"File has been saved."}';
-            exit();
+        echo '{"status":"succ","message":"File has been saved."}';
+        exit();
     } else {
         echo '{"status":"error","message":"File could not be added to database"}';
         exit();

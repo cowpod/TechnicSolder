@@ -19,7 +19,7 @@ if (substr($_SESSION['perms'],1,1)!=="1") {
     exit();
 }
 
-require("db.php");
+require_once("db.php");
 $db=new Db;
 $db->connect();
 
@@ -34,8 +34,13 @@ if ($_GET['type']=="update") {
 
 }
 $lpq = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC");
-$latest_public = ($lpq);
-$db->query("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$db->sanitize($_GET['id']));
+if ($lpq) {
+    assert(sizeof($lpq)==1);
+    $latest_public = $lpq[0];
+}
+if (!empty($latest_public['name'])) {
+    $db->query("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$db->sanitize($_GET['id']));
+}
 
 $db->disconnect();
 header("Location: ".$config['dir']."modpack?id=".$_GET['id']);

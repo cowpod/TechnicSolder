@@ -2,7 +2,7 @@
 session_start();
 $config = require("./config.php");
 
-require("db.php");
+require_once("db.php");
 $db=new Db;
 $db->connect();
 

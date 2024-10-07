@@ -24,7 +24,7 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("error");
 }
 
-require("db.php");
+require_once("db.php");
 $db=new Db;
 $db->connect(); // connect from config.php
 

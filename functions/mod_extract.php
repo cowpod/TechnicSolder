@@ -8,12 +8,16 @@ if (!$_GET['id']) {
 }
 $config = require("config.php");
 
-require("db.php");
+require_once("db.php");
 $db=new Db;
 $db->connect();
 
 $q = $db->query("SELECT `filename` FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
-$fileName = ($q)['filename'];
+if ($q) {
+    assert(sizeof($q)==1);
+    $q=$q[0];
+}
+$fileName = $q['filename'];
 $fileInfo = pathinfo("../mods/".$fileName);
 $exisingzip = new ZipArchive();
 $exisingzip->open("../mods/".$fileName);

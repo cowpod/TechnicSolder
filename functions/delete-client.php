@@ -14,12 +14,11 @@ if (substr($_SESSION['perms'], 6, 1)!=="1") {
 }
 
 global $db;
-require("db.php");
+require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
 }
 
-$db->query("DELETE FROM `clients` WHERE `id` = '".$db->sanitize($_GET['id'])."'"
-);
+$db->query("DELETE FROM `clients` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
 exit();

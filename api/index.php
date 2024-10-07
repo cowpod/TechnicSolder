@@ -40,7 +40,7 @@ if (uri($url,"api/verify/".substr($url, strrpos($url, '/') + 1))) {
     exit();
 }
 
-require("../functions/db.php");
+require_once("../functions/db.php");
 $db=new Db;
 $db->connect();
 

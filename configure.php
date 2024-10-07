@@ -21,6 +21,10 @@ if (!isset($_GET['reconfig'])) {
         die("insufficient permission!");
     }
 }
+
+require_once("./functions/db.php");
+$db=new Db;
+
 ?>
 
 <!DOCTYPE html>
@@ -77,8 +81,6 @@ if (!isset($_GET['reconfig'])) {
                         file_put_contents("./functions/config.php", $cf." );");
                     }
                     
-                    require("./functions/db.php");
-                    $db=new Db;
                     $connection_result = $db->connect();
                     
                     if ($connection_result) {
@@ -137,6 +139,8 @@ if (!isset($_GET['reconfig'])) {
                             version VARCHAR(512),
                             md5 VARCHAR(512),
                             mcversion VARCHAR(128),
+                            mcversion_low VARCHAR(128),
+                            mcversion_high VARCHAR(128),
                             filename VARCHAR(128),
                             type VARCHAR(128));";
                         $db->query($sql);

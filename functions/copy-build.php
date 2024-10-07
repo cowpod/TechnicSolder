@@ -16,7 +16,7 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
 }
 
 global $db;
-require("db.php");
+require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
@@ -24,7 +24,10 @@ if (!isset($db)){
 
 $sql = $db->query("SELECT `name` FROM `builds` WHERE `id` = " .$db->sanitize($_GET['build'])
 );
-$name = ($sql);
+if ($sql) {
+    assert(sizeof($sql)==1);
+    $name = $sql[0];
+}
 echo $name['name'];
 if (substr($_SESSION['perms'], 1, 1)!=="1") {
     echo 'Insufficient permission!';
@@ -33,16 +36,21 @@ if (substr($_SESSION['perms'], 1, 1)!=="1") {
 $db->query("INSERT INTO builds(`name`,`minecraft`,`java`,`mods`,`modpack`)
             SELECT `name`,`minecraft`,`java`,`mods`,`modpack` FROM `builds` WHERE `id` = '".$_GET['build']."'"
 );
-$lb = ($db->query("SELECT `id` FROM `builds` ORDER BY `id` DESC LIMIT 1"))['id'];
-$db->query("UPDATE `builds` SET `name` = '".$db->sanitize($_GET['newname'])."' WHERE `id` = ".$lb
-);
-$db->query("UPDATE `builds` SET `modpack` = '".$db->sanitize($_GET['id'])."' WHERE `id` = ".$lb
-);
-$lpq = $db->query("SELECT `name`,`modpack`,`public`
-            FROM `builds`
-            WHERE `public` = 1 AND `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC"
-);
-$latest_public = ($lpq);
+
+$lbq = $db->query("SELECT `id` FROM `builds` ORDER BY `id` DESC LIMIT 1");
+if ($lbq) {
+    assert(sizeof($lbq)==1);
+    $lb=$lbq[0];
+}
+
+$db->query("UPDATE `builds` SET `name` = '".$db->sanitize($_GET['newname'])."' WHERE `id` = ".$lb['id']);
+$db->query("UPDATE `builds` SET `modpack` = '".$db->sanitize($_GET['id'])."' WHERE `id` = ".$lb['id']);
+
+$lpq = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC");
+if ($lpq) {
+    assert(sizeof($lpq)==1);
+    $latest_public = $lpq[0];
+}
 $db->query("UPDATE `modpacks`
             SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$db->sanitize($_GET['id'])
 );
