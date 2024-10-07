@@ -26,18 +26,7 @@ if (!isset($db)){
     $db->connect();
 }
 
-function slugify($text) {
-    $text = preg_replace('~[^\pL\d]+~u', '-', $text);
-    //$text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
-    $text = preg_replace('~[^-\w]+~', '', $text);
-    $text = trim($text, '-');
-    $text = preg_replace('~-+~', '-', $text);
-    $text = strtolower($text);
-    if (empty($text)) {
-        return 'n-a';
-    }
-    return $text;
-}
+require('slugify.php');
 
 $version = slugify($_POST['version']);
 $mcversion = $_POST['mcversion'];
