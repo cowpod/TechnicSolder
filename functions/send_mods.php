@@ -91,6 +91,14 @@ function processFile($zipExists, $md5) {
             $warn['level'] = "info";
             $warn['message'] = "There is some information missing in mcmod.info.";
         }
+
+    // This Fabric section DOES NOT WORK.
+    // currently, before this function is called the jar is uploaded and placed in a folder called mods.
+    // it is also renamed to name-version.JAR, and then zipped (we have a zip file, contianing a mod folder,
+    // containing a zip file renamed to jar, containing a mod folder, containing a jar file)
+    // todo: simply extract the fabric ZIP so we have mod->JAR which is what we expect later in this
+    // function
+
     } elseif (@$result=file_get_contents("zip://".realpath("../mods/mods-".$fileName."/".$fileName)."#fabric.mod.json")) {
         // is a fabric mod
         // error_log("FABRIC");
