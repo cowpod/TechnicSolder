@@ -1,18 +1,16 @@
-# Security Policy
+# Reporting a Vulnerability
 
-## Supported Versions
+To report security vulnerabilities, please open a new issue at [https://github.com/cowpod/TechnicSolder/issues](https://github.com/cowpod/TechnicSolder/issues). 
 
-The below table shows which versions of TheGameSpider/TechnicSolder (Solder.cf) are supported with security updates.
+Please be descriptive. Include your version, output of phpinfo() (see info.php sample below), and any other details you want to include.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| v1.3.2-master | :white_check_mark: |
-| v1.3.2-dev | :white_check_mark: |
-| < v1.3.2-master | :x: |
-| < v1.3.2-dev | :x: |
+Please note that only the installations with the latest verion (either Release or Dev) are supported.
 
-## Reporting a Vulnerability
+info.php
+```
+<?php
+phpinfo();
+>
+```
 
-To report security vulnerabilities, please DM TheGameSpider through his Discord server at [https://discord.gg/gksfNSHTP3](https://discord.gg/gksfNSHTP3) or through the support chat at [https://solder.cf](https://solder.cf)
-
-If the security vulnerability can be verified, an update will be released that fixes the issue as soon as possible.
+As always, Pull Requests are welcome!
