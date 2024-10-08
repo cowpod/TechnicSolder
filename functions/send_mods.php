@@ -12,355 +12,408 @@ $config = require("config.php");
 
 global $db;
 require_once("db.php");
+// if (!isset($db)){
+//     $db=new Db;
+//     $db->connect();
+// }
+
+// fiels = name of input in index.php
+$file_name = $_FILES["fiels"]["name"];
+$file_tmp = $_FILES["fiels"]["tmp_name"];
+
+if (empty($file_tmp)) {
+    die ("{'status':'error','message':'File is too big! Check your post_max_size (current value ".ini_get('post_max_size').") and upload_max_filesize (current value ".ini_get('upload_max_filesize').") values in ".php_ini_loaded_file()."'}");
+}
+
+require('toml.php');
+require('slugify.php');
+require('interval_range_utils.php');
+
+define('FABRIC_INFO_PATH', 'fabric.mod.json');
+define('FORGE_INFO_PATH', 'META-INF/mods.toml');
+define('FORGE_OLD_INFO_PATH', 'mcmod.info');
+
+function getModTypes(string $filePath): array {
+    // returns a dictionary ['fabric'=>bool,'forge'=>bool,'forge_old'=>bool] 
+    // representing each detected mod type
+    // yes, there can be multiple types of the same mod in a file.
+
+    // todo: or even multiple mods in one file, but we're not handling that.
+
+    // todo: check finfo to ensure it's actually a zip
+
+    assert (file_exists($filePath));
+    $zip = new ZipArchive;
+    $open_zip = $zip->open($filePath);
+    if ($open_zip !== TRUE) {
+        $zip->close();
+        return [];
+    }
+    $check_fabric = $zip->statName(FABRIC_INFO_PATH);
+    $check_forge = $zip->statName(FORGE_INFO_PATH); // MC 1.13+
+    $check_forge_old = $zip->statName(FORGE_OLD_INFO_PATH); // MC 1.12-
+    $zip->close();
+
+    return ['fabric'=> $check_fabric!==FALSE, 'forge'=> $check_forge!==FALSE, 'forge_old'=> $check_forge_old!==FALSE];
+}
+
+function getModInfos(array $modTypes, string $filePath): array {
+    /*
+    We don't support multiple mods in a file. 
+    TODO: support multiple mods in one file.
+
+    Returns a dictionary of 
+    [
+    'forge' => [info] or null, for forge
+    'forge_old' => [info] or null, for old forge
+    'fabric' => [info] or null, for fabric
+    ]
+
+    Format is similar to that of 1.12 and below forge mcmod.info.
+    Except we don't support multiple mods in a file. 
+    // (Note the following ISN'T a nested dictionary in an array.)
+
+    */
+
+    // only make a copy of this object.
+    $mcmod_orig = [
+        'modid'         =>null, // mandatory 
+        'version'       =>null, // mandatory
+        'name'          =>null,
+        'url'           =>null,
+        'credits'       =>null,
+        'authors'       =>null,
+        'description'   =>null,
+        'mcversion'     =>null, // pulled from dependencies, exact or interval notation
+        'dependencies'  =>[],   // pulled from dependencies, ['dep mod id']
+        'loaderversion' =>null, 
+        'loadertype'    =>null, 
+        'license'       =>null
+    ];
+
+    $mod_info = ['forge'=>null, 'forge_old'=>null, 'fabric'=>null];
+
+    $zip = new ZipArchive();
+    if ($zip->open($filePath) === FALSE)
+        die ("{'status': 'error', 'message': 'Could not open JAR file as ZIP'}");
+
+    if ($modTypes['forge']===TRUE) {
+
+        $raw = $zip->getFromName(FORGE_INFO_PATH);
+        if ($raw === FALSE)
+            die ("{'status': 'error', 'message': 'Could not access info file from Forge mod.'}");
+
+        $toml = new Toml;
+        $parsed = $toml->parse($raw);
+
+        $mod_info['forge']=$mcmod_orig;
+
+        // there can be multiple mods entries, we are just getting the first.
+        foreach ($parsed['mods'] as $mod) {
+            if (empty($mod['modId']))
+                die ("{'status': 'error', 'message': 'Forge info file doesn't contain modId!'}");
+            else
+                $mod_info['forge']['modid'] = strtolower($mod['modId']);
+            if (empty($mod['version']))
+                die ("{'status': 'error', 'message': 'Forge info file does not contain version!'}");
+            else {
+                if ($mod['version']=='${file.jarVersion}')
+                    $mod['version']='';
+                $mod_info['forge']['version'] = $mod['version'];
+            }
+            if (!empty($mod['displayName']))
+                $mod_info['forge']['name'] = $mod['displayName'];
+            if (!empty($mod['displayURL']))
+                $mod_info['forge']['url'] = $mod['displayURL'];
+            if (!empty($mod['credits']))
+                $mod_info['forge']['credits'] = $mod['credits'];
+            if (!empty($mod['authors']))
+                $mod_info['forge']['authors'] = $mod['authors'];
+            if (!empty($mod['description']))
+                $mod_info['forge']['description'] = $mod['description'];
+            break;
+        }
+
+        // handle dependencies and get mcversion, sometimes there can be none.
+        if (!empty($parsed['dependencies']) && !empty($parsed['dependencies'][$mod_info['forge']['modid']])) {
+            // each dependency is an indexed array entry.
+            foreach ($parsed['dependencies'][$mod_info['forge']['modid']] as $dep) {
+                if (empty($dep['modId']))
+                    continue;
+                if (strtolower($dep['modId'])=='minecraft') {
+                    $mod_info['forge']['mcversion'] = $dep['versionRange'];
+                }
+                array_push($mod_info['forge']['dependencies'], strtolower($dep['modId']));
+            }
+        }
+
+        $mod_info['forge']['loadertype'] = 'forge';
+        if (empty($parsed['loaderVersion']))
+            die ("{'status': 'error', 'message': 'Forge info file does not contain loaderVersion!'}");
+        else
+            $mod_info['forge']['loaderversion'] = $parsed['loaderVersion'];
+        if (!empty($parsed['license']))
+            $mod_info['forge']['license'] = $parsed['license'];
+    }
+
+    if ($modTypes['forge_old']===TRUE) {
+
+        $raw = $zip->getFromName(FORGE_OLD_INFO_PATH);
+        if ($raw === FALSE)
+            die ("{'status': 'error', 'message': 'Could not access info file from Old Forge mod.'}");
+
+
+        $mod_info['forge_old']=$mcmod_orig;
+
+        // dictionary is nested in an array
+        $parsed = json_decode(preg_replace('/\r|\n/', '', trim($raw)), true)[0];
+        if (empty($parsed['modid']))
+            die ("{'status': 'error', 'message': 'Old Forge info file does not contain modid!'}");
+        else
+            $mod_info['forge_old']['modid'] = strtolower($parsed['modid']);
+        if (empty($parsed['version']))
+            die ("{'status': 'error', 'message': 'Old Forge info file does not contain version!'}");
+        else {
+            if ($parsed['version']=='${file.jarVersion}')
+                $parsed['version']='';
+            $mod_info['forge_old']['version'] = $parsed['version'];
+        }
+        if (!empty($parsed['name']))
+            $mod_info['forge_old']['name']  = $parsed['name'];
+        if (!empty($parsed['url']))
+            $mod_info['forge_old']['url'] = $parsed['url'];
+        if (!empty($parsed['credits'])) 
+            $mod_info['forge_old']['credits'] = $parsed['credits'];
+        if (!empty($parsed['authorList'])) 
+            $mod_info['forge_old']['authors'] = implode(', ', $parsed['authorList']);
+        if (!empty($parsed['description'])) 
+            $mod_info['forge_old']['description'] = $parsed['description'];
+        $mod_info['forge_old']['mcversion']=$parsed['mcversion'];
+
+        // each dependency is a string
+        if (array_key_exists('dependencies', $parsed)) {
+            foreach ($parsed['dependencies'] as $dep) {
+                if (empty($dep)) 
+                    continue;
+                array_push($mod_info['forge_old']['dependencies'], strtolower($dep));;
+            }
+        }
+
+        $mod_info['forge_old']['loadertype']='forge'; // same
+        // no loaderversion
+        // no license
+    }
+
+    if ($modTypes['fabric']===TRUE) {
+        $raw = $zip->getFromName(FABRIC_INFO_PATH);
+        if ($raw === FALSE)
+            die ("{'status': 'error', 'message': 'Could not access info file from Fabric mod.'}");
+
+
+        $mod_info['fabric']=$mcmod_orig;
+
+        $parsed = json_decode(preg_replace('/\r|\n/', '', trim($raw)), true);
+
+        if (empty($parsed['id']))
+            die ("{'status': 'error', 'message': 'Fabric info file doe not contain id!'}");
+        else
+            $mod_info['fabric']['modid'] = $parsed['id'];
+        if (empty($parsed['version']))
+            die ("{'status': 'error', 'message': 'Fabric info file does not contain version!'}");
+        else
+            $mod_info['fabric']['version'] = $parsed['version'];
+        if (!empty($parsed['name']))
+            $mod_info['fabric']['name'] = $parsed['name'];
+        if (!empty($parsed['contact']) && !empty($parsed['contact']['homepage']))
+            $mod_info['fabric']['url'] = $parsed['contact']['homepage'];
+        // no credits
+        if (!empty($parsed['authors']))
+            $mod_info['fabric']['authors'] = implode(', ', $parsed['authors']);
+        if (!empty($parsed['description']))
+            $mod_info['fabric']['description'] = $parsed['description'];
+
+        // each dependency is a key=value entry.
+        if (array_key_exists('depends', $parsed)) {
+            foreach (array_keys($parsed['depends']) as $depId) {
+                $dep_version = ''; // '' means any...
+
+                if (!empty($parsed['depends'][$depId])) {// unlikely, given data structure
+                    $dep_version_r = $parsed['depends'][$depId];
+                    $matches=[];
+
+                    // >= greater than equal to
+                    if (preg_match('/^>=(.*)/', $dep_version_r, $matches)) {
+                        if (!empty($matches) && !empty($matches[1])) {
+                            $dep_version = '['.$matches[1].',)';
+                        }
+                    }
+                    // < greater than
+                    elseif (preg_match('/^>(.*)/', $dep_version_r, $matches)) {
+                        if (!empty($matches) && !empty($matches[1])) {
+                            $dep_version = '('.$matches[1].',)';
+                        }
+                    }
+                    // <= less than equal to
+                    elseif (preg_match('/^<=(.*)/', $dep_version_r, $matches)) {
+                        if (!empty($matches) && !empty($matches[1])) {
+                            $dep_version = '(,'.$matches[1].']';
+                        }
+                    }
+                    // < less than 
+                    elseif (preg_match('/^<(.*)/', $dep_version_r, $matches)) {
+                        if (!empty($matches) && !empty($matches[1])) {
+                            $dep_version = '(,'.$matches[1].')';
+                        }
+                    }
+                    // ~ approximately (major version)
+                    elseif (preg_match('/^~(.*)/', $dep_version_r, $matches)) {
+                        if (!empty($matches) && !empty($matches[1])) {
+                            $matches_approx=[];
+                            if (preg_match('/^([0-9]+\.[0-9]+)/', $matches[1], $matches_approx)) {
+                                if (!empty($matches_approx) && !empty($matches_approx[1])) { // todo: check that [1] is correct
+                                    $dep_version = $matches_approx[1];
+                                }
+                            }
+                        }
+                    }
+                    // * any
+                    elseif ($dep_version_r=='*') { 
+                        // '' means any...
+                    } 
+                    // exact
+                    else {
+                        $dep_version = $dep_version_r;
+
+                        // if it ends in .x then it's also in interval notation!
+                        if (str_ends_with($dep_version, '.x')) {
+                            $nstr=substr($dep_version, 0, -2);
+                            $nstr_exp=explode('.',$nstr);
+                            $nstr_exp[sizeof($nstr_exp)-1]=strval(intval($nstr_exp[sizeof($nstr_exp)-1])+1);
+                            $dep_version = '['.$nstr.','.implode('.',$nstr_exp).')';
+                        }
+                    }
+                }
+
+                array_push($mod_info['fabric']['dependencies'], $dep_version);
+
+                if (strtolower($depId)=='minecraft') {
+                    $mod_info['fabric']['mcversion']=$dep_version;
+                }
+
+                if (strtolower($depId)=='fabricloader') {
+                    $mod_info['fabric']['loaderversion']=$dep_version;
+                }
+            }
+        }
+
+        $mod_info['fabric']['loadertype']='fabric';
+
+        if (!empty($parsed['license']))
+            $mod_info['fabric']['license'] = $parsed['license'];
+    }
+
+    return $mod_info;
+}
+
+function processFile(string $filePath, string $fileName, array $modinfo): int {
+    // todo: it is possible to craft a 'bad' modinfo data entry. mitigate it?
+
+    global $db;
+    global $config;
+
+    $mod_zip_name=$modinfo['modid'].'-'.slugify2($modinfo['mcversion']).'-'.$modinfo['version'].'.zip';
+    $mod_zip_path='../mods/'.$mod_zip_name;
+    $zip = new ZipArchive();
+
+    if ($zip->open($mod_zip_path, ZipArchive::CREATE)===TRUE) {
+        $zip->addEmptyDir('mods');
+        if ($zip->addFile($filePath, 'mods/'.$fileName)) {
+
+            $zip->close();
+
+            $mod_zip_md5=md5_file($mod_zip_path);
+
+            $mcvrange = mcversion_to_range($modinfo['mcversion']);
+            $mcvmin = !empty($mcvrange['min']) ? $mcvrange['min'] : ''; 
+            $mcvmax = !empty($mcvrange['max']) ? $mcvrange['max'] : '';
+
+            $addq = $db->query("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`mcversion_low`,`mcversion_high`,`filename`,`type`) VALUES ("
+                ."'".$db->sanitize($modinfo['modid'])."',"
+                ."'".$db->sanitize($modinfo['name'])."',"
+                ."'".$db->sanitize($mod_zip_md5)."',"
+                ."'".$db->sanitize('http://'.$config['host'].'/mods/'.$mod_zip_name)."',"
+                ."'".$db->sanitize($modinfo['url'])."',"
+                ."'".$db->sanitize($modinfo['authors'])."',"
+                ."'".$db->sanitize($modinfo['description'])."',"
+                ."'".$db->sanitize($modinfo['version'])."',"
+                ."'".$db->sanitize($modinfo['mcversion'])."',"
+                ."'".$db->sanitize($mcvmin)."',"
+                ."'".$db->sanitize($mcvmax)."',"
+                ."'".$db->sanitize($mod_zip_name)."',"
+                ."'mod')");
+
+            if ($addq) {
+                assert(!empty($db->insert_id()));
+                return $db->insert_id();
+            } else {
+                return -1;
+            }
+        } else {
+            die ("{'status':'error','message':'Could not create zip. Out of disk space?'}");
+        }
+    } else {
+        die ("{'status':'error','message':'Could not create zip. Bad folder permissions?'}");
+    }
+}
+// todo: specify in config if it's http or https!
+
+if (!file_exists($file_tmp))
+    die ("{'status':'error','message':'Uploaded file does not exist!?'}");
+
+// $file_ext = pathinfo($file_tmp, PATHINFO_EXTENSION);
+// if (strtolower($file_ext)!=='jar') {
+//     error_log('got bad file extension '.$file_ext);
+//     die("{'status':'error','message':'Only jar files are supported.'}");
+// }
+
+$modTypes = getModTypes($file_tmp);
+error_log('MODTYPES: '.json_encode($modTypes));
+$modInfos = getModInfos($modTypes, $file_tmp);
+error_log('MODINFOS: '.json_encode($modInfos));
+
+
 if (!isset($db)){
     $db=new Db;
     $db->connect();
 }
 
-$fileName = $_FILES["fiels"]["name"];
-$fileJarInTmpLocation = $_FILES["fiels"]["tmp_name"];
-if (!$fileJarInTmpLocation) {
-    echo '{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') andupload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}';
-    exit();
-}
-require('toml.php');
-require('slugify.php');
-
-$fileNameTmp = explode("-",slugify($fileName));
-array_pop($fileNameTmp);
-$fileNameShort=implode("-",$fileNameTmp);
-$fileNameZip=$fileNameShort.".zip";
-$fileName=$fileNameShort.".jar";
-$fileJarInFolderLocation="../mods/mods-".$fileNameShort."/".$fileName;
-$fileZipLocation="../mods/".$fileNameZip;
-$fileInfo=array();
-if (!file_exists("../mods/mods-".$fileNameShort)) {
-    mkdir("../mods/mods-".$fileNameShort);
-} else {
-    echo '{"status":"error","message":"Folder mods-'.$fileNameShort.' already exists! Please remove it and try again."}';
-    exit();
-}
-$name="";
-function processFile($zipExists, $md5) {
-    global $fileName;
-    global $fileNameZip;
-    global $fileNameShort;
-    global $fileJarInFolderLocation;
-    global $fileZipLocation;
-    global $db;
-    global $warn;
-    global $fileInfo;
-    global $name;
-
-    $legacy=false;
-    $mcmod=array();
-    
-    // error_log('pf start');
-
-    if (@$result=file_get_contents("zip://".realpath($fileJarInFolderLocation)."#META-INF/mods.toml")) {
-        // is a 1.14+ forge mod
-        // error_log("FORGE");
-
-        // todo: technically it's possible to have multiple mods in one file, which the toml parser supports. however we (and the majority of others) don't support this.
-        $toml = new Toml;
-        $mcmod = $toml->parse($result);
-        if (sizeof($mcmod['mods'])==0) {
-            echo '{"status":"error","message":"Could not parse TOML->mods->0."}';
-        }
-        $mcmod['mods']=$mcmod['mods'][0]; 
-
-        // file_put_contents('toml_output.json', JSON_ENCODE($mcmod), FILE_APPEND);
-
-        if (! (array_key_exists('modId', $mcmod['mods'])
-            && array_key_exists('version', $mcmod['mods'])
-            && array_key_exists('displayName', $mcmod['mods'])
-            && (array_key_exists('author', $mcmod['mods']) || array_key_exists('authors', $mcmod['mods']))
-            && array_key_exists('description', $mcmod['mods']))) {
-            $warn['b'] = true;
-            $warn['level'] = "info";
-            $warn['message'] = "There is some information missing in mcmod.info.";
-        }
-
-    // This Fabric section DOES NOT WORK.
-    // currently, before this function is called the jar is uploaded and placed in a folder called mods.
-    // it is also renamed to name-version.JAR, and then zipped (we have a zip file, contianing a mod folder,
-    // containing a zip file renamed to jar, containing a mod folder, containing a jar file)
-    // todo: simply extract the fabric ZIP so we have mod->JAR which is what we expect later in this
-    // function
-
-    } elseif (@$result=file_get_contents("zip://".realpath("../mods/mods-".$fileName."/".$fileName)."#fabric.mod.json")) {
-        // is a fabric mod
-        // error_log("FABRIC");
-
-        $result = file_get_contents("zip://" . realpath("../mods/mods-" . $fileName . "/" . $fileName) . "#fabric.mod.json");
-        $q = json_decode(preg_replace('/\r|\n/', '', trim($result)), true);
-        $mcmod = $q;
-
-        // fill $mcmod['mods']
-        $mcmod['mods']=[];
-        $mcmod['mods']["modId"] = $mcmod["id"];
-        $mcmod['mods']["url"] = $mcmod["contact"]["sources"];
-        $mcmod['mods']["version"] = $mcmod["version"];
-        $mcmod['mods']["displayName"] = $mcmod["name"];
-        $mcmod['mods']["authors"] = $mcmod["authors"];
-        $mcmod['mods']["displayURL"] = implode("\n", $mcmod["contact"]);
-
-        // fill $mcmod['dependencies'][$mcmod['mods']['modId']]
-        $mcmod['dependencies']=[];
-        $mcmod['dependencies'][$mcmod['id']]=[];
-        foreach (array_keys($mcmod['depends']) as $depId) {
-            $depMcVersion=$mcmod['depends'][$depId];
-            $newdep=[];
-            $newdep['modId']=$depId;
-
-            // >=
-            $matches=[];
-            if (preg_match("/^>=(.*)/", $depMcVersion, $matches)) {
-                $newdep['versionRange']="[".$matches[1].",)";
-            }
-            // <=
-            elseif (preg_match("/<=(.*)/", $depMcVersion, $matches)) {
-                $v=$matches[1];
-                $newdep['versionRange']="(,".$matches[1]."]";
-            }
-            // ~
-            elseif (preg_match("/^~(.*)/", $depMcVersion, $matches)) {
-                $newdep['versionRange']=$matches[1];
-            }
-
-            array_push($mcmod['dependencies'][$mcmod['id']], $newdep);
-        }
-
-        // error_log(json_encode($mcmod));
-        
-        if (!$mcmod['modid'] || !$mcmod['name'] || !$mcmod['description'] || !$mcmod['version'] || !$mcmod['mcversion'] || !$mcmod['url'] || !$mcmod['authorList']) {
-            $warn['b'] = true;
-            $warn['level'] = "info";
-            $warn['message'] = "There is some information missing in fabric.mod.json.";
-        }
-    } elseif (@$result=file_get_contents("zip://".realpath($fileJarInFolderLocation)."#mcmod.info")) {
-        // is legacy mod
-        // error_log("LEGACY");
-
-        $legacy=true;
-        $mcmod = json_decode(preg_replace('/\r|\n/','',trim($result)),true)[0];
-        if (!$mcmod['modid']||!$mcmod['name']||!$mcmod['description']||!$mcmod['version']||!$mcmod['mcversion']||!$mcmod['url']||!$mcmod['authorList']) {
-            $warn['b'] = true;
-            $warn['level'] = "info";
-            $warn['message'] = "There is some information missing in mcmod.info.";
-        }
+// we only care about the first mod.
+// todo: in delete modv, add a check to see if the file is used by another mod entry.
+// ie. same file for both forge and fabric loader types!
+$added_ids=[];
+$added_modids=[];
+foreach ($modInfos as $modinfo) {
+    if (empty($modinfo))
+        continue;
+    $result_mod_id = processFile($file_tmp, $file_name, $modinfo);
+    if ($result_mod_id === -1) {
+        die("{'status':'error','message':'Unable to add mod to database.', 'name': '".$file_name."'}");
     } else {
-        // we don't know what type of mod this is...
-        // error_log("IDFK");
-
-        $warn['b'] = true;
-        $warn['level'] = "warn";
-        $warn['message'] = "File does not contain any type of known mod info. Manual configuration required.";
-    }
-
-
-    // error_log('pf zipcheck');
-
-    if (!$zipExists) {
-        $zip = new ZipArchive();
-        if ($zip->open($fileZipLocation, ZIPARCHIVE::CREATE) !== TRUE) {
-            echo '{"status":"error","message":"Could not open archive"}';
-        }
-        $zip->addEmptyDir('mods');
-        if (is_file($fileJarInFolderLocation)) {
-            $zip->addFile($fileJarInFolderLocation, "mods/".$fileName) or die ('{"status":"error","message":"Could not add file $key"}');
-        }
-        $zip->close();
-    }
-
-
-    if ($legacy) {
-        // legacy forge 1.14-
-
-        // error_log('legacy');
-
-        if (!$mcmod['name']) {
-            $pretty_name = $fileNameShort;
-        } else {
-            $pretty_name = $mcmod['name'];
-        }
-        if (!$mcmod['modid']) {
-            $name = slugify($pretty_name);
-        } else {
-            if (@preg_match("^[a-z0-9]+(?:-[a-z0-9]+)*$", $mcmod['modid'])) {
-                $name = $mcmod['modid'];
-            } else {
-                $name = slugify($mcmod['modid']);
-            }
-        }
-        $link = $mcmod['url'];
-        $author = implode(', ', $mcmod['authorList']);
-        $description = $mcmod['description'];
-        $version = $mcmod['version'];
-        $mcversion = $mcmod['mcversion'];
-    } else { // forge 1.14+, fabric
-        // error_log('forge/fabric');
-
-        $pretty_name = array_key_exists('displayName', $mcmod['mods']) ? $mcmod['mods']['displayName'] : "";
-
-        $name = "";
-        if (array_key_exists('modId', $mcmod['mods'])) {
-            if (preg_match("/^[a-z0-9]+(?:-[a-z0-9]+)*$/", $mcmod['mods']['modId'])) {
-                $name = $mcmod['mods']['modId'];
-            } else {
-                $name = slugify($mcmod['mods']['modId']);
-            }
-        } else {
-            // get the slug from the filename
-            $exploded_filename = explode("-", $fileInfo['filename']);
-            if (sizeof($exploded_filename)>0) {
-                $name=$exploded_filename[0];
-            } else {
-                $warn['b'] = true;
-                $warn['level'] = "info";
-                $warn['message'] = "There is some information missing in mcmod.info.";
-            }
-        }
-
-        $link = array_key_exists('displayURL', $mcmod['mods']) ? $mcmod['mods']['displayURL'] : "";
-
-        $author = array_key_exists('author', $mcmod['mods']) ? $mcmod['mods']['author'] : $mcmod['mods']['authors'];
-
-        $description = array_key_exists('description', $mcmod['mods']) ? $mcmod['mods']['description'] : "";
-
-        $mcversion=""; // (bad) placeholder
-        // attempt to pull out necessary dependency information from toml
-        if (array_key_exists('dependencies', $mcmod)) {
-            if (array_key_exists($name, $mcmod['dependencies'])) {
-                foreach ($mcmod['dependencies'][$name] as $dependency) {
-
-                    $dependency_modId=$dependency['modId'];
-                    // $dependency_mandatory=$dependency['mandatory'];
-                    $dependency_versionRange=$dependency['versionRange'];
-                    // $dependency_ordering=$dependency['ordering'];
-                    // $dependency_side=$dependency['side'];
-
-                    if ($dependency_modId=='minecraft') {
-                        // we currently just need the dependent minecraft version.
-                        $mcversion=$dependency_versionRange;
-                        break;
-                    }
-
-                    // todo: check other dependencies of this mod
-                }
-            } else {
-                // file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
-            }
-        } else {
-            // file_put_contents("error.log","couldn't find dependencies!\n", FILE_APPEND);
-        }
-
-        // see if loaderVersion matches something in forges...
-        if ($mcversion==="" && array_key_exists('loaderVersion',$mcmod)) {
-            require('interval_range_utils.php');
-            $querystring = "SELECT version,mcversion FROM mods WHERE type='forge' ORDER BY version ASC";
-            $query = $db->query($querystring);
-            if (sizeof($query)>0) { // if we even have any forges
-                foreach ($query as $row) {
-                    // file_put_contents("../status.log", "got a forge: ".JSON_ENCODE($row)."\n", FILE_APPEND);
-                    if (in_range($row['version'], $mcmod['loaderVersion'])) {
-                        // file_put_contents("../status.log", "got mcversion: ".$row['mcversion']."\n", FILE_APPEND);
-                        $mcversion=$row['mcversion'];
-
-                        // this is still considered missing, since our forge versions specify a lower bound but no upper bound. ie. we may over estimate the compatible minecraft version.
-                        $warn['b'] = true;
-                        $warn['level'] = "info";
-                        $warn['message'] = "There is some information missing in mcmod.info.";
-                        break;
-                    }
-                }
-            }
-        }
-        
-        // if we're still missing mcversion, just report it to the user...
-        if ($mcversion==="") {
-            $warn['b'] = true;
-            $warn['level'] = "info";
-            $warn['message'] = "There is some information missing in mcmod.info.";
-        }
-
-        $version = $mcmod['mods']['version'];
-        // if needed, attempt to pull out version from filename
-        if ($version == "\${file.jarVersion}" ) {
-            $tmpFilename=explode('-', $fileNameShort);
-            array_shift($tmpFilename);
-            $tmpFilename = implode('.', $tmpFilename);
-            $version = $tmpFilename;
-        }
-
-        if ($version == "\${file.jarVersion}") {
-            $warn['b'] = true;
-            $warn['level'] = "info";
-            $warn['message'] = "There is some information missing in mcmod.info.";
-        }
-    }
-
-    // calculate md5 if we just created the zip
-    if (!$zipExists) {
-        $md5 = md5_file("../mods/".$fileInfo['filename'].".zip");
-    }
-
-    //$url = "http://".$config['host'].$config['dir']."mods/".$fileInfo['filename'].".zip";
-
-    $res_query_string="INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`) VALUES ("."'"   .$db->sanitize($name)
-        ."', '".$db->sanitize($pretty_name)
-        ."', '".$db->sanitize($md5)
-        ."', '".$db->sanitize("")
-        ."', '".$db->sanitize($link)
-        ."', '".$db->sanitize($author)
-        ."', '".$db->sanitize($description)
-        ."', '".$db->sanitize($version)
-        ."', '".$db->sanitize($mcversion)
-        ."', '".$db->sanitize($fileNameZip)
-        ."', 'mod')";
-    
-    // file_put_contents("error.log", $res_query_string, FILE_APPEND);
-
-    $res = $db->query($res_query_string);
-    if ($res) {
-        if (@$warn['b']==true) {
-            if ($warn['level']=="info") {
-                echo '{"status":"info","message":"'.$warn['message'].'","modid":'.$db->insert_id().'}';
-            } else {
-                echo '{"status":"warn","message":"'.$warn['message'].'","modid":'.$db->insert_id().'}';
-            }
-
-        } else {
-            echo '{"status":"succ","message":"Mod has been uploaded and saved.","modid":'.$db->insert_id().',"name":"'.$fileName.'"}';
-        }
-    } else {
-        echo '{"status":"error","message":"Mod could not be added to database"}';
+        error_log('Successfully added modid='.$modinfo['modid'].' id='.$result_mod_id.' to database!');
+        array_push($added_modids, $modinfo['modid']);
+        array_push($added_ids, $result_mod_id);
     }
 }
 
-if (move_uploaded_file($fileJarInTmpLocation, $fileJarInFolderLocation)) {
-    $fileInfo = pathinfo($fileJarInFolderLocation);
-    if (file_exists($fileZipLocation)) {
-        $md5_1 = md5_file($fileJarInFolderLocation);
-        $md5_2 = md5_file("zip://".realpath($fileZipLocation)."#mods/".$fileName);
-        if ($md5_1 !== $md5_2) {
-            echo '{"status":"error","message":"File with name \''.$fileName.'\' already exists!","md51":"'.$md5_1.'","md52":"'.$md5_2.'","zip":"'.$fileJarInFolderLocation.'"}';
-        } else {
-            $fq = $db->query("SELECT `id` FROM `mods` WHERE `filename` = '".$fileNameZip."'");
-            if (sizeof($fq)==1) {
-                $fq=$fq[0];
-                echo '{"status":"info","message":"This mod is already in the database.","modid":'.$fq['id'].',"name":"'.$fileName.'"}';
-            } else {
-                processFile(true, $md5_1); // use existing zip
-            }
-        }
-    } else {
-        processFile(false, ''); // create zip
-    }
-    unlink($fileJarInFolderLocation);
-    rmdir("../mods/mods-".$fileNameShort);
+$db->disconnect();
 
-} else {
-    echo '{"status":"error","message":"Permission denied! Please open SSH and run \'chown -R www-data '.addslashes(dirname(dirname(get_included_files()[0]))).'\'"}';
-}
+// get the last one added. we don't support displaying multiple..
+// todo: support displaying multiple in index.php
+// modid appears to be the id in the database, name appears to be modid...
+// error_log("{'status':'succ', 'message': 'Uploaded and saved.', 'modid': ".$added_ids[sizeof($added_ids)-1].", 'name': '".$added_modids[sizeof($added_modids)-1]."'}");
+// echo ("{'status':'succ', 'message': 'Uploaded and saved.', 'modid': ".$added_ids[sizeof($added_ids)-1].", 'name': '".$added_modids[sizeof($added_modids)-1]."'}");
+error_log('{"status":"succ","message":"Mod has been uploaded and saved.","modid":'.$added_ids[sizeof($added_ids)-1].',"name":"'.$added_modids[sizeof($added_modids)-1].'"}');
+echo '{"status":"succ","message":"Mod has been uploaded and saved.","modid":'.$added_ids[sizeof($added_ids)-1].',"name":"'.$added_modids[sizeof($added_modids)-1].'"}';
+
+exit();
 ?>
