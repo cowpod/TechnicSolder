@@ -181,6 +181,11 @@ Installation is complete. Now you need to configure TechnicSolder before using i
 >             return 403;
 >     }
 >
+>    # block access to sqlite database file
+>    location = ~* /db\.sqlite$ {
+>             deny all;
+>    }>
+
 >     error_page 403 /403.html;
 >     
 >     location ~* \.(?:ico|css|js|jpe?g|JPG|png|svg|woff)$ {
