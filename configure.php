@@ -142,7 +142,8 @@ $db=new Db;
                             mcversion_low VARCHAR(128),
                             mcversion_high VARCHAR(128),
                             filename VARCHAR(128),
-                            type VARCHAR(128));";
+                            type VARCHAR(128),
+                            loadertype VARCHAR(128));";
                         $db->query($sql);
 
                         $db->disconnect();

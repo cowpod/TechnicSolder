@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: application/json');
+
 session_start();
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die('{"status":"error","message":"Login session has expired"}');
@@ -28,6 +29,7 @@ if (empty($file_tmp)) {
 require('toml.php');
 require('slugify.php');
 require('interval_range_utils.php');
+require('compareZipContents.php');
 
 define('FABRIC_INFO_PATH', 'fabric.mod.json');
 define('FORGE_INFO_PATH', 'META-INF/mods.toml');
@@ -318,30 +320,54 @@ function getModInfos(array $modTypes, string $filePath): array {
 function processFile(string $filePath, string $fileName, array $modinfo): int {
     // todo: it is possible to craft a 'bad' modinfo data entry. mitigate it?
 
+    if (!is_dir('../mods/tmp')) {
+        mkdir('../mods/tmp',0755,TRUE);
+    }
+
     global $db;
     global $config;
 
-    $mod_zip_name=$modinfo['modid'].'-'.slugify2($modinfo['mcversion']).'-'.$modinfo['version'].'.zip';
-    $mod_zip_path='../mods/'.$mod_zip_name;
+    $mod_zip_name = $modinfo['modid'].'-'.slugify2($modinfo['mcversion']).'-'.$modinfo['version'].'.zip';
+    $mod_zip_path_tmp ='../mods/tmp/'.$mod_zip_name;
+    $mod_zip_path ='../mods/'.$mod_zip_name;
     $zip = new ZipArchive();
 
-    if ($zip->open($mod_zip_path, ZipArchive::CREATE)===TRUE) {
+    if ($zip->open($mod_zip_path_tmp, ZipArchive::CREATE|ZipArchive::OVERWRITE)===TRUE) {
         $zip->addEmptyDir('mods');
-        if ($zip->addFile($filePath, 'mods/'.$fileName)) {
+        $zip->setCompressionName('mods', ZipArchive::CM_STORE); 
 
+        if ($zip->addFile($filePath, 'mods/'.$fileName)) { 
+            $zip->setCompressionName($filePath, ZipArchive::CM_STORE); 
             $zip->close();
 
-            $mod_zip_md5=md5_file($mod_zip_path);
+            // if a file exists with same name, look for a file with duplicate contents OR rename it
+
+            // if we got a file with the same name and is DIFFERENT
+            if (file_exists($mod_zip_path) && compareZipContents($mod_zip_path, $mod_zip_path_tmp)===FALSE) {
+                $counter=1;
+                $new_dest_name = str_replace('.zip', '-'.$counter.'.zip', $mod_zip_path);
+                // if our new name also exists and is DIFFERENT
+                while(file_exists($new_dest_name) && compareZipContents($new_dest_name, $mod_zip_path_tmp)!==FALSE) {
+                    $counter+=1;
+                    $new_dest_name = str_replace('.zip', '-'.$counter.'.zip', $mod_zip_path);
+                }
+                $mod_zip_path = $new_dest_name;
+             }
+
+            // move tmp zip to actual zip, overwriting if identical
+            rename($mod_zip_path_tmp, $mod_zip_path);
+
+            $mod_zip_md5 = md5_file($mod_zip_path);
 
             $mcvrange = mcversion_to_range($modinfo['mcversion']);
             $mcvmin = !empty($mcvrange['min']) ? $mcvrange['min'] : ''; 
             $mcvmax = !empty($mcvrange['max']) ? $mcvrange['max'] : '';
 
-            $addq = $db->query("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`mcversion_low`,`mcversion_high`,`filename`,`type`) VALUES ("
+            $addq = $db->query("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`mcversion_low`,`mcversion_high`,`filename`,`type`,`loadertype`) VALUES ("
                 ."'".$db->sanitize($modinfo['modid'])."',"
                 ."'".$db->sanitize($modinfo['name'])."',"
                 ."'".$db->sanitize($mod_zip_md5)."',"
-                ."'".$db->sanitize('http://'.$config['host'].'/mods/'.$mod_zip_name)."',"
+                ."'"."',"
                 ."'".$db->sanitize($modinfo['url'])."',"
                 ."'".$db->sanitize($modinfo['authors'])."',"
                 ."'".$db->sanitize($modinfo['description'])."',"
@@ -349,8 +375,10 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
                 ."'".$db->sanitize($modinfo['mcversion'])."',"
                 ."'".$db->sanitize($mcvmin)."',"
                 ."'".$db->sanitize($mcvmax)."',"
-                ."'".$db->sanitize($mod_zip_name)."',"
-                ."'mod')");
+                ."'".$db->sanitize(basename($mod_zip_path))."',"
+                ."'mod',"
+                ."'".$db->sanitize($modinfo['loadertype'])."'"
+                .")");
 
             if ($addq) {
                 assert(!empty($db->insert_id()));
@@ -369,12 +397,6 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
 
 if (!file_exists($file_tmp))
     die ("{'status':'error','message':'Uploaded file does not exist!?'}");
-
-// $file_ext = pathinfo($file_tmp, PATHINFO_EXTENSION);
-// if (strtolower($file_ext)!=='jar') {
-//     error_log('got bad file extension '.$file_ext);
-//     die("{'status':'error','message':'Only jar files are supported.'}");
-// }
 
 $modTypes = getModTypes($file_tmp);
 error_log('MODTYPES: '.json_encode($modTypes));
@@ -395,6 +417,14 @@ $added_modids=[];
 foreach ($modInfos as $modinfo) {
     if (empty($modinfo))
         continue;
+
+    // if we have another mod of same version, name, mcversion, type, loadertype
+    $query_mod_exists = $db->query("SELECT 1 FROM mods WHERE version = '".$db->sanitize($modinfo['version'])."' AND name = '".$db->sanitize($modinfo['modid'])."' AND mcversion = '".$db->sanitize($modinfo['mcversion'])."' AND `type` = 'mod' AND `loadertype` = '".$db->sanitize($modinfo['loadertype'])."' LIMIT 1");
+    if ($query_mod_exists && sizeof($query_mod_exists)>0) {
+        die('{"status": "error","message":"Mod already in database!"}');
+    }
+    // consequence: we allow multiple loadertypes (ie fabric, forge) of the exact same mod
+
     $result_mod_id = processFile($file_tmp, $file_name, $modinfo);
     if ($result_mod_id === -1) {
         die("{'status':'error','message':'Unable to add mod to database.', 'name': '".$file_name."'}");

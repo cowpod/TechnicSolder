@@ -13,6 +13,7 @@ $db->connect();
 // 1.4.0: mod version ranges
 $addlow=$db->query("ALTER TABLE `mods` ADD COLUMN `mcversion_low` VARCHAR(128);");
 $addhigh=$db->query("ALTER TABLE `mods` ADD COLUMN `mcversion_high` VARCHAR(128);");
+$addhigh=$db->query("ALTER TABLE `mods` ADD COLUMN `loadertype` VARCHAR(128);");
 
 if (!$addlow||!$addhigh) {
     die("Couldn't add new columns mcversion_low, mcversion_high to table `mods`! Are we already upgraded?");
