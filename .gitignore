@@ -4,6 +4,7 @@ others/
 test.toml
 functions/config.php
 functions/cache.json
+db.sqlite
 
 # IntelliJ
 .idea/

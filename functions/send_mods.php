@@ -35,6 +35,8 @@ define('FABRIC_INFO_PATH', 'fabric.mod.json');
 define('FORGE_INFO_PATH', 'META-INF/mods.toml');
 define('FORGE_OLD_INFO_PATH', 'mcmod.info');
 
+// todo: implement warning system for missing mod info
+
 function getModTypes(string $filePath): array {
     // returns a dictionary ['fabric'=>bool,'forge'=>bool,'forge_old'=>bool] 
     // representing each detected mod type

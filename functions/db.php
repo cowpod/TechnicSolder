@@ -5,8 +5,6 @@ class Db {
 
 	private function get_including_file() {
 	    $backtrace = debug_backtrace();
-	    
-	    // Index 0 is the current file, index 1 will be the file that included it
 	    if (isset($backtrace[0]) && isset($backtrace[1])) {
 	        return $backtrace[1]['file']."@".$backtrace[1]['line'];
 	    } else {
@@ -19,26 +17,31 @@ class Db {
 			$this->conf = include("./config.php");
 		} elseif (file_exists("./functions/config.php")) {
 			$this->conf = include("./functions/config.php");
-		} else {
-		    error_log("db.php: __construct(): Missing configuration!");
 		}
-
-		if (! (isset($this->conf['db-host']) 
-			&& isset($this->conf['db-user'])
-			&& isset($this->conf['db-pass'])
-			&& isset($this->conf['db-name']))) {
+		if ($this->conf===NULL) {
+		    error_log("db.php: __construct(): Missing config.php?!");
+		} elseif (!empty($this->conf['db-type']) && $this->conf['db-type']=='sqlite') {
+			// 
+		} elseif(empty($this->conf['db-host']) && empty($this->conf['db-user']) && empty($this->conf['db-pass']) && empty($this->conf['db-name'])) {
 		    error_log("db.php: __construct(): Configuration is missing some database information!");
 		}
-		
-		// doesn't matter if we're missing config.php - assume we're setting up or testing
-		return true;
+		return true; // can provide arguments later, bypassing config!
 	}
 
-	public function test() {
-		// POST
-		$testconn;
+	public function test() { // POST
+		if ($this->conf===null) {  // __construct again, maybe we have config.php now
+			$this->__construct();
+		}
 		try {
-		    $testconn = new PDO("mysql:host=".$_POST['db-host'].";dbname=".$_POST['db-name'].";charset=utf8", $_POST['db-user'], $_POST['db-pass']);
+			if ($_POST['db-type']=='sqlite') {
+				if (is_dir('./functions')) {
+					$testconn = new PDO('sqlite:db.sqlite');
+				} else {
+					$testconn = new PDO('sqlite:../db.sqlite');
+				}
+			} else {
+			    $testconn = new PDO($_POST['db-type'].":host=".$_POST['db-host'].";dbname=".$_POST['db-name'].";charset=utf8", $_POST['db-user'], $_POST['db-pass']);
+			}
 		    $testconn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		} catch (PDOException $e) {
 		    error_log("db.php: test(): Connection test failed: ".$e->getMessage());
@@ -48,11 +51,17 @@ class Db {
 		return true; 
 	}
 
-	public function test2($host, $user, $pass, $name) {
-		// arg
-		$testconn;
+	public function test2($dbtype, $host, $user, $pass, $name) { // Arg
 		try {
-		    $testconn = new PDO("mysql:host=$host;dbname=$name;charset=utf8", $user, $pass);
+			if ($dbtype=='sqlite') {
+				if (is_dir('./functions')) {
+					$testconn = new PDO('sqlite:db.sqlite');
+				} else {
+					$testconn = new PDO('sqlite:../db.sqlite');
+				}
+			} else {
+		    	$testconn = new PDO("$dbtype:host=$host;dbname=$name;charset=utf8", $user, $pass);
+		    }
 		    $testconn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		} catch (PDOException $e) {
 		    error_log("db.php: test(): Connection test failed: ".$e->getMessage());
@@ -62,34 +71,51 @@ class Db {
 		return true; 
 	}
 
-	public function connect() {
-		// config
-		if (isset($this->conn)) {
+	public function connect() { // config
+		if ($this->conf===null) { // __construct again, maybe we have config.php now
+			$this->__construct();
+		}
+		if (!empty($this->conn)) {
 			error_log("db.php: connect(): already connected!");
-			return true;
+			return TRUE;
 		}
 		try {
-		    $this->conn = new PDO("mysql:host=".$this->conf['db-host'].";dbname=".$this->conf['db-name'].";charset=utf8", $this->conf['db-user'], $this->conf['db-pass']);
+			if ($this->conf['db-type']=='sqlite') {
+				if (is_dir('./functions')) {
+					$this->conn = new PDO('sqlite:db.sqlite');
+				} else {
+					$this->conn = new PDO('sqlite:../db.sqlite');
+				}
+			} else {
+		    	$this->conn = new PDO($this->conf['db-type'].":host=".$this->conf['db-host'].";dbname=".$this->conf['db-name'].";charset=utf8", $this->conf['db-user'], $this->conf['db-pass']);
+		    }
 		} catch (PDOException $e) {
 		    error_log("Connection failed : " . $e->getMessage());
-		    return false;
+		    return FALSE;
 		}
-		return true;
+		return TRUE;
 	}
 
-	public function connect2($host, $user, $pass, $name) {
-		// arg
-		if (isset($this->conn)) {
+	public function connect2($dbtype, $host, $user, $pass, $name) { // Arg
+		if (!empty($this->conn)) {
 			error_log("db.php: connect2(): already connected!");
-			return true;
+			return TRUE;
 		}
 		try {
-		    $this->conn = new PDO("mysql:host=$host;dbname=$name;charset=utf8", $user, $pass);
+			if ($dbtype=='sqlite') {
+				if (is_dir('./functions')) {
+					$this->conn = new PDO('sqlite:db.sqlite');
+				} else {
+					$this->conn = new PDO('sqlite:../db.sqlite');
+				}
+			} else {
+		    	$this->conn = new PDO("$dbtype:host=$host;dbname=$name;charset=utf8", $user, $pass);
+		    }
 		} catch (PDOException $e) {
 		    error_log("Connection failed : " . $e->getMessage());
-		    return false;
+		    return FALSE;
 		}
-		return true;
+		return TRUE;
 	}
 
 	public function disconnect(){
@@ -101,49 +127,24 @@ class Db {
 		if (empty($querystring)) {
 			return false;
 		}
-		$one_time_connection=false;
-
-		// one-time connection if $conn isn't set
-		if (!isset($this->conn)) {
-			if ($this->connect()) {
-				$one_time_connection=true;
-			} else {
-				error_log("db.php: query(): failed to open one-time connection");
-				return false;
-			}
-		}
-		// error_log('QUERY: '.$querystring);
-		$ret=[];
+		$result_array=[];
 		try {
 			$stmt = $this->conn->prepare($querystring);
 			$result = $stmt->execute();
 			$stmt->setFetchMode(PDO::FETCH_ASSOC);
 			foreach($stmt->fetchAll() as $row) {
-			    array_push($ret, $row);
+			    array_push($result_array, $row);
 			}
 		} catch (PDOException $e) {
 		    error_log("db.php: query(): SQL query exception: ".$e->getMessage());
 		}
-		// error_log('RESULT: '.json_encode($ret));
-		if ($one_time_connection) $this->disconnect();
-		return $ret;
+		return $result_array;
 	}
 
 	public function execute($querystring) {
 		if (empty($querystring)) {
 			return false;
 		}
-		$one_time_connection=false;
-		// one-time connection if $conn isn't set
-		if (!isset($this->conn)) {
-			if ($this->connect()) {
-				$one_time_connection=true;
-			} else {
-				error_log("db.php: execute(): failed to open one-time connection");
-				return false;
-			}
-		}
-		// error_log('QUERY: '.$querystring);
 		try {
 			$stmt = $this->conn->prepare($querystring);
 			$result = $stmt->execute();
@@ -155,7 +156,7 @@ class Db {
 
 
 	public function sanitize($querystring) {
-		return $querystring;
+		return addslashes(htmlspecialchars($querystring, ENT_QUOTES, 'UTF-8'));
 	}
 
 	public function insert_id() {

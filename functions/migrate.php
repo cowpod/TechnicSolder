@@ -30,7 +30,7 @@ $db=new Db;
 $db->connect(); // connect from config.php
 
 $db2=new Db;
-$db2->connect2($_POST['db-host'],$_POST['db-user'],$_POST['db-pass'],$_POST['db-name']); // connect from user-provided POST
+$db2->connect2($_POST['db-type'], $_POST['db-host'],$_POST['db-user'],$_POST['db-pass'],$_POST['db-name']); // connect from user-provided POST
 if (!$db2) {
     die("error");
 }

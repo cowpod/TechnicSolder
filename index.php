@@ -24,7 +24,7 @@ if (file_exists("./functions/cache.json")) {
 
 require_once("./functions/db.php");
 $db = new Db;
-if (!$db->connect()) {
+if ($db->connect()===FALSE) {
     die("Couldn't connect to database!");
 }
 
@@ -1423,11 +1423,24 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
 
                                         ?></td>
                                         <td>
-                                            <?php if ($moda['type'] == "forge" || $moda['type'] == "other") {
+                                            <?php if ($moda['type'] !== "mod") {
                                                 echo $moda['version'];
                                             } else { ?>
-                                                <select class="form-control" onchange="changeversion(this.value,<?php echo $moda['id'] ?>,'<?php echo $moda['name'] ?>',<?php if ($moda['mcversion']!==$user['minecraft'] && $moda['type']=="mod" ){echo 'false';} else { echo 'true'; } ?>);" name="bmversions" id="bmversions-<?php echo $moda['name'] ?>"><?php
+                                                <select class="form-control" onchange="changeversion(this.value,<?php 
+                                                echo $moda['id'] 
+                                                    ?>,'<?php 
+                                                echo $moda['name'] 
+                                                    ?>',<?php 
+                                                if (!in_range($moda['mcversion'], $user['minecraft'])){
+                                                    echo 'false';
+                                                } else { 
+                                                    echo 'true'; 
+                                                } 
+                                                    ?>);" name="bmversions" id="bmversions-<?php 
+                                                echo $moda['name'] ?>"><?php
                                                 foreach ($modvq as $mv) {
+                                                    if (empty($mv['version']))
+                                                        $mv['version']='Unknown';
                                                     if ($mv['id'] == $moda['id']) {
                                                         echo "<option selected value='".$mv['id']."'>".$mv['version']."</option>";
                                                     } else {
