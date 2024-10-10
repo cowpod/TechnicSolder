@@ -2962,74 +2962,73 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         <?php
         } elseif (uri("/file")) {
             $mres = $db->query("SELECT * FROM `mods` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
-            $file = ($mres);
+            if ($mres) {
+                assert(sizeof($mres)==0);
+                $file = $mres[0];
+            }
             ?>
             <script>
+                function structurize(paths) {
+                    var items = [];
+                    for(var i = 0, l = paths.length; i < l; i++) {
+                        var path = paths[i];
+                        var name = path[0];
+                        var rest = path.slice(1);
+                        var item = null;
+                        for(var j = 0, m = items.length; j < m; j++) {
+                            if (items[j].name === name) {
+                                item = items[j];
+                                break;
+                            }
+                        }
+                        if (item === null) {
+                            item = {name: name, children: []};
+                            items.push(item);
+                        }
+                        if (rest.length > 0) {
+                            item.children.push(rest);
+                        }
+                    }
+                    for(i = 0, l = items.length; i < l; i++) {
+                        item = items[i];
+                        item.children = structurize(item.children);
+                    }
+                    return items;
+                }
+
+                function stringify(items) {
+                    var lines = [];
+                    for(var i = 0, l = items.length; i < l; i++) {
+                        var item = items[i];
+                        lines.push(item.name);
+                        var subLines = stringify(item.children);
+                        for(var j = 0, m = subLines.length; j < m; j++) {
+                            lines.push("    " + subLines[j]);
+                        }
+                    }
+                    return lines;
+                }
+            </script>
+            <script>
                 document.title = 'File - <?php echo addslashes($file['name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';
+
                 $(document).ready(function(){
                     $("#nav-mods").trigger('click');
-
-                                    var paths = [];
-                <?php
-                    $zip = zip_open('./others/'.$file['filename']);
-
-                    if ($zip) {
-                        while ($zip_entry = zip_read($zip)) {
-                            echo 'paths.push("' . zip_entry_name($zip_entry) . '".replace(/\/+$/,\'\'));';
+                    var paths = [];
+                    <?php
+                    $zip = new ZipArchive;
+                    if ($zip->open('./others/'.$file['filename'])===TRUE) {
+                        for ($i=0; $i<$zip->numFiles; $i++) {
+                            $fileInfo = $zip->getNameIndex($i);
+                            echo 'paths.push("' . $zip->getNameIndex($i) . '".replace(/\/+$/,\'\'));';
                         }
-
-                        zip_close($zip);
+                        $zip->close();
                     }
-                ?>
-                paths = paths.map(function(path) { return path.split('/'); });
-                $("#files_ul").html(stringify(structurize(paths)).join("\n"));
-                $("#loadingfiles").hide();
+                    ?>
+                    paths = paths.map(function(path) { return path.split('/'); });
+                    $("#files_ul").html(stringify(structurize(paths)).join("\n"));
+                    $("#loadingfiles").hide();
                 });
-
-
-
-function structurize(paths) {
-    var items = [];
-    for(var i = 0, l = paths.length; i < l; i++) {
-        var path = paths[i];
-        var name = path[0];
-        var rest = path.slice(1);
-        var item = null;
-        for(var j = 0, m = items.length; j < m; j++) {
-            if (items[j].name === name) {
-                item = items[j];
-                break;
-            }
-        }
-        if (item === null) {
-            item = {name: name, children: []};
-            items.push(item);
-        }
-        if (rest.length > 0) {
-            item.children.push(rest);
-        }
-    }
-    for(i = 0, l = items.length; i < l; i++) {
-        item = items[i];
-        item.children = structurize(item.children);
-    }
-    return items;
-}
-
-function stringify(items) {
-    var lines = [];
-    for(var i = 0, l = items.length; i < l; i++) {
-        var item = items[i];
-        lines.push(item.name);
-        var subLines = stringify(item.children);
-        for(var j = 0, m = subLines.length; j < m; j++) {
-            lines.push("    " + subLines[j]);
-        }
-    }
-    return lines;
-}
-
-
             </script>
             <div class="main">
                 <div class="card">
