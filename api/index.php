@@ -249,7 +249,7 @@ foreach($result as $modpack) {
                                             "name" => $modinfo['name'],
                                             "version" => $modinfo['version'],
                                             "md5" => $modinfo['md5'],
-                                            "url" => "http://".$config['host'].$config['dir'].$modinfo['type']."s/".$modinfo['filename']
+                                            "url" => current(explode('/',$_SERVER['SERVER_PROTOCOL'])).'://'.$config['host'].$config['dir'].$modinfo['type']."s/".$modinfo['filename']
                                         );
                                     } else {
                                         $mods[$modnumber] = array(
