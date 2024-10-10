@@ -389,7 +389,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </div>
             </span>
         </nav>
-        <script type="text/javascript">
+        <script>
             $(".navbar-brand").click(function(){
                 $("#sidenav").toggleClass("sidenavexpand");
             });
@@ -413,7 +413,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <label class="custom-control-label" for="dark">Dark theme</label>
                 </div>
             </ul>
-            <script type="text/javascript">
+            <script>
                 $("#dark").click(function(){
                     if ($("#dark").is(":checked")){
                         if (window.location.href.indexOf("?light") > -1 || window.location.href.indexOf("&light") > -1) {
@@ -715,7 +715,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <br />
                             <input autocomplete="off" id="modlist" required readonly class="form-control" type="text" name="modlist" placeholder="Mods to add" />
                             <br />
-                            <script type="text/javascript">
+                            <script>
                                 $("#dn").on("keyup", function(){
                                     var slug = slugify($(this).val());
                                     $("#slug").val(slug);
@@ -779,7 +779,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             </table>
                             <button id="btn-done" disabled class="btn btn-success btn-block" onclick="againMods();">Add more Mods</button>
                         </div>
-                        <script type="text/javascript">
+                        <script>
                             var formdisabled = true;
                             $('#modsform').submit(function() {
                                 if (formDisabled) {
@@ -936,7 +936,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <input type="text" class="form-control" id="origdir" placeholder="Path to original solder install directory (ex. /var/www/solder)"><br>
                             <button class="btn btn-primary" id="submitmigration">Start Migration</button>
                         </div>
-                        <script type="text/javascript">
+                        <script>
                             $("#submitmigration").click(function(){
                                 $("#submitmigration").attr('disabled',true);
                                 $("#submitmigration").text('Migrating...');
@@ -1025,7 +1025,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
 
                             </div>
                         </div>
-                        <script type="text/javascript">
+                        <script>
                         document.getElementById("link").addEventListener("keyup", function(event) {
                             if (event.keyCode === 13) {
                                 document.getElementById("search").click();
@@ -1241,7 +1241,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         </div>
                       </div>
                     </div>
-                    <script type="text/javascript">
+                    <script>
                             <?php if (!strpos($modpack['name'],"unnamed-modpack-")) { ?>
                                 $("#slug").on("keyup", function(){
                                     if ($("#slug").val()!=="<?php echo $modpack['name'] ?>"){
@@ -1437,7 +1437,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <br />
                         <button type="submit" id="copybutton" name="submit" value="copy" class="btn btn-primary">Copy</button>
                     </form>
-                    <script type="text/javascript">
+                    <script>
                         var builds = "<?php echo addslashes(json_encode($mpab)) ?>";
                         var sbn = "<?php echo addslashes(json_encode($sbn)) ?>";
                         var bd = JSON.parse(builds);
@@ -1538,7 +1538,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         </div>
                       </div>
                     </div>
-                    <script type="text/javascript">
+                    <script>
                         function edit(id) {
                             window.location = "./build?id="+id;
                         }
@@ -1699,7 +1699,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 echo "<div style='display:block' class='invalid-feedback'>There are no versions available. Please fetch versions in the <a href='./lib-forges'>Forge Library</a></div>";
                             }
                             ?>
-                            <script type="text/javascript">
+                            <script>
                                 $('#versions').change(function(){
                                     $('#editBuild').modal('show');
                                 });
@@ -1786,7 +1786,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 <?php } if (!empty($modslist)) { ?>
                     <div class="card">
                         <h2>Mods in Build <?php echo $user['name'] ?></h2>
-                        <script type="text/javascript">
+                        <script>
                             function remove_mod(id,name) {
                                 $("#mod-"+name).remove();
                                 var request = new XMLHttpRequest();
@@ -1917,7 +1917,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <input <?php if (isset($_SESSION['showall'])&&$_SESSION['showall']){echo "checked";} ?> type="checkbox" name="showall" class="custom-control-input" id="showall">
                             <label class="custom-control-label" for="showall">Show all</label>
                         </div>
-                        <script type="text/javascript">
+                        <script>
                             $('#showall').change(function() {
 
                                     var request = new XMLHttpRequest();
@@ -1954,7 +1954,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
 
                             if (sizeof($mres)!==0) {
                                 ?>
-                                <script type="text/javascript">
+                                <script>
                                     $("#search").on('keyup',function(){
                                         tr = document.getElementById("modstable").getElementsByTagName("tr");
 
@@ -2089,7 +2089,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             $mres = $db->query("SELECT * FROM `mods` WHERE `type` = 'other'");
                             if (sizeof($mres)!==0) {
                                 ?>
-                                <script type="text/javascript">
+                                <script>
                                     function add_o(id) {
                                         $("#btn-add-o-"+id).attr("disabled", true);
                                         $("#cog-o-"+id).show();
@@ -2132,7 +2132,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         ?>
         <script>document.title = 'Mod Library - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
-        <script type="text/javascript">
+        <script>
                 function remove_box(name) {
                     $("#mod-name-title").text(name);
                     $("#mod-name").text(name);
@@ -2258,7 +2258,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         ?>
                     </tbody>
                 </table>
-                <script type="text/javascript">
+                <script>
                     $("#search").on('keyup',function(){
                         tr = document.getElementById("modstable").getElementsByTagName("tr");
 
@@ -2300,7 +2300,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             </div>
         </div>
 
-        <script type="text/javascript">
+        <script>
             mn = 1;
             function sendFile(file, i) {
                 var formData = new FormData();
@@ -2398,7 +2398,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 });
             });
         </script>
-        <script type="text/javascript">
+        <script>
             $(document).ready(function(){
                 $("#nav-mods").trigger('click');
             });
@@ -2441,7 +2441,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <input required class="form-control" required type="text" name="mcversion" placeholder="Minecraft Version"><br />
                     <input type="submit" name="submit" value="Save" class="btn btn-success">
                 </form>
-                <script type="text/javascript">
+                <script>
                         $("#pn").on("keyup", function(){
                             var slug = slugify($(this).val());
                             console.log(slug);
@@ -2463,7 +2463,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </script>
             </div>
         </div>
-        <script type="text/javascript">
+        <script>
             $(document).ready(function(){
                 $("#nav-mods").trigger('click');
                 $(function () {
@@ -2476,7 +2476,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         ?>
         <script>document.title = 'Forge Versions - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
-            <script type="text/javascript">
+            <script>
                 function remove_box(id,name) {
                     $("#mod-name-title").text(name);
                     $("#mod-name").text(name);
@@ -2567,7 +2567,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </form>
             </div>
             <div class="card" id="fetched-mods" style="display: none">
-                <script type="text/javascript">
+                <script>
                     var nof = 0;
                     var fiq = 0;
                     function chf(link,name,id,mc) {
@@ -2733,7 +2733,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             </div>
         <?php } ?>
         </div>
-        <script type="text/javascript">
+        <script>
             $(document).ready(function(){
                 $("#nav-mods").trigger('click');
             });
@@ -2743,7 +2743,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         ?>
         <script>document.title = 'Other Files - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
-        <script type="text/javascript">
+        <script>
                 function remove_box(id,name) {
                     $("#mod-name-title").text(name);
                     $("#mod-name").text(name);
@@ -2856,7 +2856,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
 
         </div>
 
-        <script type="text/javascript">
+        <script>
             mn = 1;
             function sendFile(file, i) {
                 var formData = new FormData();
@@ -2954,7 +2954,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 });
             });
         </script>
-        <script type="text/javascript">
+        <script>
             $(document).ready(function(){
                 $("#nav-mods").trigger('click');
             });
@@ -3142,7 +3142,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </form>
             </div>
         </div>
-        <script type="text/javascript">
+        <script>
             $("#pn").on("keyup", function(){
                 var slug = slugify($(this).val());
                 console.log(slug);
@@ -3162,7 +3162,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 return str;
             }
         </script>
-        <script type="text/javascript">
+        <script>
             $(document).ready(function(){
                 $("#nav-mods").trigger('click');
             });
@@ -3186,7 +3186,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 <h3>Edit <?php echo $mod['pretty_name']." ".$mod['version']; ?></h3>
                 <form method="POST" action="./functions/edit-modv.php?id=<?php echo $_GET['id'] ?>">
 
-                    <script type="text/javascript">
+                    <script>
                         $("#pn").on("keyup", function(){
                             var slug = slugify($(this).val());
                             console.log(slug);
@@ -3234,7 +3234,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </form>
             </div>
         </div>
-        <script type="text/javascript">
+        <script>
             $(document).ready(function(){
                 $("#nav-mods").trigger('click');
                 $("#author-input").on("keyup",function(){
@@ -3334,7 +3334,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                 </div>
             </div>
-            <script type="text/javascript">
+            <script>
                 $(document).ready(function(){
                     $("#nav-settings").trigger('click');
                 });
@@ -3393,7 +3393,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <?php } ?>
                 </div>
             </div>
-            <script type="text/javascript">
+            <script>
                 $(document).ready(function(){
                     $("#nav-settings").trigger('click');
                 });
@@ -3460,7 +3460,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                      </form>
                 </div>
             </div>
-            <script type="text/javascript">
+            <script>
                 $("#pass1").on("keyup", function() {
                     if ($("#pass1").val()!=="") {
                         $("#pass1").addClass("is-valid");
@@ -3545,7 +3545,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 }
             </script>
             <script>document.title = 'My Account - <?php echo addslashes($_SESSION['name']) ?> - <?php echo addslashes($config['author']) ?>';</script>
-            <script type="text/javascript">
+            <script>
                 $(document).ready(function(){
                     $("#nav-settings").trigger('click');
                 });
@@ -3694,7 +3694,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                   </div>
                 </div>
-                <script type="text/javascript">
+                <script>
                     function remove(id) {
                         var request = new XMLHttpRequest();
                         request.open('POST', './functions/remove_user.php');
@@ -3781,7 +3781,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         request.send("name="+mail+"&display_name="+name+"&perms="+perms);
                     }
                 </script>
-                <script type="text/javascript">
+                <script>
                     // https://gist.github.com/endel/321925f6cafa25bbfbde
                     Number.prototype.pad = function(size) {
                       var s = String(this);
@@ -3860,7 +3860,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     });
 
                 </script>
-                <script type="text/javascript">
+                <script>
                     function new_user(email,name,pass) {
                         var request = new XMLHttpRequest();
                         request.open('POST', './functions/new_user.php');
@@ -3876,7 +3876,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         request.send("name="+email+"&display_name="+name+"&pass="+pass);
                     }
                 </script>
-                <script type="text/javascript">
+                <script>
                     $("#name2").on("keyup", function() {
                         if ($("#name2").val()!=="") {
                             $("#name2").addClass("is-valid");
@@ -3891,7 +3891,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         }
                     });
                 </script>
-                <script type="text/javascript">
+                <script>
                     $("#email").on("keyup", function() {
                         if ($("#email").val()!=="") {
                             $("#email").addClass("is-valid");
@@ -3948,7 +3948,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </script>
             </div>
             <script>document.title = 'Admin - <?php echo addslashes($config['author']) ?>';</script>
-            <script type="text/javascript">
+            <script>
                 $(document).ready(function(){
                     $("#nav-settings").trigger('click');
                 });
@@ -3996,7 +3996,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </form>
             </div>
         </div>
-        <script type="text/javascript">
+        <script>
                 $(document).ready(function(){
                     $("#nav-settings").trigger('click');
                 });
@@ -4088,7 +4088,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                   </div>
                 </div>
-                <script type="text/javascript">
+                <script>
                     function remove_box(id,name) {
                         $("#mod-name-title").text(name);
                         $("#mod-name").text(name);
@@ -4105,7 +4105,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </script>
             </div>
         </div>
-        <script type="text/javascript">
+        <script>
                 $(document).ready(function(){
                     $("#nav-settings").trigger('click');
                 });
