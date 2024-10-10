@@ -1388,26 +1388,30 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                         }
                                         array_push($modsluglist, $moda['name']);
 
-                                        $mcvrange=mcversion_to_range($moda['mcversion']);
-                                        $min=$mcvrange['min'];
-                                        $max=$mcvrange['max'];
+                                        // only check game compatibility if it's a mod!
+                                        if ($moda['type']=='mod') {
+                                            $mcvrange=mcversion_to_range($moda['mcversion']);
+                                            $min=$mcvrange['min'];
+                                            $max=$mcvrange['max'];
 
-                                        if (isset($_SESSION['showall']) && $_SESSION['showall']) {
-                                            $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."'");
-                                        } else {
-                                            if ($min!=null && $max!=null) { // both min,max specified
-                                                $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR (`mcversion_low` >= '".$min."' AND `mcversion_high` < '".$max."') OR `id` = ".$bmod.")");
-                                            } elseif ($min!=null) { // just min specified
-                                                $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `mcversion_low` >= '".$min."' OR `id` = ".$bmod.")");
-                                            } elseif ($max!=null) { // just max specified
-                                                $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `mcversion_high` < '".$max."' OR `id` = ".$bmod.")");
-                                            } else { // exact version specified
-                                                $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `id` = ".$bmod.")");
+                                            if (isset($_SESSION['showall']) && $_SESSION['showall']) {
+                                                $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."'");
+                                            } else {
+                                                if ($min!=null && $max!=null) { // both min,max specified
+                                                    $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR (`mcversion_low` >= '".$min."' AND `mcversion_high` < '".$max."') OR `id` = ".$bmod.")");
+                                                } elseif ($min!=null) { // just min specified
+                                                    $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `mcversion_low` >= '".$min."' OR `id` = ".$bmod.")");
+                                                } elseif ($max!=null) { // just max specified
+                                                    $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `mcversion_high` < '".$max."' OR `id` = ".$bmod.")");
+                                                } else { // exact version specified
+                                                    $modvq = $db->query("SELECT `version`,`id` FROM `mods` WHERE `name` = '".$moda['name']."' AND (`mcversion` = '".$user['minecraft']."' OR `id` = ".$bmod.")");
+                                                }
                                             }
+                                        
+                                            $userModVersionOK = in_range($moda['mcversion'], $user['minecraft']);
+                                        } else {
+                                            $userModVersionOK = true;
                                         }
-                                    
-                                        // todo: check if mod is actually a moda['type']=='mod' and not something else.
-                                        $userModVersionOK = in_range($moda['mcversion'], $user['minecraft']);
                                         
                                         ?>
 
@@ -1504,72 +1508,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 $mres = $db->query("SELECT * FROM `mods` WHERE `type` = 'mod' AND (`mcversion` = '".$user['minecraft']."' OR ('".$user['minecraft']."' >= `mcversion_low` AND '".$user['minecraft']."' < `mcversion_high`))");
                             }
 
-                            if (sizeof($mres)!==0) {
-                                ?>
-                                <script>
-                                    $("#search").on('keyup',function(){
-                                        tr = document.getElementById("modstable").getElementsByTagName("tr");
-
-                                        for (var i = 0; i < tr.length; i++) {
-
-                                            td = tr[i].getElementsByTagName("td")[0];
-                                            if (td) {
-
-                                                console.log(td);
-                                                console.log(td.innerHTML.toUpperCase())
-                                                if (td.innerHTML.toUpperCase().indexOf($("#search").val().toUpperCase()) > -1) {
-                                                    tr[i].style.display = "";
-                                                } else {
-                                                    tr[i].style.display = "none";
-                                                }
-                                            }
-                                        }
-                                    });
-                                    $("#search2").on('keyup',function(){
-                                        tr = document.getElementById("filestable").getElementsByTagName("tr");
-
-                                        for (var i = 0; i < tr.length; i++) {
-
-                                            td = tr[i].getElementsByTagName("td")[0];
-                                            if (td) {
-
-                                                console.log(td);
-                                                console.log(td.innerHTML.toUpperCase())
-                                                if (td.innerHTML.toUpperCase().indexOf($("#search").val().toUpperCase()) > -1) {
-                                                    tr[i].style.display = "";
-                                                } else {
-                                                    tr[i].style.display = "none";
-                                                }
-                                            }
-                                        }
-                                    });
-
-
-                                    function add(name) {
-                                        $("#btn-add-mod-"+name).attr("disabled", true);
-                                        $("#cog-"+name).show();
-                                        var request = new XMLHttpRequest();
-                                        request.onreadystatechange = function() {
-                                            if (this.readyState == 4 && this.status == 200) {
-                                                if (this.responseText=="Insufficient permission!") {
-                                                    $("#cog-"+name).hide();
-                                                    $("#times-"+name).show();
-                                                } else {
-                                                    $("#cog-"+name).hide();
-                                                    $("#check-"+name).show();
-                                                    setTimeout(function() {
-                                                        $("#mod-add-row-"+name).remove();
-                                                    }, 3000);
-
-                                                }
-                                            }
-                                        };
-                                        request.open("GET", "./functions/add-mod.php?bid=<?php echo $user['id'] ?>&id="+$("#versionselect-"+name).val());
-                                        request.send();
-                                    }
-                                </script>
-                                <?php
-                                if ($mres){
+                            if ($mres){
+                                if (sizeof($mres)!==0) {
                                     $modsi = array();
                                     $modslugs = array();
                                     foreach($mres as $mod){
@@ -1661,14 +1601,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                 <?php }
                 } else echo "<div class='card'><h3 class='text-info'>Select minecraft version and save before editing mods.</h3></div>"; ?>
-
                 <script>
                     var modslist_0 = '<?php echo sizeof($modslist)>0 ? $modslist[0] : "" ?>';
                     var build_id = '<?php echo $user['id'] ?>';
                 </script>
                 <script src="./resources/js/page_build.js"></script>
             </div>
-
         <?php
         }
         elseif (uri('/lib-mods')) {

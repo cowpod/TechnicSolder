@@ -55,3 +55,64 @@ function add_o(id) {
     request.open("GET", "./functions/add-mod.php?bid="+build_id+"&id="+id);
     request.send();
 }
+
+$("#search").on('keyup',function(){
+    tr = document.getElementById("modstable").getElementsByTagName("tr");
+
+    for (var i = 0; i < tr.length; i++) {
+
+        td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+
+            console.log(td);
+            console.log(td.innerHTML.toUpperCase())
+            if (td.innerHTML.toUpperCase().indexOf($("#search").val().toUpperCase()) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+});
+$("#search2").on('keyup',function(){
+    tr = document.getElementById("filestable").getElementsByTagName("tr");
+
+    for (var i = 0; i < tr.length; i++) {
+
+        td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+
+            console.log(td);
+            console.log(td.innerHTML.toUpperCase())
+            if (td.innerHTML.toUpperCase().indexOf($("#search").val().toUpperCase()) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+});
+
+
+function add(name) {
+    $("#btn-add-mod-"+name).attr("disabled", true);
+    $("#cog-"+name).show();
+    var request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            if (this.responseText=="Insufficient permission!") {
+                $("#cog-"+name).hide();
+                $("#times-"+name).show();
+            } else {
+                $("#cog-"+name).hide();
+                $("#check-"+name).show();
+                setTimeout(function() {
+                    $("#mod-add-row-"+name).remove();
+                }, 3000);
+
+            }
+        }
+    };
+    request.open("GET", "./functions/add-mod.php?bid="+build_id+"&id="+$("#versionselect-"+name).val());
+    request.send();
+}
