@@ -47,18 +47,22 @@ function getModTypes(string $filePath): array {
     // todo: check finfo to ensure it's actually a zip
 
     assert (file_exists($filePath));
-    $zip = new ZipArchive;
-    $open_zip = $zip->open($filePath);
-    if ($open_zip !== TRUE) {
-        $zip->close();
-        return [];
-    }
-    $check_fabric = $zip->statName(FABRIC_INFO_PATH);
-    $check_forge = $zip->statName(FORGE_INFO_PATH); // MC 1.13+
-    $check_forge_old = $zip->statName(FORGE_OLD_INFO_PATH); // MC 1.12-
-    $zip->close();
 
-    return ['fabric'=> $check_fabric!==FALSE, 'forge'=> $check_forge!==FALSE, 'forge_old'=> $check_forge_old!==FALSE];
+    $has_fabric=FALSE;
+    $has_forge=FALSE;
+    $has_forge_old=FALSE;
+
+    $zip = new ZipArchive;
+
+    if ($zip->open($filePath)===TRUE) {
+        // statName returns Array or FALSE.
+        $has_fabric = $zip->statName(FABRIC_INFO_PATH)!==FALSE;
+        $has_forge = $zip->statName(FORGE_INFO_PATH)!==FALSE; // MC 1.13+
+        $has_forge_old = $zip->statName(FORGE_OLD_INFO_PATH)!==FALSE; // MC 1.12-
+        $zip->close();
+    }
+
+    return ['fabric'=> $has_fabric, 'forge'=> $has_forge, 'forge_old'=> $has_forge_old];
 }
 
 function getModInfos(array $modTypes, string $filePath): array {
@@ -79,7 +83,7 @@ function getModInfos(array $modTypes, string $filePath): array {
 
     */
 
-    // only make a copy of this object.
+    // only make a copy of this object. we don't have const or final :c
     $mcmod_orig = [
         'modid'         =>null, // mandatory 
         'version'       =>null, // mandatory
@@ -102,14 +106,12 @@ function getModInfos(array $modTypes, string $filePath): array {
         die ('{"status": "error", "message": "Could not open JAR file as ZIP"}');
 
     if ($modTypes['forge']===TRUE) {
-
         $raw = $zip->getFromName(FORGE_INFO_PATH);
         if ($raw === FALSE)
             die ('{"status": "error", "message": "Could not access info file from Forge mod."}');
 
         $toml = new Toml;
         $parsed = $toml->parse($raw);
-
         $mod_info['forge']=$mcmod_orig;
 
         // there can be multiple mods entries, we are just getting the first.
@@ -118,13 +120,10 @@ function getModInfos(array $modTypes, string $filePath): array {
                 die ('{"status": "error", "message": "Forge info file does not contain modId!"}');
             else
                 $mod_info['forge']['modid'] = strtolower($mod['modId']);
-            if (empty($mod['version']))
-                die ('{"status": "error", "message": "Forge info file does not contain version!"}');
-            else {
-                if ($mod['version']=='${file.jarVersion}')
-                    $mod['version']='';
+            if (empty($mod['version']) || $mod['version']=='${file.jarVersion}')
+                $mod_info['forge']['version'] = '';
+            else
                 $mod_info['forge']['version'] = $mod['version'];
-            }
             if (!empty($mod['displayName']))
                 $mod_info['forge']['name'] = $mod['displayName'];
             if (!empty($mod['displayURL']))
@@ -175,13 +174,10 @@ function getModInfos(array $modTypes, string $filePath): array {
             die ('{"status": "error", "message": "Old Forge info file does not contain modid!"}');
         else
             $mod_info['forge_old']['modid'] = strtolower($parsed['modid']);
-        if (empty($parsed['version']))
-            die ('{"status": "error", "message": "Old Forge info file does not contain version!"}');
-        else {
-            if ($parsed['version']=='${file.jarVersion}')
-                $parsed['version']='';
+        if (empty($parsed['version']) || $parsed['version']=='${file.jarVersion}')
+            $mod_info['forge_old']['version'] = '';
+        else
             $mod_info['forge_old']['version'] = $parsed['version'];
-        }
         if (!empty($parsed['name']))
             $mod_info['forge_old']['name']  = $parsed['name'];
         if (!empty($parsed['url']))
@@ -213,9 +209,7 @@ function getModInfos(array $modTypes, string $filePath): array {
         if ($raw === FALSE)
             die ('{"status": "error", "message": "Could not access info file from Fabric mod."}');
 
-
         $mod_info['fabric']=$mcmod_orig;
-
         $parsed = json_decode(preg_replace('/\r|\n/', '', trim($raw)), true);
 
         if (empty($parsed['id']))
@@ -240,37 +234,30 @@ function getModInfos(array $modTypes, string $filePath): array {
         if (array_key_exists('depends', $parsed)) {
             foreach (array_keys($parsed['depends']) as $depId) {
                 $dep_version = ''; // '' means any...
-
                 if (!empty($parsed['depends'][$depId])) {// unlikely, given data structure
                     $dep_version_r = $parsed['depends'][$depId];
                     $matches=[];
-
-                    // >= greater than equal to
-                    if (preg_match('/^>=(.*)/', $dep_version_r, $matches)) {
+                    if (preg_match('/^>=(.*)/', $dep_version_r, $matches)) { // >= greater than equal to
                         if (!empty($matches) && !empty($matches[1])) {
                             $dep_version = '['.$matches[1].',)';
                         }
                     }
-                    // < greater than
-                    elseif (preg_match('/^>(.*)/', $dep_version_r, $matches)) {
+                    elseif (preg_match('/^>(.*)/', $dep_version_r, $matches)) { // < greater than
                         if (!empty($matches) && !empty($matches[1])) {
                             $dep_version = '('.$matches[1].',)';
                         }
                     }
-                    // <= less than equal to
-                    elseif (preg_match('/^<=(.*)/', $dep_version_r, $matches)) {
+                    elseif (preg_match('/^<=(.*)/', $dep_version_r, $matches)) { // <= less than equal to
                         if (!empty($matches) && !empty($matches[1])) {
                             $dep_version = '(,'.$matches[1].']';
                         }
                     }
-                    // < less than 
-                    elseif (preg_match('/^<(.*)/', $dep_version_r, $matches)) {
+                    elseif (preg_match('/^<(.*)/', $dep_version_r, $matches)) { // < less than 
                         if (!empty($matches) && !empty($matches[1])) {
                             $dep_version = '(,'.$matches[1].')';
                         }
                     }
-                    // ~ approximately (major version)
-                    elseif (preg_match('/^~(.*)/', $dep_version_r, $matches)) {
+                    elseif (preg_match('/^~(.*)/', $dep_version_r, $matches)) { // ~ approximately (major version)
                         if (!empty($matches) && !empty($matches[1])) {
                             $matches_approx=[];
                             if (preg_match('/^([0-9]+\.[0-9]+)/', $matches[1], $matches_approx)) {
@@ -280,14 +267,11 @@ function getModInfos(array $modTypes, string $filePath): array {
                             }
                         }
                     }
-                    // * any
-                    elseif ($dep_version_r=='*') { 
+                    elseif ($dep_version_r=='*') {  // * any
                         // '' means any...
                     } 
-                    // exact
-                    else {
+                    else { // exact
                         $dep_version = $dep_version_r;
-
                         // if it ends in .x then it's also in interval notation!
                         if (str_ends_with($dep_version, '.x')) {
                             $nstr=substr($dep_version, 0, -2);
@@ -303,7 +287,6 @@ function getModInfos(array $modTypes, string $filePath): array {
                 if (strtolower($depId)=='minecraft') {
                     $mod_info['fabric']['mcversion']=$dep_version;
                 }
-
                 if (strtolower($depId)=='fabricloader') {
                     $mod_info['fabric']['loaderversion']=$dep_version;
                 }
@@ -401,9 +384,7 @@ if (!file_exists($file_tmp))
     die ('{"status":"error","message":"Uploaded file does not exist!?"}');
 
 $modTypes = getModTypes($file_tmp);
-// error_log('MODTYPES: '.json_encode($modTypes));
 $modInfos = getModInfos($modTypes, $file_tmp);
-// error_log('MODINFOS: '.json_encode($modInfos));
 
 if (!isset($db)){
     $db=new Db;
