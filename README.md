@@ -13,8 +13,24 @@
 
 TechnicSolder was originaly developed by Technic using the Laravel Framework. However, the application is difficult to install and use. Technic Solder - Solder.cf by TheGameSpider runs on pure PHP with zip and MySQL extensions and it's very easy to use. To install, you just need to install zip extension, setup MySQL database and download Solder to your server (No composer needed). And the usage is even easier! Just Drag n' Drop your mods.
 
-# Detailed Installation
-> ***Note: If you already have a working web server with mysql and zip extensions and enabled rewrite mod, you can [skip to step 6.](https://github.com/TheGameSpider/TechnicSolder#cloning-technicsolder-repository)***
+## Installation and configuration (without SSH/CLI access)
+If you are using a shared host, or for some reason don't have access to the command-line interface, the general set-up is as follows. This assumes you'll be using something like cPanel.
+
+- Set PHP version to 8.3. 
+- Install the PHP ZIP, PDO extensions.
+    - Enable one or both of pdo_mysql, pdo_sqlite 
+- In Apache2 settings, enable rewriteengine, and the PHP module.
+- Upload the contents of this git to your document root, such that index.php is directly in your document root folder. This is usually in ``/var/www/html``
+    - Alternatively, you can modify the document root in cPanel to point to the folder containing this repository. Ie. ``/var/www/html/TechnicSolder``
+- Using phpMyAdmin, or any built-in cPanel MySQL editor, Create a new user ``solder``, database ``solder``, and grant the user access to the database. Make sure you write down your password.
+
+Now open your server address, ie. ``http://localhost`` if running on a your local machine, and follow the set-up prompt there. 
+- If using MySQL, set the user of the database to ``solder``, database name to ``solder``, host to either ``localhost`` (if the database is on the same machine and network as the web server) or the IP address of your database, and the password you created earlier. 
+- If using SQLite, simply set the type to SQLite.
+- For the Solder API key, go to [https://technicpack.net](https://technicpack.net), log in/create an account, go to my settings/profile, and click on "solder" on the left menu.
+
+# Detailed Installation (SSH/CLI access required)
+> ***Note: If you already have a working web server with PDO and ZIP extensions and enabled rewrite mod, you can [skip to step 6.](#cloning-technicsolder-repository)***
 
 **1. Install Ubuntu Server (https://www.ubuntu.com/download/server)** <br />
 **2. Login to Ubuntu with credentials you set.** <br />
@@ -23,24 +39,8 @@ Root is basically the "god account" that controls everything on the system.
 You should never, _EVER_ use root to do simple tasks, unless you want your computer to be destroyed.
 ```bash
 sudo su -
-```
+``` 
 
-## Web server installation and configuration (without SSH/CLI access)
-If you are using a shared host, or for some reason don't have access to the command-line interface, the general set-up is as follows. This assumes you'll be using something like cPanel.
-
-- Set php version to 8.3. 
-- Install the php ZIP, PDO extensions.
-    - enable one or both of pdo_mysql, pdo_sqlite 
-- In Apache2 settings, enable rewriteengine, and the PHP module.
-- Upload the contents of this git to your document root, such that index.php is directly in your document root folder. ```/```
-    - Alternatively, you can modify the document root in cPanel to point to the folder containing this repository. Ie. ```/var/www/TechnicSolder```
-- Using phpMyAdmin, or any built-in cPanel MySQL editor, Create a new user ```solder```, database ```solder```, and grant the user access to the database. Make sure you write down your ```solder```-user password.
-
-Now open your server address, ie. ```http://localhost``` if running on a your local machine, and follow the set-up prompt there. 
-- Set the user of the database to solder, database name to solder, host to either ```localhost``` (if the database is on the same machine and network as the web server) or the IP address of your database, and the password you created earlier. 
-- For the Solder API key, go to [https://technicpack.net](https://technicpack.net), log in/create an account, go to my settings/profile, and click on "solder" on the left menu.
-
-## Web server installation and configuration (SSH/CLI access)
 **4. Install Prerequisites**<br />
 This command installs what's known as a LAMP Stack, which includes Apache2, MariaDB, and PHP. Very useful!
 ```bash
