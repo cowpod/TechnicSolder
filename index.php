@@ -2241,13 +2241,39 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 <div class="card">
                     <h2>Solder Updater</h2>
                     <br />
-                    <div class="alert <?php if ($version['version']==$newversion['version'] && $checked) { echo "alert-success";} else { if ($checked) {echo "alert-info";} else {echo "alert-warning";} } ?>" role="alert">
-                        <h4 class="alert-heading"><?php if ($checked) {if ($version['version']==$newversion['version']) {echo "No updates";} else { echo "New update available - ".$newversion['version']; }} else {echo "Cannot check for updates!";} ?></h4>
+                    <div class="alert <?php 
+                        if (version_compare($version['version'], $newversion['version'], '>=') && $checked) { 
+                            echo "alert-success";
+                        } else { 
+                            if ($checked) {
+                                echo "alert-info";
+                            } else {
+                                echo "alert-warning";
+                            } 
+                        } 
+                        ?>" role="alert">
+                        <h4 class="alert-heading"><?php 
+                            if ($checked) {
+                                if (version_compare($version['version'], $newversion['version'], '>=')) {
+                                    echo "No updates. Currently on ".$version['version'];
+                                } else { 
+                                    echo "New update available - ".$newversion['version'].". Curently on ".$version['version']; 
+                                }
+                            } else {
+                                echo "Cannot check for updates!";
+                            } 
+                        ?></h4>
                         <hr>
-                        <p class="mb-0"><?php if ($version['version']==$newversion['version']) { echo $version['changelog']; } else { echo $newversion['changelog']; } ?></p>
+                        <p class="mb-0"><?php 
+                            if (version_compare($version['version'], $newversion['version'], '>=')) { 
+                                echo $version['changelog']; 
+                            } else { 
+                                echo $newversion['changelog']; 
+                            } 
+                        ?></p>
                     </div>
 
-                    <?php if ($version['version']!==$newversion['version']) { ?>
+                    <?php if (version_compare($version['version'], $newversion['version'], '<>')) { ?>
                         <div class="card text-white bg-info mb3" style="padding: 0px">
                             <div class="card-header">How to update?</div>
                             <div class="card-body">
