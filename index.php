@@ -1602,8 +1602,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         $modslist2 = $modslist;
                         $modslist2[0] = $_POST['versions'];
                         $db->query("UPDATE `builds` SET `mods` = '".$db->sanitize(implode(',',$modslist2))."' WHERE `id` = ".$db->sanitize($_GET['id']));
-
-
                     }
                 }
                 $ispublic = 0;
@@ -2394,8 +2392,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 <button onclick="window.location = './lib-mods'" style="width: fit-content;" class="btn btn-primary"><em class="fas fa-arrow-left"></em> Back</button><br />
                 <h3>Add Mod</h3>
                 <form method="POST" action="./functions/add-modv.php">
-
-
                     <input id="pn" required class="form-control" type="text" name="pretty_name" placeholder="Mod name" />
                     <br />
                     <input id="slug" required pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Mod slug" /><br />
@@ -2815,7 +2811,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </div>
               </div>
             </div>
-
         </div>
 
         <script>
@@ -2915,8 +2910,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     }
                 });
             });
-        </script>
-        <script>
             $(document).ready(function(){
                 $("#nav-mods").trigger('click');
             });
@@ -3093,8 +3086,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </div>
                 <h2>Details</h2><hr>
                 <form method="POST" action="./functions/edit-mod.php?id=<?php echo $_GET['id'] ?>">
-
-
                     <input id="pn" required class="form-control" type="text" name="pretty_name" placeholder="Mod name" value="<?php echo $modpn ?>" />
                     <br />
                     <input id="slug" required pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Mod slug" value="<?php echo $_GET['id'] ?>" /><br />
@@ -3479,9 +3470,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 } else {
                     $('#perm7').prop('checked', false);
                 }
-            </script>
-            <script>document.title = 'My Account - <?php echo addslashes($_SESSION['name']) ?> - <?php echo addslashes($config['author']) ?>';</script>
-            <script>
+                document.title = 'My Account - <?php echo addslashes($_SESSION['name']) ?> - <?php echo addslashes($config['author']) ?>';</script>
                 $(document).ready(function(){
                     $("#nav-settings").trigger('click');
                 });
@@ -3716,8 +3705,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         }
                         request.send("name="+mail+"&display_name="+name+"&perms="+perms);
                     }
-                </script>
-                <script>
                     // https://gist.github.com/endel/321925f6cafa25bbfbde
                     Number.prototype.pad = function(size) {
                       var s = String(this);
@@ -3795,8 +3782,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         }
                     });
 
-                </script>
-                <script>
                     function new_user(email,name,pass) {
                         var request = new XMLHttpRequest();
                         request.open('POST', './functions/new_user.php');
@@ -3811,8 +3796,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         }
                         request.send("name="+email+"&display_name="+name+"&pass="+pass);
                     }
-                </script>
-                <script>
                     $("#name2").on("keyup", function() {
                         if ($("#name2").val()!=="") {
                             $("#name2").addClass("is-valid");
@@ -3826,8 +3809,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             $("#save-button-2").attr("disabled", true);
                         }
                     });
-                </script>
-                <script>
                     $("#email").on("keyup", function() {
                         if ($("#email").val()!=="") {
                             $("#email").addClass("is-valid");
@@ -3891,10 +3872,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             </script>
             <?php
         } elseif (uri('/settings')) {
-
             if (isset($_POST['submit'])) {
                 $cf = '<?php return array( ';
-
                 foreach ($_POST as $key => $value) {
                     $cf .= '"'.$key.'" => "'.$value.'"';
                     if ($key !== "submit") {
@@ -3904,11 +3883,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 if ($cf." );" !== "<?php return array(  );") {
                     file_put_contents("./functions/settings.php", $cf . " );");
                 }
-                ?>
-                <?php
             }
         ?>
-
 
         <div class="main">
             <div class="card">
@@ -3933,10 +3909,10 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             </div>
         </div>
         <script>
-                $(document).ready(function(){
-                    $("#nav-settings").trigger('click');
-                });
-            </script>
+            $(document).ready(function(){
+                $("#nav-settings").trigger('click');
+            });
+        </script>
         <?php } elseif (uri('/clients')) {
         ?>
         <script>document.title = 'Clients - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -4042,10 +4018,10 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             </div>
         </div>
         <script>
-                $(document).ready(function(){
-                    $("#nav-settings").trigger('click');
-                });
-            </script>
+            $(document).ready(function(){
+                $("#nav-settings").trigger('click');
+            });
+        </script>
         <?php } else {
             ?>
         <script>document.title = '404 - Not Found';</script>
