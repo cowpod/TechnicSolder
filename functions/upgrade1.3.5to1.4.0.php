@@ -16,7 +16,7 @@ $addhigh=$db->query("ALTER TABLE `mods` ADD COLUMN `mcversion_high` VARCHAR(128)
 $addhigh=$db->query("ALTER TABLE `mods` ADD COLUMN `loadertype` VARCHAR(128);");
 
 if (!$addlow||!$addhigh) {
-    die("Couldn't add new columns mcversion_low, mcversion_high to table `mods`! Are we already upgraded?");
+    die("Couldn't add new columns mcversion_low, mcversion_high to table `mods`! Are we already upgraded? <a href='/'>Click here to return to index</a>.");
 }
 
 echo "Upgrading database...<br/>";
@@ -37,7 +37,6 @@ if ($mods && sizeof($mods)>0) {
         }
         elseif (sizeof($mcvrange)==1) {
             $min=$mcvrange[0];
-            // don't specify a max
         }
         else {
             echo "Ignoring mod with invalid mcversion string: ".$mod['mcversion']."<br/>";
@@ -54,6 +53,5 @@ if ($mods && sizeof($mods)>0) {
 
 
 $db->disconnect();
-// header("Location: ".$config['dir']."clients");
 
 exit();
