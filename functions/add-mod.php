@@ -23,5 +23,5 @@ if ($modsq) {
     assert(sizeof($modsq)==1);
     $mods = $modsq[0];
 }
-$db->query("UPDATE `builds` SET `mods` = '".$mods['mods'].",".$_GET['id']."' WHERE `id` = ".$_GET['bid']);
+$db->execute("UPDATE `builds` SET `mods` = '".$mods['mods'].",".$_GET['id']."' WHERE `id` = ".$_GET['bid']);
 exit();

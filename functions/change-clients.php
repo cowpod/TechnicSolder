@@ -18,7 +18,7 @@ $db=new Db;
 $db->connect();
 
 $clients = implode(",", $_GET['client']);
-$db->query("UPDATE `modpacks` SET `clients` = '".$db->sanitize($clients)."' WHERE `id`=".$_GET['id']
-);
+$db->execute("UPDATE `modpacks` SET `clients` = '".$db->sanitize($clients)."' WHERE `id`=".$_GET['id']);
+
 header("Location: ".$config['dir']."modpack?id=".$_GET['id']);
 exit();

@@ -23,7 +23,7 @@ $file_name = $_FILES["fiels"]["name"];
 $file_tmp = $_FILES["fiels"]["tmp_name"];
 
 if (empty($file_tmp)) {
-    die ("{'status':'error','message':'File is too big! Check your post_max_size (current value ".ini_get('post_max_size').") and upload_max_filesize (current value ".ini_get('upload_max_filesize').") values in ".php_ini_loaded_file()."'}");
+    die ('{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}');
 }
 
 require('toml.php');
@@ -97,13 +97,13 @@ function getModInfos(array $modTypes, string $filePath): array {
 
     $zip = new ZipArchive();
     if ($zip->open($filePath) === FALSE)
-        die ("{'status': 'error', 'message': 'Could not open JAR file as ZIP'}");
+        die ('{"status": "error", "message": "Could not open JAR file as ZIP"}');
 
     if ($modTypes['forge']===TRUE) {
 
         $raw = $zip->getFromName(FORGE_INFO_PATH);
         if ($raw === FALSE)
-            die ("{'status': 'error', 'message': 'Could not access info file from Forge mod.'}");
+            die ('{"status": "error", "message": "Could not access info file from Forge mod."}');
 
         $toml = new Toml;
         $parsed = $toml->parse($raw);
@@ -113,11 +113,11 @@ function getModInfos(array $modTypes, string $filePath): array {
         // there can be multiple mods entries, we are just getting the first.
         foreach ($parsed['mods'] as $mod) {
             if (empty($mod['modId']))
-                die ("{'status': 'error', 'message': 'Forge info file doesn't contain modId!'}");
+                die ('{"status": "error", "message": "Forge info file does not contain modId!"}');
             else
                 $mod_info['forge']['modid'] = strtolower($mod['modId']);
             if (empty($mod['version']))
-                die ("{'status': 'error', 'message': 'Forge info file does not contain version!'}");
+                die ('{"status": "error", "message": "Forge info file does not contain version!"}');
             else {
                 if ($mod['version']=='${file.jarVersion}')
                     $mod['version']='';
@@ -151,7 +151,7 @@ function getModInfos(array $modTypes, string $filePath): array {
 
         $mod_info['forge']['loadertype'] = 'forge';
         if (empty($parsed['loaderVersion']))
-            die ("{'status': 'error', 'message': 'Forge info file does not contain loaderVersion!'}");
+            die ('{"status": "error", "message": "Forge info file does not contain loaderVersion!"}');
         else
             $mod_info['forge']['loaderversion'] = $parsed['loaderVersion'];
         if (!empty($parsed['license']))
@@ -162,7 +162,7 @@ function getModInfos(array $modTypes, string $filePath): array {
 
         $raw = $zip->getFromName(FORGE_OLD_INFO_PATH);
         if ($raw === FALSE)
-            die ("{'status': 'error', 'message': 'Could not access info file from Old Forge mod.'}");
+            die ('{"status": "error", "message": "Could not access info file from Old Forge mod."}');
 
 
         $mod_info['forge_old']=$mcmod_orig;
@@ -170,11 +170,11 @@ function getModInfos(array $modTypes, string $filePath): array {
         // dictionary is nested in an array
         $parsed = json_decode(preg_replace('/\r|\n/', '', trim($raw)), true)[0];
         if (empty($parsed['modid']))
-            die ("{'status': 'error', 'message': 'Old Forge info file does not contain modid!'}");
+            die ('{"status": "error", "message": "Old Forge info file does not contain modid!"}');
         else
             $mod_info['forge_old']['modid'] = strtolower($parsed['modid']);
         if (empty($parsed['version']))
-            die ("{'status': 'error', 'message': 'Old Forge info file does not contain version!'}");
+            die ('{"status": "error", "message": "Old Forge info file does not contain version!"}');
         else {
             if ($parsed['version']=='${file.jarVersion}')
                 $parsed['version']='';
@@ -209,7 +209,7 @@ function getModInfos(array $modTypes, string $filePath): array {
     if ($modTypes['fabric']===TRUE) {
         $raw = $zip->getFromName(FABRIC_INFO_PATH);
         if ($raw === FALSE)
-            die ("{'status': 'error', 'message': 'Could not access info file from Fabric mod.'}");
+            die ('{"status": "error", "message": "Could not access info file from Fabric mod."}');
 
 
         $mod_info['fabric']=$mcmod_orig;
@@ -217,11 +217,11 @@ function getModInfos(array $modTypes, string $filePath): array {
         $parsed = json_decode(preg_replace('/\r|\n/', '', trim($raw)), true);
 
         if (empty($parsed['id']))
-            die ("{'status': 'error', 'message': 'Fabric info file doe not contain id!'}");
+            die ('{"status": "error", "message": "Fabric info file doe not contain id!"}');
         else
             $mod_info['fabric']['modid'] = $parsed['id'];
         if (empty($parsed['version']))
-            die ("{'status': 'error', 'message': 'Fabric info file does not contain version!'}");
+            die ('{"status": "error", "message": "Fabric info file does not contain version!"}');
         else
             $mod_info['fabric']['version'] = $parsed['version'];
         if (!empty($parsed['name']))
@@ -363,7 +363,7 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
             $mcvmin = !empty($mcvrange['min']) ? $mcvrange['min'] : ''; 
             $mcvmax = !empty($mcvrange['max']) ? $mcvrange['max'] : '';
 
-            $addq = $db->query("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`mcversion_low`,`mcversion_high`,`filename`,`type`,`loadertype`) VALUES ("
+            $addq = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`mcversion_low`,`mcversion_high`,`filename`,`type`,`loadertype`) VALUES ("
                 ."'".$db->sanitize($modinfo['modid'])."',"
                 ."'".$db->sanitize($modinfo['name'])."',"
                 ."'".$db->sanitize($mod_zip_md5)."',"
@@ -387,22 +387,21 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
                 return -1;
             }
         } else {
-            die ("{'status':'error','message':'Could not create zip. Out of disk space?'}");
+            die ('{"status":"error","message":"Could not create zip. Out of disk space?"}');
         }
     } else {
-        die ("{'status':'error','message':'Could not create zip. Bad folder permissions?'}");
+        die ('{"status":"error","message":"Could not create zip. Bad folder permissions?"}');
     }
 }
 // todo: specify in config if it's http or https!
 
 if (!file_exists($file_tmp))
-    die ("{'status':'error','message':'Uploaded file does not exist!?'}");
+    die ('{"status":"error","message":"Uploaded file does not exist!?"}');
 
 $modTypes = getModTypes($file_tmp);
-error_log('MODTYPES: '.json_encode($modTypes));
+// error_log('MODTYPES: '.json_encode($modTypes));
 $modInfos = getModInfos($modTypes, $file_tmp);
-error_log('MODINFOS: '.json_encode($modInfos));
-
+// error_log('MODINFOS: '.json_encode($modInfos));
 
 if (!isset($db)){
     $db=new Db;
@@ -424,10 +423,9 @@ foreach ($modInfos as $modinfo) {
         die('{"status": "error","message":"Mod already in database!"}');
     }
     // consequence: we allow multiple loadertypes (ie fabric, forge) of the exact same mod
-
     $result_mod_id = processFile($file_tmp, $file_name, $modinfo);
     if ($result_mod_id === -1) {
-        die("{'status':'error','message':'Unable to add mod to database.', 'name': '".$file_name."'}");
+        die('{"status":"error","message":"Unable to add mod to database.", "name": "'.$file_name.'"}');
     } else {
         error_log('Successfully added modid='.$modinfo['modid'].' id='.$result_mod_id.' to database!');
         array_push($added_modids, $modinfo['modid']);
@@ -440,8 +438,6 @@ $db->disconnect();
 // get the last one added. we don't support displaying multiple..
 // todo: support displaying multiple in index.php
 // modid appears to be the id in the database, name appears to be modid...
-// error_log("{'status':'succ', 'message': 'Uploaded and saved.', 'modid': ".$added_ids[sizeof($added_ids)-1].", 'name': '".$added_modids[sizeof($added_modids)-1]."'}");
-// echo ("{'status':'succ', 'message': 'Uploaded and saved.', 'modid': ".$added_ids[sizeof($added_ids)-1].", 'name': '".$added_modids[sizeof($added_modids)-1]."'}");
 error_log('{"status":"succ","message":"Mod has been uploaded and saved.","modid":'.$added_ids[sizeof($added_ids)-1].',"name":"'.$added_modids[sizeof($added_modids)-1].'"}');
 echo '{"status":"succ","message":"Mod has been uploaded and saved.","modid":'.$added_ids[sizeof($added_ids)-1].',"name":"'.$added_modids[sizeof($added_modids)-1].'"}';
 

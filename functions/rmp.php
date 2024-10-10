@@ -17,8 +17,8 @@ require_once("db.php");
 $db=new Db;
 $db->connect();
 
-$db->query("DELETE FROM `builds` WHERE `modpack` = '".$db->sanitize($_GET['id'])."'");
-$db->query("DELETE FROM `modpacks` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
+$db->execute("DELETE FROM `builds` WHERE `modpack` = '".$db->sanitize($_GET['id'])."'");
+$db->execute("DELETE FROM `modpacks` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
 
 $db->disconnect();
 header("Location: ".$config['dir']."dashboard");

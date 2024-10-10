@@ -24,7 +24,7 @@ $ispublic = 0;
 if ($_GET['ispublic']=="on") {
     $ispublic=1;
 }
-$db->query("UPDATE `modpacks`
+$db->execute("UPDATE `modpacks`
     SET `name` = '".$db->sanitize($_GET['name'])."',
      `display_name` = '".$db->sanitize($_GET['display_name'])."',
       `public` = ".$ispublic."

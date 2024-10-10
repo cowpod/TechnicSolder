@@ -25,7 +25,7 @@ if (!isset($db)){
     $db->connect();
 }
 
-$sql = $db->query("UPDATE `users`
+$sql = $db->execute("UPDATE `users`
     SET `display_name` = '".$_POST['display_name']."', `perms` = '".$_POST['perms']."'
     WHERE `name` = '".$_POST['name']."'"
 );

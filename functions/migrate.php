@@ -35,10 +35,10 @@ if (!$db2) {
     die("error");
 }
 
-$db->query("TRUNCATE `modpacks`");
-$db->query("TRUNCATE `builds`");
-$db->query("TRUNCATE `clients`");
-$db->query("TRUNCATE `mods`");
+$db->execute("TRUNCATE `modpacks`");
+$db->execute("TRUNCATE `builds`");
+$db->execute("TRUNCATE `clients`");
+$db->execute("TRUNCATE `mods`");
 
 // ----- MODPACKS ----- \\
 $res = $db2->query("SELECT `name`,`slug`,`status`,`latest_build_id`,`recommended_build_id` FROM `modpacks`");
@@ -50,7 +50,7 @@ foreach ($res as $row) {
     } else {
         $public = 0;
     }
-    $db->query("INSERT INTO `modpacks` (`display_name`,`name`,`public`,`latest`,`recommended`,`icon`) VALUES ('".$row['name']."','".$row['slug']."',".$public.",'".$latest."','".$recommended."','http://demo.solder.cf/TechnicSolder/resources/default/icon.png')");
+    $db->execute("INSERT INTO `modpacks` (`display_name`,`name`,`public`,`latest`,`recommended`,`icon`) VALUES ('".$row['name']."','".$row['slug']."',".$public.",'".$latest."','".$recommended."','http://demo.solder.cf/TechnicSolder/resources/default/icon.png')");
 }
 // ----- BUILDS ----- \\
 $res = $db2->query("SELECT `modpack_id`,`version`,`minecraft_version`,`status`,`java_version`,`required_memory` FROM `builds`");
@@ -60,12 +60,12 @@ foreach ($res as $row) {
     } else {
         $public = 0;
     }
-    $db->query("INSERT INTO `builds` (`modpack`,`name`,`public`,`minecraft`,`java`,`memory`) VALUES ('".$row['modpack_id']."','".$row['version']."',".$public.",'".$row['minecraft_version']."','".$row['java_version']."','".$row['memory']."')");
+    $db->execute("INSERT INTO `builds` (`modpack`,`name`,`public`,`minecraft`,`java`,`memory`) VALUES ('".$row['modpack_id']."','".$row['version']."',".$public.",'".$row['minecraft_version']."','".$row['java_version']."','".$row['memory']."')");
 }
 // ----- CLIENTS ----- \\
 $res = $db2->query("SELECT `title`,`token` FROM `clients`");
 foreach ($res as $row) {
-    $db->query("INSERT INTO `clients` (`name`,`UUID`) VALUES ('".$row['title']."','".$row['token']."')");
+    $db->execute("INSERT INTO `clients` (`name`,`UUID`) VALUES ('".$row['title']."','".$row['token']."')");
 }
 // ----- MODS ----- \\
 $res = $db2->query("SELECT * FROM `releases`");
@@ -76,7 +76,7 @@ foreach ($res as $row) {
         assert(sizeof($packageres)==1);
         $package = $packageres[0];
     }
-    $db->query("INSERT INTO `mods` (`type`,`url`,`version`,`md5`,`filename`,`name`,`pretty_name`,`author`,`link`,`donlink`,`description`) VALUES ('mod','".$url."','".$row['version']."','".$row['md5']."','".end(explode("/",$row['path']))."','".$package['slug']."','".$package['name']."','".$package['author']."','".$package['website_url']."','".$package['donation_url']."','".$package['description']."')");
+    $db->execute("INSERT INTO `mods` (`type`,`url`,`version`,`md5`,`filename`,`name`,`pretty_name`,`author`,`link`,`donlink`,`description`) VALUES ('mod','".$url."','".$row['version']."','".$row['md5']."','".end(explode("/",$row['path']))."','".$package['slug']."','".$package['name']."','".$package['author']."','".$package['website_url']."','".$package['donation_url']."','".$package['description']."')");
     copy($_POST['solder-orig']."/storage/app/public/".$row['path'], dirname(dirname(__FILE__))."/mods/".end(explode("/",$row['path'])));
 }
 // ----- BUILD_RELEASE ----- \\
@@ -93,5 +93,5 @@ foreach ($res as $row) {
         array_push($mods, implode(',',$ml));
     }
     array_push($mods, $row['release_id']);
-    $db->query("UPDATE `builds` SET `mods` = '". implode(',',$mods)."' WHERE `id` = ".$row['build_id']);
+    $db->execute("UPDATE `builds` SET `mods` = '". implode(',',$mods)."' WHERE `id` = ".$row['build_id']);
 }

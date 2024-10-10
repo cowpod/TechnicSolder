@@ -20,5 +20,5 @@ if (!isset($db)){
     $db->connect();
 }
 
-$db->query("DELETE FROM `clients` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
+$db->execute("DELETE FROM `clients` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
 exit();

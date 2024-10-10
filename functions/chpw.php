@@ -23,7 +23,7 @@ if (!isset($db)){
     $db->connect();
 }
 
-$sql = $db->query("UPDATE `users` SET `pass` = '".$pass."' WHERE `name` = '".$_SESSION['user']."'"
+$sql = $db->execute("UPDATE `users` SET `pass` = '".$pass."' WHERE `name` = '".$_SESSION['user']."'"
 );
 echo $db->error();
 

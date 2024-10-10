@@ -25,6 +25,6 @@ foreach ($modq as $mod) {
     unlink("../".$mod['type']."s/".$mod['filename']);
 }
 
-$db->query("DELETE FROM `mods` WHERE `name` = '".$db->sanitize($_GET['id'])."'");
+$db->execute("DELETE FROM `mods` WHERE `name` = '".$db->sanitize($_GET['id'])."'");
 
 exit();

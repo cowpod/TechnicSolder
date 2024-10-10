@@ -422,13 +422,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         if (sizeof($result)!==0) {
                             foreach($result as $modpack){
                                 if (empty($modpack['name'])) {
-                                    // error_log("modpacks: modpack name isn't set, so can't query technic api on stats! skipping.");
                                     continue;
                                 }
                                 if (isset($cache[$modpack['name']])&&$cache[$modpack['name']]['time'] > time()-1800) {
                                     $info = $cache[$modpack['name']]['info'];
                                 } else {
-                                    if ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
+                                    if (!str_starts_with($modpack['name'],'unnamed-modpack-') && $info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
                                         $cache[$modpack['name']]['time'] = time();
                                         if(!empty($info['icon']['url'])){
                                             $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
@@ -1063,7 +1062,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 );
                                 array_push($mpab, $ba);
                             }
-                            // error_log(json_encode($mpab));
                             $mps = array();
                             $allmps = $db->query("SELECT `id`,`display_name` FROM `modpacks`");
                             foreach($allmps as $mp) {
@@ -1176,11 +1174,11 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             if (isset($_POST['java'])) {
                 if ($_POST['forgec']!=="none"||empty($modslist)) {
                     if ($_POST['forgec']=="wipe"||empty($modslist)) {
-                        $db->query("UPDATE `builds` SET `mods` = '".$db->sanitize($_POST['versions'])."' WHERE `id` = ".$db->sanitize($_GET['id']));
+                        $db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize($_POST['versions'])."' WHERE `id` = ".$db->sanitize($_GET['id']));
                     } else {
                         $modslist2 = $modslist;
                         $modslist2[0] = $_POST['versions'];
-                        $db->query("UPDATE `builds` SET `mods` = '".$db->sanitize(implode(',',$modslist2))."' WHERE `id` = ".$db->sanitize($_GET['id']));
+                        $db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize(implode(',',$modslist2))."' WHERE `id` = ".$db->sanitize($_GET['id']));
                     }
                 }
                 $ispublic = 0;
@@ -1192,13 +1190,13 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     assert(sizeof($minecraft)==1);
                     $minecraft=$minecraft[0];
                 }
-                $db->query("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic." WHERE `id` = ".$db->sanitize($_GET['id']));
+                $db->execute("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic." WHERE `id` = ".$db->sanitize($_GET['id']));
                 $latest_public = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$user['modpack']." ORDER BY `id` DESC");
                 if ($latest_public) {
                     assert(sizeof($latest_public==1));
                     $latest_public = $latest_public[0];
                 }
-                $db->query("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$user['modpack']);
+                $db->execute("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$user['modpack']);
             }
 
             $user = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));

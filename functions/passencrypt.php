@@ -12,15 +12,15 @@ if ($_SESSION['user']!==$config['mail']) {
 require_once("db.php");
 $db=new Db;
 
-//$sql = $db->query("UPDATE `users` SET `display_name` = '".$_POST['display_name']."', `perms` = '".$_POST['perms']."' WHERE `name` = '".$_POST['name']."'");
+//$sql = $db->execute("UPDATE `users` SET `display_name` = '".$_POST['display_name']."', `perms` = '".$_POST['perms']."' WHERE `name` = '".$_POST['name']."'");
 if (!isset($config['encrypted'])||$config['encrypted']==false) {
     $db->connect();
     $users = $db->query("SELECT * FROM `users`");
     $db->disconnect();
     foreach ($users as $user) {
         // OLD HASHING METHOD (INSECURE)
-        // $db->query("UPDATE `users` SET `pass` = '".hash("sha256",$user['pass']."Solder.cf")."' WHERE `name` = '".$user['name']."'");
-        $db->query( "UPDATE `users` SET `pass` = '".password_hash($user['pass'], PASSWORD_DEFAULT)."' WHERE `name` = '".$user['name']."'");
+        // $db->execute("UPDATE `users` SET `pass` = '".hash("sha256",$user['pass']."Solder.cf")."' WHERE `name` = '".$user['name']."'");
+        $db->execute( "UPDATE `users` SET `pass` = '".password_hash($user['pass'], PASSWORD_DEFAULT)."' WHERE `name` = '".$user['name']."'");
     }
     // OLD HASHING METHOD (INSECURE)
     // $mainpass = hash("sha256",$config['pass']."Solder.cf");

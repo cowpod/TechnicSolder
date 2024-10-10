@@ -25,7 +25,7 @@ if ($result) {
     assert(sizeof($result)==1);
     $mod = $result[0];
 }
-$db->query("UPDATE `mods`
+$db->execute("UPDATE `mods`
     SET `name` = '".$db->sanitize($_POST['name'])."',
     `pretty_name` = '".$db->sanitize($_POST['pretty_name'])."',
     `description` = '".$db->sanitize($_POST['description'])."'

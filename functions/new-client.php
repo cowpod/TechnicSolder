@@ -20,7 +20,7 @@ if (substr($_SESSION['perms'],6,1)!=="1") {
     exit();
 }
 
-$db->query("INSERT INTO clients(`name`,`UUID`) VALUES ('".$db->sanitize($_GET['name'])."', '".$db->sanitize($_GET['uuid'])."')");
+$db->execute("INSERT INTO clients(`name`,`UUID`) VALUES ('".$db->sanitize($_GET['name'])."', '".$db->sanitize($_GET['uuid'])."')");
 
 $db->disconnect();
 

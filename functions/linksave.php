@@ -20,7 +20,7 @@ if (!isset($db)){
     $db->connect();
 }
 
-$db->query("UPDATE `mods` SET `link` = '".$db->sanitize($_POST['value'])."'
+$db->execute("UPDATE `mods` SET `link` = '".$db->sanitize($_POST['value'])."'
     WHERE `name` = '".$db->sanitize($_POST['id'])."'"
 );
 

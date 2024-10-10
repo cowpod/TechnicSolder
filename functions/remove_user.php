@@ -16,7 +16,7 @@ require_once("db.php");
 $db=new Db;
 $db->connect();
 
-$sql = $db->query("DELETE FROM `users` WHERE `id` = ".$_POST['id']);
+$sql = $db->execute("DELETE FROM `users` WHERE `id` = ".$_POST['id']);
 
 $db->disconnect();
 

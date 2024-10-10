@@ -23,7 +23,7 @@ if ($bq) {
     $build = $bq[0];
 }
 
-$db->query("UPDATE `modpacks` SET `recommended` = '".$build['name']."' WHERE `id` = ".$build['modpack']);
+$db->execute("UPDATE `modpacks` SET `recommended` = '".$build['name']."' WHERE `id` = ".$build['modpack']);
 
 $response = array(
     "name" => $build['name'],

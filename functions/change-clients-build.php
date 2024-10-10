@@ -21,7 +21,7 @@ if (!isset($db)){
 }
 
 $clients = implode(",", $_GET['client']);
-$db->query("UPDATE `builds` SET `clients` = '".$db->sanitize($clients)."' WHERE `id`=".$_GET['id']
-);
+$db->execute("UPDATE `builds` SET `clients` = '".$db->sanitize($clients)."' WHERE `id`=".$_GET['id']);
+
 header("Location: ".$config['dir']."build?id=".$_GET['id']);
 exit();

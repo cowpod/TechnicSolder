@@ -12,7 +12,7 @@ $db->connect();
 $icon = $_FILES["newIcon"]["tmp_name"];
 $iconbase = base64_encode(file_get_contents($icon));
 
-$query = $db->query("UPDATE `users` SET `icon` = '".$iconbase."' WHERE `name` = '".$_SESSION['user']."'");
+$query = $db->execute("UPDATE `users` SET `icon` = '".$iconbase."' WHERE `name` = '".$_SESSION['user']."'");
 
 echo $db->error;
 

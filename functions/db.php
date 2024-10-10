@@ -35,69 +35,66 @@ class Db {
 	}
 
 	public function test() {
-		// pure
+		// POST
 		$testconn;
 		try {
-		    $testconn = mysqli_connect($_POST['db-host'], $_POST['db-user'], $_POST['db-pass'], $_POST['db-name']);
-		} catch (mysqli_sql_exception $e) {
-		    error_log("db.php: test(): Connection test failed: ".$e);
+		    $testconn = new PDO("mysql:host=".$_POST['db-host'].";dbname=".$_POST['db-name'].";charset=utf8", $_POST['db-user'], $_POST['db-pass']);
+		    $testconn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		} catch (PDOException $e) {
+		    error_log("db.php: test(): Connection test failed: ".$e->getMessage());
 		    return false;
 		}
-		mysqli_disconnect($testconn);
+		$testconn=null;
 		return true; 
 	}
 
 	public function test2($host, $user, $pass, $name) {
-		// pure
+		// arg
 		$testconn;
 		try {
-		    $testconn = mysqli_connect($host, $user, $pass, $name);
-		} catch (mysqli_sql_exception $e) {
-		    error_log("db.php: test2(): Connection test failed: ".$e);
+		    $testconn = new PDO("mysql:host=$host;dbname=$name;charset=utf8", $user, $pass);
+		    $testconn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		} catch (PDOException $e) {
+		    error_log("db.php: test(): Connection test failed: ".$e->getMessage());
 		    return false;
 		}
-		mysqli_disconnect($testconn);
+		$testconn=null;
 		return true; 
 	}
 
 	public function connect() {
+		// config
 		if (isset($this->conn)) {
 			error_log("db.php: connect(): already connected!");
 			return true;
 		}
 		try {
-		    $this->conn = mysqli_connect($this->conf['db-host'], $this->conf['db-user'], $this->conf['db-pass'], $this->conf['db-name']);;
-		} catch (mysqli_sql_exception $e) {
-		    error_log("Connection failed : " . $e);
+		    $this->conn = new PDO("mysql:host=".$this->conf['db-host'].";dbname=".$this->conf['db-name'].";charset=utf8", $this->conf['db-user'], $this->conf['db-pass']);
+		} catch (PDOException $e) {
+		    error_log("Connection failed : " . $e->getMessage());
 		    return false;
 		}
 		return true;
 	}
 
 	public function connect2($host, $user, $pass, $name) {
+		// arg
 		if (isset($this->conn)) {
 			error_log("db.php: connect2(): already connected!");
 			return true;
 		}
 		try {
-		    $this->conn = mysqli_connect($host, $user, $pass, $name);;
-		} catch (mysqli_sql_exception $e) {
-		    error_log("Connection failed : " . $e);
+		    $this->conn = new PDO("mysql:host=$host;dbname=$name;charset=utf8", $user, $pass);
+		} catch (PDOException $e) {
+		    error_log("Connection failed : " . $e->getMessage());
 		    return false;
 		}
 		return true;
 	}
 
-
 	public function disconnect(){
-		$ret=false;
-		try {
-			$ret=mysqli_close($this->conn);
-		} catch (mysqli_sql_exception $e) {
-			error_log("db.php: disconnect(): already closed? ".$e);
-		}
 		$this->conn=null;
-		return $ret;
+		return true;
 	}
 
 	public function query($querystring) {
@@ -115,65 +112,60 @@ class Db {
 				return false;
 			}
 		}
-
+		// error_log('QUERY: '.$querystring);
 		$ret=[];
-		$result;
-		
-		// error_log("db.php: query(): \"".$querystring."\" from: ".$this->get_including_file());
-
 		try {
-			$result = mysqli_query($this->conn, $querystring);
-		} catch (mysqli_sql_exception $e) {
-			// die("SQL query exception: ".$e);
-		    error_log("db.php: query(): SQL query exception: ".$e);
-		    if ($one_time_connection) $this->disconnect();
-		    return false;
-		}
-
-		if ($result===false) {
-		    error_log("db.php: query(): SQL query error: ".mysqli_error($result));
-		    if ($one_time_connection) $this->disconnect();
-		    return false;
-		}
-
-		if ($result===true) {
-			// success! got a boolean TRUE
-			if ($one_time_connection) $this->disconnect();
-			return true;
-		}
-
-		// otherwise, we got an object.
-		
-		if (mysqli_num_rows($result) == 0) {
-			// got 0 rows
-		    // if ($one_time_connection) $this->disconnect();
-    		// return [];
-    	} else {
-			while($row = mysqli_fetch_assoc($result)) {
-				if (empty($row)) continue;
-				// error_log("got row: ".json_encode($row));
-				array_push($ret, $row);
+			$stmt = $this->conn->prepare($querystring);
+			$result = $stmt->execute();
+			$stmt->setFetchMode(PDO::FETCH_ASSOC);
+			foreach($stmt->fetchAll() as $row) {
+			    array_push($ret, $row);
 			}
+		} catch (PDOException $e) {
+		    error_log("db.php: query(): SQL query exception: ".$e->getMessage());
 		}
-
-		// error_log(json_encode($ret));
-		
+		// error_log('RESULT: '.json_encode($ret));
 		if ($one_time_connection) $this->disconnect();
-    	return $ret;
+		return $ret;
 	}
 
+	public function execute($querystring) {
+		if (empty($querystring)) {
+			return false;
+		}
+		$one_time_connection=false;
+		// one-time connection if $conn isn't set
+		if (!isset($this->conn)) {
+			if ($this->connect()) {
+				$one_time_connection=true;
+			} else {
+				error_log("db.php: execute(): failed to open one-time connection");
+				return false;
+			}
+		}
+		// error_log('QUERY: '.$querystring);
+		try {
+			$stmt = $this->conn->prepare($querystring);
+			$result = $stmt->execute();
+		} catch (PDOException $e) {
+		    error_log("db.php: execute(): SQL query exception: ".$e->getMessage());
+		}
+		return $result;
+	}
+
+
 	public function sanitize($querystring) {
-		return mysqli_real_escape_string($this->conn, $querystring);
+		return $querystring;
 	}
 
 	public function insert_id() {
-		error_log("db.php: insert_id(): ".mysqli_insert_id($this->conn));
-		return mysqli_insert_id($this->conn);
+		error_log("db.php: insert_id(): ".$this->conn->lastInsertId());
+		return $this->conn->lastInsertId();
 	}
 
 	public function error() {
-		error_log("db.php: error(): ".mysqli_error($this->conn));
-		return mysqli_error($this->conn);
+		error_log("db.php: error(): ".$this->conn->errorInfo());
+		return $this->conn->errorInfo();
 	}
 }
 

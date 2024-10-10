@@ -27,7 +27,7 @@ $bmods = $db->sanitize($_POST['modlist']);
 $bjava = $db->sanitize($_POST['java']);
 $bmemory = $db->sanitize($_POST['memory']);
 $bforge = $db->sanitize($_POST['versions']);
-$db->query("INSERT INTO modpacks(`name`, `display_name`, `icon`, `icon_md5`, `logo`, `logo_md5`, `background`, `background_md5`, `public`, `recommended`, `latest`) 
+$db->execute("INSERT INTO modpacks(`name`, `display_name`, `icon`, `icon_md5`, `logo`, `logo_md5`, `background`, `background_md5`, `public`, `recommended`, `latest`) 
     VALUES ('".$mpname."',
     '".$mpdname."',
     'http://".$config['host'].$config['dir']."resources/default/icon.png',
@@ -53,7 +53,7 @@ if ($fq) {
     $f = $fq[0];
 }
 $minecraft =  $f['mcversion'];
-$db->query("INSERT INTO builds(`name`,`modpack`,`public`,`mods`,`java`,`memory`,`minecraft`) 
+$db->execute("INSERT INTO builds(`name`,`modpack`,`public`,`mods`,`java`,`memory`,`minecraft`) 
     VALUES ('1.0','".$mpi."',1,'".$bforge.",".$bmods."','".$bjava."','".$bmemory."','".$minecraft."')");
     
 header("Location: ".$config['dir']."modpack?id=".$mpi);

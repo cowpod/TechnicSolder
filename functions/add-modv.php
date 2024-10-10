@@ -33,7 +33,7 @@ if (!isset($db)){
     $db->connect();
 }
 
-$db->query("INSERT INTO `mods`
+$db->execute("INSERT INTO `mods`
     (`name`, `pretty_name`, `md5`, `url`, `link`, `author`, `donlink`, `description`, `version`, `mcversion`, `type`) VALUES ( 
         '".$db->sanitize($_POST['name'])."',
         '".$db->sanitize($_POST['pretty_name'])."',

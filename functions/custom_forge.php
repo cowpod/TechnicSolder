@@ -56,7 +56,7 @@ if (move_uploaded_file($fileTmpLoc, "../forges/modpack-".$version."/modpack.jar"
     rmdir("../forges/modpack-".$version);
     $md5 = md5_file("../forges/forge-".$version.".zip");
     $url = "http://".$config['host'].$config['dir']."forges/forge-".$version.".zip";
-    $res = $db->query("INSERT INTO `mods`
+    $res = $db->execute("INSERT INTO `mods`
                 (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`)
                 VALUES ('forge','Minecraft Forge (Custom)',
                         '".$md5."',

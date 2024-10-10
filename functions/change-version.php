@@ -35,7 +35,7 @@ $modslist = explode(',', $mods['mods']);
 $nmodlist = array_diff($modslist, [$_GET['mod']]);
 array_push($nmodlist, $_GET['id']);
 $modslist = implode(',', $nmodlist);
-$db->query("UPDATE `builds` SET `mods` = '".$modslist."' WHERE `id` = ".$db->sanitize($_GET['bid'])
-);
+
+$db->execute("UPDATE `builds` SET `mods` = '".$modslist."' WHERE `id` = ".$db->sanitize($_GET['bid']));
 
 exit();

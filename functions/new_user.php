@@ -30,7 +30,7 @@ require_once("db.php");
 $db=new Db;
 $db->connect();
 
-$sql = $db->query("INSERT INTO users(`name`,`display_name`,`pass`,`icon`) VALUES('".$_POST['name']."','".$_POST['display_name']."','".$pass."','".$icon."')");
+$sql = $db->execute("INSERT INTO users(`name`,`display_name`,`pass`,`icon`) VALUES('".$_POST['name']."','".$_POST['display_name']."','".$pass."','".$icon."')");
 
 $db->disconnect();
 

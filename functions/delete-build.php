@@ -19,13 +19,12 @@ if (!isset($db)){
     $db->connect();
 }
 
-$db->query("DELETE FROM `builds` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
+$db->execute("DELETE FROM `builds` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
 $bq = $db->query("SELECT * FROM `builds` WHERE `modpack` = '".$db->sanitize($_GET['pack'])."' AND `public` = 1 ORDER BY `id` DESC LIMIT 1");
 
 if ($bq) {
     assert(sizeof($bq)==1);
     $build = $bq[0];
-    //$db->query("UPDATE `modpacks` SET `latest` = '".$build['name']."' WHERE `id` = '".$build['modpack']."'");
     $response = array(
         "exists" => true,
         "name" => $build['name'],
@@ -43,7 +42,7 @@ if ($lpq) {
 }
 
 if (!empty($latest_public['name']))
-    $db->query("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."'WHERE `id` = ".$db->sanitize($_GET['pack']));
+    $db->execute("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."'WHERE `id` = ".$db->sanitize($_GET['pack']));
 
 echo json_encode($response);
 exit();
