@@ -3119,7 +3119,7 @@ function stringify(items) {
                                             class="btn btn-primary">Edit</button>
                                     <button onclick="remove_box(<?php echo $mod['id'].",'".$mod['version']."','".$mod['filename']."'" ?>)" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
                                     <!-- url from api/index.php -->
-                                    <button onclick="window.location = '<?php echo !empty($mod['url']) ? $mod['url'] : current(explode('/',strtolower($_SERVER['SERVER_PROTOCOL']))).'://'.$config['host'].$config['dir'].$mod['type']."s/".$mod['filename'] ?>'" class="btn btn-secondary"><em class="fas fa-file-download"></em> .zip</button>
+                                    <button onclick="window.location = '<?php echo !empty($mod['url']) ? $mod['url'] : strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://'.$config['host'].$config['dir'].$mod['type']."s/".$mod['filename'] ?>'" class="btn btn-secondary"><em class="fas fa-file-download"></em> .zip</button>
                                     <?php if (!empty($mod['filename'])) { ?><button onclick="window.location = './functions/mod_extract.php?id=<?php echo $mod['id']; ?>'" class="btn btn-secondary"><em class="fas fa-file-download"></em> .jar</button><?php } ?>
                                 </div>
                             </td>
