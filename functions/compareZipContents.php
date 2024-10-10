@@ -8,8 +8,10 @@ function compareZipContents(string $filepath1, string $filepath2): bool {
     }
 
     $contents1=[];
+    $filecount1=0;
     $zip = new ZipArchive();
     if ($zip->open($filepath1) === TRUE) {
+        $filecount1=$zip->numFiles;
         for ($i=0; $i<$zip->numFiles; $i++) {
             $fileInfo = $zip->statIndex($i);
             array_push($contents1, ['name'=>$fileInfo['name'], 'crc'=>$fileInfo['crc'],'size'=>$fileInfo['size']]);
@@ -20,8 +22,10 @@ function compareZipContents(string $filepath1, string $filepath2): bool {
         return FALSE;
     }
     $contents2=[];
+    $filecount2=0;
     $zip = new ZipArchive();
     if ($zip->open($filepath2) === TRUE) {
+        $filecount2=$zip->numFiles;
         for ($i=0; $i<$zip->numFiles; $i++) {
             $fileInfo = $zip->statIndex($i);
             array_push($contents2, ['name'=>$fileInfo['name'], 'crc'=>$fileInfo['crc'],'size'=>$fileInfo['size']]);
@@ -33,6 +37,6 @@ function compareZipContents(string $filepath1, string $filepath2): bool {
     }
     // disregards order
     // error_log($filepath1.','.$filepath2.'='.($contents1 == $contents2));
-    return ($contents1 == $contents2);
+    return ($contents1==$contents2 && $filecount1==$filecount2);
 }
 ?>
