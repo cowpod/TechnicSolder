@@ -134,6 +134,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         <script src="./resources/js/popper.min.js"></script>
         <script src="./resources/js/fontawesome.js"></script>
         <script src="./resources/js/slugify.js"></script>
+        <script src="./resources/js/getQueryVariable.js"></script>
         <script src="./resources/bootstrap/bootstrap.min.js"></script>
         <script src="./resources/bootstrap/bootstrap-sortable.js"></script>
         <link rel="stylesheet" href="./resources/bootstrap/bootstrap-sortable.css" type="text/css">
@@ -369,10 +370,10 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         </div>
         <?php
         } else {
-            $filecontents = file_get_contents('./api/version.json');
+            $api_version_json = file_get_contents('./api/version.json');
         ?>
         <nav class="navbar <?php if ($_SESSION['dark']=="on") { echo "navbar-dark bg-dark sticky-top";}else { echo "navbar-light bg-white sticky-top";}?>">
-            <span class="navbar-brand"  href="#"><img id="techniclogo" alt="Technic logo" class="d-inline-block align-top" height="46px" src="./resources/wrenchIcon<?php if ($_SESSION['dark']=="on") {echo "W";}?>.svg"><em id="menuopen" class="fas fa-bars menu-bars"></em> Technic Solder <span id="solderinfo"><?php echo(json_decode($filecontents,true))['version']; ?></span></span></span>
+            <span class="navbar-brand"  href="#"><img id="techniclogo" alt="Technic logo" class="d-inline-block align-top" height="46px" src="./resources/wrenchIcon<?php if ($_SESSION['dark']=="on") {echo "W";}?>.svg"><em id="menuopen" class="fas fa-bars menu-bars"></em> Technic Solder <span id="solderinfo"><?php echo(json_decode($api_version_json,true))['version']; ?></span></span></span>
             <span style="cursor: pointer;" class="dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <?php if ($_SESSION['user']!==$config['mail']) { ?>
                 <img class="img-thumbnail" style="width: 40px;height: 40px" src="data:image/png;base64,<?php
@@ -390,11 +391,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </div>
             </span>
         </nav>
-        <script>
-            $(".navbar-brand").click(function(){
-                $("#sidenav").toggleClass("sidenavexpand");
-            });
-        </script>
         <div id="sidenav" class="text-white sidenav">
             <ul class="nav nav-tabs" style="height:100%">
                 <li class="nav-item">
@@ -414,39 +410,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <label class="custom-control-label" for="dark">Dark theme</label>
                 </div>
             </ul>
-            <script>
-                $("#dark").click(function(){
-                    if ($("#dark").is(":checked")){
-                        if (window.location.href.indexOf("?light") > -1 || window.location.href.indexOf("&light") > -1) {
-                            if (window.location.href.indexOf("?light") > -1) {
-                                window.location.href = window.location.href.replace("?light","?dark");
-                            } else {
-                                window.location.href = window.location.href.replace("&light","&dark");
-                            }
-                        } else {
-                            if (window.location.href.indexOf("?") > -1) {
-                                window.location.href = window.location.href+"&dark";
-                            } else {
-                                window.location.href = window.location.href+"?dark";
-                            }
-                        }
-                    } else {
-                        if (window.location.href.indexOf("?dark") > -1 || window.location.href.indexOf("&dark") > -1) {
-                            if (window.location.href.indexOf("?dark") > -1) {
-                                window.location.href = window.location.href.replace("?dark","?light");
-                            } else {
-                                window.location.href = window.location.href.replace("&dark","&light");
-                            }
-                        } else {
-                            if (window.location.href.indexOf("?") > -1) {
-                                window.location.href = window.location.href+"&light";
-                            } else {
-                                window.location.href = window.location.href+"?light";
-                            }
-                        }
-                    }
-                });
-            </script>
             <div class="tab-content">
                 <div class="tab-pane active" id="modpacks" role="tabpanel">
                     <div style="overflow:auto;height: calc( 100% - 62px )">
@@ -556,6 +519,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                 </div>
             </div>
+            <script src="./resources/js/page_login.js"></script>
         </div>
         <?php
         if (uri("/dashboard")){
@@ -716,12 +680,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <br />
                             <input autocomplete="off" id="modlist" required readonly class="form-control" type="text" name="modlist" placeholder="Mods to add" />
                             <br />
-                            <script>
-                                $("#dn").on("keyup", function(){
-                                    var slug = slugify($(this).val());
-                                    $("#slug").val(slug);
-                                });
-                            </script>
                             <input type="submit" id="submit" disabled class="btn btn-primary btn-block" value="Create">
                         </form>
                         <div id="upload-card" class="card">
@@ -767,141 +725,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             </table>
                             <button id="btn-done" disabled class="btn btn-success btn-block" onclick="againMods();">Add more Mods</button>
                         </div>
-                        <script>
-                            var formdisabled = true;
-                            $('#modsform').submit(function() {
-                                if (formDisabled) {
-                                    return false;
-                                } else {
-                                    return true;
-                                }
-                            });
-                            var addedmodslist = [];
-                            mn = 1;
-                            function againMods() {
-                                $("#btn-done").attr("disabled",true);
-                                $("#table-mods").html("");
-                                $("#upload-card").show();
-                                $("#u-mods").hide();
-                                addedmodslist = [];
-                                mn = 1;
-                            }
-                            function sendFile(file, i) {
-                                formdisabled = true;
-                                $("#submit").attr("disabled",true);
-                                var formData = new FormData();
-                                var request = new XMLHttpRequest();
-                                formData.set('fiels', file);
-                                request.open('POST', './functions/send_mods.php');
-                                request.upload.addEventListener("progress", function(evt) {
-                                    if (evt.lengthComputable) {
-                                        var percentage = evt.loaded / evt.total * 100;
-                                        $("#" + i).attr('aria-valuenow', percentage + '%');
-                                        $("#" + i).css('width', percentage + '%');
-                                        request.onreadystatechange = function() {
-                                            if (request.readyState == 4) {
-                                                if (request.status == 200) {
-                                                    console.log(request.response);
-                                                    response = JSON.parse(request.response);
-                                                    if (response.modid) {
-                                                        if (! $('#modlist').val().split(",").includes(response.modid.toString())) {
-                                                            addedmodslist.push(response.name);
-                                                        }
-                                                    }
-                                                    if ( mn == modcount ) {
-                                                        if (addedmodslist.length > 0) {
-                                                            if ($('#modlist').val().length > 0) {
-                                                                $('#modlist').val($('#modlist').val() + "," + addedmodslist);
-                                                            } else {
-                                                                $('#modlist').val($('#modlist').val() + addedmodslist);
-                                                            }
-                                                        }
-                                                        if ($('#modlist').val().length > 0) {
-                                                            console.log($('#modlist').val().length);
-                                                            $("#submit").attr("disabled",false);
-                                                            formdisabled = false;
-                                                        }
-                                                        $("#btn-done").attr("disabled",false);
-                                                    } else {
-                                                        mn = mn + 1;
-                                                    }
-
-                                                    switch(response.status) {
-                                                        case "succ":
-                                                        {
-                                                            $("#cog-" + i).hide();
-                                                            $("#check-" + i).show();
-                                                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                                            $("#" + i).addClass("bg-success");
-                                                            $("#info-" + i).text(response.message);
-                                                            $("#" + i).attr("id", i + "-done");
-                                                            break;
-                                                        }
-                                                        case "error":
-                                                        {
-                                                            $("#cog-" + i).hide();
-                                                            $("#times-" + i).show();
-                                                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                                            $("#" + i).addClass("bg-danger");
-                                                            $("#info-" + i).text(response.message);
-                                                            $("#" + i).attr("id", i + "-done");
-                                                            break;
-                                                        }
-                                                        case "warn":
-                                                        {
-                                                            $("#cog-" + i).hide();
-                                                            $("#exc-" + i).show();
-                                                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                                            $("#" + i).addClass("bg-warning");
-                                                            $("#info-" + i).text(response.message);
-                                                            $("#" + i).attr("id", i + "-done");
-                                                            break;
-                                                        }
-                                                        case "info":
-                                                        {
-                                                            $("#cog-" + i).hide();
-                                                            $("#inf-" + i).show();
-                                                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                                            $("#" + i).addClass("bg-info");
-                                                            $("#info-" + i).text(response.message);
-                                                            $("#" + i).attr("id", i + "-done");
-                                                            break;
-                                                        }
-                                                    }
-                                                } else {
-                                                    $("#cog-" + i).hide();
-                                                    $("#times-" + i).show();
-                                                    $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                                    $("#" + i).addClass("bg-danger");
-                                                    $("#info-" + i).text("An error occured: " + request.status);
-                                                    $("#" + i).attr("id", i + "-done");
-                                                }
-                                            }
-                                        }
-                                    }
-                                }, false);
-                                request.send(formData);
-                            }
-
-                            function showFile(file, i) {
-                                $("#table-mods").append('<tr><td scope="row">' + file.name + '</td> <td><em id="cog-' + i + '" class="fas fa-cog fa-spin"></em><em id="check-' + i + '" style="display:none" class="text-success fas fa-check"></em><em id="times-' + i + '" style="display:none" class="text-danger fas fa-times"></em><em id="exc-' + i + '" style="display:none" class="text-warning fas fa-exclamation"></em><em id="inf-' + i + '" style="display:none" class="text-info fas fa-info"></em> <small class="text-muted" id="info-' + i + '"></small></h4><div class="progress"><div id="' + i + '" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div></div></td></tr>');
-                            }
-                            $(document).ready(function() {
-                                $(':file').change(function() {
-                                    $("#upload-card").hide();
-                                    $("#u-mods").show();
-                                    modcount = this.files.length;
-                                    for (var i = 0; i < this.files.length; i++) {
-                                        var file = this.files[i];
-                                        showFile(file, i);
-                                    }
-                                    for (var i = 0; i < this.files.length; i++) {
-                                        var file = this.files[i];
-                                        sendFile(file, i);
-                                    }
-                                });
-                            });
-                        </script>
                     </div>
                     <br />
                 <?php } ?>
@@ -924,59 +747,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <input type="text" class="form-control" id="origdir" placeholder="Path to original solder install directory (ex. /var/www/solder)"><br>
                             <button class="btn btn-primary" id="submitmigration">Start Migration</button>
                         </div>
-                        <script>
-                            $("#submitmigration").click(function(){
-                                $("#submitmigration").attr('disabled',true);
-                                $("#submitmigration").text('Migrating...');
-                                var http = new XMLHttpRequest();
-                                var params = 'db-pass='+ $("#origpass").val() +'&db-name='+ $("#origdatabase").val() +'&db-user='+ $("#origname").val() +'&db-host='+ $("#orighost").val() +'&solder-orig='+$("#origdir").val() ;
-                                http.open('POST', './functions/migrate.php');
-                                http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                                http.onreadystatechange = function() {
-                                    if (http.readyState == 4 && http.status == 200) {
-                                        if (http.responseText == "error") {
-                                            $("#errtext").text("Migration failed!");
-                                            $("#errtext").removeClass("text-muted text-success");
-                                            $("#errtext").addClass("text-danger");
-                                            $("#submitmigration").attr('disabled',false);
-                                            $("#submitmigration").text('Start Migration');
-                                        } else {
-                                            $("#errtext").text("Migration was successful!");
-                                            $("#errtext").removeClass("text-muted text-danger");
-                                            $("#errtext").addClass("text-success");
-                                            $("#submitmigration").text("Done");
-                                        }
-                                    }
-                                }
-                                http.send(params);
-                            });
-                            $("#submitdbform").click(function() {
-                                $("#submitdbform").attr("disabled", true);
-                                $("#submitdbform").text("Connecting...");
-                                var http = new XMLHttpRequest();
-                                var params = 'db-pass='+ $("#origpass").val() +'&db-name='+ $("#origdatabase").val() +'&db-user='+ $("#origname").val() +'&db-host='+ $("#orighost").val() ;
-                                http.open('POST', './functions/conntest.php');
-                                http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                                http.onreadystatechange = function() {
-                                    if (http.readyState == 4 && http.status == 200) {
-                                        if (http.responseText == "error") {
-                                            $("#errtext").text("Cannot connect to database");
-                                            $("#errtext").removeClass("text-muted text-success");
-                                            $("#errtext").addClass("text-danger");
-                                            $("#submitdbform").attr("disabled", false);
-                                            $("#submitdbform").text("Connect");
-                                        } else {
-                                            $("#errtext").text("Connected to database");
-                                            $("#errtext").removeClass("text-muted text-danger");
-                                            $("#errtext").addClass("text-success");
-                                            $("#dbform").hide();
-                                            $("#migrating").show();
-                                        }
-                                    }
-                                }
-                                http.send(params);
-                            });
-                        </script>
                         <hr>
                         <p>If you are using v1.0.0.rc4 or higher, <a href="./functions/upgrade100rc4.php">Click here</a> to upgrade your database to be compatible with v1.0.0.rc1 or higher, if created in a version lower than v1.0.0.rc1</p>
                     </div>
@@ -999,115 +769,27 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             </div>
                         </div>
                         <pre class="card border-primary" style="white-space: pre-wrap;width: 100%" id="responseRaw">
-
                         </pre>
                         <h3 id="response-title"></h3>
                         <div id="response" style="width: 100%">
                             <span id="solder">
-
                             </span>
                             <div id="responseR">
-
                             </div>
                             <div id="feed">
-
                             </div>
                         </div>
-                        <script>
-                        document.getElementById("link").addEventListener("keyup", function(event) {
-                            if (event.keyCode === 13) {
-                                document.getElementById("search").click();
-                                document.getElementById("responseRaw").innerHTML = "Loading...";
-
-                            }
-                        });
-                        function get(){
-                            console.log("working");
-                            var link = document.getElementById("link").value;
-                            var request = new XMLHttpRequest();
-                            request.onreadystatechange = function() {
-                                if (this.readyState == 4 && this.status == 200) {
-                                    response = request.responseText;
-                                    console.log(response);
-                                    var code = document.getElementById("responseRaw");
-                                    var responseDIV = document.getElementById("responseR");
-                                    var feedDIV = document.getElementById("feed");
-                                    var solderInfoDIV = document.getElementById("solderInfo");
-                                    var solderDIV = document.getElementById("solder");
-                                    code.innerHTML = response;
-                                    responseObj = JSON.parse(response);
-                                    if (responseObj.error=="Modpack does not exist") {
-                                        responseDIV.innerHTML = "<strong>This modpack does not exists</strong>";
-                                    } else {
-                                        if (responseObj.solder!==null) {
-                                            solderRequest = new XMLHttpRequest();
-                                            console.log("Getting info from solder");
-                                            solderRequest.onreadystatechange = function() {
-                                                if (this.readyState == 4 && this.status == 200) {
-                                                    document.getElementById("response-title").innerHTML ="Response from Technic API:<br>";
-                                                    solderRaw = solderRequest.responseText;
-                                                    solder = JSON.parse(solderRaw);
-                                                    var solderDIV = document.getElementById("solder");
-                                                    solderDIV.innerHTML = "<strong class='text-success'>This modpack is using Solder API - "+solder.api+" "+solder.version+" "+solder.stream+"</strong>";
-                                                    console.log(solderRaw);
-                                                    console.log("done");
-                                                }
-                                            }
-                                            solderRequest.open("GET", "./functions/resolder.php?link="+responseObj.solder);
-                                            solderRequest.send();
-
-                                        } else {
-                                            solderDIV.innerHTML = "<strong class='text-danger'>This modpack is not using Solder API</strong>";
-                                        }
-                                        responseDIV.innerHTML = "<br /><strong>Modpack Name: </strong>"+responseObj.displayName;
-                                        responseDIV.innerHTML += "<br /><strong>Author: </strong>"+responseObj.user;
-                                        responseDIV.innerHTML += "<br /><strong>Minecraft Version: </strong>"+responseObj.minecraft;
-                                        responseDIV.innerHTML += "<br /><strong>Downloads: </strong>"+responseObj.downloads;
-                                        responseDIV.innerHTML += "<br /><strong>Runs: </strong>"+responseObj.runs;
-                                        responseDIV.innerHTML += "<br /><strong>Official Modpack: </strong>"+responseObj.isOfficial;
-                                        responseDIV.innerHTML += "<br /><strong>Server Modpack: </strong>"+responseObj.isServer;
-                                        responseDIV.innerHTML += "<br /><strong>Platform Site: </strong><a target='_blank' href='"+responseObj.platformUrl+"'>"+responseObj.platformUrl+"</a>";
-                                        if (responseObj.url!==null) {
-                                            responseDIV.innerHTML += "<br /><strong>Download Link: </strong><a target='_blank' href='"+responseObj.url+"'>"+responseObj.url+"</a>";
-                                        }
-                                        if (responseObj.solder!==null) {
-                                            responseDIV.innerHTML += "<br /><strong>Solder API: </strong><a target='_blank' href='"+responseObj.solder+"'>"+responseObj.solder+"</a>";
-                                        }
-                                        responseDIV.innerHTML += "<br /><strong>Description: </strong>"+responseObj.description
-                                        if (responseObj.discordServerId!=="") {
-                                            responseDIV.innerHTML += "<br /><br /><iframe src='https://discordapp.com/widget?id="+responseObj.discordServerId+"&theme=dark' width='350' height='500' allowtransparency='true' frameborder='0'></iframe>";
-                                        }
-                                        feedDIV.innerHTML = "<br /><h3>Updates: </h3><div class='card-columns' id='cards'></div>"
-                                        i=0;
-                                        responseObj.feed.forEach(element => {
-                                            i++
-                                            document.getElementById("cards").innerHTML += "<div style='padding:0px' class='card'><div class='card-header'><h5><img class='rounded-circle' src='"+element.avatar+"' height='32px' width='32px' /> "+element.user+"</h5></div><div class='card-body'><p>"+element.content+"</p></div></div>";
-                                        });
-                                        if (i==0) {
-                                            feedDIV.innerHTML = "";
-                                        }
-                                    }
-                                }
-                            };
-                            request.open("GET", "./functions/platform.php?slug="+link+"&build=<?php echo SOLDER_BUILD ?>");
-                            request.send();
-                        }
-                    </script>
                     </div>
                 <?php } ?>
                 </div>
+                <script src="./resources/js/page_dashboard.js"></script>
             </div>
             <?php
         }
         elseif (uri("/modpack")){
-            if (!isset($_GET['id'])) {
-                // exit();
-            }
             $modpack = $db->query("SELECT * FROM `modpacks` WHERE `id` = ".$db->sanitize($_GET['id']));
-            if (!$modpack || sizeof($modpack)!=1) {
-                error_log("couldn't get info on modpack id=".$_GET['id']);
-                // exit();
-            } else {
+            if ($modpack) {
+                assert(sizeof($modpack)==1);
                 $modpack=$modpack[0];
             ?>
             <script>document.title = 'Modpack - <?php echo addslashes($modpack['display_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -1402,9 +1084,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         </select>
                         <br />
                         <select required="" name='build' id="buildlist" class="form-control">
-                            <?php
-
-                            ?>
                         </select>
                         <br />
                         <input pattern="^[a-zA-Z0-9.-]+$" type="text" name="newname" id="newname" required class="form-control" placeholder="New Build Name">
@@ -1412,46 +1091,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <br />
                         <button type="submit" id="copybutton" name="submit" value="copy" class="btn btn-primary">Copy</button>
                     </form>
-                    <script>
-                        var builds = "<?php echo addslashes(json_encode($mpab)) ?>";
-                        var sbn = "<?php echo addslashes(json_encode($sbn)) ?>";
-                        var bd = JSON.parse(builds);
-                        var sbna = JSON.parse(sbn);
-                        console.log(sbna);
-                        $("#mplist").change(function() {
-                            $("#buildlist").children().each(function(){this.remove();});
-                            Object.keys(bd).forEach(function(element){
-
-                                if ($("#mplist").val() == bd[element]['mpid']) {
-                                    $("#buildlist").append("<option value='"+bd[element]['id']+"'>"+bd[element]['mpname']+" - "+bd[element]['name']+"</option>")
-                                }
-                            });
-                        });
-                        $("#newbname").on("keyup",function(){
-                            if (sbna.indexOf($("#newbname").val())==false) {
-                                $("#newbname").addClass("is-invalid");
-                                $("#warn_newbname").show();
-                                $("#create1").prop("disabled",true);
-                                $("#create2").prop("disabled",true);
-                            } else {
-                                $("#newbname").removeClass("is-invalid");
-                                $("#warn_newbname").hide();
-                                $("#create1").prop("disabled",false);
-                                $("#create2").prop("disabled",false);
-                            }
-                        });
-                        $("#newname").on("keyup",function(){
-                            if (sbna.indexOf($("#newname").val())==false) {
-                                $("#newname").addClass("is-invalid");
-                                $("#warn_newname").show();
-                                $("#copybutton").prop("disabled",true);
-                            } else {
-                                $("#newname").removeClass("is-invalid");
-                                $("#warn_newname").hide();
-                                $("#copybutton").prop("disabled",false);
-                            }
-                        });
-                    </script>
                 </div>
             <?php } ?>
                 <div class="card">
@@ -1513,72 +1152,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         </div>
                       </div>
                     </div>
-                    <script>
-                        function edit(id) {
-                            window.location = "./build?id="+id;
-                        }
-                        function remove_box(id,name) {
-                            $("#build-title").text(name);
-                            $("#build-text").text(name);
-                            $("#remove-button").attr("onclick","remove("+id+")");
-                        }
-                        function remove(id) {
-                            $("#cog-"+id).show();
-                            var request = new XMLHttpRequest();
-                            request.onreadystatechange = function() {
-                                if (this.readyState == 4 && this.status == 200) {
-                                    response = JSON.parse(this.response);
-                                    $("#cog-"+id).hide();
-                                    $("#b-"+id).hide();
-                                    if ($("#b-"+id).attr("rec")=="true") {
-                                        $("#rec-v-li").hide();
-                                        $("#rec-mc-li").hide();
-                                    }
-                                    console.log(response);
-                                    if (response['exists']==true) {
-                                        $("#latest-v-li").show();
-                                        $("#latest-mc-li").show();
-                                        $("#latest-name").text(response['name']);
-                                        $("#latest-mc").text(response['mc']);
-                                        if (response['name']==null) {
-                                            $("#latest-v-li").hide();
-                                            $("#latest-mc-li").hide();
-                                        }
-                                    } else {
-                                        $("#latest-v-li").hide();
-                                        $("#latest-mc-li").hide();
-                                    }
-
-                                }
-                            };
-                            request.open("GET", "./functions/delete-build.php?id="+id+"&pack=<?php echo $_GET['id'] ?>");
-                            request.send();
-                        }
-                        function set_recommended(id) {
-                            $("#cog-"+id).show();
-                            var request = new XMLHttpRequest();
-                            request.onreadystatechange = function() {
-                                if (this.readyState == 4 && this.status == 200) {
-                                    response = JSON.parse(this.response);
-                                    $("#rec-v-li").show();
-                                    $("#rec-mc-li").show();
-                                    $("#cog-"+id).hide();
-                                    $("#rec-"+id).attr('disabled', true);
-                                    var bid = $("#rec-disabled").attr('bid');
-                                    $("#rec-disabled").attr('disabled', false);
-                                    $("#rec-disabled").attr('id', 'rec-'+bid);
-                                    $("#rec-"+id).attr('id', 'rec-disabled');
-                                    $("#rec-name").text(response['name']);
-                                    $("#rec-mc").text(response['mc']);
-                                    $("#table-builds tr").attr('rec','false');
-                                    $("#b-"+id).attr('rec','true');
-                                }
-                            };
-                            request.open("GET", "./functions/set-recommended.php?id="+id);
-                            request.send();
-                        }
-                    </script>
                 </div>
+                <script>
+                    var builds = "<?php echo addslashes(json_encode($mpab)) ?>";
+                    var sbn = "<?php echo addslashes(json_encode($sbn)) ?>";
+                </script>
+                <script src="./resources/js/page_modpack.js"></script>
             </div>
             <?php
             }
@@ -2062,21 +1641,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             $mres = $db->query("SELECT * FROM `mods` WHERE `type` = 'other'");
                             if (sizeof($mres)!==0) {
                                 ?>
-                                <script>
-                                    function add_o(id) {
-                                        $("#btn-add-o-"+id).attr("disabled", true);
-                                        $("#cog-o-"+id).show();
-                                        var request = new XMLHttpRequest();
-                                        request.onreadystatechange = function() {
-                                            if (this.readyState == 4 && this.status == 200) {
-                                                $("#cog-o-"+id).hide();
-                                                $("#check-o-"+id).show();
-                                            }
-                                        };
-                                        request.open("GET", "./functions/add-mod.php?bid=<?php echo $user['id'] ?>&id="+id);
-                                        request.send();
-                                    }
-                                </script>
                                 <?php
                                 foreach($mres as $mod) {
                                     if (!in_array($mod['id'], $modslist)) {
@@ -2097,6 +1661,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                 <?php }
                 } else echo "<div class='card'><h3 class='text-info'>Select minecraft version and save before editing mods.</h3></div>"; ?>
+
+                <script>
+                    var modslist_0 = '<?php echo sizeof($modslist)>0 ? $modslist[0] : "" ?>';
+                    var build_id = '<?php echo $user['id'] ?>';
+                </script>
+                <script src="./resources/js/page_build.js"></script>
             </div>
 
         <?php
@@ -2105,21 +1675,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         ?>
         <script>document.title = 'Mod Library - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
-        <script>
-                function remove_box(name) {
-                    $("#mod-name-title").text(name);
-                    $("#mod-name").text(name);
-                    $("#remove-button").attr("onclick","remove('"+name+"')");
-                }
-                function remove(id) {
-                    var request = new XMLHttpRequest();
-                    request.onreadystatechange = function() {
-                        $("#mod-row-"+id).remove();
-                    }
-                    request.open("GET", "./functions/delete-mod.php?id="+id);
-                    request.send();
-                }
-            </script>
             <div id="upload-card" class="card">
                 <h2>Upload mods</h2>
                 <div class="card-img-bottom">
@@ -2159,7 +1714,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         </tr>
                     </thead>
                     <tbody id="table-mods">
-
                     </tbody>
                 </table>
                 <button id="btn-done" disabled class="btn btn-success btn-block" onclick="window.location.reload();">Done</button>
@@ -2231,26 +1785,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         ?>
                     </tbody>
                 </table>
-                <script>
-                    $("#search").on('keyup',function(){
-                        tr = document.getElementById("modstable").getElementsByTagName("tr");
-
-                        for (var i = 0; i < tr.length; i++) {
-
-                            td = tr[i].getElementsByTagName("td")[0];
-                            if (td) {
-
-                                console.log(td);
-                                console.log(td.innerHTML.toUpperCase())
-                                if (td.innerHTML.toUpperCase().indexOf($("#search").val().toUpperCase()) > -1) {
-                                    tr[i].style.display = "";
-                                } else {
-                                    tr[i].style.display = "none";
-                                }
-                            }
-                        }
-                    });
-                </script>
             </div>
             <div class="modal fade" id="removeMod" tabindex="-1" role="dialog" aria-labelledby="rm" aria-hidden="true">
               <div class="modal-dialog" role="document">
@@ -2271,111 +1805,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </div>
               </div>
             </div>
+            <script src="./resources/js/page_lib-mods.js"></script>
         </div>
-
-        <script>
-            mn = 1;
-            function sendFile(file, i) {
-                var formData = new FormData();
-                var request = new XMLHttpRequest();
-                formData.set('fiels', file);
-                request.open('POST', './functions/send_mods.php');
-                request.upload.addEventListener("progress", function(evt) {
-                    if (evt.lengthComputable) {
-                        var percentage = evt.loaded / evt.total * 100;
-                        $("#" + i).attr('aria-valuenow', percentage + '%');
-                        $("#" + i).css('width', percentage + '%');
-                        request.onreadystatechange = function() {
-                            if (request.readyState == 4) {
-                                if (request.status == 200) {
-                                    if ( mn == modcount ) {
-                                        $("#btn-done").attr("disabled",false);
-                                    } else {
-                                        mn = mn + 1;
-                                    }
-                                    console.log(request.response);
-                                    response = JSON.parse(request.response);
-                                    switch(response.status) {
-                                        case "succ":
-                                        {
-                                            $("#cog-" + i).hide();
-                                            $("#check-" + i).show();
-                                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                            $("#" + i).addClass("bg-success");
-                                            $("#info-" + i).text(response.message);
-                                            $("#" + i).attr("id", i + "-done");
-                                            break;
-                                        }
-                                        case "error":
-                                        {
-                                            $("#cog-" + i).hide();
-                                            $("#times-" + i).show();
-                                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                            $("#" + i).addClass("bg-danger");
-                                            $("#info-" + i).text(response.message);
-                                            $("#" + i).attr("id", i + "-done");
-                                            break;
-                                        }
-                                        case "warn":
-                                        {
-                                            $("#cog-" + i).hide();
-                                            $("#exc-" + i).show();
-                                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                            $("#" + i).addClass("bg-warning");
-                                            $("#info-" + i).text(response.message);
-                                            $("#" + i).attr("id", i + "-done");
-                                            break;
-                                        }
-                                        case "info":
-                                        {
-                                            $("#cog-" + i).hide();
-                                            $("#inf-" + i).show();
-                                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                            $("#" + i).addClass("bg-success");
-                                            $("#info-" + i).text(response.message);
-                                            $("#" + i).attr("id", i + "-done");
-                                            break;
-                                        }
-                                    }
-                                } else {
-                                    $("#cog-" + i).hide();
-                                    $("#times-" + i).show();
-                                    $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                    $("#" + i).addClass("bg-danger");
-                                    $("#info-" + i).text("An error occured: " + request.status);
-                                    $("#" + i).attr("id", i + "-done");
-                                }
-                            }
-                        }
-                    }
-                }, false);
-                request.send(formData);
-            }
-
-            function showFile(file, i) {
-                $("#table-mods").append('<tr><td scope="row">' + file.name + '</td> <td><em id="cog-' + i + '" class="fas fa-cog fa-spin"></em><em id="check-' + i + '" style="display:none" class="text-success fas fa-check"></em><em id="times-' + i + '" style="display:none" class="text-danger fas fa-times"></em><em id="exc-' + i + '" style="display:none" class="text-warning fas fa-exclamation"></em><em id="inf-' + i + '" style="display:none" class="text-info fas fa-info"></em> <small class="text-muted" id="info-' + i + '"></small></h4><div class="progress"><div id="' + i + '" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div></div></td></tr>');
-            }
-            $(document).ready(function() {
-                $(':file').change(function() {
-                    $("#upload-card").hide();
-                    $("#u-mods").show();
-                    modcount = this.files.length;
-                    for (var i = 0; i < this.files.length; i++) {
-                        var file = this.files[i];
-                        showFile(file, i);
-                    }
-                    for (var i = 0; i < this.files.length; i++) {
-                        var file = this.files[i];
-                        sendFile(file, i);
-                    }
-                });
-            });
-        </script>
-        <script>
-            $(document).ready(function(){
-                $("#nav-mods").trigger('click');
-            });
-        </script>
         <?php
         } elseif (uri('/add-mods')) {
         ?>
@@ -2412,43 +1843,14 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <input required class="form-control" required type="text" name="mcversion" placeholder="Minecraft Version"><br />
                     <input type="submit" name="submit" value="Save" class="btn btn-success">
                 </form>
-                <script>
-                        $("#pn").on("keyup", function(){
-                            var slug = slugify($(this).val());
-                            console.log(slug);
-                            $("#slug").val(slug);
-                        });
-                    </script>
             </div>
+            <script src="./resources/js/page_add-mods.js"></script>
         </div>
-        <script>
-            $(document).ready(function(){
-                $("#nav-mods").trigger('click');
-                $(function () {
-                    $('[data-toggle="popover"]').popover()
-                })
-            });
-        </script>
         <?php
         } elseif (uri('/lib-forges')) {
         ?>
         <script>document.title = 'Forge Versions - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
-            <script>
-                function remove_box(id,name) {
-                    $("#mod-name-title").text(name);
-                    $("#mod-name").text(name);
-                    $("#remove-button").attr("onclick","remove("+id+")");
-                }
-                function remove(id) {
-                    var request = new XMLHttpRequest();
-                    request.onreadystatechange = function() {
-                        $("#mod-row-"+id).remove();
-                    }
-                    request.open("GET", "./functions/delete-modv.php?id="+id);
-                    request.send();
-                }
-            </script>
             <div class="card">
             <div class="modal fade" id="removeMod" tabindex="-1" role="dialog" aria-labelledby="rm" aria-hidden="true">
               <div class="modal-dialog" role="document">
@@ -2469,14 +1871,14 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </div>
               </div>
             </div>
-        <h2>Forge Versions in Database</h2>
-        <?php if (isset($_GET['errfilesize'])) {
-            echo '<span class="text-danger">File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'</span>';
-        } ?>
+            <h2>Forge Versions in Database</h2>
+            <?php if (isset($_GET['errfilesize'])) {
+                echo '<span class="text-danger">File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'</span>';
+            } ?>
 
-        <?php if (isset($_GET['succ'])) {
-            echo '<span class="text-success">File has been uploaded.</span>';
-        } ?>
+            <?php if (isset($_GET['succ'])) {
+                echo '<span class="text-success">File has been uploaded.</span>';
+            } ?>
 
                 <table class="table table-striped sortable">
                     <thead>
@@ -2525,136 +1927,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </form>
             </div>
             <div class="card" id="fetched-mods" style="display: none">
-                <script>
-                    var nof = 0;
-                    var fiq = 0;
-                    function chf(link,name,id,mc) {
-                        var chf = new XMLHttpRequest();
-                        chf.open('GET', "./functions/chf.php?link="+link);
-                        chf.onreadystatechange = function() {
-                            if (chf.readyState == 4) {
-                                if (chf.status == 200) {
-                                    fiq++;
-                                    if (chf.response == "OK") {
-                                        $("#fetched-mods").show();
-                                        $("#forge-table").append('<tr id="forge-'+id+'"><td scope="row">'+mc+'</td><td>'+name+'</td><td><a href="'+link+'">'+link+'</a></td><td><button id="button-add-'+id+'" onclick="add(\''+name+'\',\''+link+'\',\''+mc+'\',\''+id+'\')" class="btn btn-primary btn-sm">Add to Database</button></td><td><em id="cog-'+id+'" style="display:none" class="fas fa-spin fa-cog fa-2x"></em><em id="check-'+id+'" style="display:none" class="text-success fas fa-check fa-2x"></em><em id="times-'+id+'" style="display:none" class="text-danger fas fa-times fa-2x"></em></td></tr>');
-                                        if (fiq==nof) {
-                                            $("#fetch-forge").hide();
-                                            $("#save").show();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        chf.send();
-                    }
-                    // Fabric Download
-                    let download = () => {
-                        $("#sub-button").attr("disabled","true")
-                        $("#sub-button")[0].innerHTML = "<i class='fas fa-cog fa-spin'></i>"
-                        let packager = new XMLHttpRequest();
-                        packager.open('GET', './functions/package-fabric.php?version='+encodeURIComponent($("#ver").children("option:selected").val())+"&loader="+encodeURIComponent($("#lod").children("option:selected").val()))
-                        packager.onreadystatechange = () => {
-                            if (packager.readyState === 4) {
-                                if (packager.status === 200) {
-                                    retur = JSON.parse(packager.response)
-                                    if (retur["status"] === "succ") {
-                                        $("#sub-button")[0].classList.remove("btn-primary")
-                                        $("#sub-button")[0].classList.add("btn-success")
-                                        $("#sub-button")[0].innerHTML = "<i class='fas fa-check'></i> Please reload the page."
-                                    }
-                                }
-                            }
-                        }
-                        packager.send()
-                    }
-                    // Fetch Fabric Versions
-                    let fetchfabric = () => {
-                        $("#fetch-fabric").attr("disabled",true)
-                        $("#fetch-forge").attr("disabled",true)
-                        $("#fetch-fabric").html("Fetching...<i class='fas fa-cog fa-spin fa-sm'></i>")
-                        let versions = new XMLHttpRequest()
-                        let loaders = new XMLHttpRequest()
-                        versions.open('GET','https://meta.fabricmc.net/v2/versions/game')
-                        loaders.open('GET','https://meta.fabricmc.net/v2/versions/loader')
-                        versions.onreadystatechange = () => {
-                            if (versions.readyState === 4) {
-                                if (versions.status === 200) {
-                                    response = JSON.parse(versions.response)
-                                    for (key in response) {
-                                        if (response[key]["stable"]) {
-                                            ver = document.createElement("option")
-                                            ver.text = response[key]["version"]
-                                            ver.value = response[key]["version"]
-                                            $("#ver")[0].add(ver)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        loaders.onreadystatechange = () => {
-                            if (loaders.readyState === 4) {
-                                if (loaders.status === 200) {
-                                    response = JSON.parse(loaders.response)
-                                    for (key in response) {
-                                        if (response[key]["stable"]) {
-                                            ver = document.createElement("option")
-                                            ver.text = response[key]["version"]
-                                            ver.value = response[key]["version"]
-                                            $("#lod")[0].add(ver)
-                                        }
-                                    }
-                                    $("#fetch-fabric").html("Fetch Fabric Versions")
-                                    $("#fabrics")[0].style.display = "flex";
-                                }
-                            }
-                        }
-                        loaders.send()
-                        versions.send()
-                    }
-                    // Fetch versions
-                    let fetch = ()=> {
-                        $("#fetch-forge").attr("disabled", true);
-                        $("#fetch-fabric").attr("disabled", true);
-                        $("#fetch-forge").html("Fetching...<i class='fas fa-cog fa-spin fa-sm'></i>");
-                        var request = new XMLHttpRequest();
-                        request.open('GET', './functions/forge-links.php');
-                        request.onreadystatechange = function() {
-                            if (request.readyState == 4) {
-                                if (request.status == 200) {
-                                    response = JSON.parse(this.response);
-                                    for (var key in response) {
-                                        nof++;
-                                        chf(response[key]["link"],response[key]["name"],response[key]["id"],response[key]["mc"]);
-                                    }
-                                }
-                            }
-                        }
-                        request.send();
-                    }
-                    function add(v,link,mcv,id) {
-                        $("#button-add-"+id).attr("disabled",true);
-                        $("#cog-"+id).show();
-                        var request = new XMLHttpRequest();
-                        request.open('GET', './functions/add-forge.php?version='+v+'&link='+link+'&mcversion='+mcv);
-                        request.onreadystatechange = function() {
-                            if (request.readyState == 4) {
-                                if (request.status == 200) {
-                                    response = JSON.parse(this.response);
-                                    $("#cog-"+id).hide();
-                                    if (response['status']=="succ") {
-                                        $("#check-"+id).show();
-                                    } else {
-                                        $("#times-"+id).show();
-                                        $("#info").text(response['message']);
-                                    }
-
-                                }
-                            }
-                        }
-                        request.send();
-                    }
-                </script>
                 <h2>Available Forge Versions</h2>
                 <table class="table table-striped table-responsive">
                     <thead>
@@ -2690,32 +1962,13 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </form>
             </div>
         <?php } ?>
+            <script src="./resources/js/page_lib-forges.js"></script>
         </div>
-        <script>
-            $(document).ready(function(){
-                $("#nav-mods").trigger('click');
-            });
-        </script>
         <?php
         } elseif (uri('/lib-other')) {
         ?>
         <script>document.title = 'Other Files - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
-        <script>
-                function remove_box(id,name) {
-                    $("#mod-name-title").text(name);
-                    $("#mod-name").text(name);
-                    $("#remove-button").attr("onclick","remove("+id+")");
-                }
-                function remove(id) {
-                    var request = new XMLHttpRequest();
-                    request.onreadystatechange = function() {
-                        $("#mod-row-"+id).remove();
-                    }
-                    request.open("GET", "./functions/delete-modv.php?id="+id);
-                    request.send();
-                }
-            </script>
             <div id="upload-card" class="card">
                 <h2>Upload files</h2>
                 <div class="card-img-bottom">
@@ -2811,109 +2064,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </div>
               </div>
             </div>
+            <script src="./resources/js/page_lib-other.js"></script>
         </div>
-
-        <script>
-            mn = 1;
-            function sendFile(file, i) {
-                var formData = new FormData();
-                var request = new XMLHttpRequest();
-                formData.set('fiels', file);
-                request.open('POST', './functions/send_other.php');
-                request.upload.addEventListener("progress", function(evt) {
-                    if (evt.lengthComputable) {
-                        var percentage = evt.loaded / evt.total * 100;
-                        $("#" + i).attr('aria-valuenow', percentage + '%');
-                        $("#" + i).css('width', percentage + '%');
-                        request.onreadystatechange = function() {
-                            if (request.readyState == 4) {
-                                if (request.status == 200) {
-                                    if ( mn == modcount ) {
-                                        $("#btn-done").attr("disabled",false);
-                                    } else {
-                                        mn = mn + 1;
-                                    }
-                                    console.log(request.response);
-                                    response = JSON.parse(request.response);
-                                    switch(response.status) {
-                                        case "succ":
-                                        {
-                                            $("#cog-" + i).hide();
-                                            $("#check-" + i).show();
-                                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                            $("#" + i).addClass("bg-success");
-                                            $("#info-" + i).text(response.message);
-                                            $("#" + i).attr("id", i + "-done");
-                                            break;
-                                        }
-                                        case "error":
-                                        {
-                                            $("#cog-" + i).hide();
-                                            $("#times-" + i).show();
-                                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                            $("#" + i).addClass("bg-danger");
-                                            $("#info-" + i).text(response.message);
-                                            $("#" + i).attr("id", i + "-done");
-                                            break;
-                                        }
-                                        case "warn":
-                                        {
-                                            $("#cog-" + i).hide();
-                                            $("#exc-" + i).show();
-                                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                            $("#" + i).addClass("bg-warning");
-                                            $("#info-" + i).text(response.message);
-                                            $("#" + i).attr("id", i + "-done");
-                                            break;
-                                        }
-                                        case "info":
-                                        {
-                                            $("#cog-" + i).hide();
-                                            $("#inf-" + i).show();
-                                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                            $("#" + i).addClass("bg-info");
-                                            $("#info-" + i).text(response.message);
-                                            $("#" + i).attr("id", i + "-done");
-                                            break;
-                                        }
-                                    }
-                                } else {
-                                    $("#cog-" + i).hide();
-                                    $("#times-" + i).show();
-                                    $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                    $("#" + i).addClass("bg-danger");
-                                    $("#info-" + i).text("An error occured: " + request.status);
-                                    $("#" + i).attr("id", i + "-done");
-                                }
-                            }
-                        }
-                    }
-                }, false);
-                request.send(formData);
-            }
-
-            function showFile(file, i) {
-                $("#table-mods").append('<tr><td scope="row">' + file.name + '</td> <td><em id="cog-' + i + '" class="fas fa-cog fa-spin"></em><em id="check-' + i + '" style="display:none" class="text-success fas fa-check"></em><em id="times-' + i + '" style="display:none" class="text-danger fas fa-times"></em><em id="exc-' + i + '" style="display:none" class="text-warning fas fa-exclamation"></em><em id="inf-' + i + '" style="display:none" class="text-info fas fa-info"></em> <small class="text-muted" id="info-' + i + '"></small></h4><div class="progress"><div id="' + i + '" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div></div></td></tr>');
-            }
-            $(document).ready(function() {
-                $(':file').change(function() {
-                    $("#upload-card").hide();
-                    $("#u-mods").show();
-                    modcount = this.files.length;
-                    for (var i = 0; i < this.files.length; i++) {
-                        var file = this.files[i];
-                        showFile(file, i);
-                    }
-                    for (var i = 0; i < this.files.length; i++) {
-                        var file = this.files[i];
-                        sendFile(file, i);
-                    }
-                });
-            });
-            $(document).ready(function(){
-                $("#nav-mods").trigger('click');
-            });
-        </script>
         <?php
         } elseif (uri("/file")) {
             $mres = $db->query("SELECT * FROM `mods` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
@@ -2922,69 +2074,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 $file = $mres[0];
             }
             ?>
-            <script>
-                function structurize(paths) {
-                    var items = [];
-                    for(var i = 0, l = paths.length; i < l; i++) {
-                        var path = paths[i];
-                        var name = path[0];
-                        var rest = path.slice(1);
-                        var item = null;
-                        for(var j = 0, m = items.length; j < m; j++) {
-                            if (items[j].name === name) {
-                                item = items[j];
-                                break;
-                            }
-                        }
-                        if (item === null) {
-                            item = {name: name, children: []};
-                            items.push(item);
-                        }
-                        if (rest.length > 0) {
-                            item.children.push(rest);
-                        }
-                    }
-                    for(i = 0, l = items.length; i < l; i++) {
-                        item = items[i];
-                        item.children = structurize(item.children);
-                    }
-                    return items;
-                }
-
-                function stringify(items) {
-                    var lines = [];
-                    for(var i = 0, l = items.length; i < l; i++) {
-                        var item = items[i];
-                        lines.push(item.name);
-                        var subLines = stringify(item.children);
-                        for(var j = 0, m = subLines.length; j < m; j++) {
-                            lines.push("    " + subLines[j]);
-                        }
-                    }
-                    return lines;
-                }
-            </script>
-            <script>
-                document.title = 'File - <?php echo addslashes($file['name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';
-
-                $(document).ready(function(){
-                    $("#nav-mods").trigger('click');
-                    var paths = [];
-                    <?php
-                    $zip = new ZipArchive;
-                    if ($zip->open('./others/'.$file['filename'])===TRUE) {
-                        for ($i=0; $i<$zip->numFiles; $i++) {
-                            $fileInfo = $zip->getNameIndex($i);
-                            echo 'paths.push("' . $zip->getNameIndex($i) . '".replace(/\/+$/,\'\'));';
-                        }
-                        $zip->close();
-                    }
-                    ?>
-                    paths = paths.map(function(path) { return path.split('/'); });
-                    $("#files_ul").html(stringify(structurize(paths)).join("\n"));
-                    $("#loadingfiles").hide();
-                });
-            </script>
+            <script>document.title = 'File - <?php echo addslashes($file['name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <div class="main">
                 <div class="card">
                     <button onclick="window.location = './lib-other'" style="width: fit-content;" class="btn btn-primary">
@@ -2999,6 +2089,18 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </pre>
                     <h4 id="loadingfiles"><em class="fas fa-cog fa-spin"></em> Loading...</h4>
                 </div>
+                <?php
+                $zip = new ZipArchive;
+                $paths=[];
+                if ($zip->open('./others/'.$file['filename'])===TRUE) {
+                    for ($i=0; $i<$zip->numFiles; $i++) {
+                        array_push($paths, $zip->getNameIndex($i));
+                    }
+                    $zip->close();
+                }
+                echo '<script>var paths = JSON.parse(\''.json_encode($paths).'\');</script>';
+                ?>
+                <script src="./resources/js/page_file.js"></script>
             </div>
             <?php
         } elseif (uri("/mod")) {
@@ -3008,22 +2110,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             $mres = $db->query("SELECT * FROM `mods` WHERE `name` = '".$db->sanitize($_GET['id'])."'");
             ?>
             <script>document.title = 'Mod - <?php echo addslashes($_GET['id']) ?> - <?php echo addslashes($_SESSION['name']) ?>';
-            function remove_box(id,version,name) {
-                    $("#mod-name-title").text(name+" "+version);
-                    $("#mod-name").text(name+" "+version);
-                    $("#remove-button").attr("onclick","remove("+id+")");
-                }
-                function remove(id) {
-                    var request = new XMLHttpRequest();
-                    request.onreadystatechange = function() {
-                        $("#mod-row-"+id).remove();
-                        if ($("#table-mods tr").length==0) {
-                            window.location = "./lib-mods";
-                        }
-                    }
-                    request.open("GET", "./functions/delete-modv.php?id="+id);
-                    request.send();
-                }
             </script>
             <div class="card">
                 <button onclick="window.location = './lib-mods'" style="width: fit-content;" class="btn btn-primary">
@@ -3094,19 +2180,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <input type="submit" name="submit" value="Save and close" class="btn btn-success">
                 </form>
             </div>
+            <script src="./resources/js/page_mod.js"></script>
         </div>
-        <script>
-            $("#pn").on("keyup", function(){
-                var slug = slugify($(this).val());
-                console.log(slug);
-                $("#slug").val(slug);
-            });
-        </script>
-        <script>
-            $(document).ready(function(){
-                $("#nav-mods").trigger('click');
-            });
-        </script>
         <?php
         } elseif (uri("/modv")) {
         ?>
@@ -3125,14 +2200,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </button><br />
                 <h3>Edit <?php echo $mod['pretty_name']." ".$mod['version']; ?></h3>
                 <form method="POST" action="./functions/edit-modv.php?id=<?php echo $_GET['id'] ?>">
-
-                    <script>
-                        $("#pn").on("keyup", function(){
-                            var slug = slugify($(this).val());
-                            console.log(slug);
-                            $("#slug").val(slug);
-                        });
-                    </script>
                         <input required class="form-control" type="text" name="version" placeholder="Mod Version" value="<?php echo $mod['version'] ?>"><br />
                         <div class="input-group">
                             <input class="form-control" type="text" name="author" id="author-input" placeholder="Mod Author" value="<?php echo $mod['author'] ?>">
@@ -3140,7 +2207,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 <button class="btn btn-primary" type="button" id="author-save" onclick="authorsave()">Set for all versions</button>
                             </div>
                         </div><br />
-
                         <div class="input-group">
                             <input class="form-control" type="url" name="link" id="link-input" placeholder="Mod Website" value="<?php echo $mod['link'] ?>">
                             <div class="input-group-append">
@@ -3160,62 +2226,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <input type="submit" name="submit" value="Save and close" class="btn btn-success">
                 </form>
             </div>
+            <script src="./resources/js/page_modv.js"></script>
         </div>
-        <script>
-            $(document).ready(function(){
-                $("#nav-mods").trigger('click');
-                $("#author-input").on("keyup",function(){
-                    $("#author-save").html("Set for all versions").attr("disabled",false);
-                });
-                $("#link-input").on("keyup",function(){
-                    $("#link-save").html("Set for all versions").attr("disabled",false);
-                });
-                $("#donlink-input").on("keyup",function(){
-                    $("#donlink-save").html("Set for all versions").attr("disabled",false);
-                });
-
-            });
-            function authorsave() {
-                $("#author-save").html("<em class='fas fa-cog fa-spin'></em>").attr("disabled",true);
-                var request = new XMLHttpRequest();
-                request.open('POST', './functions/authorsave.php');
-                request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                request.onreadystatechange = function() {
-                    if (request.readyState == 4) {
-                        $("#author-save").html("<em class='fas fa-check text-success'></em>");
-                    }
-                }
-                var value = encodeURIComponent($("#author-input").val());
-                request.send("id=<?php echo $mod['name'] ?>&value="+value);
-            }
-            function linksave() {
-                $("#link-save").html("<em class='fas fa-cog fa-spin'></em>").attr("disabled",true);
-                var request = new XMLHttpRequest();
-                request.open('POST', './functions/linksave.php');
-                request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                request.onreadystatechange = function() {
-                    if (request.readyState == 4) {
-                        $("#link-save").html("<em class='fas fa-check text-success'></em>");
-                    }
-                }
-                var value = encodeURIComponent($("#link-input").val());
-                request.send("id=<?php echo $mod['name'] ?>&value="+value);
-            }
-            function donlinksave() {
-                $("#donlink-save").html("<em class='fas fa-cog fa-spin'></em>").attr("disabled",true);
-                var request = new XMLHttpRequest();
-
-                request.open('POST', './functions/donlinksave.php');
-                request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                request.onreadystatechange = function() {
-                    if (request.readyState == 4) {
-                        $("#donlink-save").html("<em class='fas fa-check text-success'></em>");
-                    }
-                }
-                var value = encodeURIComponent($("#donlink-input").val());
-                request.send("id=<?php echo $mod['name'] ?>&value="+value);
-            }
-        </script>
         <?php
         } elseif (uri("/about")) {
             ?>
@@ -3387,94 +2399,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                      </form>
                 </div>
             </div>
-            <script>
-                $("#pass1").on("keyup", function() {
-                    if ($("#pass1").val()!=="") {
-                        $("#pass1").addClass("is-valid");
-                        $("#pass1").removeClass("is-invalid");
-                        if ($("#pass1").val()!==""&&$("#pass2").val()!==""&&$("#pass1").val()==$("#pass2").val()) {
-                            $("#save-button").attr("disabled", false);
-                        }
-                    } else {
-                        $("#pass1").addClass("is-invalid");
-                        $("#pass1").removeClass("is-valid");
-                        $("#save-button").attr("disabled", true);
-                    }
-                });
-                $("#pass2").on("keyup", function() {
-                    if ($("#pass2").val()!==""&$("#pass2").val()==$("#pass1").val()) {
-                        $("#pass2").addClass("is-valid");
-                        $("#pass2").removeClass("is-invalid");
-                        if ($("#pass1").val()!==""&&$("#pass2").val()!==""&&$("#pass1").val()==$("#pass2").val()) {
-                            $("#save-button").attr("disabled", false);
-                        }
-                    } else {
-                        $("#pass2").addClass("is-invalid");
-                        $("#pass2").removeClass("is-valid");
-                        $("#save-button").attr("disabled", true);
-                    }
-                });
-                $("#newIcon").change(function(){
-                    var formData = new FormData();
-                    var request = new XMLHttpRequest();
-                    icon = document.getElementById('newIcon');
-                    formData.set('newIcon', icon.files[0]);
-                    request.open('POST', './functions/new_icon.php');
-                    request.onreadystatechange = function() {
-                        if (request.readyState == 4) {
-                            console.log(this.responseText);
-                            setTimeout(function(){ window.location.reload(); }, 500);
-                        }
-                    }
-                    request.send(formData);
-                });
-                var perm1 = $("#perms").val().substr(0,1);
-                var perm2 = $("#perms").val().substr(1,1);
-                var perm3 = $("#perms").val().substr(2,1);
-                var perm4 = $("#perms").val().substr(3,1);
-                var perm5 = $("#perms").val().substr(4,1);
-                var perm6 = $("#perms").val().substr(5,1);
-                var perm7 = $("#perms").val().substr(6,1);
-                if (perm1==1) {
-                    $('#perm1').prop('checked', true);
-                } else {
-                    $('#perm1').prop('checked', false);
-                }
-                if (perm2==1) {
-                    $('#perm2').prop('checked', true);
-                } else {
-                    $('#perm2').prop('checked', false);
-                }
-                if (perm3==1) {
-                    $('#perm3').prop('checked', true);
-                } else {
-                    $('#perm3').prop('checked', false);
-                }
-                if (perm4==1) {
-                    $('#perm4').prop('checked', true);
-                } else {
-                    $('#perm4').prop('checked', false);
-                }
-                if (perm5==1) {
-                    $('#perm5').prop('checked', true);
-                } else {
-                    $('#perm5').prop('checked', false);
-                }
-                if (perm6==1) {
-                    $('#perm6').prop('checked', true);
-                } else {
-                    $('#perm6').prop('checked', false);
-                }
-                if (perm7==1) {
-                    $('#perm7').prop('checked', true);
-                } else {
-                    $('#perm7').prop('checked', false);
-                }
-                document.title = 'My Account - <?php echo addslashes($_SESSION['name']) ?> - <?php echo addslashes($config['author']) ?>';</script>
-                $(document).ready(function(){
-                    $("#nav-settings").trigger('click');
-                });
-            </script>
+            <script>document.title = 'My Account - <?php echo addslashes($_SESSION['name']) ?> - <?php echo addslashes($config['author']) ?>';</script>
+            <script src="./resources/js/page_user.js"></script>
             <?php
         } elseif (uri("/admin")) {
             ?>
@@ -3619,257 +2545,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                   </div>
                 </div>
-                <script>
-                    function remove(id) {
-                        var request = new XMLHttpRequest();
-                        request.open('POST', './functions/remove_user.php');
-                        request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                        request.onreadystatechange = function() {
-                            if (request.readyState == 4) {
-                                console.log(request.responseText);
-                                $("#info").html(request.responseText + "<br />");
-                                setTimeout(function(){ window.location.reload(); }, 500);
-                            }
-
-                        }
-                        request.send("id="+id);
-                    }
-                    function remove_box(id,name) {
-                        $("#user-name").text(name);
-                        $("#user-name-title").text(name);
-                        $("#remove-button").attr("onclick","remove("+id+")");
-                    }
-                    function edit(mail,name, perms) {
-                        $("#save-button-2").attr("disabled", true);
-                        $("#mail2").val(mail);
-                        $("#name2").val(name);
-                        if (perms.match("^[01]+$")) {
-                            $("#perms").val(perms);
-                        } else {
-                            $("#perms").val("0000000");
-                        }
-                        var perm1 = $("#perms").val().substr(0,1);
-                        var perm2 = $("#perms").val().substr(1,1);
-                        var perm3 = $("#perms").val().substr(2,1);
-                        var perm4 = $("#perms").val().substr(3,1);
-                        var perm5 = $("#perms").val().substr(4,1);
-                        var perm6 = $("#perms").val().substr(5,1);
-                        var perm7 = $("#perms").val().substr(6,1);
-                        if (perm1==1) {
-                            $('#perm1').prop('checked', true);
-                        } else {
-                            $('#perm1').prop('checked', false);
-                        }
-                        if (perm2==1) {
-                            $('#perm2').prop('checked', true);
-                        } else {
-                            $('#perm2').prop('checked', false);
-                        }
-                        if (perm3==1) {
-                            $('#perm3').prop('checked', true);
-                        } else {
-                            $('#perm3').prop('checked', false);
-                        }
-                        if (perm4==1) {
-                            $('#perm4').prop('checked', true);
-                        } else {
-                            $('#perm4').prop('checked', false);
-                        }
-                        if (perm5==1) {
-                            $('#perm5').prop('checked', true);
-                        } else {
-                            $('#perm5').prop('checked', false);
-                        }
-                        if (perm6==1) {
-                            $('#perm6').prop('checked', true);
-                        } else {
-                            $('#perm6').prop('checked', false);
-                        }
-                        if (perm7==1) {
-                            $('#perm7').prop('checked', true);
-                        } else {
-                            $('#perm7').prop('checked', false);
-                        }
-                    }
-                    function edit_user(mail,name,perms) {
-                        var request = new XMLHttpRequest();
-                        request.open('POST', './functions/edit_user.php');
-                        request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                        request.onreadystatechange = function() {
-                            if (request.readyState == 4) {
-                                console.log(request.responseText);
-                                $("#info").html(request.responseText + "<br />");
-                                setTimeout(function(){ window.location.reload(); }, 500);
-                            }
-
-                        }
-                        request.send("name="+mail+"&display_name="+name+"&perms="+perms);
-                    }
-                    // https://gist.github.com/endel/321925f6cafa25bbfbde
-                    Number.prototype.pad = function(size) {
-                      var s = String(this);
-                      while (s.length < (size || 2)) {s = "0" + s;}
-                      return s;
-                    }
-                    $("#perm1").change(function(){
-                        if ($("#perm1").is(":checked")) {
-                            $("#perms").val((parseInt($("#perms").val())+1000000).pad(7));
-                        } else {
-                            $("#perms").val((parseInt($("#perms").val())-1000000).pad(7));
-                        }
-                        if ($("#name2").val()!=="") {
-                            $("#save-button-2").attr("disabled", false);
-                        }
-                    });
-                    $("#perm2").change(function(){
-                        if ($("#perm2").is(":checked")) {
-                            $("#perms").val((parseInt($("#perms").val())+100000).pad(7));
-                        } else {
-                            $("#perms").val((parseInt($("#perms").val())-100000).pad(7));
-                        }
-                        if ($("#name2").val()!=="") {
-                            $("#save-button-2").attr("disabled", false);
-                        }
-                    });
-                    $("#perm3").change(function(){
-                        if ($("#perm3").is(":checked")) {
-                            $("#perms").val((parseInt($("#perms").val())+10000).pad(7));
-                        } else {
-                            $("#perms").val((parseInt($("#perms").val())-10000).pad(7));
-                        }
-                        if ($("#name2").val()!=="") {
-                            $("#save-button-2").attr("disabled", false);
-                        }
-                    });
-                    $("#perm4").change(function(){
-                        if ($("#perm4").is(":checked")) {
-                            $("#perms").val((parseInt($("#perms").val())+1000).pad(7));
-                        } else {
-                            $("#perms").val((parseInt($("#perms").val())-1000).pad(7));
-                        }
-                        if ($("#name2").val()!=="") {
-                            $("#save-button-2").attr("disabled", false);
-                        }
-                    });
-                    $("#perm5").change(function(){
-                        if ($("#perm5").is(":checked")) {
-                            $("#perms").val((parseInt($("#perms").val())+100).pad(7));
-                        } else {
-                            $("#perms").val((parseInt($("#perms").val())-100).pad(7));
-                        }
-                        if ($("#name2").val()!=="") {
-                            $("#save-button-2").attr("disabled", false);
-                        }
-                    });
-                    $("#perm6").change(function(){
-                        if ($("#perm6").is(":checked")) {
-                            $("#perms").val((parseInt($("#perms").val())+10).pad(7));
-                        } else {
-                            $("#perms").val((parseInt($("#perms").val())-10).pad(7));
-                        }
-                        if ($("#name2").val()!=="") {
-                            $("#save-button-2").attr("disabled", false);
-                        }
-                    });
-                    $("#perm7").change(function(){
-                        if ($("#perm7").is(":checked")) {
-                            $("#perms").val((parseInt($("#perms").val())+1).pad(7));
-                        } else {
-                            $("#perms").val((parseInt($("#perms").val())-1).pad(7));
-                        }
-                        if ($("#name2").val()!=="") {
-                            $("#save-button-2").attr("disabled", false);
-                        }
-                    });
-
-                    function new_user(email,name,pass) {
-                        var request = new XMLHttpRequest();
-                        request.open('POST', './functions/new_user.php');
-                        request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                        request.onreadystatechange = function() {
-                            if (request.readyState == 4) {
-                                console.log(request.responseText);
-                                $("#info").html(request.responseText + "<br />");
-                                setTimeout(function(){ window.location.reload(); }, 500);
-                            }
-
-                        }
-                        request.send("name="+email+"&display_name="+name+"&pass="+pass);
-                    }
-                    $("#name2").on("keyup", function() {
-                        if ($("#name2").val()!=="") {
-                            $("#name2").addClass("is-valid");
-                            $("#name2").removeClass("is-invalid");
-                            if ($("#name2").val()!=="") {
-                                $("#save-button-2").attr("disabled", false);
-                            }
-                        } else {
-                            $("#name2").addClass("is-invalid");
-                            $("#name2").removeClass("is-valid");
-                            $("#save-button-2").attr("disabled", true);
-                        }
-                    });
-                    $("#email").on("keyup", function() {
-                        if ($("#email").val()!=="") {
-                            $("#email").addClass("is-valid");
-                            $("#email").removeClass("is-invalid");
-                            if ($("#email").val()!==""&$("#name").val()!==""&$("#pass1").val()!==""&$("#pass2").val()!==""&$("#pass1").val()==$("#pass2").val()) {
-                                $("#save-button").attr("disabled", false);
-                            }
-                        } else {
-                            $("#email").addClass("is-invalid");
-                            $("#email").removeClass("is-valid");
-                            $("#save-button").attr("disabled", true);
-                        }
-                    });
-                    $("#name").on("keyup", function() {
-                        if ($("#name").val()!=="") {
-                            $("#name").addClass("is-valid");
-                            $("#name").removeClass("is-invalid");
-                            if ($("#email").val()!==""&$("#name").val()!==""&$("#pass1").val()!==""&$("#pass2").val()!==""&$("#pass1").val()==$("#pass2").val()) {
-                                $("#save-button").attr("disabled", false);
-                            }
-                        } else {
-                            $("#name").addClass("is-invalid");
-                            $("#name").removeClass("is-valid");
-                            $("#save-button").attr("disabled", true);
-                        }
-                    });
-                    $("#pass1").on("keyup", function() {
-                        if ($("#pass1").val()!=="") {
-                            $("#pass1").addClass("is-valid");
-                            $("#pass1").removeClass("is-invalid");
-                            if ($("#email").val()!==""&$("#name").val()!==""&$("#pass1").val()!==""&$("#pass2").val()!==""&$("#pass1").val()==$("#pass2").val()) {
-                                $("#save-button").attr("disabled", false);
-                            }
-                        } else {
-                            $("#pass1").addClass("is-invalid");
-                            $("#pass1").removeClass("is-valid");
-                            $("#save-button").attr("disabled", true);
-                        }
-                    });
-                    $("#pass2").on("keyup", function() {
-                        if ($("#pass2").val()!==""&$("#pass2").val()==$("#pass1").val()) {
-                            $("#pass2").addClass("is-valid");
-                            $("#pass2").removeClass("is-invalid");
-                            if ($("#email").val()!==""&$("#name").val()!==""&$("#pass1").val()!==""&$("#pass2").val()!==""&$("#pass1").val()==$("#pass2").val()) {
-                                $("#save-button").attr("disabled", false);
-                            }
-                        } else {
-                            $("#pass2").addClass("is-invalid");
-                            $("#pass2").removeClass("is-valid");
-                            $("#save-button").attr("disabled", true);
-                        }
-                    });
-
-                </script>
+                <script>document.title = 'Admin - <?php echo addslashes($config['author']) ?>';</script>
+                <script src="./resources/js/page_admin.js"></script>
             </div>
-            <script>document.title = 'Admin - <?php echo addslashes($config['author']) ?>';</script>
-            <script>
-                $(document).ready(function(){
-                    $("#nav-settings").trigger('click');
-                });
-            </script>
             <?php
         } elseif (uri('/settings')) {
             if (isset($_POST['submit'])) {
@@ -3885,14 +2563,13 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 }
             }
         ?>
-
         <div class="main">
             <div class="card">
                 <h1>Quick Settings</h1>
                 <hr>
                 <form method="POST">
                     <div class="custom-control custom-switch">
-                        <input <?php if ($settings['dev_builds']=="on") {echo "checked";} if (json_decode($filecontents, true)['stream']=="Dev") {echo "checked disabled";} ?> type="checkbox" class="custom-control-input" name="dev_builds" id="dev_builds">
+                        <input <?php if ($settings['dev_builds']=="on") {echo "checked";} if (json_decode($api_version_json, true)['stream']=="Dev") {echo "checked disabled";} ?> type="checkbox" class="custom-control-input" name="dev_builds" id="dev_builds">
                         <label class="custom-control-label" for="dev_builds">Subscribe to dev builds</label>
                     </div>
                     <div class="custom-control custom-switch">
@@ -3937,23 +2614,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <br>
                     <input type="submit" value="Save" class="btn btn-primary">
                 </form>
-                <script>
-                    (function() {
-                        'use strict';
-                        window.addEventListener('load', function() {
-                            var forms = document.getElementsByClassName('needs-validation');
-                            var validation = Array.prototype.filter.call(forms, function(form) {
-                            form.addEventListener('submit', function(event) {
-                                if (form.checkValidity() === false) {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                }
-                                    form.classList.add('was-validated');
-                                }, false);
-                            });
-                        }, false);
-                    })();
-                </script>
                 <table class="table table-striped sortable">
                     <thead>
                         <tr>
@@ -4000,28 +2660,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                   </div>
                 </div>
-                <script>
-                    function remove_box(id,name) {
-                        $("#mod-name-title").text(name);
-                        $("#mod-name").text(name);
-                        $("#remove-button").attr("onclick","remove("+id+")");
-                    }
-                    function remove(id) {
-                        var request = new XMLHttpRequest();
-                        request.onreadystatechange = function() {
-                            $("#mod-row-"+id).remove();
-                        }
-                        request.open("GET", "./functions/delete-client.php?id="+id);
-                        request.send();
-                    }
-                </script>
             </div>
+            <script src="./resources/js/page_clients.js"></script>
         </div>
-        <script>
-            $(document).ready(function(){
-                $("#nav-settings").trigger('click');
-            });
-        </script>
         <?php } else {
             ?>
         <script>document.title = '404 - Not Found';</script>
@@ -4031,7 +2672,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 <center><h2>There is nothing...</h2></center>
         </div>
         <?php }
-
     }
     ?>
     </body>
