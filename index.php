@@ -31,7 +31,7 @@ if (!$db->connect()) {
 $url = $_SERVER['REQUEST_URI'];
 
 require('functions/interval_range_utils.php');
-require('functions/number_suffix_string.php');
+require('functions/format_number.php');
 
 if (strpos($url, '?') !== false) {
     $url = substr($url, 0, strpos($url, "?"));
@@ -2961,24 +2961,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         </script>
         <?php
         } elseif (uri("/file")) {
-            function formatSizeUnits($bytes)
-            {
-                if ($bytes >= 1073741824) {
-                $bytes = number_format($bytes / 1073741824, 2) . ' GB';
-                } elseif ($bytes >= 1048576) {
-                $bytes = number_format($bytes / 1048576, 2) . ' MB';
-                } elseif ($bytes >= 1024) {
-                $bytes = number_format($bytes / 1024, 2) . ' KB';
-                } elseif ($bytes > 1) {
-                $bytes = $bytes . ' bytes';
-                } elseif ($bytes == 1) {
-                $bytes = $bytes . ' byte';
-                } else {
-                $bytes = '0 bytes';
-            }
-
-            return $bytes;
-            }
             $mres = $db->query("SELECT * FROM `mods` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
             $file = ($mres);
             ?>
