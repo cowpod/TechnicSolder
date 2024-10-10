@@ -42,7 +42,8 @@ if ($lpq) {
     $latest_public = $lpq[0];
 }
 
-$db->query("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."'WHERE `id` = ".$db->sanitize($_GET['pack']));
+if (!empty($latest_public['name']))
+    $db->query("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."'WHERE `id` = ".$db->sanitize($_GET['pack']));
 
 echo json_encode($response);
 exit();
