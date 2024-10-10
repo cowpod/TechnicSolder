@@ -30,5 +30,7 @@ if (!isset($config['encrypted'])||$config['encrypted']==false) {
     header("Location: ../");
 } else {
     //$pass = hash("sha256",$_POST['pass']."Solder.cf");
-    die("Passwords are already encrypted");
+    echo "Passwords are already encrypted";
 }
+
+exit();

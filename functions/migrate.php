@@ -95,3 +95,5 @@ foreach ($res as $row) {
     array_push($mods, $row['release_id']);
     $db->execute("UPDATE `builds` SET `mods` = '". implode(',',$mods)."' WHERE `id` = ".$row['build_id']);
 }
+
+exit();

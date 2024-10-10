@@ -43,6 +43,6 @@ if ($mod['type']=='mod') {
 // delete file from disk since we have no other mods with same filename
 // error_log('deleted from db and disk');
 unlink("../".$mod['type']."s/".$mod['filename']);
-die('{"status":"success","message":"Mod deleted from database and disk."}');
+echo '{"status":"success","message":"Mod deleted from database and disk."}';
 
 exit();

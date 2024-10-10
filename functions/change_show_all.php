@@ -8,3 +8,4 @@ if ($_GET['showall'] == 'true') {
 } else {
     $_SESSION['showall'] = false;
 }
+exit();

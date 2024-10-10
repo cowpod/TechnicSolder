@@ -51,3 +51,4 @@ foreach (json_decode($forge_data, true)['promos'] as $gameVersion => $forgeVersi
 
 header('Content-Type: application/json');
 print_r(json_encode($forges, JSON_PRETTY_PRINT));
+exit();

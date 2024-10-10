@@ -33,7 +33,7 @@ $db->execute("UPDATE `mods`
 
 if ($_POST['submit']=="Save and close") {
     header("Location: ".$config['dir']."lib-mods");
-    exit();
+} else {
+    header("Location: ".$config['dir']."mod?id=".$_POST['name']);
 }
-header("Location: ".$config['dir']."mod?id=".$_POST['name']);
 exit();

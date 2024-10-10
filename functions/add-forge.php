@@ -49,14 +49,13 @@ if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_con
 
     if ($res) {
         echo '{"status":"succ","message":"Mod has been saved."}';
-        exit();
     } else {
         echo '{"status":"error","message":"Mod could not be added to database"}';
-        exit();
     }
 } else {
     echo '{"status":"error","message":"File download failed."}';
     unlink("../forges/modpack-".$version."/modpack.jar");
     rmdir("../forges/modpack-".$version);
-    exit();
 }
+
+exit();

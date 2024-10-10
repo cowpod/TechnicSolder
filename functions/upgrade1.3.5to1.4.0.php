@@ -50,8 +50,6 @@ if ($mods && sizeof($mods)>0) {
     echo "Upgrade complete. <a href='/'>Click here to return to index</a>.";
 }
 
-
-
 $db->disconnect();
-
 exit();
+

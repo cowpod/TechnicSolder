@@ -33,5 +33,6 @@ $sql = $db->execute("UPDATE `users`
 if ($sql) {
     echo '<span class="text-success">Saved.</span>';
 } else {
-    die('<span class="text-danger">An error has occurred</span>');
+    echo '<span class="text-danger">An error has occurred</span>';
 }
+exit();

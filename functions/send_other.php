@@ -73,13 +73,12 @@ if (move_uploaded_file($fileTmpLoc, "../others/".$fileName)) {
 
     if ($res) {
         echo '{"status":"succ","message":"File has been saved."}';
-        exit();
     } else {
         echo '{"status":"error","message":"File could not be added to database"}';
-        exit();
     }
 } else {
     echo '{"status":"error","message":"Permission denied! Open SSH and run chown -R www-data '.dirname(dirname(get_included_files()[0])).'"}';
-    exit();
 }
+
+exit();
 ?>

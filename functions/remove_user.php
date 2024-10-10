@@ -23,5 +23,7 @@ $db->disconnect();
 if ($sql) {
     echo '<span class="text-success">User removed.</span>';
 } else {
-    die('<span class="text-danger">An error has occured</span>');
+    echo '<span class="text-danger">An error has occured</span>';
 }
+
+exit();

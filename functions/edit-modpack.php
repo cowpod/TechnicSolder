@@ -32,4 +32,3 @@ $db->execute("UPDATE `modpacks`
 );
 
 header("Location: ".$config['dir']."modpack?id=".$_GET['id']);
-exit();

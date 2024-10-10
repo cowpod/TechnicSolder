@@ -1,14 +1,14 @@
 <?php
 function compareZipContents(string $filepath1, string $filepath2): bool {
-    if (!file_exists($filepath1) && !!file_exists($filepath2)) {
+    if (!file_exists($filepath1) && !file_exists($filepath2)) {
         return true; // true if neither exist
     }
     elseif(!file_exists($filepath1) || !file_exists($filepath2)) {
         return false; // false if only one exists
     }
 
-    $contents1=[];
-    $filecount1=0;
+    $contents1 = [];
+    $filecount1 = 0;
     $zip = new ZipArchive();
     if ($zip->open($filepath1) === TRUE) {
         $filecount1=$zip->numFiles;
@@ -18,11 +18,12 @@ function compareZipContents(string $filepath1, string $filepath2): bool {
         }
         $zip->close();
     } else {
-        error_log('couldn\'t open zip file 1: '.$filepath1);
+        error_log("compareZipContents(): Couldn't open zip file 1: ".$filepath1);
         return FALSE;
     }
-    $contents2=[];
-    $filecount2=0;
+
+    $contents2 = [];
+    $filecount2 = 0;
     $zip = new ZipArchive();
     if ($zip->open($filepath2) === TRUE) {
         $filecount2=$zip->numFiles;
@@ -32,11 +33,12 @@ function compareZipContents(string $filepath1, string $filepath2): bool {
         }
         $zip->close();
     } else {
-        error_log('couldn\'t open zip file 2: '.$filepath2);
+        error_log("compareZipContents(): Couldn't open zip file 2: ".$filepath2);
         return FALSE;
     }
+
     // disregards order
-    // error_log($filepath1.','.$filepath2.'='.($contents1 == $contents2));
     return ($contents1==$contents2 && $filecount1==$filecount2);
 }
+exit();
 ?>

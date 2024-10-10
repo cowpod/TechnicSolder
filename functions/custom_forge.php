@@ -74,13 +74,11 @@ if (move_uploaded_file($fileTmpLoc, "../forges/modpack-".$version."/modpack.jar"
     if ($res) {
         echo '{"status":"succ","message":"Mod has been saved."}';
         header("Location: ../lib-forges?succ");
-        exit();
     } else {
         echo '{"status":"error","message":"Mod could not be added to database"}';
-        exit();
     }
 } else {
     echo '{"status":"error","message":"File download failed."}';
     rmdir("../forges/modpack-".$version);
-    exit();
 }
+exit();

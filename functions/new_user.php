@@ -37,5 +37,6 @@ $db->disconnect();
 if ($sql) {
     echo '<span class="text-success">New user created</span>';
 } else {
-    die('<span class="text-danger">An error has occured</span>');
+    echo '<span class="text-danger">An error has occured</span>';
 }
+exit();

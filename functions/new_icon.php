@@ -17,3 +17,4 @@ $query = $db->execute("UPDATE `users` SET `icon` = '".$iconbase."' WHERE `name` 
 echo $db->error;
 
 $db->disconnect();
+exit();
