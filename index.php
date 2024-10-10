@@ -132,8 +132,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         } ?>
         <script src="./resources/js/jquery.min.js"></script>
         <script src="./resources/js/popper.min.js"></script>
-        <script src="./resources/bootstrap/bootstrap.min.js"></script>
         <script src="./resources/js/fontawesome.js"></script>
+        <script src="./resources/js/slugify.js"></script>
+        <script src="./resources/bootstrap/bootstrap.min.js"></script>
         <script src="./resources/bootstrap/bootstrap-sortable.js"></script>
         <link rel="stylesheet" href="./resources/bootstrap/bootstrap-sortable.css" type="text/css">
         <style type="text/css">
@@ -720,19 +721,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                     var slug = slugify($(this).val());
                                     $("#slug").val(slug);
                                 });
-                                function slugify (str) {
-                                    str = str.replace(/^\s+|\s+$/g, '');
-                                    str = str.toLowerCase();
-                                    var from = "àáãäâèéëêìíïîòóöôùúüûñšç·/_,:;";
-                                    var to = "aaaaaeeeeiiiioooouuuunsc------";
-                                    for (var i=0, l=from.length ; i<l ; i++) {
-                                        str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i));
-                                    }
-                                    str = str.replace(/[^a-z0-9 -]/g, '')
-                                        .replace(/\s+/g, '-')
-                                        .replace(/-+/g, '-');
-                                    return str;
-                                }
                             </script>
                             <input type="submit" id="submit" disabled class="btn btn-primary btn-block" value="Create">
                         </form>
@@ -1260,19 +1248,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 $("#slug").val(slug);
                             <?php } ?>
                         });
-                        function slugify (str) {
-                            str = str.replace(/^\s+|\s+$/g, '');
-                            str = str.toLowerCase();
-                            var from = "àáãäâèéëêìíïîòóöôùúüûñšç·/_,:;";
-                            var to = "aaaaaeeeeiiiioooouuuunsc------";
-                            for (var i=0, l=from.length ; i<l ; i++) {
-                                str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i));
-                            }
-                            str = str.replace(/[^a-z0-9 -]/g, '')
-                                .replace(/\s+/g, '-')
-                                .replace(/-+/g, '-');
-                            return str;
-                        }
                     </script>
                 </div>
                 <?php
@@ -2447,19 +2422,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             console.log(slug);
                             $("#slug").val(slug);
                         });
-                        function slugify (str) {
-                            str = str.replace(/^\s+|\s+$/g, '');
-                            str = str.toLowerCase();
-                            var from = "àáãäâèéëêìíïîòóöôùúüûñç·/_,:;";
-                            var to = "aaaaaeeeeiiiioooouuuunc------";
-                            for (var i=0, l=from.length ; i<l ; i++) {
-                                str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i));
-                            }
-                            str = str.replace(/[^a-z0-9 -]/g, '')
-                                .replace(/\s+/g, '-')
-                                .replace(/-+/g, '-');
-                            return str;
-                        }
                     </script>
             </div>
         </div>
@@ -3148,19 +3110,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 console.log(slug);
                 $("#slug").val(slug);
             });
-            function slugify (str) {
-                str = str.replace(/^\s+|\s+$/g, '');
-                str = str.toLowerCase();
-                var from = "àáãäâèéëêìíïîòóöôùúüûñç·/_,:;";
-                var to = "aaaaaeeeeiiiioooouuuunc------";
-                for (var i=0, l=from.length ; i<l ; i++) {
-                    str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i));
-                }
-                str = str.replace(/[^a-z0-9 -]/g, '')
-                    .replace(/\s+/g, '-')
-                    .replace(/-+/g, '-');
-                return str;
-            }
         </script>
         <script>
             $(document).ready(function(){
@@ -3192,19 +3141,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             console.log(slug);
                             $("#slug").val(slug);
                         });
-                        function slugify (str) {
-                            str = str.replace(/^\s+|\s+$/g, '');
-                            str = str.toLowerCase();
-                            var from = "àáãäâèéëêìíïîòóöôùúüûñç·/_,:;";
-                            var to = "aaaaaeeeeiiiioooouuuunc------";
-                            for (var i=0, l=from.length ; i<l ; i++) {
-                                str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i));
-                            }
-                            str = str.replace(/[^a-z0-9 -]/g, '')
-                                .replace(/\s+/g, '-')
-                                .replace(/-+/g, '-');
-                            return str;
-                        }
                     </script>
                         <input required class="form-control" type="text" name="version" placeholder="Mod Version" value="<?php echo $mod['version'] ?>"><br />
                         <div class="input-group">
