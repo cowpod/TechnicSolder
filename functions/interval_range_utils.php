@@ -8,35 +8,29 @@ function in_range($range, $num) {
 	if (empty($range)) return false;
 	if (empty($num)) return false;
 
-	$exploded = explode(',', str_replace(' ', '', $range));
-	// explode [a,b] into '[a' and 'b]'
-	// or [a,] into '[a' and ']'
-	
-	foreach ($exploded as $endpoint) {
-		$trimmed=trim($endpoint, '[(])');
-		if (str_contains($endpoint, '[')) {
-			// left side [
-			if (! version_compare($num, $trimmed, '>='))
-				return false;
-		}
-		if (str_contains($endpoint, '(')) {
-			// left side (
-			if (! version_compare($num, $trimmed, '>'))
-				return false;
-		}
-		if (str_contains($endpoint, ']')) {
-			// right side ]
-			if (! version_compare($num, $trimmed, '<='))
-				return false;
-		}
-		if (str_contains($endpoint, ')')) {
-			// right side )
-			if (! version_compare($num, $trimmed, '<'))
-				return false;
-		}
+	$matches=[];
+	if (preg_match("/^(?:\[)?(.*),(.*)(?:\])?$/", $range, $matches)) { // [, ]
+		[$full,$low,$high]=$matches;
+		return (version_compare($num, $low, '>=') && version_compare($num, $high, '<='));
+	}
+	$matches=[];
+	if (preg_match("/^(?:\[)?(.*),(.*)(?:\))?$/", $range, $matches)) { // [, )
+		[$full,$low,$high]=$matches;
+		return (version_compare($num, $low, '>=') && version_compare($num, $high, '<'));
+	}
+	$matches=[];
+	if (preg_match("/^(?:\()?(.*),(.*)(?:\])?$/", $range, $matches)) { // (, ]
+		[$full,$low,$high]=$matches;
+		return (version_compare($num, $low, '>') && version_compare($num, $high, '<='));
+	}
+	$matches=[];
+	if (preg_match("/^(?:\()?(.*),(.*)(?:\))?$/", $range, $matches)) { // (, )
+		[$full,$low,$high]=$matches;
+		return (version_compare($num, $low, '>') && version_compare($num, $high, '<'));
 	}
 	
-	return true;
+	// assume range is just a string?
+	return version_compare($range,$num,'=');
 }
 
 function mcversion_to_range($mcversion) {
