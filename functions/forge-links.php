@@ -19,13 +19,14 @@ $db->connect();
 
 // this was called INSIDE the for loop before...
 $forgesq = $db->query("SELECT `version` FROM `mods` WHERE `type` = 'forge'");
-$forges=[];
+$forges_installed=[];
 if($forgesq) {
     foreach($forgesq as $forge) {
-        array_push($forges, $forge['version']);
+        array_push($forges_installed, $forge['version']);
     }
 }
 
+$forges=[];
 foreach (json_decode($forge_data, true)['promos'] as $gameVersion => $forgeVersion) { // key, value
     $id++;
     if (strpos($gameVersion, "latest")) {
@@ -38,7 +39,7 @@ foreach (json_decode($forge_data, true)['promos'] as $gameVersion => $forgeVersi
         }
         $versions[$forgeVersion] = $forge_link.'/'.$gameVersion.'-'.$forgeVersion.'/forge-'.$gameVersion.'-'.$forgeVersion.'-'.$suffixExt;
 
-        if (!in_array($forgeVersion, $forges)) {
+        if (!in_array($forgeVersion, $forges_installed)) {
             $forges[$gameVersion] = array(
                 "id" => $id,
                 "mc" => $gameVersion,
