@@ -71,25 +71,48 @@ function in_range($range, $num) {
 	$matches=[];
 	if     (preg_match("/^(\[)([0-9\.]*),\s?([0-9\.]*)(\])$/", $range, $matches)) { // [, ]
 		[$full,$not1,$low,$high,$not2]=$matches;
+		if (empty($high)) {
+			return (version_compare($num, $low, '>='));
+		}
+		if (empty($low)) {
+			return (version_compare($num, $high, '<='));
+		}
 		return (version_compare($num, $low, '>=') && version_compare($num, $high, '<='));
 	}
 	elseif (preg_match("/^(\[)([0-9\.]*),\s?([0-9\.]*)(\))$/", $range, $matches)) { // [, )
 		[$full,$not1,$low,$high,$not2]=$matches;
+		if (empty($high)) {
+			return (version_compare($num, $low, '>='));
+		}
+		if (empty($low)) {
+			return (version_compare($num, $high, '<'));
+		}
 		return (version_compare($num, $low, '>=') && version_compare($num, $high, '<'));
 	}
 	elseif (preg_match("/^(\()([0-9\.]*),\s?([0-9\.]*)(\])$/", $range, $matches)) { // (, ]
 		[$full,$not1,$low,$high,$not2]=$matches;
+		if (empty($high)) {
+			return (version_compare($num, $low, '>'));
+		}
+		if (empty($low)) {
+			return (version_compare($num, $high, '<='));
+		}
 		return (version_compare($num, $low, '>') && version_compare($num, $high, '<='));
 	}
 	elseif (preg_match("/^(\()([0-9\.]*),\s?([0-9\.]*)(\))$/", $range, $matches)) { // (, )
 		[$full,$not1,$low,$high,$not2]=$matches;
+		if (empty($high)) {
+			return (version_compare($num, $low, '>'));
+		}
+		if (empty($low)) {
+			return (version_compare($num, $high, '<'));
+		}
 		return (version_compare($num, $low, '>') && version_compare($num, $high, '<'));
 	}
 	
 	// assume range is just a string?
 	return version_compare($range,$num,'=');
 }
-
 
 function parse_interval_range($mcversion) {
     $min=null;
