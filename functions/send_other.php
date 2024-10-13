@@ -18,6 +18,18 @@ if (!$fileTmpLoc) {
     exit();
 }
 
+if (str_ends_with($fileName, '.zip')) {
+    // check file magic
+    $filetype=mime_content_type($fileTmpLoc);
+    if ($filetype!='application/zip') {
+        error_log ('{"status":"error","message":"Not a ZIP file."}');
+        die ('{"status":"error","message":"Not a ZIP file."}');
+    }
+} else {
+    error_log ('{"status":"error","message":"Not a ZIP file."}');
+    die ('{"status":"error","message":"Not a ZIP file."}');
+}
+
 // unlike send_mods.php, we don't have any metadata to go off of. 
 // and as we don't create a zip, we can simply check the files' md5s.
 // this means a user can upload multiple timestamp variations of the exact same file, in a zip.
