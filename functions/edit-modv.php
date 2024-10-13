@@ -26,14 +26,15 @@ if ($result) {
     $mod = $result[0];
 }
 $db->execute("UPDATE `mods`
-    SET `link` = '".$db->sanitize($_POST['link'])."',
-    `author` = '".  $db->sanitize($_POST['author'])."',
-    `donlink` = '". $db->sanitize($_POST['donlink'])."',
-    `version` = '". $db->sanitize($_POST['version'])."',
-    `mcversion` = '".$db->sanitize($_POST['mcversion'])."',
-    `url` = '".     $db->sanitize($_POST['url'])."',
-    `md5` = '".     $db->sanitize($_POST['md5'])."'
-    WHERE `id` = ". $db->sanitize($_GET['id'])
+    SET link='".    $db->sanitize($_POST['link'])."',"
+    ."author ='".   $db->sanitize($_POST['author'])."',"
+    ."donlink='".   $db->sanitize($_POST['donlink'])."',"
+    ."version='".   $db->sanitize($_POST['version'])."',"
+    ."mcversion='". $db->sanitize($_POST['mcversion'])."',"
+    ."url='".       $db->sanitize($_POST['url'])."',"
+    ."md5='".       $db->sanitize($_POST['md5'])."',"
+    ."loadertype='".$db->sanitize($_POST['loadertype'])."'"
+    ."WHERE id=".     $db->sanitize($_GET['id'])
 );
 
 if ($_POST['submit']=="Save and close") {

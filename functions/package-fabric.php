@@ -39,8 +39,7 @@ if (file_put_contents("../forges/modpack-".$version."/version.json", file_get_co
     $url = "http://".$config['host'].$config['dir']."forges/fabric-".urlencode($version).".zip";
 
     $db->connect();
-    $res = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`) VALUES 
-                           ('forge','Fabric (alpha)','".$md5."','".$url."','https://fabricmc.net/','FabricMC Team', 'Fabric is a lightweight, experimental modding toolchain for Minecraft.', '".$version."','f".$mcversion."','fabric-".$version.".zip','forge')");
+    $res = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`) VALUES ('forge','Fabric (alpha)','".$md5."','".$url."','https://fabricmc.net/','FabricMC Team', 'Fabric is a lightweight, experimental modding toolchain for Minecraft.', '".$version."','".$mcversion."','fabric-".$version.".zip','forge', 'fabric')");
     $db->disconnect();
     
     if ($res) {

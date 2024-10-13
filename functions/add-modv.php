@@ -19,12 +19,16 @@ if (empty($_POST['md5'])) {
 if (empty($_POST['mcversion'])) {
     die("Minecraft version not specified.");
 }
+if (empty($_POST['loadertype'])) {
+    die("Loader type not specified.");
+}
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
 }
 if (substr($_SESSION['perms'], 3, 1)!=="1") {
     die("Insufficient permission!");
 }
+$config = require("./config.php");
 
 global $db;
 require_once("db.php");
@@ -34,7 +38,7 @@ if (!isset($db)){
 }
 
 $db->execute("INSERT INTO `mods`
-    (`name`, `pretty_name`, `md5`, `url`, `link`, `author`, `donlink`, `description`, `version`, `mcversion`, `type`) VALUES ( 
+    (`name`, `pretty_name`, `md5`, `url`, `link`, `author`, `donlink`, `description`, `version`, `mcversion`, `type`, `loadertype`) VALUES ( 
         '".$db->sanitize($_POST['name'])."',
         '".$db->sanitize($_POST['pretty_name'])."',
         '".$db->sanitize($_POST['md5'])."',
@@ -45,7 +49,9 @@ $db->execute("INSERT INTO `mods`
         '".$db->sanitize($_POST['dscription'])."',
         '".$db->sanitize($_POST['version'])."',
         '".$db->sanitize($_POST['mcversion'])."',
-        'mod')");
+        'mod',
+        '".$db->sanitize($_POST['loadertype'])."',
+        )");
 
-header("Location: ../lib-mods");
+header("Location: ".$config['dir']."lib-mods");
 exit();
