@@ -12,7 +12,7 @@ if (substr($_SESSION['perms'], 5, 1)!=="1") {
 $fileName = $_FILES["file"]["name"];
 $fileTmpLoc = $_FILES["file"]["tmp_name"];
 if (!$fileTmpLoc) {
-    header("Location: ../lib-forges?errfilesize");
+    header("Location: ../modloaders?errfilesize");
    // echo '{"status":"error","message":"File is too big! Check your post_max_size
     //(current value '.ini_get('post_max_size').') and upload_max_filesize
     //(current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}';
@@ -73,7 +73,7 @@ if (move_uploaded_file($fileTmpLoc, "../forges/modpack-".$version."/modpack.jar"
     );
     if ($res) {
         echo '{"status":"succ","message":"Mod has been saved."}';
-        header("Location: ../lib-forges?succ");
+        header("Location: ../modloaders?succ");
     } else {
         echo '{"status":"error","message":"Mod could not be added to database"}';
     }

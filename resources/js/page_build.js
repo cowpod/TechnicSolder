@@ -92,23 +92,27 @@ $("#search2").on('keyup',function(){
         }
     }
 });
-
-
 function add(name) {
+    if ($("#versionselect-"+name+' option:selected').attr('missing')=='true') {
+        return;
+    }
+    if ($("#versionselect-"+name).val()==null) {
+        return;
+    }
     $("#btn-add-mod-"+name).attr("disabled", true);
-    $("#cog-"+name).show();
+    // $("#cog-"+name).show();
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             if (this.responseText=="Insufficient permission!") {
-                $("#cog-"+name).hide();
-                $("#times-"+name).show();
+                // $("#cog-"+name).hide();
+                // $("#times-"+name).show();
             } else {
-                $("#cog-"+name).hide();
-                $("#check-"+name).show();
-                setTimeout(function() {
+                // $("#cog-"+name).hide();
+                // $("#check-"+name).show();
+                // setTimeout(function() {
                     $("#mod-add-row-"+name).remove();
-                }, 3000);
+                // }, 0);
 
             }
         }
@@ -116,3 +120,35 @@ function add(name) {
     request.open("GET", "./functions/add-mod.php?bid="+build_id+"&id="+$("#versionselect-"+name).val());
     request.send();
 }
+
+$('#showall').change(function() {
+    var request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            window.location.reload();
+        }
+    };
+    if ( $('#showall').is(':checked') ) {
+        request.open("GET", "./functions/change_show_all.php?showall=true");
+    } else {
+        request.open("GET", "./functions/change_show_all.php?showall=false");
+    }
+    request.send();
+});
+
+$(document).on('change', '.form-control', function() {
+    if ($(this).attr('id').startsWith('versionselect-')) {
+        var id=$(this).attr('id');
+        var name=$(this).attr('modname');
+
+        var addButton = $('#btn-add-mod-'+name);
+        var selected = $('#'+id+' option:selected');
+
+        if(selected.attr('missing')==='true') {
+            addButton.attr('disabled','true');
+        } else {
+            addButton.removeAttr('disabled');
+        }
+        console.log('#btn-add-mod-'+modid);
+    }
+});
