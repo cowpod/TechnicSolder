@@ -20,11 +20,33 @@ if (!isset($db)){
     $db->connect();
 }
 
+
+$querybuilds = $db->query("SELECT id,name,mods FROM builds");
+
+$warn='';
+
+//potentially destructive..
 $modq = $db->query("SELECT * FROM `mods` WHERE `name` = '".$db->sanitize($_GET['id'])."'");
 foreach ($modq as $mod) {
-    unlink("../".$mod['type']."s/".$mod['filename']);
+    if ($querybuilds&&sizeof($querybuilds)>0) {
+        if (!empty($querybuilds[0]['mods'])) {
+            $mods=explode(',', $querybuilds[0]['mods']);
+        }
+    }
+    if (!empty($mods)&&in_array($mod['id'], $mods)) {
+        $warn.='Cannot delete version '.$mod['version'].' as it is used in build <a href=\'build?id='.$querybuilds[0]['id'].'\'>'.$querybuilds[0]['name'].'</a>';
+        error_log($warn);
+        continue;
+    } else {
+        unlink("../".$mod['type']."s/".$mod['filename']);
+        $db->execute("DELETE FROM `mods` WHERE `id` = '".$mod['id']."'");
+    }
 }
 
-$db->execute("DELETE FROM `mods` WHERE `name` = '".$db->sanitize($_GET['id'])."'");
+// $db->execute("DELETE FROM `mods` WHERE `name` = '".$db->sanitize($_GET['id'])."'");
 
+if ($warn!=='') {
+    die('{"status":"warn","message":"'.$warn.'"}');
+}
+die('{"status":"succ","message":"Deleted successfully"}');
 exit();
