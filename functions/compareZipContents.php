@@ -40,5 +40,4 @@ function compareZipContents(string $filepath1, string $filepath2): bool {
     // disregards order
     return ($contents1==$contents2 && $filecount1==$filecount2);
 }
-exit();
 ?>
