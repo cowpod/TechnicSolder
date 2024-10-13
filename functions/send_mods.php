@@ -79,7 +79,7 @@ function getModTypes(string $filePath): array {
     return ['fabric'=> $has_fabric, 'forge'=> $has_forge, 'forge_old'=> $has_forge_old];
 }
 
-function getModInfos(array $modTypes, string $filePath): array {
+function getModInfos(array $modTypes, string $filePath, string $fileName): array {
     /*
     We don't support multiple mods in a file. 
     TODO: support multiple mods in one file.
@@ -147,8 +147,19 @@ function getModInfos(array $modTypes, string $filePath): array {
                 $mod_info['forge']['modid'] = strtolower($mod['modId']);
             }
             if (empty($mod['version']) || $mod['version']=='${file.jarVersion}') {
-                array_push($warn, 'Missing version!');
-                $mod_info['forge']['version'] = '';
+                $matches=[];
+                $patchedversion='';
+                if (preg_match("/-([0-9a-z\-\.]+)$/", str_replace('.jar','',$fileName), $matches)) {
+                    if (!empty($matches[1])) {
+                        $mod_info['forge']['version'] = $matches[1];
+                    } else {
+                        array_push($warn, 'Missing version!');
+                        $mod_info['forge']['version'] = '';
+                    }
+                } else {
+                    array_push($warn, 'Missing version!');
+                    $mod_info['forge']['version'] = '';
+                }
             } else {
                 $mod_info['forge']['version'] = $mod['version'];
             }
@@ -212,8 +223,20 @@ function getModInfos(array $modTypes, string $filePath): array {
             $mod_info['forge_old']['modid'] = strtolower($parsed['modid']);
         }
         if (empty($parsed['version']) || $parsed['version']=='${file.jarVersion}') {
-            array_push($warn, 'Missing version!');
-            $mod_info['forge_old']['version'] = '';
+            // array_push($warn, 'Missing version!');
+            $matches=[];
+            $patchedversion='';
+            if (preg_match("/-([0-9a-z\-\.]+)$/", str_replace('.jar','',$fileName), $matches)) {
+                if (!empty($matches[1])) {
+                    $mod_info['old_forge']['version'] = $matches[1];
+                } else {
+                    array_push($warn, 'Missing version!');
+                    $mod_info['old_forge']['version'] = '';
+                }
+            } else {
+                array_push($warn, 'Missing version!');
+                $mod_info['old_forge']['version'] = '';
+            }
         } else {
             $mod_info['forge_old']['version'] = $parsed['version'];
         }
@@ -399,7 +422,7 @@ if (!file_exists($file_tmp)){
 }
 
 $modTypes = getModTypes($file_tmp);
-$modInfos = getModInfos($modTypes, $file_tmp);
+$modInfos = getModInfos($modTypes, $file_tmp, $file_name);
 
 if (!isset($db)){
     $db=new Db;
