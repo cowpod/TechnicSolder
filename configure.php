@@ -143,8 +143,6 @@ $db=new Db;
                                 version TEXT,
                                 md5 TEXT,
                                 mcversion TEXT,
-                                mcversion_low TEXT,
-                                mcversion_high TEXT,
                                 filename TEXT,
                                 type TEXT,
                                 loadertype TEXT);";
@@ -205,8 +203,6 @@ $db=new Db;
                                 version VARCHAR(512),
                                 md5 VARCHAR(512),
                                 mcversion VARCHAR(128),
-                                mcversion_low VARCHAR(128),
-                                mcversion_high VARCHAR(128),
                                 filename VARCHAR(128),
                                 type VARCHAR(128),
                                 loadertype VARCHAR(128));";
