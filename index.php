@@ -668,7 +668,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             $vres = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge'");
                             if (sizeof($vres)!==0) {
                                 foreach($vres as $version) {
-                                    ?><option <?php if (!empty($modslist)&&$modslist[0]==$version['id']){ echo "selected"; } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - Forge <?php echo $version['version'] ?></option><?php
+                                    ?><option <?php if (!empty($modslist)&&$modslist[0]==$version['id']){ echo "selected"; } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - <?php echo $version['loadertype']?> <?php echo $version['version'] ?></option><?php
                                 }
                                 echo "</select>";
                             } else {
@@ -1096,8 +1096,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <thead>
                             <tr>
                                 <th style="width:20%" data-defaultsign="AZ" scope="col">Build</th>
-                                <th style="width:20%" data-defaultsign="AZ" scope="col">Minecraft version</th>
-                                <th style="width:20%" data-defaultsign="AZ" scope="col">Java version</th>
+                                <th style="width:20%" data-defaultsign="AZ" scope="col">Minecraft</th>
+                                <th style="width:20%" data-defaultsign="AZ" scope="col">Java</th>
                                 <th style="width:5%" data-defaultsign="_19" scope="col">Mods</th>
                                 <th style="width:30%" data-defaultsign="disabled" scope="col"></th>
                                 <th style="width:5%" data-defaultsign="disabled" scope="col"></th>
@@ -1243,7 +1243,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                     if (sizeof($modslist)>0 && $modslist[0]==$version['id']){ 
                                         $loadertype=$version['loadertype'];
                                         echo "selected"; 
-                                    } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - Forge <?php echo $version['version'] ?></option><?php
+                                    } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - <?php echo $version['loadertype'] ?> <?php echo $version['version'] ?></option><?php
                                 }
                                 echo "</select>";
                             } else {
@@ -1447,7 +1447,10 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         if (empty($_SESSION['showall'])) { 
                             echo 'for Minecraft '.$user['minecraft']; 
                         } 
-                            ?></h2>
+
+                        echo !empty($user['loadertype']) ? ' - '.$user['loadertype'] : ' - Missing LoaderType! Please run <a href=/functions/upgrade1.3.5to1.4.0.php>/functions/upgrade1.3.5to1.4.0.php</a>';
+
+                        ?></h2>
                         <hr>
                         <button onclick="window.location.href = window.location.href" class="btn btn-primary">Refresh</button>
                         <br />
