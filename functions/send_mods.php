@@ -36,305 +36,18 @@ if (str_ends_with($file_name, '.jar')) {
     die ('{"status":"error","message":"Not a JAR file."}');
 }
 
-require('toml.php');
 require('slugify.php');
-require('interval_range_utils.php');
 require('compareZipContents.php');
+require('modInfo.php');
 
-define('FABRIC_INFO_PATH', 'fabric.mod.json');
-define('FORGE_INFO_PATH', 'META-INF/mods.toml');
-define('FORGE_OLD_INFO_PATH', 'mcmod.info');
-
-$error=[];
-$warn=[];
-$info=[];
-$succ=[];
-
-function getModTypes(string $filePath): array {
-    // returns a dictionary ['fabric'=>bool,'forge'=>bool,'forge_old'=>bool] 
-    // representing each detected mod type
-    // yes, there can be multiple types of the same mod in a file.
-
-    // todo: or even multiple mods in one file, but we're not handling that.
-
-    // todo: check finfo to ensure it's actually a zip
-
-    error_log("getModTypes()");
-    assert (file_exists($filePath));
-
-    $has_fabric=FALSE;
-    $has_forge=FALSE;
-    $has_forge_old=FALSE;
-
-    $zip = new ZipArchive;
-
-    if ($zip->open($filePath)===TRUE) {
-        // statName returns Array or FALSE.
-        $has_fabric = $zip->statName(FABRIC_INFO_PATH)!==FALSE;
-        $has_forge = $zip->statName(FORGE_INFO_PATH)!==FALSE; // MC 1.13+
-        $has_forge_old = $zip->statName(FORGE_OLD_INFO_PATH)!==FALSE; // MC 1.12-
-        $zip->close();
-    }
-
-    return ['fabric'=> $has_fabric, 'forge'=> $has_forge, 'forge_old'=> $has_forge_old];
+if (!file_exists($file_tmp)){
+    error_log ('{"status":"error","message":"Uploaded file does not exist!?"}');
+    die ('{"status":"error","message":"Uploaded file does not exist!?"}');
 }
 
-function getModInfos(array $modTypes, string $filePath, string $fileName): array {
-    /*
-    We don't support multiple mods in a file. 
-    TODO: support multiple mods in one file.
-
-    Returns a dictionary of 
-    [
-    'forge' => [info] or null, for forge
-    'forge_old' => [info] or null, for old forge
-    'fabric' => [info] or null, for fabric
-    ]
-
-    Format is similar to that of 1.12 and below forge mcmod.info.
-    Except we don't support multiple mods in a file. 
-    // (Note the following ISN'T a nested dictionary in an array.)
-
-    */
-    global $error;
-    global $warn;
-    global $info;
-    global $succ;
-
-    error_log("getModInfos()");
-
-    // only make a copy of this object. we don't have const or final :c
-    $mcmod_orig = [
-        'modid'         =>null, // mandatory 
-        'version'       =>null, // mandatory
-        'name'          =>null,
-        'url'           =>null,
-        'credits'       =>null,
-        'authors'       =>null,
-        'description'   =>null,
-        'mcversion'     =>null, // pulled from dependencies, exact or interval notation
-        'dependencies'  =>[],   // pulled from dependencies, ['dep mod id']
-        'loaderversion' =>null, 
-        'loadertype'    =>null, 
-        'license'       =>null
-    ];
-
-    $mod_info = ['forge'=>null, 'forge_old'=>null, 'fabric'=>null];
-
-    $zip = new ZipArchive();
-    if ($zip->open($filePath) === FALSE) {
-        error_log ('{"status": "error", "message": "Could not open JAR file as ZIP"}');
-        die ('{"status": "error", "message": "Could not open JAR file as ZIP"}');
-    }
-
-    if ($modTypes['forge']===TRUE) {
-        $raw = $zip->getFromName(FORGE_INFO_PATH);
-        if ($raw === FALSE) {
-            error_log  ('{"status": "error", "message": "Could not access info file from Forge mod."}');
-            die ('{"status": "error", "message": "Could not access info file from Forge mod."}');
-        }
-
-        $toml = new Toml;
-        $parsed = $toml->parse($raw);
-        $mod_info['forge']=$mcmod_orig;
-
-        // there can be multiple mods entries, we are just getting the first.
-        foreach ($parsed['mods'] as $mod) {
-            if (empty($mod['modId'])) {
-                error_log ('{"status": "error", "message": "Missing modId!"}');
-                die ('{"status": "error", "message": "Missing modId!"}');
-            } else {
-                $mod_info['forge']['modid'] = strtolower($mod['modId']);
-            }
-            if (empty($mod['version']) || $mod['version']=='${file.jarVersion}') {
-                $matches=[];
-                $patchedversion='';
-                if (preg_match("/-([0-9a-z\-\.]+)$/", str_replace('.jar','',$fileName), $matches)) {
-                    if (!empty($matches[1])) {
-                        $mod_info['forge']['version'] = $matches[1];
-                    } else {
-                        array_push($warn, 'Missing version!');
-                        $mod_info['forge']['version'] = '';
-                    }
-                } else {
-                    array_push($warn, 'Missing version!');
-                    $mod_info['forge']['version'] = '';
-                }
-            } else {
-                $mod_info['forge']['version'] = $mod['version'];
-            }
-            if (!empty($mod['displayName']))
-                $mod_info['forge']['name'] = $mod['displayName'];
-            if (!empty($mod['displayURL']))
-                $mod_info['forge']['url'] = $mod['displayURL'];
-            if (!empty($mod['credits']))
-                $mod_info['forge']['credits'] = $mod['credits'];
-            if (!empty($mod['authors']))
-                $mod_info['forge']['authors'] = $mod['authors'];
-            if (!empty($mod['description']))
-                $mod_info['forge']['description'] = $mod['description'];
-            break;
-        }
-
-        // handle dependencies and get mcversion, sometimes there can be none.
-        if (!empty($parsed['dependencies']) && !empty($parsed['dependencies'][$mod_info['forge']['modid']])) {
-            // each dependency is an indexed array entry.
-            foreach ($parsed['dependencies'][$mod_info['forge']['modid']] as $dep) {
-                if (empty($dep['modId']))
-                    continue;
-                if (strtolower($dep['modId'])=='minecraft') {
-                    $mod_info['forge']['mcversion'] = $dep['versionRange'];
-                }
-                array_push($mod_info['forge']['dependencies'], strtolower($dep['modId']));
-            }
-        }
-
-        if (empty($mod_info['forge']['mcversion'])) {
-            array_push($warn, 'Missing mcversion!');
-        }
-
-        $mod_info['forge']['loadertype'] = 'forge';
-        if (empty($parsed['loaderVersion'])) {
-            error_log ('{"status": "error", "message": "Missing loaderVersion!"}');
-            die ('{"status": "error", "message": "Missing loaderVersion!"}');
-        } else {
-            $mod_info['forge']['loaderversion'] = $parsed['loaderVersion'];
-        }
-        if (!empty($parsed['license']))
-            $mod_info['forge']['license'] = $parsed['license'];
-    }
-
-    if ($modTypes['forge_old']===TRUE) {
-
-        $raw = $zip->getFromName(FORGE_OLD_INFO_PATH);
-        if ($raw === FALSE) {
-            error_log ('{"status": "error", "message": "Could not access info file from Old Forge mod."}');
-            die ('{"status": "error", "message": "Could not access info file from Old Forge mod."}');
-        }
-
-        $mod_info['forge_old']=$mcmod_orig;
-
-        // dictionary is nested in an array
-        $parsed = json_decode(preg_replace('/\r|\n/', '', trim($raw)), true)[0];
-        if (empty($parsed['modid'])) {
-            error_log ('{"status": "error", "message": "Missing modid!"}');
-            die ('{"status": "error", "message": "Missing modid!"}');
-        } else {
-            $mod_info['forge_old']['modid'] = strtolower($parsed['modid']);
-        }
-        if (empty($parsed['version']) || $parsed['version']=='${file.jarVersion}') {
-            // array_push($warn, 'Missing version!');
-            $matches=[];
-            $patchedversion='';
-            if (preg_match("/-([0-9a-z\-\.]+)$/", str_replace('.jar','',$fileName), $matches)) {
-                if (!empty($matches[1])) {
-                    $mod_info['old_forge']['version'] = $matches[1];
-                } else {
-                    array_push($warn, 'Missing version!');
-                    $mod_info['old_forge']['version'] = '';
-                }
-            } else {
-                array_push($warn, 'Missing version!');
-                $mod_info['old_forge']['version'] = '';
-            }
-        } else {
-            $mod_info['forge_old']['version'] = $parsed['version'];
-        }
-        if (!empty($parsed['name']))
-            $mod_info['forge_old']['name']  = $parsed['name'];
-        if (!empty($parsed['url']))
-            $mod_info['forge_old']['url'] = $parsed['url'];
-        if (!empty($parsed['credits'])) 
-            $mod_info['forge_old']['credits'] = $parsed['credits'];
-        if (!empty($parsed['authorList'])) 
-            $mod_info['forge_old']['authors'] = implode(', ', $parsed['authorList']);
-        if (!empty($parsed['description'])) 
-            $mod_info['forge_old']['description'] = $parsed['description'];
-        if (!empty($parsed['mcversion']))
-            $mod_info['forge_old']['mcversion']=$parsed['mcversion'];
-        else {
-            array_push($warn, 'Missing mcversion!');
-            // error_log('{"status": "warn", "message": "Missing mcversion!"}');
-        }
-
-        // each dependency is a string
-        if (array_key_exists('dependencies', $parsed)) {
-            foreach ($parsed['dependencies'] as $dep) {
-                if (empty($dep)) 
-                    continue;
-                array_push($mod_info['forge_old']['dependencies'], strtolower($dep));;
-            }
-        }
-
-        $mod_info['forge_old']['loadertype']='forge'; // same
-        // no loaderversion
-        // no license
-    }
-
-    if ($modTypes['fabric']===TRUE) {
-        $raw = $zip->getFromName(FABRIC_INFO_PATH);
-        if ($raw === FALSE) {
-            error_log ('{"status": "error", "message": "Could not access info file from Fabric mod."}');
-            die ('{"status": "error", "message": "Could not access info file from Fabric mod."}');
-        }
-
-        $mod_info['fabric']=$mcmod_orig;
-        $parsed = json_decode(preg_replace('/\r|\n/', '', trim($raw)), true);
-
-        if (empty($parsed['id'])) {
-            error_log ('{"status": "error", "message": "Missing id!"}');
-            die ('{"status": "error", "message": "Missing id!"}');
-        } else {
-            $mod_info['fabric']['modid'] = $parsed['id'];
-        }
-        if (empty($parsed['version'])) {
-            array_push($warn, 'Missing version!');
-            // error_log('{"status": "warn", "message": "Missing version!"}');
-            $mod_info['fabric']['version'] = '';
-        } else{
-            $mod_info['fabric']['version'] = $parsed['version'];
-        }
-        if (!empty($parsed['name']))
-            $mod_info['fabric']['name'] = $parsed['name'];
-        if (!empty($parsed['contact']) && !empty($parsed['contact']['homepage']))
-            $mod_info['fabric']['url'] = $parsed['contact']['homepage'];
-        // no credits
-        if (!empty($parsed['authors']))
-            $mod_info['fabric']['authors'] = implode(', ', $parsed['authors']);
-        if (!empty($parsed['description']))
-            $mod_info['fabric']['description'] = $parsed['description'];
-
-        // each dependency is a key=value entry.
-        if (array_key_exists('depends', $parsed)) {
-            foreach (array_keys($parsed['depends']) as $depId) {
-                $dep_version = '*'; // default to any
-                if (!empty($parsed['depends'][$depId])) {
-                    $dep_version = fabric_to_interval_range($parsed['depends'][$depId]);
-                }
-
-                array_push($mod_info['fabric']['dependencies'], $dep_version);
-
-                if (strtolower($depId)=='minecraft') {
-                    $mod_info['fabric']['mcversion']=$dep_version;
-                }
-                if (strtolower($depId)=='fabricloader') {
-                    $mod_info['fabric']['loaderversion']=$dep_version;
-                }
-            }
-        }
-
-        if (empty($mod_info['fabric']['mcversion'])) {
-            array_push($warn, 'Missing mcversion!');
-            // error_log('{"status": "warn", "message": "Missing mcversion!"}');
-        }
-
-        $mod_info['fabric']['loadertype']='fabric';
-
-        if (!empty($parsed['license']))
-            $mod_info['fabric']['license'] = $parsed['license'];
-    }
-
-    return $mod_info;
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
 }
 
 function processFile(string $filePath, string $fileName, array $modinfo): int {
@@ -414,30 +127,21 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
         die ('{"status":"error","message":"Could not create zip. Bad folder permissions?"}');
     }
 }
-// todo: specify in config if it's http or https!
 
-if (!file_exists($file_tmp)){
-    error_log ('{"status":"error","message":"Uploaded file does not exist!?"}');
-    die ('{"status":"error","message":"Uploaded file does not exist!?"}');
-}
-
-$modTypes = getModTypes($file_tmp);
-$modInfos = getModInfos($modTypes, $file_tmp, $file_name);
-
-if (!isset($db)){
-    $db=new Db;
-    $db->connect();
-}
+$mi = new modInfo();
+$modinfo = $mi->getModInfo($file_tmp, $file_name);
 
 // we only care about the first mod.
 // todo: in delete modv, add a check to see if the file is used by another mod entry.
 // ie. same file for both forge and fabric loader types!
 $added_ids=[];
 $added_modids=[];
-foreach ($modInfos as $modinfo) {
-    if (empty($modinfo))
-        continue;
-
+// foreach ($modInfos as $modinfo) {
+    if (empty($modinfo)) {
+        error_log('{"status":"error","message":"Unable to add mod to database (empty).", "name": "'.$file_name.'"}');
+        die('{"status":"error","message":"Unable to add mod to database (empty).", "name": "'.$file_name.'"}');
+        // continue;
+    }
     // if we have another mod of same version, name, mcversion, type, loadertype
     $query_mod_exists = $db->query("SELECT 1 FROM mods WHERE version = '".$db->sanitize($modinfo['version'])."' AND name = '".$db->sanitize($modinfo['modid'])."' AND mcversion = '".$db->sanitize($modinfo['mcversion'])."' AND `type` = 'mod' AND `loadertype` = '".$db->sanitize($modinfo['loadertype'])."' LIMIT 1");
     if ($query_mod_exists && sizeof($query_mod_exists)>0) {
@@ -454,7 +158,7 @@ foreach ($modInfos as $modinfo) {
         array_push($added_modids, $modinfo['modid']);
         array_push($added_ids, $result_mod_id);
     }
-}
+// }
 
 $db->disconnect();
 
@@ -466,6 +170,7 @@ if (sizeof($added_ids)==0) {
 }
 
 // if we got warnings
+$warn = $mi->getWarnings();
 if (!empty($warn) && sizeof($warn)>0) {
     // accumulate them all into one, as we dont support displaying multiple seperate ones in index.php.
     $acc_message='';
