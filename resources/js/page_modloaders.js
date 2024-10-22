@@ -6,7 +6,22 @@ function remove_box(id,name) {
 function remove(id) {
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
-        $("#mod-row-"+id).remove();
+        if (this.readyState == 4 && this.status == 200) {
+            response = JSON.parse(this.response);
+            console.log(response);
+            if (response['status']=='succ') {
+                console.log('success!');
+                $("#mod-row-"+id).remove();
+            } else {
+                // todo: use styled alert instead of this
+                alert("Cannot delete modloader as it is used by a build.");
+                // if (confirm(response['message'])) {
+                    // console.log(response['message'].match(/'([^']+)'/)[1]);
+                    // window.location.href=response['message'].match(/'([^']+)'/)[1];
+                // }
+            }
+        }
+        
     }
     request.open("GET", "./functions/delete-modv.php?id="+id);
     request.send();
