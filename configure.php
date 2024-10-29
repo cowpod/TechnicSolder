@@ -126,6 +126,7 @@ $db=new Db;
                                 name TEXT NOT NULL,
                                 minecraft TEXT,
                                 java TEXT,
+                                loadertype TEXT,
                                 memory TEXT,
                                 mods TEXT,
                                 public BOOLEAN,
@@ -186,6 +187,7 @@ $db=new Db;
                                 name VARCHAR(128) NOT NULL,
                                 minecraft VARCHAR(128),
                                 java VARCHAR(512),
+                                loadertype VARCHAR(32),
                                 memory VARCHAR(512),
                                 mods VARCHAR(1024),
                                 public BOOLEAN,
@@ -205,7 +207,7 @@ $db=new Db;
                                 mcversion VARCHAR(128),
                                 filename VARCHAR(128),
                                 type VARCHAR(128),
-                                loadertype VARCHAR(128));";
+                                loadertype VARCHAR(32));";
                             $db->query($sql);
                         }
 
