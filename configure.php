@@ -246,34 +246,42 @@ $db=new Db;
                     </div>
                     <div class="form-group">
                         <label for="email">Database</label>
-                        <small class="form-text text-muted">
-                            If you already have installed the original version of solder, do not use the same database.
-                            You can migrate your data later. It's recommended to use an empty database.
-                        </small>
-                        <label for="db-type">Database type</label>
                         <select required name="db-type" class="form-control" id="db-type">
-                            <option value="mysql" selected>MySQL</option>
-                            <option value="sqlite">SQLite</option>
-                        </select><br />
-                        <input required name="db-host" type="text" class="form-control" id="db-host"
-                               placeholder="Database IP" value="127.0.0.1"><br />
-                        <input required name="db-user" type="text" class="form-control" id="db-user"
-                               placeholder="Database username"><br />
-                        <input required name="db-name" type="text" class="form-control" id="db-name"
-                               placeholder="Database name"><br />
-                        <input name="db-pass" type="password" class="form-control" id="db-pass"
-                               placeholder="Database password">
+                            <option value="mysql" <?php if (!empty($_POST['db-type'])&&$_POST['db-type']=='mysql') echo 'selected' ?>>MySQL</option>
+                            <option value="sqlite" <?php if (!empty($_POST['db-type'])&&$_POST['db-type']=='sqlite') echo 'selected' ?>>SQLite</option>
+                        </select>
+                        <small id="sqlite-warning" style="display:none" class="form-text">
+                            <b>SQLite is not recommended for large installations.</b>
+                        </small>
+                        <div id="mysql-options">
+                            <br/>
+                            <input required name="db-host" type="text" class="form-control" id="db-host"
+                                   placeholder="Database IP" value="127.0.0.1"><br />
+                            <input required name="db-user" type="text" class="form-control" id="db-user"
+                                   placeholder="Database username"><br />
+                            <input required name="db-name" type="text" class="form-control" id="db-name"
+                                   placeholder="Database name"><br />
+                            <input name="db-pass" type="password" class="form-control" id="db-pass"
+                                   placeholder="Database password">
+                        </div>
+                        <small class="form-text text-muted">
+                            <li>If migrating from original solder, <b>use a new database.</b></li>
+                            <li>If MySQL was previously used, your data will not be transferred to SQLite, and vice-versa.</li>
+                        </small>
                         <small id="errtext" class="form-text text-muted">
                             Five tables will be created: users, clients, modpacks, builds, mods
                         </small>
                     </div>
                     <div class="form-group">
                         <label for="email">Installation details</label>
-                        <input required name="host" type="text" class="form-control"
-                               placeholder="Webserver public IP or domain name. (does NOT start with http[s]://)"><br />
-                        <input class="form-control" type="text" name="dir"
-                               placeholder="Install Directory" value="/" id="dir" required><br />
-                        <input required name="api_key" type="text" class="form-control" placeholder="API Key">
+                        <input id="host" name="host" type="text" class="form-control"
+                               placeholder="Webserver IP or hostname" required>
+                        <small id="host-warning" class="form-text" style="display:none;">
+                            IP/hostname should NOT start with http[s]://!
+                        </small><br />
+                        <input id="dir" class="form-control" type="text" name="dir"
+                               placeholder="Install Directory" value="/" required><br />
+                        <input name="api_key" type="text" class="form-control" placeholder="API Key" required>
                         <small class="form-text text-muted">
                             You can find you API Key in your profile at
                             <a target="_blank" href="https://technicpack.net">technicpack.net</a>
@@ -291,8 +299,16 @@ $db=new Db;
                         }
 
                     });
+                    $("#host").on("keyup", function() {
+                        let hostval = $("#host").val();
+                        if (hostval.startsWith("https://") || hostval.startsWith("http://")) {
+                            $("#host-warning").show();
+                        } else if ($("#host-warning").is(":visible")) {
+                            $("#host-warning").hide();
+                        }
+                    });
                     $("#pass2").on("keyup", function() {
-                        console.log($("#pass2").val()+"=="+$("#pass").val())
+                        // console.log($("#pass2").val()+"=="+$("#pass").val())
                         if ($("#pass2").val()==$("#pass").val()) {
                             $("#pass2").addClass("is-valid");
                             $("#pass2").removeClass("is-invalid");
@@ -310,19 +326,15 @@ $db=new Db;
                             $("#db-user").removeAttr('required');
                             $("#db-name").removeAttr('required');
                             $("#db-pass").removeAttr('required');
-                            $("#db-host").hide();
-                            $("#db-user").hide();
-                            $("#db-name").hide();
-                            $("#db-pass").hide();
+                            $("#mysql-options").hide();
+                            $("#sqlite-warning").show();
                         } else {
                             $("#db-host").attr('required','required');
                             $("#db-user").attr('required','required');
                             $("#db-name").attr('required','required');
                             $("#db-pass").attr('required','required');
-                            $("#db-host").show();
-                            $("#db-user").show();
-                            $("#db-name").show();
-                            $("#db-pass").show();
+                            $("#mysql-options").show();
+                            $("#sqlite-warning").hide();
                         }
                       });
 
