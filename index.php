@@ -1169,6 +1169,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 unset($modslist[0]);
             }
 
+            // update build details
+            // todo: move this to it's own function and set form action to that.
             if (isset($_POST['java'])) {
                 if ($_POST['forgec']!=="none"||empty($modslist)) {
                     if ($_POST['forgec']=="wipe"||empty($modslist)) {
@@ -1188,7 +1190,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     assert(sizeof($minecraft)==1);
                     $minecraft=$minecraft[0];
                 }
-                $db->execute("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic." WHERE `id` = ".$db->sanitize($_GET['id']));
+
+                $db->execute("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic.", `loadertype` = '".$minecraft['loadertype']."' WHERE `id` = ".$db->sanitize($_GET['id']));
+
                 $latest_public = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$user['modpack']." ORDER BY `id` DESC");
                 if ($latest_public) {
                     assert(sizeof($latest_public==1));
