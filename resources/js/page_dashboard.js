@@ -7,6 +7,7 @@ $('#modsform').submit(function() {
     }
 });
 var addedmodslist = [];
+var addedmodsliststr = [];
 mn = 1;
 function againMods() {
     $("#btn-done").attr("disabled",true);
@@ -14,6 +15,7 @@ function againMods() {
     $("#upload-card").show();
     $("#u-mods").hide();
     addedmodslist = [];
+    addedmodsliststr= [];
     mn = 1;
 }
 function sendFile(file, i) {
@@ -34,15 +36,18 @@ function sendFile(file, i) {
                         console.log(request.response);
                         response = JSON.parse(request.response);
                         if (response.modid) {
-                            if (! $('#modlist').val().split(",").includes(response.modid.toString())) {
-                                addedmodslist.push(response.name);
+                            if (!addedmodslist.includes(response.modid)) {
+                                addedmodslist.push(response.modid);
+                                addedmodsliststr.push(response.name);
                             }
                         }
                         if ( mn == modcount ) {
                             if (addedmodslist.length > 0) {
-                                if ($('#modlist').val().length > 0) {
+                                if ($('#modliststr').val().length > 0) {
+                                    $('#modliststr').val($('#modliststr').val() + "," + addedmodsliststr);
                                     $('#modlist').val($('#modlist').val() + "," + addedmodslist);
                                 } else {
+                                    $('#modliststr').val($('#modliststr').val() + addedmodsliststr);
                                     $('#modlist').val($('#modlist').val() + addedmodslist);
                                 }
                             }

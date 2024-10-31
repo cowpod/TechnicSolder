@@ -679,7 +679,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             }
                             ?>
                             <br />
-                            <input autocomplete="off" id="modlist" required readonly class="form-control" type="text" name="modlist" placeholder="Mods to add" />
+                            <input id="modlist" class="form-control" type="hidden" name="modlist" />
+                            <input autocomplete="off" id="modliststr" required readonly class="form-control" type="text" name="modliststr" placeholder="Mods to add" />
                             <br />
                             <input type="submit" id="submit" disabled class="btn btn-primary btn-block" value="Create">
                         </form>

@@ -27,6 +27,7 @@ $bmods = $db->sanitize($_POST['modlist']);
 $bjava = $db->sanitize($_POST['java']);
 $bmemory = $db->sanitize($_POST['memory']);
 $bforge = $db->sanitize($_POST['versions']);
+
 $db->execute("INSERT INTO modpacks(`name`, `display_name`, `icon`, `icon_md5`, `logo`, `logo_md5`, `background`, `background_md5`, `public`, `recommended`, `latest`) 
     VALUES ('".$mpname."',
     '".$mpdname."',
@@ -37,24 +38,33 @@ $db->execute("INSERT INTO modpacks(`name`, `display_name`, `icon`, `icon_md5`, `
     'http://".$config['host'].$config['dir']."resources/default/background.png',
     '88F838780B89D7C7CD10FE6C3DBCDD39',
     1,
-    '1.0',
-    '1.0')");
+    '',
+    '')");
+// latest,public will be set later in this script
 
-$mpq = $db->query("SELECT `id` FROM `modpacks` ORDER BY `id` DESC LIMIT 1");
-if ($mpq) {
-    assert(sizeof($mpq)==1);
-    $mp = $mpq[0];
-}
-$mpi = intval($mp['id']);
+// $mpq = $db->query("SELECT `id` FROM `modpacks` ORDER BY `id` DESC LIMIT 1");
+// if ($mpq) {
+//     assert(sizeof($mpq)==1);
+//     $mp = $mpq[0];
+// }
+// $mpi = intval($mp['id']);
+$mpi = $db->insert_id();
 
-$fq = $db->query("SELECT `mcversion` FROM `mods` WHERE `id` = ". $bforge);
+$fq = $db->query("SELECT `loadertype`,`mcversion` FROM `mods` WHERE `id` = ". $bforge);
 if ($fq) {
     assert(sizeof($fq)==1);
     $f = $fq[0];
 }
-$minecraft =  $f['mcversion'];
-$db->execute("INSERT INTO builds(`name`,`modpack`,`public`,`mods`,`java`,`memory`,`minecraft`) 
-    VALUES ('1.0','".$mpi."',1,'".$bforge.",".$bmods."','".$bjava."','".$bmemory."','".$minecraft."')");
-    
+$minecraft = $f['mcversion'];
+$loadertype= $f['loadertype'];
+$forgeandmods = !empty($bmods) ? $bforge.','.$bmods : $bforge;
+error_log("FORGEANDMODS ".$forgeandmods);
+$db->execute("INSERT INTO builds(`name`,`modpack`,`public`,`mods`,`java`,`memory`,`minecraft`,`loadertype`) 
+    VALUES ('1.0', '".$mpi."', 1, '".$forgeandmods."', '".$bjava."', '".$bmemory."', '".$minecraft."', '".$loadertype."')");
+
+$new_build_id = $db->insert_id();
+
+$db->execute("UPDATE modpacks SET latest=".$new_build_id.", recommended=".$new_build_id." WHERE id=".$mpi);
+
 header("Location: ".$config['dir']."modpack?id=".$mpi);
 exit();
