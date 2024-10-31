@@ -1160,48 +1160,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         }
         elseif (uri('/build')) {
             $user = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
-            if ($user) {
-                assert(sizeof($user)==1);
-                $user = $user[0];
-            }
-            $modslist = explode(',', $user['mods']);
-            if ($modslist[0]==""){
-                unset($modslist[0]);
-            }
-
-            // update build details
-            // todo: move this to it's own function and set form action to that.
-            if (isset($_POST['java'])) {
-                if ($_POST['forgec']!=="none"||empty($modslist)) {
-                    if ($_POST['forgec']=="wipe"||empty($modslist)) {
-                        $db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize($_POST['versions'])."' WHERE `id` = ".$db->sanitize($_GET['id']));
-                    } else {
-                        $modslist2 = $modslist;
-                        $modslist2[0] = $_POST['versions'];
-                        $db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize(implode(',',$modslist2))."' WHERE `id` = ".$db->sanitize($_GET['id']));
-                    }
-                }
-                $ispublic = 0;
-                if ($_POST['ispublic']=="on") {
-                    $ispublic = 1;
-                }
-                $minecraft = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_POST['versions']));
-                if ($minecraft) {
-                    assert(sizeof($minecraft)==1);
-                    $minecraft=$minecraft[0];
-                }
-
-                $db->execute("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic.", `loadertype` = '".$minecraft['loadertype']."' WHERE `id` = ".$db->sanitize($_GET['id']));
-
-                $latest_public = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$user['modpack']." ORDER BY `id` DESC");
-                if ($latest_public) {
-                    assert(sizeof($latest_public==1));
-                    $latest_public = $latest_public[0];
-                }
-                $db->execute("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$user['modpack']);
-            }
-
-            $user = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
             if ($user && sizeof($user)==1) {
                 $user = $user[0];
             }
@@ -1235,7 +1193,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 <div class="card">
                     <h2>Build <?php echo $user['name'] ?></h2>
                     <hr>
-                    <form method="POST">
+                    <form method="POST" action="./functions/update-build.php?id=<?php echo $_GET['id'] ?>">
                         <label for="versions">Select minecraft version</label>
                         <select id="versions" name="versions" class="form-control">
                             <?php
@@ -1271,7 +1229,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <input class="form-control" type="number" id="memory" name="memory" value="<?php echo $user['memory'] ?>" min="1024" max="65536" placeholder="2048" step="512">
                         <br />
                         <div class="custom-control custom-checkbox">
-                            <input <?php if ($user['public']==1){echo "checked";} ?> type="checkbox" name="ispublic" class="custom-control-input" id="public">
+                            <input <?php if ($user['public']==1) echo "checked" ?> type="checkbox" name="ispublic" class="custom-control-input" id="public">
                             <label class="custom-control-label" for="public">Public Build</label>
                         </div><br />
                         <div style='display:none' id="wipewarn" class='text-danger'>Build will be wiped.</div>
@@ -1323,7 +1281,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </form>
                 </div>
             <?php } ?>
-                <?php } if (!empty($modslist)) { ?>
+                <?php } if (!empty($modslist)) { // only empty on new build before mcversion is set?>
                     <div class="card">
                         <h2>Mods in Build <?php echo $user['name'] ?></h2>
                         <table class="table table-striped sortable">
