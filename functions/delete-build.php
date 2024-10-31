@@ -35,14 +35,15 @@ if ($bq) {
         "exists" => false
     );
 }
-$lpq = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$db->sanitize($_GET['pack'])." ORDER BY `id` DESC");
-if ($lpq) {
-    assert(sizeof($lpq)==1);
-    $latest_public = $lpq[0];
-}
 
-if (!empty($latest_public['name']))
-    $db->execute("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."'WHERE `id` = ".$db->sanitize($_GET['pack']));
+// get latest public build
+$lpq = $db->query("SELECT id FROM build WHERE public = 1 AND modpack = ".$db->sanitize($_GET['pack'])." ORDER BY id DESC LIMIT 1");
+if ($lpq && sizeof($lpq)==1) {
+    $latest_public_build = $lpq[0];
+    $db->execute("UPDATE modpacks SET latest = ".$latest_public_build['id']." WHERE id = ".$db->sanitize($_GET['pack']));
+} else if (sizeof($lpq)==0) {
+    $db->execute("UPDATE modpacks SET latest = null WHERE id = ".$db->sanitize($_GET['pack']));
+}
 
 echo json_encode($response);
 exit();

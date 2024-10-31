@@ -31,17 +31,11 @@ if ($_GET['type']=="update") {
     $db->execute("INSERT INTO builds(`name`,`modpack`,`public`) VALUES ('".$db->sanitize($_GET['name'])."','".$db->sanitize($_GET['id'])."',0)");
 }
 
-$lpq = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC LIMIT 1");
+// get latest public build
+$lpq = $db->query("SELECT id FROM builds WHERE public = 1 AND modpack = ".$db->sanitize($_GET['id'])." ORDER BY id DESC LIMIT 1");
 if ($lpq && sizeof($lpq)==1) {
-    $latest_public = $lpq[0];
-} else {
-    $db->disconnect();
-    error_log("new-build.php: couldn't select latest build");
-    die("new-build.php: couldn't select latest build");
-}
-
-if (!empty($latest_public['name'])) {
-    $db->execute("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$db->sanitize($_GET['id']));
+    $latest_public_build = $lpq[0];
+    $db->execute("UPDATE modpacks SET latest = ".$latest_public_build['id']." WHERE id = ".$db->sanitize($_GET['id']));
 }
 
 $db->disconnect();

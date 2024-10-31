@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+if (empty($_GET['id'])) {
+    die("id (build id) not specified");
+}
 if (empty($_POST['versions'])) {
     die("versions not specified");
 }
@@ -63,13 +66,14 @@ if ($minecraft) {
     $minecraft=$minecraft[0];
 }
 
+// actually update build
 $db->execute("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic.", `loadertype` = '".$minecraft['loadertype']."' WHERE `id` = ".$db->sanitize($_GET['id']));
 
-$latest_public = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$user['modpack']." ORDER BY `id` DESC");
-if ($latest_public) {
-    assert(sizeof($latest_public==1));
-    $latest_public = $latest_public[0];
+// get latest public build
+$lpq = $db->query("SELECT id FROM builds WHERE public = 1 AND modpack = ".$user['modpack']." ORDER BY id DESC LIMIT 1");
+if ($lpq && sizeof($lpq)==1) {
+    $latest_public_build = $lpq[0];
+    $db->execute("UPDATE modpacks SET latest = ".$latest_public_build['id']." WHERE id = ".$user['modpack']);
 }
-$db->execute("UPDATE `modpacks` SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$user['modpack']);
 
 header('Location: '.$config['dir'].'build?id='.$_GET['id']);

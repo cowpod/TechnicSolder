@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 session_start();
 
 if (empty($_GET['id'])) {
-    die("Build not specified.");
+    die("Build ID not specified.");
 }
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
@@ -23,7 +23,7 @@ if ($bq) {
     $build = $bq[0];
 }
 
-$db->execute("UPDATE `modpacks` SET `recommended` = '".$build['name']."' WHERE `id` = ".$build['modpack']);
+$db->execute("UPDATE `modpacks` SET `recommended` = '".$db->sanitize($_GET['id'])."' WHERE `id` = ".$build['modpack']);
 
 $response = array(
     "name" => $build['name'],

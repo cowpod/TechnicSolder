@@ -46,13 +46,12 @@ if ($lbq) {
 $db->execute("UPDATE `builds` SET `name` = '".$db->sanitize($_GET['newname'])."' WHERE `id` = ".$lb['id']);
 $db->execute("UPDATE `builds` SET `modpack` = '".$db->sanitize($_GET['id'])."' WHERE `id` = ".$lb['id']);
 
-$lpq = $db->query("SELECT `name`,`modpack`,`public` FROM `builds` WHERE `public` = 1 AND `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC");
-if ($lpq) {
-    assert(sizeof($lpq)==1);
-    $latest_public = $lpq[0];
+// get latest public build
+$lpq = $db->query("SELECT id FROM builds WHERE public = 1 AND modpack = ".$db->sanitize($_GET['id'])." ORDER BY id DESC LIMIT 1");
+if ($lpq && sizeof($lpq)==1) {
+    $latest_public_build = $lpq[0];
+    $db->execute("UPDATE modpacks SET latest = ".$latest_public_build['id']." WHERE id = ".$db->sanitize($_GET['id']));
 }
-$db->execute("UPDATE `modpacks`
-            SET `latest` = '".$latest_public['name']."' WHERE `id` = ".$db->sanitize($_GET['id'])
-);
+
 header("Location: ".$config['dir']."modpack?id=".$_GET['id']);
 exit();

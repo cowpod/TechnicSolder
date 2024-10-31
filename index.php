@@ -559,7 +559,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             if (isset($notechnic) && $notechnic) {
             ?>
                 <div class="card alert-warning">
-                    <strong>Warning! </strong>Cannot connect to Technic!
+                    <strong>Warning! </strong>Cannot connect to Technic! Make sure you set your modpack name and slug.
                 </div>
                 <?php
             } else {
@@ -805,13 +805,13 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
 
                 $latest=false;
                 if ($packdata['latest']!=null) {
-                    $latestres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `name` = '".$packdata['latest']."'");
+                    $latestres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `id` = ".$packdata['latest']);
                     if (sizeof($latestres)!==0) {
                         $latest=true;
                         $user = $latestres[0];
                     }
                 } else {
-                    $user=['name'=>'null', 'minecraft'=>'null'];
+                    $user=['id'=>$_GET['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'public'=>0];
                 }
                 ?>
                 <li <?php if (!$latest){ echo "style='display:none'"; } ?> id="latest-v-li" class="nav-item">
@@ -825,13 +825,13 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
 
                 $rec=false;
                 if ($packdata['recommended']!=null) {
-                    $recres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `name` = '".$packdata['recommended']."'");
+                    $recres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `id` = '".$packdata['recommended']."'");
                     if (sizeof($recres)!==0) {
                         $rec=true;
                         $user = $recres[0];
                     }
                 } else {
-                    $user=['name'=>'null', 'minecraft'=>'null'];
+                    $user=['id'=>$_GET['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'public'=>0];
                 }
                 ?>
                 <li <?php if (!$rec){ echo "style='display:none'"; } ?> id="rec-v-li" class="nav-item">
@@ -847,7 +847,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 if (isset($cache[$modpack['name']])&&$cache[$modpack['name']]['time'] > time()-1800) {
                     $info = $cache[$modpack['name']]['info'];
                 } else {
-                    if (!empty($modpack['name']) && !str_starts_with('unnamed-modpack-', $modpack['name']) && $info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
+                    if (!empty($modpack['name']) && !str_starts_with($modpack['name'],'unnamed-modpack-') && $info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
                         $cache[$modpack['name']]['time'] = time();
                         if(!empty($info['icon']['url'])){
                             $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
@@ -859,7 +859,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         $info = $cache[$modpack['name']]['info'];
                         ?>
                         <div class="card alert-warning">
-                            <strong>Warning! </strong>Cannot connect to Technic!
+                            <strong>Warning! </strong>Cannot connect to Technic! Make sure you set your modpack name and slug.
                         </div>
                         <?php
                     }
@@ -912,7 +912,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                       </div>
                     </div>
                     <script>
-                            <?php if (!strpos($modpack['name'],"unnamed-modpack-")) { ?>
+                            <?php if (!str_starts_with($modpack['name'],"unnamed-modpack-")) { ?>
                                 $("#slug").on("keyup", function(){
                                     if ($("#slug").val()!=="<?php echo $modpack['name'] ?>"){
                                         $("#warn_slug").show();
@@ -926,7 +926,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         $("#dn").on("keyup", function(){
                             var slug = slugify($(this).val());
                             console.log(slug);
-                            <?php if (strpos($modpack['name'],"unnamed-modpack-")!==false) { ?>
+                            <?php if (str_starts_with($modpack['name'],"unnamed-modpack-")!==false) { ?>
                                 $("#slug").val(slug);
                             <?php } ?>
                         });
@@ -1026,7 +1026,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <input pattern="^[a-zA-Z0-9.-]+$" required id="newbname" autocomplete="off" class="form-control" type="text" name="name" placeholder="Build name (e.g. 1.0) (a-z, A-Z, 0-9, dot and dash)" />
                         <span id="warn_newbname" style="display: none" class="text-danger">Build with this name already exists.</span>
                         <input hidden type="text" name="id" value="<?php echo $_GET['id'] ?>">
-                        <input hidden type="text" name="name" value="<?php echo $_GET['name'] ?>">
                         <br />
                         <div class="btn-group">
                             <button id="create1" type="submit" name="type" value="new" class="btn btn-primary">Create Empty Build</button>
@@ -1104,29 +1103,35 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             </tr>
                         </thead>
                         <tbody id="table-builds">
-                            <?php
-                            $users = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC");
-                            foreach($users as $user) {
-                            ?>
-                            <tr rec="<?php if ($packdata['recommended']==$user['name']){ echo "true"; } else { echo "false"; } ?>" id="b-<?php echo $user['id'] ?>">
+                        <?php
+                        $users = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC");
+                        foreach($users as $user) { ?>
+                            <tr rec="<?php if ($packdata['recommended']==$user['id']){ echo "true"; } else { echo "false"; } ?>" id="b-<?php echo $user['id'] ?>">
                                 <td scope="row"><?php echo $user['name'] ?></td>
                                 <td><?php echo $user['minecraft'] ?></td>
                                 <td><?php echo $user['java'] ?></td>
                                 <td><?php echo count(explode(',', $user['mods'])) ?></td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                        <?php if (substr($_SESSION['perms'],1,1)=="1") { ?> <button onclick="edit(<?php echo $user['id'] ?>)" class="btn btn-primary">Edit</button>
-                                        <button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeModal" class="btn btn-danger">Remove</button> <?php
-                                        } if (substr($_SESSION['perms'],2,1)=="1") {?>
-                                        <button bid="<?php echo $user['id'] ?>" id="rec-<?php if ($packdata['recommended']==$user['name']){ ?>disabled<?php } else echo $user['id'] ?>" <?php if ($packdata['recommended']==$user['name']){ ?>disabled<?php } ?> onclick="set_recommended(<?php echo $user['id'] ?>)" class="btn btn-success">Set recommended </button><?php
-                                        } ?>
+                                    <?php if (substr($_SESSION['perms'],1,1)=="1") { ?> 
+                                        <button onclick="edit(<?php echo $user['id'] ?>)" class="btn btn-primary">Edit</button>
+                                        <button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeModal" class="btn btn-danger">Remove</button> 
+                                    <?php } 
+                                    if (substr($_SESSION['perms'],2,1)=="1") { ?>
+                                        <button bid="<?php echo $user['id'] ?>" id="pub-<?php echo $user['id']?>" class="btn btn-success" onclick="set_public(<?php echo $user['id'] ?>)" style="display:<?php echo ($user['public']!='1')?'block':'none' ?>" <?php if (empty($user['minecraft'])) echo 'disabled title="Minecraft version not set!"'?>>Publish</button>
+                                        <!-- if public is null then MC version and loader hasn't been set yet-->
+
+                                        <button bid="<?php echo $user['id'] ?>" id="rec-<?php echo $user['id']?>" class="btn btn-success" onclick="set_recommended(<?php echo $user['id'] ?>)" style="display:<?php echo ($packdata['recommended']!=$user['id']&&$user['public']=='1')?'block':'none' ?>">Recommend</button>
+
+                                        <button bid="<?php echo $user['id'] ?>" id="recd-<?php echo $user['id']?>" class="btn btn-success" style="display:<?php echo ($packdata['recommended']==$user['id']&&$user['public']=='1')?'block':'none' ?>" disabled>Recommended</button>
+                                    <?php } ?>
                                     </div>
                                 </td>
                                 <td>
                                     <em id="cog-<?php echo $user['id'] ?>" style="display:none;margin-top: 0.5rem" class="fas fa-cog fa-lg fa-spin"></em>
                                 </td>
-                            <?php } ?>
                             </tr>
+                        <?php } ?>
                         </tbody>
                     </table>
                     <div class="modal fade" id="removeModal" tabindex="-1" role="dialog" aria-labelledby="removeModalLabel" aria-hidden="true">
@@ -1179,11 +1184,11 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 <li class="nav-item">
                     <a class="nav-link" href="./modpack?id=<?php echo $mpack['id'] ?>"><em class="fas fa-arrow-left fa-lg"></em> <?php echo $mpack['display_name'] ?></a>
                 </li>
-                <li <?php if ($mpack['latest']!==$user['name']){ echo "style='display:none'"; } ?> id="latest-v-li" class="nav-item">
+                <li <?php if ($mpack['latest']!=$user['id']){ echo "style='display:none'"; error_log(json_encode($mpack)); } ?> id="latest-v-li" class="nav-item">
                     <span class="navbar-text"><em style="color:#2E74B2" class="fas fa-exclamation"></em> Latest</span>
                 </li>
                 <div style="width:30px"></div>
-                <li <?php if ($mpack['recommended']!==$user['name']){ echo "style='display:none'"; } ?> id="rec-v-li" class="nav-item">
+                <li <?php if ($mpack['recommended']!=$user['id']){ echo "style='display:none'"; } ?> id="rec-v-li" class="nav-item">
                     <span class="navbar-text"><em style="color:#329C4E" class="fas fa-check"></em> Recommended</span>
                 </li>
                 <div style="width:30px"></div>

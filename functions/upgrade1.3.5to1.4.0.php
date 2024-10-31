@@ -136,6 +136,25 @@ foreach ($builds as $build) {
     }
 }
 
+echo "<hr/>Updating modpack recommended,latest<br/>";
+
+// change latest,recommended to ids instead of names. allows renaming without breaking
+$modpacks = $db->query("SELECT id,name,latest,recommended from modpacks");
+foreach ($modpacks as $modpack) {
+    // get latest public build
+    $lpq = $db->query("SELECT id,name FROM builds WHERE public = 1 AND modpack = ".$modpack['id']." AND name= '".$modpack['latest']."' ORDER BY id DESC LIMIT 1");
+    if ($lpq && sizeof($lpq)==1) {
+        $db->execute("UPDATE modpacks SET latest = ".$lpq[0]['id']." WHERE id = ".$modpack['id']);
+        echo $modpack['name'].": latest=".$lpq[0]['name']." (".$lpq[0]['id'].")<br/>";
+    }
+    // get recommended public build
+    $lpq = $db->query("SELECT id FROM builds WHERE public = 1 AND modpack = ".$modpack['id']." AND name= '".$modpack['recommended']."' ORDER BY id DESC LIMIT 1");
+    if ($lpq && sizeof($lpq)==1) {
+        $db->execute("UPDATE modpacks SET recommended = ".$lpq[0]['id']." WHERE id = ".$modpack['id']);
+        echo $modpack['name'].": recommended=".$lpq[0]['name']." (".$lpq[0]['id'].")<br/>";
+    }
+}
+
 echo "<hr/>Upgrade complete. <a href='/'>Click here to return to index</a>.</br>";
 
 rmdir('../upgrade_work/mods');
