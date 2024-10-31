@@ -33,6 +33,8 @@ $url = $_SERVER['REQUEST_URI'];
 require('functions/interval_range_utils.php');
 require('functions/format_number.php');
 
+require('functions/mp_latest_recommended.php');
+
 if (strpos($url, '?') !== false) {
     $url = substr($url, 0, strpos($url, "?"));
 }
@@ -800,8 +802,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <a class="nav-link" href="./dashboard"><em class="fas fa-arrow-left fa-lg"></em> <?php echo $modpack['display_name'] ?></a>
                 </li>
                 <?php
-                $packapi = require('./api/mp.php');
-                $packdata = json_decode($packapi, true);
+                $packdata = json_decode(mp_latest_recommended($db), true);
 
                 $latest=false;
                 if ($packdata['latest']!=null) {
