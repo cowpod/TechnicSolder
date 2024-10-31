@@ -143,10 +143,10 @@ $added_modids=[];
         // continue;
     }
     // if we have another mod of same version, name, mcversion, type, loadertype
-    $query_mod_exists = $db->query("SELECT 1 FROM mods WHERE version = '".$db->sanitize($modinfo['version'])."' AND name = '".$db->sanitize($modinfo['modid'])."' AND mcversion = '".$db->sanitize($modinfo['mcversion'])."' AND `type` = 'mod' AND `loadertype` = '".$db->sanitize($modinfo['loadertype'])."' LIMIT 1");
+    $query_mod_exists = $db->query("SELECT id,name FROM mods WHERE version = '".$db->sanitize($modinfo['version'])."' AND name = '".$db->sanitize($modinfo['modid'])."' AND mcversion = '".$db->sanitize($modinfo['mcversion'])."' AND `type` = 'mod' AND `loadertype` = '".$db->sanitize($modinfo['loadertype'])."' LIMIT 1");
     if ($query_mod_exists && sizeof($query_mod_exists)>0) {
-        error_log('{"status": "error","message":"Mod already in database!"}');
-        die('{"status": "error","message":"Mod already in database!"}');
+        error_log('{"status": "info","message":"Mod already in database!","modid":"'.$query_mod_exists[0]['id'].'","name":"'.$query_mod_exists[0]['name'].'"}');
+        die('{"status": "info","message":"Mod already in database!","modid":"'.$query_mod_exists[0]['id'].'","name":"'.$query_mod_exists[0]['name'].'"}');
     }
     // consequence: we allow multiple loadertypes (ie fabric, forge) of the exact same mod
     $result_mod_id = processFile($file_tmp, $file_name, $modinfo);
