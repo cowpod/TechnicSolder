@@ -45,6 +45,31 @@ function remove_box(id,name) {
     $("#build-text").text(name);
     $("#remove-button").attr("onclick","remove("+id+")");
 }
+function set_public(id) {
+    $("#cog-"+id).show();
+    var request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            response = JSON.parse(this.response);
+            $("#cog-"+id).hide();
+            if (response['status']=="succ") {
+                // if (response['latest']==id) {
+                // }
+                $("#pub-"+id).hide();
+                if (response['recommended']==id) {
+                    $("#recd-"+id).show();
+                } else {
+                    $("#rec-"+id).show();
+                }
+            } else {
+                console.log(response);
+            }
+        }
+    };
+    request.open("GET", "./functions/set-public-build.php?id="+id+"&ispublic=1");
+    request.send();
+
+}
 function remove(id) {
     $("#cog-"+id).show();
     var request = new XMLHttpRequest();
@@ -84,14 +109,28 @@ function set_recommended(id) {
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             response = JSON.parse(this.response);
+
+            $("[id^='recd-']").each(function() {
+                let otherid = $(this).attr("id").substring(5);
+                if (otherid==id) { 
+                    return;
+                } else {
+                    // hide all recd
+                    $(this).hide();
+                    // show all rec
+                    $("#rec-"+otherid).show();
+                }
+            });
+            $("#recd-"+id).show(); // recommended
+            $("#rec-"+id).hide(); // reccommend
             $("#rec-v-li").show();
             $("#rec-mc-li").show();
             $("#cog-"+id).hide();
-            $("#rec-"+id).attr('disabled', true);
+            // $("#rec-"+id).attr('disabled', true);
             var bid = $("#rec-disabled").attr('bid');
-            $("#rec-disabled").attr('disabled', false);
-            $("#rec-disabled").attr('id', 'rec-'+bid);
-            $("#rec-"+id).attr('id', 'rec-disabled');
+            // $("#rec-disabled").attr('disabled', false);
+            // $("#rec-disabled").attr('id', 'rec-'+bid);
+            // $("#rec-"+id).attr('id', 'rec-disabled');
             $("#rec-name").text(response['name']);
             $("#rec-mc").text(response['mc']);
             $("#table-builds tr").attr('rec','false');
