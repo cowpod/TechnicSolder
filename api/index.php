@@ -18,14 +18,14 @@ if (substr($url, -1)=="/" && substr($url, -4)!=="api/") {
 
 $config = require("../functions/config.php");
 
-if(uri($url,"api/")){
+if(str_ends_with($url, "api/")){
 	die('{"api":"Solder.cf","version":"v1.4.0","stream":"Release"}'); // todo: this is Dev not release, but may break things if changed...
 } 
-if (uri($url, "api/verify")) {
+if (str_ends_with($url, "api/verify")) {
     die('{"error":"No API key provided."}');
 }
-if (uri($url,"api/verify/".substr($url, strrpos($url, '/') + 1))) {
-    if (substr($url, strrpos($url, '/') + 1)==$config['api_key']) {
+if (str_ends_with($url, "api/verify/".substr($url, strrpos($url, '/') + 1))) {
+    if (substr($url, strrpos($url, '/') + 1)==$config['api_key']) { // todo: actual validation?
         die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
     }
     die('{"error":"Invalid key provided."}');
@@ -34,10 +34,12 @@ if (uri($url,"api/verify/".substr($url, strrpos($url, '/') + 1))) {
 $PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
 
 require_once("../functions/db.php");
-$db=new Db;
-$db->connect();
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
+}
 
-if (preg_match("/^\/api\/modpack$/", $url)) { // modpacks
+if (preg_match("/api\/modpack$/", $url)) { // modpacks
     // $modpacksq = $db->query("SELECT * FROM `modpacks`");
     $modpacksq = $db->query("
     SELECT M.*, 
@@ -94,7 +96,7 @@ if (preg_match("/^\/api\/modpack$/", $url)) { // modpacks
     }
     die(json_encode(["modpacks"=>$modpacks, "mirror_url"=>"http://".$config['host']."/mods"]));
 } 
-elseif (preg_match("/^\/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modpack details
+elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modpack details
     $uri_modpack = $matches[1];
 
     // $modpackq = $db->query("SELECT * FROM `modpacks` WHERE name='".$db->sanitize($uri_modpack)."'");
@@ -146,12 +148,12 @@ elseif (preg_match("/^\/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // m
         }
     }
 // } else { // build details (including mods)
-} elseif (preg_match("/\/api\/modpack\/([a-z\-|0-9]+)\/?([a-z\-|0-9]+)?$/", $url, $matches)) { // modpack details
+} elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)\/?([a-z\-|0-9]+)?$/", $url, $matches)) { // modpack details
     $uri_modpack = $matches[1];
     $uri_build = $matches[2];
     // could use a join on/using for better speed.
     $modpacksq = $db->query("SELECT * FROM `modpacks` WHERE name='".$db->sanitize($uri_modpack)."'");
-    if (!$modpackq) {
+    if (!$modpacksq) {
         die('{"status":404,"error":"Not Found"}');
     }
 
