@@ -39,6 +39,18 @@ if (!isset($db)){
     $db->connect();
 }
 
+if (isset($_GET['cid'])) {
+    $client_uuid=$_GET['cid'];
+} else {
+    $client_uuid='';
+}
+if (isset($_GET['k'])) {
+    $client_api_key=$_GET['k'];
+} else {
+    $client_api_key='';
+}
+
+
 if (preg_match("/api\/modpack$/", $url)) { // modpacks
     // $modpacksq = $db->query("SELECT * FROM `modpacks`");
     $modpacksq = $db->query("
@@ -60,14 +72,14 @@ if (preg_match("/api\/modpack$/", $url)) { // modpacks
             $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
 
             foreach($buildsq as $build) {
-                $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($_GET['cid'])."' AND `id` IN (".$build['clients'].")");
+                $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
                 if ($build['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
                     $builds[$counter]=$build['name'];
                     $counter++;
                 }
             }
-            $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($_GET['cid'])."' AND `id` IN (".$modpack['clients'].")");
-            if ($modpack['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
+            $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
+            if ($modpack['public']==1 || $clientsq || $client_api_key==$config['api_key']) {
                 $modpacks[$modpack['name']] = [
                     "name" => $modpack['name'],
                     "display_name" => $modpack['display_name'],
@@ -86,8 +98,8 @@ if (preg_match("/api\/modpack$/", $url)) { // modpacks
         }
     } else {
         foreach($modpacksq as $modpack) {
-            $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($_GET['cid'])."' AND `id` IN (".$modpack['clients'].")");
-            if ($modpack['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
+            $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
+            if ($modpack['public']==1 || $clientsq || $client_api_key==$config['api_key']) {
                 $mn = $modpack['name'];
                 $mpn = $modpack['display_name'];
                 $modpacks[$mn] = $mpn;
@@ -116,15 +128,15 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
     }
 
     foreach($modpackq as $modpack) { // sql col `name` isn't guaranteed to be unique...
-        $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($_GET['cid'])."' AND `id` IN (".$modpack['clients'].")");
-        if ($modpack['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
+        $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
+        if ($modpack['public']==1 || $clientsq || $client_api_key==$config['api_key']) {
             $builds = [];
             $counter=0;
             $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
 
             foreach($buildsq as $build) {
-                $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($_GET['cid'])."' AND `id` IN (".$build['clients'].")");
-                if ($build['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
+                $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
+                if ($build['public']==1 || $clientsq || $client_api_key==$config['api_key']) {
                     $builds[$counter]=$build['name'];
                     $counter++;
                 }
@@ -161,27 +173,29 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
         $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']." AND name='".$db->sanitize($uri_build)."'");
 
         foreach($buildsq as $build) {
-            $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($_GET['cid'])."' AND `id` IN (".$build['clients'].")");
-            if ($build['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
+            $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
+            if ($build['public']==1 || $clientsq || $client_api_key==$config['api_key']) {
                 $mods = [];
                 $modslist = explode(',', $build['mods']);
                 $modnumber = 0;
 
-                foreach($modslist as $mod) {
-                    // sanity check each mod
-                    if (empty($mod)) continue;
-                    $modq = $db->query("SELECT * FROM `mods` WHERE `id` = ".$mod);
+                foreach($modslist as $modid) {
+                    if (empty($modid)) {
+                        error_log("API: double-comma (malformed 'mods' column) in database, skipping");
+                        continue;
+                    }
+                    $modq = $db->query("SELECT * FROM mods WHERE id='".$modid."'");
                     if (!$modq || sizeof($modq)!=1) {
                         error_log("API: failed to get mod for id='".$mod."', skipping");
                         continue;
                     }
                     $mod = $modq[0];
                     if (empty($mod)) {
-                        error_log("API: missing ALL data for mod id='".$mod."', skipping");
+                        error_log("API: missing ALL data for mod id='".$modid."', skipping");
                         continue;
                     }
-                    if (empty($mod['name']) || empty($mod['type']) || empty($mod['version'])) { // todo: add more checks
-                        error_log("API: missing critical data for mod id='".$mod."', skipping");
+                    if (empty($mod['name']) || empty($mod['type']) || empty($mod['version'])) { // todo: add more checks?
+                        error_log("API: missing critical data for mod id='".$modid."', skipping");
                         continue;
                     }
                     if (isset($_GET['include']) && $_GET['include']=="mods") {
