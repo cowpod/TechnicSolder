@@ -17,11 +17,6 @@ if ($config['configured']!==true) {
 
 $settings = include("./functions/settings.php");
 
-$cache=[];
-if (file_exists("./functions/cache.json")) {
-    $cache = json_decode(file_get_contents("./functions/cache.json"),true);
-}
-
 require_once("./functions/db.php");
 $db = new Db;
 if ($db->connect()===FALSE) {
@@ -417,53 +412,69 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <div style="overflow:auto;height: calc( 100% - 62px )">
                         <p class="text-muted">MODPACKS</p>
                         <?php
-                        $result = $db->query("SELECT * FROM `modpacks`");
+                        $modpacksq = $db->query("SELECT * FROM `modpacks`");
                         $totaldownloads=0;
                         $totalruns=0;
                         $totallikes=0;
-                        if (sizeof($result)!==0) {
-                            foreach($result as $modpack){
-                                if (empty($modpack['name'])) {
-                                    continue;
-                                }
-                                if (isset($cache[$modpack['name']])&&$cache[$modpack['name']]['time'] > time()-1800) {
-                                    $info = $cache[$modpack['name']]['info'];
-                                } else {
-                                    if (!str_starts_with($modpack['name'],'unnamed-modpack-') && $info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
-                                        $cache[$modpack['name']]['time'] = time();
-                                        if(!empty($info['icon']['url'])){
-                                            $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
-                                        }
-                                        $cache[$modpack['name']]['info'] = $info;
-                                        $ws = json_encode($cache);
-                                        file_put_contents("./functions/cache.json", $ws);
-                                    } else {
-                                        $info = $cache[$modpack['name']]['info'];
-                                        $notechnic = true;
-                                    }
-                                }
-                                if (isset($cache[$modpack['name']]['icon'])&&$cache[$modpack['name']]['icon']!=="") {
-                                    $info_icon = "data:image/png;base64, ".$cache[$modpack['name']]['icon'];
-                                } else {
-                                    $info_icon = $modpack['icon'];
-                                }
 
-                                // happens if we have a new modpack
-                                if (empty($info['downloads']) && empty($info['runs']) && empty($info['ratings'])) {
-                                    $info=['downloads'=>0,'runs'=>0,'ratings'=>0];
-                                }
-
-                                $totaldownloads = $totaldownloads + $info['downloads'];
-                                $totalruns = $totalruns + $info['runs'];
-                                $totallikes = $totallikes + $info['ratings'];
-                                ?>
-                                <a href="./modpack?id=<?php echo $modpack['id'] ?>">
-                                    <div class="modpack">
-                                        <p class="text-white"><img alt="<?php echo $modpack['display_name'] ?>" class="d-inline-block align-top" height="25px" src="<?php echo $info_icon; ?>"> <?php echo $modpack['display_name'] ?></p>
-                                    </div>
-                                </a>
-                            <?php
+                        foreach($modpacksq as $modpack) {
+                            if (empty($modpack['name'])) {
+                                continue;
                             }
+
+                            $notechnic = true;
+                            if (!str_starts_with($modpack['name'], 'unnamed-modpack-') && !empty($config['api_key'])) {
+                                $cache = [];
+                                $cached_info = [];
+
+                                // clean up old cached data
+                                $db->execute("DELETE FROM metrics WHERE time_stamp < ".time());
+
+                                $cacheq = $db->query("SELECT info FROM metrics WHERE name = '".$db->sanitize($modpack['name'])."' AND time_stamp > ".time());
+
+                                if ($cacheq && !empty($cacheq[0]) && !empty($cacheq[0]['info'])) {
+                                    $info = json_decode(base64_decode($cacheq[0]['info']), true);
+                                }
+                                elseif ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
+                                    $time = time()+1800;
+                                    $info_data = base64_encode(json_encode($info));
+
+                                    if (!empty($config['db-type']) && $config['db-type']=='sqlite') {
+                                        $db->execute("
+                                            INSERT OR REPLACE INTO metrics (name,time_stamp,info)
+                                            VALUES (
+                                                '".$db->sanitize($modpack['name'])."',
+                                                ".$time.",
+                                                '".$info_data."'
+                                        )");
+                                    } else {
+                                        $db->execute("
+                                            REPLACE INTO metrics (name,time_stamp,info)
+                                            VALUES (
+                                                '".$db->sanitize($modpack['name'])."',
+                                                ".$time.",
+                                                '".$info_data."'
+                                        )");
+                                    }
+                                    $notechnic = false;
+                                }
+                            }
+                            
+                            $info_icon = $modpack['icon'];
+
+                            if ((empty($info['installs']) && empty($info['runs']) && empty($info['ratings']))) {
+                                $info=['installs'=>0,'runs'=>0,'ratings'=>0];
+                            }
+                            $totaldownloads += $info['installs'];
+                            $totalruns += $info['runs'];
+                            $totallikes += $info['ratings'];
+
+                        ?><a href="./modpack?id=<?php echo $modpack['id'] ?>">
+                            <div class="modpack">
+                                <p class="text-white"><img alt="<?php echo $modpack['display_name'] ?>" class="d-inline-block align-top" height="25px" src="<?php echo $info_icon; ?>"> <?php echo $modpack['display_name'] ?></p>
+                            </div>
+                        </a><?php
+
                         }
                         ?>
                         <?php if (substr($_SESSION['perms'],0,1)=="1") { ?>
@@ -558,10 +569,10 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </div>
                 <?php
             }
-            if (isset($notechnic) && $notechnic) {
+            if ($notechnic) {
             ?>
                 <div class="card alert-warning">
-                    <strong>Warning! </strong>Cannot connect to Technic! Make sure you set your modpack name and slug.
+                    <strong>Warning! </strong>Cannot connect to Technic! Make sure you set your API key, have a valid name, and unique slug.
                 </div>
                 <?php
             } else {
@@ -649,7 +660,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <br>
                             <input autocomplete="off" required id="dn" class="form-control" type="text" name="display_name" placeholder="Modpack name" />
                             <br />
-                            <input autocomplete="off" required id="slug" pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Modpack slug" />
+                            <input autocomplete="off" required id="slug" pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Modpack slug (same as on technicpack.net)" />
                             <br />
                             <label for="java">Select java version</label>
                             <select name="java" class="form-control">
@@ -766,7 +777,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <div class="collapse" id="collapseVerify">
                         <br />
                         <div class="input-group">
-                            <input autocomplete="off" class="form-control <?php if ($_SESSION['dark']=="on") {echo "border-primary";}?>" type="text" id="link" placeholder="Modpack slug" aria-describedby="search" />
+                            <input autocomplete="off" class="form-control <?php if ($_SESSION['dark']=="on") {echo "border-primary";}?>" type="text" id="link" placeholder="Modpack slug (same as on technicpack.net)"" aria-describedby="search" />
                             <div class="input-group-append">
                                 <button class="<?php if ($_SESSION['dark']=="on") { echo "btn btn-primary";} else { echo "btn btn-outline-secondary";} ?>" onclick="get();" type="button" id="search">Search</button>
                             </div>
@@ -847,30 +858,50 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             </ul>
             <div class="main">
                 <?php
-                if (isset($cache[$modpack['name']])&&$cache[$modpack['name']]['time'] > time()-1800) {
-                    $info = $cache[$modpack['name']]['info'];
-                } else {
-                    if (!empty($modpack['name']) && !str_starts_with($modpack['name'],'unnamed-modpack-') && $info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
-                        $cache[$modpack['name']]['time'] = time();
-                        if(!empty($info['icon']['url'])){
-                            $cache[$modpack['name']]['icon'] = base64_encode(file_get_contents($info['icon']['url']));
+                $notechnic=true;
+                if (!str_starts_with($modpack['name'], 'unnamed-modpack-') && !empty($config['api_key'])) {
+                    $cache = [];
+                    $cached_info = [];
+
+                    // clean up old cached data
+                    $db->execute("DELETE FROM metrics WHERE time_stamp < ".time());
+
+                    $cacheq = $db->query("SELECT info FROM metrics WHERE name = '".$db->sanitize($modpack['name'])."' AND time_stamp > ".time());
+                    if ($cacheq && !empty($cacheq[0]) && !empty($cacheq[0]['info'])) {
+                        $info = json_decode(base64_decode($cacheq[0]['info']),true);
+                    }
+                    elseif ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
+                        $time = time()+1800;
+                        $info_data = base64_encode(json_encode($info));
+                        if (!empty($config['db-type']) && $config['db-type']=='sqlite') {
+                            $db->execute("
+                                INSERT OR REPLACE INTO metrics (name,time_stamp,info)
+                                VALUES (
+                                    '".$db->sanitize($modpack['name'])."',
+                                    ".$time.",
+                                    '".$info_data."'
+                            )");
+                        } else {
+                            $db->execute("
+                                REPLACE INTO metrics (name,time_stamp,info)
+                                VALUES (
+                                    '".$db->sanitize($modpack['name'])."',
+                                    ".$time.",
+                                    '".$info_data."'
+                            )");
                         }
-                        $cache[$modpack['name']]['info'] = $info;
-                        $ws = json_encode($cache);
-                        file_put_contents("./functions/cache.json", $ws);
-                    } else {
-                        $info = $cache[$modpack['name']]['info'];
-                        ?>
-                        <div class="card alert-warning">
-                            <strong>Warning! </strong>Cannot connect to Technic! Make sure you set your modpack name and slug.
-                        </div>
-                        <?php
+                        $notechnic = false;
                     }
                 }
-
-                // happens if we have a new modpack
-                if (empty($info['downloads']) && empty($info['runs']) && empty($info['ratings'])) {
-                    $info=['downloads'=>0,'runs'=>0,'ratings'=>0];
+                
+                if ($notechnic) {
+                    ?><div class="card alert-warning">
+                        <strong>Warning! </strong>Cannot connect to Technic! Make sure you set your API key, have a valid name, and unique slug.
+                    </div><?php
+                }
+                
+                if (empty($info['installs']) && empty($info['runs']) && empty($info['ratings'])) {
+                    $info=['installs'=>0,'runs'=>0,'ratings'=>0];
                 }
 
                 if (substr($_SESSION['perms'],0,1)=="1") { ?>
@@ -881,9 +912,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <input hidden type="text" name="id" value="<?php echo $_GET['id'] ?>">
                         <input autocomplete="off" id="dn" class="form-control" type="text" name="display_name" placeholder="Modpack name" value="<?php echo $modpack['display_name'] ?>" />
                         <br />
-                        <input autocomplete="off" id="slug" pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Modpack slug" value="<?php echo $modpack['name'] ?>" />
-
-                        <span id="warn_slug" style="display: none" class="text-warning"><strong>Warning!</strong> Modpack slug have to be the same as on the technic platform</span>
+                        <input autocomplete="off" id="slug" pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Modpack slug (same as on technicpack.net)" value="<?php echo $modpack['name'] ?>" />
                         <br />
                         <div class="custom-control custom-checkbox">
                             <input <?php if ($modpack['public']==1){echo "checked";} ?> type="checkbox" name="ispublic" class="custom-control-input" id="public">
@@ -914,29 +943,9 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         </div>
                       </div>
                     </div>
-                    <script>
-                            <?php if (!str_starts_with($modpack['name'],"unnamed-modpack-")) { ?>
-                                $("#slug").on("keyup", function(){
-                                    if ($("#slug").val()!=="<?php echo $modpack['name'] ?>"){
-                                        $("#warn_slug").show();
-                                        $("#slug").addClass("border-warning");
-                                    } else {
-                                        $("#warn_slug").hide();
-                                        $("#slug").removeClass("border-warning");
-                                    }
-                                });
-                            <?php } ?>
-                        $("#dn").on("keyup", function(){
-                            var slug = slugify($(this).val());
-                            console.log(slug);
-                            <?php if (str_starts_with($modpack['name'],"unnamed-modpack-")!==false) { ?>
-                                $("#slug").val(slug);
-                            <?php } ?>
-                        });
-                    </script>
                 </div>
                 <?php
-                $totaldownloads = $info['downloads'];
+                $totaldownloads = $info['installs'];
                 $totalruns = $info['runs'];
                 $totallikes = $info['ratings'];
 
