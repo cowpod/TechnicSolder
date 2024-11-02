@@ -24,6 +24,7 @@ if (empty($_POST['solder-orig'])) {
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("error");
 }
+$PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
 
 require_once("db.php");
 $db=new Db;
@@ -50,7 +51,7 @@ foreach ($res as $row) {
     } else {
         $public = 0;
     }
-    $db->execute("INSERT INTO `modpacks` (`display_name`,`name`,`public`,`latest`,`recommended`,`icon`) VALUES ('".$row['name']."','".$row['slug']."',".$public.",'".$latest."','".$recommended."','http://demo.solder.cf/TechnicSolder/resources/default/icon.png')");
+    $db->execute("INSERT INTO `modpacks` (`display_name`,`name`,`public`,`latest`,`recommended`,`icon`) VALUES ('".$row['name']."','".$row['slug']."',".$public.",'".$latest."','".$recommended."','".$PROTO_STR.$config['host']."/resources/default/icon.png')");
 }
 // ----- BUILDS ----- \\
 $res = $db2->query("SELECT `modpack_id`,`version`,`minecraft_version`,`status`,`java_version`,`required_memory` FROM `builds`");
