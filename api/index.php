@@ -1,159 +1,72 @@
 <?php
-error_reporting(0);
 header('Content-Type: application/json');
+
 $url = $_SERVER['REQUEST_URI'];
-if (strpos($url, '?') !== false) {
+
+// remove args
+if (strpos($url, '?') !== FALSE) {
     $url = substr($url, 0, strpos($url, "?"));
 }
-if (substr($url, -1)=="/" & substr($url, -4)!=="api/") {
-    if ($_SERVER['QUERY_STRING']!=="") {
+// if trailing / and not api/, remove trailing / and append query string if present.
+if (substr($url, -1)=="/" && substr($url, -4)!=="api/") {
+    if (!empty($_SERVER['QUERY_STRING'])) {
         header("Location: " . rtrim($url, '/') . "?" . $_SERVER['QUERY_STRING']);
     } else {
         header("Location: " . rtrim($url, '/'));
     }
 }
+
 $config = require("../functions/config.php");
 
-function uri($url, $uri)
-{
-    $length = strlen($uri);
-    if ($length == 0) {
-        return true;
-    }
-    return (substr($url, -$length) === $uri);
-}
-
 if(uri($url,"api/")){
-	print '{"api":"Solder.cf","version":"v1.3.4","stream":"Release"}';
-	exit();
+	die('{"api":"Solder.cf","version":"v1.4.0","stream":"Release"}'); // todo: this is Dev not release, but may break things if changed...
 } 
 if (uri($url, "api/verify")) {
-    print '{"error":"No API key provided."}';
-    exit();
+    die('{"error":"No API key provided."}');
 }
 if (uri($url,"api/verify/".substr($url, strrpos($url, '/') + 1))) {
     if (substr($url, strrpos($url, '/') + 1)==$config['api_key']) {
-        print '{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}';
-        exit();
+        die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
     }
-    print '{"error":"Invalid key provided."}';
-    exit();
+    die('{"error":"Invalid key provided."}');
 }
+
+$PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
 
 require_once("../functions/db.php");
 $db=new Db;
 $db->connect();
 
-if (uri($url,"api/modpack")) {
-    if (isset($_GET['include'])) {
-        if ($_GET['include'] == "full") {
-            $result = $db->query("SELECT * FROM `modpacks`");
-            $modpacks = array();
-            foreach($result as $modpack) {
-                $buildsres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
-                $builds = [];
-                foreach($buildsres as $build) {
-                    $clients = [];
-                    $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$build['clients'].")");
-                    foreach($clientsq as $client) {
-                        array_push($clients, $client['UUID']);
-                    }
-                    if ($build['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
-                        array_push($builds, $build['name']);
-                    }
-                }
-                $clients = [];
-                $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
-                foreach($clientsq as $client) {
-                    array_push($clients, $client['UUID']);
-                }
-                if ($modpack['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
-                    $modpacks[$modpack['name']] = array(
-                        "name" => $modpack['name'],
-                        "display_name" => $modpack['display_name'],
-                        "url" => $modpack['url'],
-                        "icon" => $modpack['icon'],
-                        "icon_md5" => $modpack['icon_md5'],
-                        "logo" => $modpack['logo'],
-                        "logo_md5" => $modpack['logo_md5'],
-                        "background" => $modpack['background'],
-                        "background_md5" => $modpack['background_md5'],
-                        "recommended" => $modpack['recommended'],
-                        "latest" => $modpack['latest'],
-                        "builds" => $builds
-                    );
-                }
-                $response = array(
-                    "modpacks" => $modpacks,
-                    "mirror_url" => "http://".$config['host']."/mods"
-                );
-            }
-        } else {
-            $modpacks = array();
-            $result = $db->query("SELECT * FROM `modpacks`");
-            foreach($result as $modpack) {
-                $clients = [];
-                $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
-                foreach($clientsq as $client) {
-                    array_push($clients, $client['UUID']);
-                }
-                if ($modpack['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
-                    $mn = $modpack['name'];
-                    $mpn = $modpack['display_name'];
-                    $modpacks[$mn] = $mpn;
+if (preg_match("/^\/api\/modpack$/", $url)) { // modpacks
+    // $modpacksq = $db->query("SELECT * FROM `modpacks`");
+    $modpacksq = $db->query("
+    SELECT M.*, 
+        B.name AS latest_name, 
+        B2.name AS recommended_name
+    FROM modpacks AS M 
+    LEFT JOIN builds AS B 
+        ON M.latest = B.id 
+    LEFT JOIN builds AS B2 
+        ON M.recommended = B2.id;
+    ");
+    $modpacks = [];
+    if (isset($_GET['include']) && $_GET['include'] == "full") {
+
+        foreach($modpacksq as $modpack) {
+            $builds = [];
+            $counter=0;
+            $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
+
+            foreach($buildsq as $build) {
+                $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($_GET['cid'])."' AND `id` IN (".$build['clients'].")");
+                if ($build['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
+                    $builds[$counter]=$build['name'];
+                    $counter++;
                 }
             }
-            $response = array(
-                "modpacks" => $modpacks,
-                "mirror_url" => "http://".$config['host']."/mods"
-            );
-        }
-    } else {
-        $modpacks = array();
-        $result = $db->query("SELECT * FROM `modpacks`");
-        foreach($result as $modpack) {
-            $clients = [];
-            $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
-            foreach($clientsq as $client) {
-                array_push($clients, $client['UUID']);
-            }
-            if ($modpack['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
-                $mn = $modpack['name'];
-                $mpn = $modpack['display_name'];
-                $modpacks[$mn] = $mpn;
-            }
-        }
-        $response = array(
-            "modpacks" => $modpacks,
-            "mirror_url" => "http://".$config['host']."/mods"
-        );
-    }
-    print(json_encode($response));
-    exit();
-}
-if (uri($url,"api/modpack/".substr($url, strrpos($url, '/') + 1))) {
-    $result = $db->query("SELECT * FROM `modpacks`");
-    foreach($result as $modpack) {
-        if (uri($url,"api/modpack/".$modpack['name'])) {
-            $clients = [];
-            $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
-            foreach($clientsq as $client) {
-                array_push($clients, $client['UUID']);
-            }
-            if ($modpack['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
-                $buildsres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
-                $builds = [];
-                foreach($buildsres as $build) {
-                    $clients = [];
-                    $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$build['clients'].")");
-                    foreach($clientsq as $client) {
-                        array_push($clients, $client['UUID']);
-                    }
-                    if ($build['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
-                        array_push($builds, $build['name']);
-                    }
-                }
-                $response = array(
+            $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($_GET['cid'])."' AND `id` IN (".$modpack['clients'].")");
+            if ($modpack['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
+                $modpacks[$modpack['name']] = [
                     "name" => $modpack['name'],
                     "display_name" => $modpack['display_name'],
                     "url" => $modpack['url'],
@@ -163,125 +76,145 @@ if (uri($url,"api/modpack/".substr($url, strrpos($url, '/') + 1))) {
                     "logo_md5" => $modpack['logo_md5'],
                     "background" => $modpack['background'],
                     "background_md5" => $modpack['background_md5'],
-                    "recommended" => $modpack['recommended'],
-                    "latest" => $modpack['latest'],
+                    "recommended" => $modpack['recommended_name'],
+                    "latest" => $modpack['latest_name'], 
                     "builds" => $builds
-                );
-                print(json_encode($response));
-                exit();
-            } else {
-                print '{"error":"This modpack is private."}';
-                exit();
+                ];
             }
         }
+    } else {
+        foreach($modpacksq as $modpack) {
+            $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($_GET['cid'])."' AND `id` IN (".$modpack['clients'].")");
+            if ($modpack['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
+                $mn = $modpack['name'];
+                $mpn = $modpack['display_name'];
+                $modpacks[$mn] = $mpn;
+            }
+        }
+    }
+    die(json_encode(["modpacks"=>$modpacks, "mirror_url"=>"http://".$config['host']."/mods"]));
+} 
+elseif (preg_match("/^\/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modpack details
+    $uri_modpack = $matches[1];
 
+    // $modpackq = $db->query("SELECT * FROM `modpacks` WHERE name='".$db->sanitize($uri_modpack)."'");
+    $modpackq = $db->query("
+        SELECT M.*, 
+            B.name AS latest_name, 
+            B2.name AS recommended_name
+        FROM modpacks AS M 
+        LEFT JOIN builds AS B 
+            ON M.latest = B.id 
+        LEFT JOIN builds AS B2 
+            ON M.recommended = B2.id
+        WHERE M.name = '".$db->sanitize($uri_modpack)."';
+    ");
+    if (!$modpackq) {
+        die('{"error":"Modpack does not exist"}');
     }
-    print '{"error":"Modpack does not exist"}';
-    exit();
-}
-$result = $db->query("SELECT * FROM `modpacks`");
-foreach($result as $modpack) {
-    if (uri($url,"api/modpack/".$modpack['name']."/".substr($url, strrpos($url, '/') + 1))) {
-        $buildsres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
-        foreach($buildsres as $build) {
-            if (uri($url,"api/modpack/".$modpack['name']."/".$build['name'])) {
-                $clients = [];
-                $clientsq = $db->query("SELECT * FROM `clients` WHERE `id` IN (".$build['clients'].")");
-                foreach($clientsq as $client) {
-                    array_push($clients, $client['UUID']);
-                }
-                if ($build['public']==1||in_array($_GET['cid'],$clients)||$_GET['k']==$config['api_key']) {
-                    $mods = [];
-                    $modslist= explode(',', $build['mods']);
-                    $modnumber = 0;
-                    foreach($modslist as $mod) {
-                        if ($mod !== "") {
-                            $modsres = $db->query("SELECT * FROM `mods` WHERE `id` = ".$mod);
-                            $modinfo=($modsres);
-                            if ($modinfo['name']!== null && $modinfo['type'] !== null) {
-                                if (isset($_GET['include'])) {
-                                    if ($_GET['include']=="mods") {
-                                        if (!$modinfo['url']) {
-                                            $mods[$modnumber] = array(
-                                                "name" => $modinfo['name'],
-                                                "version" => $modinfo['version'],
-                                                "md5" => $modinfo['md5'],
-                                                "url" => "http://".$config['host'].$config['dir'].$modinfo['type']."s/".$modinfo['filename'],
-                                                "pretty_name" => $modinfo['pretty_name'],
-                                                "author" => $modinfo['author'],
-                                                "description" => $modinfo['description'],
-                                                "link" => $modinfo['link'],
-                                                "donate" => $modinfo['donlink']
-                                            );
-                                        } else {
-                                            $mods[$modnumber] = array(
-                                                "name" => $modinfo['name'],
-                                                "version" => $modinfo['version'],
-                                                "md5" => $modinfo['md5'],
-                                                "url" => $modinfo['url'],
-                                                "pretty_name" => $modinfo['pretty_name'],
-                                                "author" => $modinfo['author'],
-                                                "description" => $modinfo['description'],
-                                                "link" => $modinfo['link'],
-                                                "donate" => $modinfo['donlink']
-                                            );
-                                        }
-                                    } else {
-                                        if (!$modinfo['url']) {
-                                            $mods[$modnumber] = array(
-                                                "name" => $modinfo['name'],
-                                                "version" => $modinfo['version'],
-                                                "md5" => $modinfo['md5'],
-                                                "url" => "http://".$config['host'].$config['dir'].$modinfo['type']."s/".$modinfo['filename']
-                                            );
-                                        } else {
-                                            $mods[$modnumber] = array(
-                                                "name" => $modinfo['name'],
-                                                "version" => $modinfo['version'],
-                                                "md5" => $modinfo['md5'],
-                                                "url" => $modinfo['url']
-                                            );
-                                        }
-                                    }
-                                } else {
-                                    if (!$modinfo['url']) {
-                                        $mods[$modnumber] = array(
-                                            "name" => $modinfo['name'],
-                                            "version" => $modinfo['version'],
-                                            "md5" => $modinfo['md5'],
-                                            "url" => strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://'.$config['host'].$config['dir'].$modinfo['type']."s/".$modinfo['filename']
-                                        );
-                                    } else {
-                                        $mods[$modnumber] = array(
-                                            "name" => $modinfo['name'],
-                                            "version" => $modinfo['version'],
-                                            "md5" => $modinfo['md5'],
-                                            "url" => $modinfo['url']
-                                        );
-                                    }
-                                }
-                                $modnumber++;
-                            }
-                        }
-                    }
-                    $response = array(
-                        "minecraft" => str_replace("f", "", $build['minecraft']),
-                        "java" => $build['java'],
-                        "memory" => $build['memory'],
-                        "forge" => null,
-                        "mods" => $mods,
-                    );
-                    print(json_encode($response));
-                    exit();
-                } else {
-                    print '{"error":"\n\r This build is private. Use Solder.cf to create private builds and modpacks :)
-                     www.solder.cf\n\r Please contact '.$config['author'].' for more information."}';
-                    exit();
+
+    foreach($modpackq as $modpack) { // sql col `name` isn't guaranteed to be unique...
+        $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($_GET['cid'])."' AND `id` IN (".$modpack['clients'].")");
+        if ($modpack['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
+            $builds = [];
+            $counter=0;
+            $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
+
+            foreach($buildsq as $build) {
+                $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($_GET['cid'])."' AND `id` IN (".$build['clients'].")");
+                if ($build['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
+                    $builds[$counter]=$build['name'];
+                    $counter++;
                 }
             }
+            die(json_encode([
+                "name" => $modpack['name'],
+                "display_name" => $modpack['display_name'],
+                "url" => $modpack['url'],
+                "icon" => $modpack['icon'],
+                "icon_md5" => $modpack['icon_md5'],
+                "logo" => $modpack['logo'],
+                "logo_md5" => $modpack['logo_md5'],
+                "background" => $modpack['background'],
+                "background_md5" => $modpack['background_md5'],
+                "recommended" => $modpack['recommended_name'],
+                "latest" => $modpack['latest_name'],
+                "builds" => $builds
+            ]));
+        } else {
+            die('{"error":"This modpack is private."}');
         }
-        print '{"error":"Build does not exist"}';
-        exit();
+    }
+// } else { // build details (including mods)
+} elseif (preg_match("/\/api\/modpack\/([a-z\-|0-9]+)\/?([a-z\-|0-9]+)?$/", $url, $matches)) { // modpack details
+    $uri_modpack = $matches[1];
+    $uri_build = $matches[2];
+    // could use a join on/using for better speed.
+    $modpacksq = $db->query("SELECT * FROM `modpacks` WHERE name='".$db->sanitize($uri_modpack)."'");
+    if (!$modpackq) {
+        die('{"status":404,"error":"Not Found"}');
+    }
+
+    foreach($modpacksq as $modpack) {
+        $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']." AND name='".$db->sanitize($uri_build)."'");
+
+        foreach($buildsq as $build) {
+            $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($_GET['cid'])."' AND `id` IN (".$build['clients'].")");
+            if ($build['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
+                $mods = [];
+                $modslist = explode(',', $build['mods']);
+                $modnumber = 0;
+
+                foreach($modslist as $mod) {
+                    // sanity check each mod
+                    if (empty($mod)) continue;
+                    $modq = $db->query("SELECT * FROM `mods` WHERE `id` = ".$mod);
+                    if (!$modq || sizeof($modq)!=1) {
+                        error_log("API: failed to get mod for id='".$mod."', skipping");
+                        continue;
+                    }
+                    $mod = $modq[0];
+                    if (empty($mod)) {
+                        error_log("API: missing ALL data for mod id='".$mod."', skipping");
+                        continue;
+                    }
+                    if (empty($mod['name']) || empty($mod['type']) || empty($mod['version'])) { // todo: add more checks
+                        error_log("API: missing critical data for mod id='".$mod."', skipping");
+                        continue;
+                    }
+                    if (isset($_GET['include']) && $_GET['include']=="mods") {
+                        $mods[$modnumber] = [
+                            "name" => $mod['name'],
+                            "version" => $mod['version'],
+                            "md5" => $mod['md5'],
+                            "url" => !empty($mod['url']) ? $mod['url'] : $PROTO_STR.$config['host'].$config['dir'].$mod['type']."s/".$mod['filename'],
+                            "pretty_name" => $mod['pretty_name'],
+                            "author" => $mod['author'],
+                            "description" => $mod['description'],
+                            "link" => $mod['link'],
+                            "donate" => $mod['donlink']
+                        ];
+                    } else {
+                        $mods[$modnumber] = [
+                            "name" => $mod['name'],
+                            "version" => $mod['version'],
+                            "md5" => $mod['md5'],
+                            "url" => !empty($mod['url']) ? $mod['url'] : $PROTO_STR.$config['host'].$config['dir'].$mod['type']."s/".$mod['filename']
+                        ];
+                    }
+                    $modnumber++;
+                }
+                die(json_encode([
+                    "minecraft" => str_replace("f", "", $build['minecraft']),
+                    "java" => $build['java'],
+                    "memory" => $build['memory'],
+                    "forge" => null, // todo: is this a bool? or a forge version? or are there more keys for fabric/etc?
+                    "mods" => $mods,
+                ]));
+            } else {
+                die('{"error":"\n\rThis build is private. \n\rPlease contact '.$config['author'].' for more information."}');
+            }
+        }
+        die('{"error":"Build does not exist"}');
     }
 }
-print '{"status":404,"error":"Not Found"}';
