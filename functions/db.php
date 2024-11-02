@@ -17,6 +17,8 @@ class Db {
 			$this->conf = include("./config.php");
 		} elseif (file_exists("./functions/config.php")) {
 			$this->conf = include("./functions/config.php");
+		} elseif (file_exists("../functions/config.php")) {
+			$this->conf = include("../functions/config.php");
 		}
 		if ($this->conf===NULL) {
 		    error_log("db.php: __construct(): Missing config.php?!");
