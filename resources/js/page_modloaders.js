@@ -1,9 +1,10 @@
 function remove_box(id,name) {
     $("#mod-name-title").text(name);
     $("#mod-name").text(name);
-    $("#remove-button").attr("onclick","remove("+id+")");
+    $("#remove-button").attr("onclick","remove("+id+",false)");
+    $("#remove-button-force").attr("onclick","remove("+id+",true)");
 }
-function remove(id) {
+function remove(id,force) {
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
@@ -14,16 +15,16 @@ function remove(id) {
                 $("#mod-row-"+id).remove();
             } else {
                 // todo: use styled alert instead of this
-                alert("Cannot delete modloader as it is used by a build.");
-                // if (confirm(response['message'])) {
-                    // console.log(response['message'].match(/'([^']+)'/)[1]);
-                    // window.location.href=response['message'].match(/'([^']+)'/)[1];
-                // }
+                // alert("Cannot delete modloader as it is used by a build.");
+                // $("#removeModWarn").show();
+                if (confirm(response['message']+" Press OK to go to '"+response['bname']+"'")) {
+                    window.location.href="/build?id="+response['bid'];
+                }
             }
         }
         
     }
-    request.open("GET", "./functions/delete-modv.php?id="+id);
+    request.open("GET", "./functions/delete-mod.php?id="+id+"&force="+force);
     request.send();
 }
 

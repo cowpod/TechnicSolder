@@ -1,5 +1,4 @@
 <?php
-error_reporting(E_ALL & ~E_NOTICE);
 session_start();
 
 define('SUPPORTED_JAVA_VERSIONS', [21,20,19,18,17,16,15,14,13,12,11,1.8,1.7,1.6]);
@@ -1181,7 +1180,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 $user = $user[0];
             }
             $modslist = explode(',', $user['mods']);
-            if ($modslist[0]==""){
+            if (empty($modslist[0])){
                 unset($modslist[0]);
             }
 
@@ -1314,19 +1313,17 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <tbody>
                                 <?php
                                 $modsluglist = Array();
-                                // mods is a comma delimed string in builds under build id => id
-                                $build_mod_idsq = $db->query("SELECT mods FROM builds WHERE id = ".$_GET['id']);
-                                if ($build_mod_idsq && sizeof($build_mod_idsq)==1) {
-                                    $build_mod_ids = explode(',', $build_mod_idsq[0]['mods']);
+                                $build_mod_ids = $modslist;
 
-                                    foreach ($build_mod_ids as $build_mod_id) {
+                                foreach ($build_mod_ids as $build_mod_id) {
 
-                                        // now get the mod details (before we got ALL the mods...)
-                                        $modq = $db->query("SELECT * FROM mods WHERE id = '".$build_mod_id."'");
-                                        if ($modq) {
-                                            assert(sizeof($modq)==1);
-                                            $mod = $modq[0];
-                                        }
+                                    // now get the mod details (before we got ALL the mods...)
+                                    $modq = $db->query("SELECT * FROM mods WHERE id = '".$build_mod_id."'");
+                                    if (!$modq || sizeof($modq)!=1) {
+                                        $mod=[];
+                                    } else {
+                                        $mod = $modq[0];
+                                    
                                         array_push($modsluglist, $mod['name']);
 
                                         // only check game compatibility if it's a mod!
@@ -1337,85 +1334,80 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                             $max=$mcvrange['max'];
                                             $maxInclusivity=$mcvrange['max_inclusivity'];
 
-                                            // get list of mods..gets ALL mods...?
-                                            // if (isset($_SESSION['showall']) && $_SESSION['showall']) {
-                                            //     $modvq = $db->query("SELECT id,version FROM mods WHERE name = '".$mod['name']."'");
-                                            // } else {
-                                                // not adding a WHERE mcversion clause
-                                                $modvq = $db->query("SELECT id,version FROM mods WHERE type = 'mod'");
-                                            // }
+                                            $modvq = $db->query("SELECT id,version FROM mods WHERE type = 'mod'");
 
                                             $userModVersionOK = in_range($mod['mcversion'], $user['minecraft']);
                                         } else {
                                             $userModVersionOK = true;
                                         }
-                                        ?>
-                                    <tr <?php if (!$userModVersionOK || empty($mod['version'])) { 
-                                        echo 'class="table-warning"';
-                                        } ?> id="mod-<?php 
-                                            echo $mod['name'];
-                                        ?>">
-                                        <td scope="row"><?php
-                                        echo $mod['pretty_name'];
-                                        if (!$userModVersionOK) {
-                                            echo '<span id="warn-incompatible-'.$mod['name'].'">: For Minecraft '.$mod['mcversion'].', you have '.$user['minecraft'].'. May not be compatible!</span>';
-                                        } elseif(empty($mod['version'])) {
-                                            echo '<span id="warn-incompatible-'.$mod['name'].'">: Missing version! You must set it in <a href="modv?id='.$build_mod_id.'" target="_blank">mod details</a>.</span>';
-                                        }
+                                    }
 
-                                        ?></td>
-                                        <td>
-                                            <?php 
-                                            if ($mod['type'] !== "mod") {
-                                                echo $mod['version'];
-                                            } else { ?>
-                                                <select class="form-control" onchange="changeversion(this.value,<?php 
-                                                echo $mod['id'] 
-                                                    ?>,'<?php 
-                                                echo $mod['name'] 
-                                                    ?>',<?php 
-                                                if (!in_range($mod['mcversion'], $user['minecraft'])){
-                                                    echo 'false';
-                                                } else { 
-                                                    echo 'true'; 
-                                                } 
-                                                    ?>);" name="bmversions" id="bmversions-<?php 
-                                                echo $mod['name'] ?>"><?php
+                                    ?>
+                                <tr <?php if (empty($mod)) { echo 'style="background-color:rgba(255,0,0,0.25);"'; } elseif (!$userModVersionOK || empty($mod['version'])) { echo 'class="table-warning"'; } ?> id="mod-missing-<?php echo $build_mod_id ?>">
+                                    <td scope="row"><?php
+                                    echo empty($mod)?'MISSING':$mod['pretty_name'];
+                                    if (empty($mod)) {
+                                        echo '<span id="warn-incompatible-missing-'.$build_mod_id.'">: Mod does not exist! Please remove from this build.</span>';
+                                    } elseif (!$userModVersionOK) {
+                                        echo '<span id="warn-incompatible-'.$mod['name'].'">: For Minecraft '.$mod['mcversion'].', you have '.$user['minecraft'].'. May not be compatible!</span>';
+                                    } elseif(empty($mod['version'])) {
+                                        echo '<span id="warn-incompatible-'.$mod['name'].'">: Missing version! You must set it in <a href="modv?id='.$build_mod_id.'" target="_blank">mod details</a>.</span>';
+                                    }
 
-                                                // get versions for mod
-                                                $modv = $db->query("SELECT version FROM mods WHERE name='".$mod['name']."'");
-                                                if($modv && sizeof($modv)>0) {
-                                                    foreach ($modv as $mv) {
-                                                        if ($mv['id'] == $mod['id']) {
-                                                            echo "<option selected value='".$mv['id']."'>".$mv['version']."</option>";
-                                                        } else {
-                                                            echo "<option value='".$mv['id']."'>".$mv['version']."</option>";
-                                                        }
+                                    ?></td>
+                                    <td>
+                                        <?php 
+                                        if (!empty($mod) && $mod['type'] !== "mod") {
+                                            echo $mod['version'];
+                                        } elseif(!empty($mod)) { ?>
+                                            <select class="form-control" onchange="changeversion(this.value,<?php 
+                                            echo $mod['id'] 
+                                                ?>,'<?php 
+                                            echo $mod['name'] 
+                                                ?>',<?php 
+                                            if (!in_range($mod['mcversion'], $user['minecraft'])){
+                                                echo 'false';
+                                            } else { 
+                                                echo 'true'; 
+                                            } 
+                                                ?>);" name="bmversions" id="bmversions-<?php 
+                                            echo $mod['name'] ?>"><?php
+
+                                            // get versions for mod
+                                            $modv = $db->query("SELECT version FROM mods WHERE name='".$mod['name']."'");
+                                            if($modv && sizeof($modv)>0) {
+                                                foreach ($modv as $mv) {
+                                                    if ($mv['id'] == $mod['id']) {
+                                                        echo "<option selected value='".$mv['id']."'>".$mv['version']."</option>";
+                                                    } else {
+                                                        echo "<option value='".$mv['id']."'>".$mv['version']."</option>";
                                                     }
                                                 }
                                             }
-                                            ?>
-                                            </select>
-                                        </td>
-                                        <td><?php
+                                        }
+                                        ?>
+                                        </select>
+                                    </td>
+                                    <td><?php
+                                        if (!empty($mod)) {
                                             echo $mod['mcversion'];
-                                        ?></td>
-                                        <td><?php
-                                            if (substr($_SESSION['perms'], 1, 1)=="1" && $mod['name'] !== "forge") {
-                                                ?>
-                                                <button onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo $mod['name'] ?>')" class="btn btn-danger">
-                                                    <em class="fas fa-times"></em>
-                                                </button>
-                                                <?php
-                                            }
-                                        ?></td>
-                                        <td>
-                                            <em style="font-size: 2em;display: none;" class="fas fa-cog fa-spin" id="spinner-<?php echo $mod['name'] ?>"></em>
-                                        </td>
-                                    </tr>
-                                    <?php
-                                    }
-                                } 
+                                        }
+                                    ?></td>
+                                    <td><?php
+                                        if (substr($_SESSION['perms'], 1, 1)=="1" && (empty($mod) || $mod['name'] !== "forge")) {
+                                            ?>
+                                            <button onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo empty($mod)?'missing-'.$build_mod_id:$mod['name'] ?>')" class="btn btn-danger">
+                                                <em class="fas fa-times"></em>
+                                            </button>
+                                            <?php
+                                        }
+                                    ?></td>
+                                    <td>
+                                        <em style="font-size: 2em;display: none;" class="fas fa-cog fa-spin" id="spinner-<?php echo empty($mod)?'MISSING':$mod['name'] ?>"></em>
+                                    </td>
+                                </tr>
+                                <?php
+                                }
                                 ?>
                             </tbody>
                         </table>
@@ -1700,6 +1692,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                   <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
                     <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
+                    <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
                   </div>
                 </div>
               </div>
@@ -1767,6 +1760,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                   <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
                     <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
+                    <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
                   </div>
                 </div>
               </div>
@@ -1962,6 +1956,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                   <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
                     <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
+                    <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
                   </div>
                 </div>
               </div>
@@ -2070,6 +2065,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                       <div class="modal-footer">
                         <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
                         <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
+                        <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
                       </div>
                     </div>
                   </div>

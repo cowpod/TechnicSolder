@@ -1,10 +1,11 @@
 function remove_box(name) {
     $("#mod-name-title").text(name);
     $("#mod-name").text(name);
-    $("#remove-button").attr("onclick","remove('"+name+"')");
+    $("#remove-button").attr("onclick","remove('"+name+"',false)");
+    $("#remove-button-force").attr("onclick","remove('"+name+"',true)");
 }
 
-function remove(id) {
+function remove(name,force) {
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
@@ -12,18 +13,18 @@ function remove(id) {
             console.log(response);
             if (response['status']=='succ') {
                 console.log('success!');
-                $("#mod-row-"+id).remove();
+                $("#mod-row-"+name).remove();
             } else {
                 // todo: use styled alert instead of this
-                if (confirm(response['message'])) {
-                    // console.log(response['message'].match(/'([^']+)'/)[1]);
-                    window.location.href=response['message'].match(/'([^']+)'/)[1];
+                console.log('error!?');
+                if (confirm(response['message']+" Press OK to go to '"+response['bname']+"'")) {
+                    window.location.href="/build?id="+response['bid'];
                 }
             }
         }
         
     }
-    request.open("GET", "./functions/delete-mod.php?id="+id);
+    request.open("GET", "./functions/delete-mod.php?name="+name+"&force="+force);
     request.send();
 }
 

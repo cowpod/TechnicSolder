@@ -1,14 +1,15 @@
 function remove_box(id,name) {
     $("#mod-name-title").text(name);
     $("#mod-name").text(name);
-    $("#remove-button").attr("onclick","remove("+id+")");
+    $("#remove-button").attr("onclick","remove("+id+",false)");
+    $("#remove-button-force").attr("onclick","remove("+id+",true)");
 }
-function remove(id) {
+function remove(id,force) {
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         $("#mod-row-"+id).remove();
     }
-    request.open("GET", "./functions/delete-modv.php?id="+id);
+    request.open("GET", "./functions/delete-mod.php?id="+id+"&force="+force);
     request.send();
 }
 mn = 1;
