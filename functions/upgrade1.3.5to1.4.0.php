@@ -10,6 +10,10 @@ require_once("./db.php");
 $db=new Db;
 $db->connect();
 
+if (!empty($config['db-type']) && $config['db-type']=='sqlite') {
+    die("<b>This script is only meant to be run when upgrading a 1.3.5 install to 1.4.0</b><br/>(You appear to be running SQLite, which is only supported in 1.4.0!)");
+}
+
 echo "<hr/>Altering table columns<br/>";
 
 // 1.4.0: mod version ranges
