@@ -1394,7 +1394,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                         }
                                     ?></td>
                                     <td><?php
-                                        if (substr($_SESSION['perms'], 1, 1)=="1" && (empty($mod) || $mod['name'] !== "forge")) {
+                                        // todo: we should switch type to be 'loader' instead of 'forge' for loaders.
+                                        if (substr($_SESSION['perms'], 1, 1)=="1" && (empty($mod) || $mod['type'] == "mod" || $mod['type'] == "other")) {
                                             ?>
                                             <button onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo empty($mod)?'missing-'.$build_mod_id:$mod['name'] ?>')" class="btn btn-danger">
                                                 <em class="fas fa-times"></em>
