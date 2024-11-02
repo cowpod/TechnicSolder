@@ -5,6 +5,7 @@ test.toml
 functions/config.php
 functions/cache.json
 db.sqlite
+db.sqlite-journal
 
 # IntelliJ
 .idea/
