@@ -6,12 +6,26 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
 }
 
+if (!empty($config['db-type'])) {
+    die("<b>This script is only meant to be run when upgrading a 1.3.5 install to 1.4.0.</b><br/>You appear to have already run this script (your config has specified 'db-type').");
+}
+
+echo "<hr/>Adding db-type to config<br/>";
+$config_old=$config;
+$config['db-type']='mysql';
+
+// write config
+file_put_contents("./config.php", '<?php return ('.var_export($config,true).') ?>');
+
+// test db
 require_once("./db.php");
 $db=new Db;
-$db->connect();
+$dbres = $db->connect();
 
-if (!empty($config['db-type']) && $config['db-type']=='sqlite') {
-    die("<b>This script is only meant to be run when upgrading a 1.3.5 install to 1.4.0</b><br/>(You appear to be running SQLite, which is only supported in 1.4.0!)");
+if (!$dbres) {
+    // put back old config
+    file_put_contents("./config.php", '<?php return ('.var_export($config_old,true).') ?>');
+    die('DB configuration error. Please check that config.php has all the necessary database values.');
 }
 
 echo "<hr/>Altering table columns<br/>";
