@@ -16,6 +16,12 @@ if (!empty($config['db-type']) && $config['db-type']=='sqlite') {
 
 echo "<hr/>Altering table columns<br/>";
 
+$db->execute("CREATE TABLE metrics (
+name VARCHAR(128) PRIMARY KEY,
+time_stamp INT(64),
+info TEXT");
+// woot woot 64-bit timestamp support
+
 // 1.4.0: mod version ranges
 // naturally, we assume user is using mysql.
 $addtype1=$db->execute("ALTER TABLE mods ADD COLUMN loadertype VARCHAR(32);");

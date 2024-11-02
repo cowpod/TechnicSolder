@@ -88,6 +88,11 @@ $db=new Db;
                             // sqlite: bigtext,varchar => text
                             // int => integer
                             // unsigned doesn't exist.
+                            $sql = "CREATE TABLE metrics (
+                                name TEXT PRIMARY KEY,
+                                time_stamp INTEGER,
+                                info TEXT";
+                            $db->execute($sql);
                             $sql = "CREATE TABLE modpacks (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 name TEXT,
@@ -104,7 +109,7 @@ $db=new Db;
                                 public BOOLEAN,
                                 clients TEXT,
                                 UNIQUE (name));";
-                            $db->query($sql);
+                            $db->execute($sql);
                             $sql = "CREATE TABLE users (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 name TEXT,
@@ -113,13 +118,13 @@ $db=new Db;
                                 perms TEXT,
                                 icon TEXT,
                                 UNIQUE (name));";
-                            $db->query($sql);
+                            $db->execute($sql);
                             $sql = "CREATE TABLE clients (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 name TEXT,
                                 UUID TEXT,
                                 UNIQUE (UUID));";
-                            $db->query($sql);
+                            $db->execute($sql);
                             $sql = "CREATE TABLE builds (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 modpack INTEGER NOT NULL,
@@ -131,7 +136,7 @@ $db=new Db;
                                 mods TEXT,
                                 public BOOLEAN,
                                 clients TEXT);";
-                            $db->query($sql);
+                            $db->execute($sql);
                             $sql = "CREATE TABLE mods (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 name TEXT NOT NULL,
@@ -147,8 +152,13 @@ $db=new Db;
                                 filename TEXT,
                                 type TEXT,
                                 loadertype TEXT);";
-                            $db->query($sql);
+                            $db->execute($sql);
                         } else {
+                            $sql = "CREATE TABLE metrics (
+                                name VARCHAR(128) PRIMARY KEY,
+                                time_stamp int(64),
+                                info TEXT";
+                            $db->execute($sql);
                             $sql = "CREATE TABLE modpacks (
                                 id int(64) AUTO_INCREMENT PRIMARY KEY,
                                 name VARCHAR(128),
@@ -165,7 +175,7 @@ $db=new Db;
                                 public BOOLEAN,
                                 clients LONGTEXT,
                                 UNIQUE (name));";
-                            $db->query($sql);
+                            $db->execute($sql);
                             $sql = "CREATE TABLE users (
                                 id int(8) AUTO_INCREMENT PRIMARY KEY,
                                 name VARCHAR(128),
@@ -174,13 +184,13 @@ $db=new Db;
                                 perms VARCHAR(512),
                                 icon LONGTEXT,
                                 UNIQUE (name));";
-                            $db->query($sql);
+                            $db->execute($sql);
                             $sql = "CREATE TABLE clients (
                                 id int(8) AUTO_INCREMENT PRIMARY KEY,
                                 name VARCHAR(128),
                                 UUID VARCHAR(128),
                                 UNIQUE (UUID));";
-                            $db->query($sql);
+                            $db->execute($sql);
                             $sql = "CREATE TABLE builds (
                                 id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                                 modpack INT(6) NOT NULL,
@@ -192,7 +202,7 @@ $db=new Db;
                                 mods VARCHAR(1024),
                                 public BOOLEAN,
                                 clients LONGTEXT);";
-                            $db->query($sql);
+                            $db->execute($sql);
                             $sql = "CREATE TABLE mods (
                                 id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                                 name VARCHAR(128) NOT NULL,
@@ -208,7 +218,7 @@ $db=new Db;
                                 filename VARCHAR(128),
                                 type VARCHAR(128),
                                 loadertype VARCHAR(32));";
-                            $db->query($sql);
+                            $db->execute($sql);
                         }
 
                         $db->disconnect();
