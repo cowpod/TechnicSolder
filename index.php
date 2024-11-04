@@ -134,6 +134,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         <script src="./resources/bootstrap/bootstrap.min.js"></script>
         <script src="./resources/bootstrap/bootstrap-sortable.js"></script>
         <link rel="stylesheet" href="./resources/bootstrap/bootstrap-sortable.css" type="text/css">
+        <link rel="stylesheet" href="./resources/css/global.css" type="text/css">
         <style type="text/css">
             .menu-bars {
                 vertical-align: middle;
@@ -1343,7 +1344,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                     }
 
                                     ?>
-                                <tr <?php if (empty($mod)) { echo 'style="background-color:rgba(255,0,0,0.25);"'; } elseif (!$userModVersionOK || empty($mod['version'])) { echo 'class="table-warning"'; } ?> id="mod-missing-<?php echo $build_mod_id ?>">
+                                <tr <?php if (empty($mod)) { echo 'class="custom-table-error"'; } elseif (!$userModVersionOK || empty($mod['version'])) { echo 'class="table-warning"'; } ?> id="mod-<?php echo empty($mod) ? 'missing-'.$build_mod_id : $build_mod_id ?>">
                                     <td scope="row"><?php
                                     echo empty($mod)?'MISSING':$mod['pretty_name'];
                                     if (empty($mod)) {
