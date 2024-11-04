@@ -1,12 +1,26 @@
 <?php
 header('Content-Type: application/json');
 session_start();
-$config = require("config.php");
 
 if (substr($_SESSION['perms'], 5, 1)!=="1") {
     echo '{"status":"error","message":"Insufficient permission!"}';
     echo $_SESSION['perms'];
     exit();
+}
+
+if (!isset($_POST['version'])) {
+    die('version missing!');
+}
+if (!isset($_POST['mcversion'])) {
+    die('mcversion missing!');
+}
+if (!isset($_POST['file'])) {
+    die('file missing!');
+}
+if (!isset($_POST['type'])) {
+    die('type missing!');
+} elseif (!in_array($_POST['type'], ['fabric','forge','neoforge'])) {
+    die('type is invalid! only accepted are fabric,forge,neoforge')l
 }
 
 $fileName = $_FILES["file"]["name"];
@@ -16,7 +30,7 @@ if (!$fileTmpLoc) {
    // echo '{"status":"error","message":"File is too big! Check your post_max_size
     //(current value '.ini_get('post_max_size').') and upload_max_filesize
     //(current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}';
-    exit();
+    // exit();
 }
 
 global $db;
@@ -26,59 +40,61 @@ if (!isset($db)){
     $db->connect();
 }
 
+$config = require("config.php");
+
 require('slugify.php');
 
-$version = slugify($_POST['version']);
-$mcversion = $_POST['mcversion'];
-if ($mcversion == "1.7.10-1.7.10") {
-    $mcversion = "1.7.10";
+$version = $db->sanitize(slugify($_POST['version']));
+$mcversion = $db->sanitize($_POST['mcversion']);
+$type = $db->sanitize($_POST['type']);
+
+if (is_dir("../forges/modpack-".$version)) {
+    die('{"status":"error","message":"Folder modpack-'.$version.' already exists!"}');
 }
-if (!file_exists("../forges/modpack-".$version)) {
-    mkdir("../forges/modpack-".$version);
-} else {
-    echo '{"status":"error","message":"Folder modpack-'.$version.' already exists!"}';
-    exit();
-}
+
+mkdir("../forges/modpack-".$version);
 
 if (move_uploaded_file($fileTmpLoc, "../forges/modpack-".$version."/modpack.jar")) {
     $zip = new ZipArchive();
     if ($zip->open("../forges/forge-".$version.".zip", ZIPARCHIVE::CREATE) !== true) {
-        echo '{"status":"error","message":"Could not open archive"}';
-        exit();
+        die('{"status":"error","message":"Could not open archive"}');
     }
     $path = "../forges/modpack-".$version."/modpack.jar";
     $zip->addEmptyDir('bin');
     if (is_file($path)) {
-        $zip->addFile($path, "bin/modpack.jar") or die ('{"status":"error","message":"Could not add file to archive"}');
+        $zip->addFile($path, "bin/modpack.jar");
+    } else {
+        $zip->close();
+        die ('{"status":"error","message":"Could not find file to add to archive"}');
     }
     $zip->close();
+
     unlink("../forges/modpack-".$version."/modpack.jar");
     rmdir("../forges/modpack-".$version);
+    
     $md5 = md5_file("../forges/forge-".$version.".zip");
     $url = "http://".$config['host'].$config['dir']."forges/forge-".$version.".zip";
-    $res = $db->execute("INSERT INTO `mods`
-                (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`)
-                VALUES ('forge','Minecraft Forge (Custom)',
+    $insertq = $db->execute("INSERT INTO `mods`
+                (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`)
+                VALUES ('".$type."',
+                        'Custom mod loader',
                         '".$md5."',
                         '".$url."',
-                        'https://minecraftforge.net',
-                        'LexManos',
-                        'Minecraft Forge is a common open source API allowing a broad range of mods to work
-                        cooperatively together. Is allows many mods to be created without them editing the main
-                        Minecraft Code',
+                        '',
+                        '".$config['author']."',
+                        'Custom mod loader',
                         '".$version."',
                         '".$mcversion."',
                         'forge-".$version.".zip',
-                        'forge')"
+                        '".$type."')"
     );
-    if ($res) {
-        echo '{"status":"succ","message":"Mod has been saved."}';
+    if ($insertq) {
+        // echo '{"status":"succ","message":"Mod has been saved."}';
         header("Location: ../modloaders?succ");
     } else {
-        echo '{"status":"error","message":"Mod could not be added to database"}';
+        die('{"status":"error","message":"Mod could not be added to database"}');
     }
 } else {
-    echo '{"status":"error","message":"File download failed."}';
     rmdir("../forges/modpack-".$version);
+    die('{"status":"error","message":"File download failed."}');
 }
-exit();

@@ -1843,10 +1843,10 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             </div>
             <?php if (substr($_SESSION['perms'], 5, 1)=="1") { ?>
             <div class="card">
-                <h2>Upload custom Forge version</h2>
+                <h2>Custom mod loader</h2>
                 <hr>
-                <form action="./functions/custom_forge.php" method="POST" enctype="multipart/form-data">
-                    <input class="form-control" type="text" name="version" placeholder="Forge Version Name" required="">
+                <form action="./functions/custom_modloader.php" method="POST" enctype="multipart/form-data">
+                    <input class="form-control" type="text" name="version" placeholder="Loader version" required="">
                     <br />
                     <input class="form-control" type="text" name="mcversion" placeholder="Minecraft Version" required="">
                     <br />
@@ -1854,8 +1854,14 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <input name="file" accept=".jar" type="file" class="custom-file-input" id="forge" required>
                         <label class="custom-file-label" for="forge">Choose modpack.jar file...</label>
                     </div>
-                    <br />
-                    <br />
+                    <br /><br>
+                    <select name="type">
+                        <option value="forge">Forge</option>
+                        <option value="neoforge">Neoforge</option>
+                        <option value="fabric">Fabric</option>
+                    </select>
+                    <br/>
+                    <br/>
                     <button type="submit" class="btn btn-primary">Upload</button>
                 </form>
             </div>
