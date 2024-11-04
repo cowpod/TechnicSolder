@@ -138,7 +138,7 @@ function add(v,link,mcv,id) {
     $("#button-add-"+id).attr("disabled",true);
     $("#cog-"+id).show();
     var request = new XMLHttpRequest();
-    request.open('GET', './functions/add-forge.php?version='+v+'&link='+link+'&mcversion='+mcv);
+    request.open('GET', './functions/add-modloader.php?type=forge&version='+v+'&dl='+link+'&mcversion='+mcv);
     request.onreadystatechange = function() {
         if (request.readyState == 4) {
             if (request.status == 200) {
