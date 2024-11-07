@@ -90,14 +90,16 @@ if (!empty($_GET['name'])) {
     // remove it from db
     $db->execute("DELETE FROM `mods` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
 
-    if ($mod['type']=='mod' && !(isset($_GET['force']) && $_GET['force']=='true')) {
+    if ($mod['type']=='mod' && (!isset($_GET['force']) || !$_GET['force']=='true')) {
         // check if theres any other mod entries with the same file
-        $mod2q = $db->query("SELECT COUNT(*) as count FROM `mods` WHERE `filename` = '".$mod['filename']."'");
+        $mod2q = $db->query("SELECT COUNT(*) AS count FROM `mods` WHERE `filename` = '".$mod['filename']."'");
         if ($mod2q && sizeof($mod2q)==1 && $mod2q[0]['count']>0) {
             die('{"status":"succ","message":"Mod version deleted from database, but file is still in use by other mod version."}'); // leave file on disk
         }
     } else {
-        unlink("../".$mod['type']."s/".$mod['filename']);
+        if (file_exists("../".$mod['type']."s/".$mod['filename'])) {
+            unlink("../".$mod['type']."s/".$mod['filename']);
+        }
         die('{"status":"succ","message":"Mod version deleted."}');
     }
 }
