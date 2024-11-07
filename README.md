@@ -41,17 +41,17 @@ You should never, _EVER_ use root to do simple tasks, unless you want your compu
 sudo su -
 ``` 
 
-**4. Install Prerequisites**<br />
-This command installs what's known as a LAMP Stack, which includes Apache2, MariaDB, and PHP. Very useful!
+**4. Install Prerequisites (assuming you are using a system with APT)**<br />
+This command installs what's known as a LAMP Stack, which includes Apache2, MariaDB, and PHP.
 ```bash
 apt update
 ```
 Then install the packages
-```
+```bash
 apt -y install mariadb-server apache2 libapache2-mod-php php8.3 php8.3-pdo php8.3-zip libzip-dev
 ```
 ...Or the following if you intend to only use sqlite
-```
+```bash
 apt -y install apache2 libapache2-mod-php php8.3 php8.3-pdo php8.3-zip libzip-dev
 ```
 
@@ -61,7 +61,7 @@ service apache2 restart
 ```
 
 We're now going to test that Apache and PHP are working together. Open up a blank file:
-```
+```bash
 nano /var/www/html/index.php
 ```
 and put the following text, inside:
@@ -89,11 +89,11 @@ If you don't have a file here and it's instead blank, look for 'Configuration Fi
 - For example, ``/usr/local/etc/php`` would become ``/usr/local/etc/php/php.ini``
 
 Now that you have your php.ini path, open it in your editor
-```
+```bash
 nano /usr/local/etc/php/php.ini
 ```
 And uncomment (remove ``;`` at the beginning of the line) the following, or add (without the comments) if a blank file:
-```
+```php
 ;extension=zip
 ;extension=pdo_sqlite
 ;extension=pdo_mysql
@@ -115,26 +115,32 @@ You probably want to remove this file after this test because it could actually 
 ```bash
 rm /var/www/html/index.php
 ```
-**5. Enable RewriteEngine and Configure Apache**<br />
+**5. Enable RewriteEngine, configure apache**<br />
 ```bash
 a2enmod rewrite
 cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/TechnicSolder.conf
+```
+Enable the site
+```bash
 a2ensite TechnicSolder
+```
+Edit site configuration file with nano (or some other editor)
+```bash
 nano /etc/apache2/sites-enabled/TechnicSolder.conf
 ```
 
 Add the following above the `DocumentRoot` line:
-```
+```apache
 ServerName <yourSolderDomainHere>
 ```
 
 Change the `DocumentRoot` line to:
-```
+```apache
 DocumentRoot /var/www/TechnicSolder
 ```
 
 Add this before `</VirtualHost>` close tag:
-```
+```apache
     DirectoryIndex index.php index.html
     <Directory /var/www/TechnicSolder>
         Options Indexes FollowSymLinks MultiViews
@@ -143,7 +149,7 @@ Add this before `</VirtualHost>` close tag:
     </Directory>
 ```
 Save and close the file and restart Apache:
-```
+```bash
 service apache2 restart
 ```
 
@@ -158,12 +164,18 @@ Installation is complete. Now you need to configure TechnicSolder before using i
 
 Here is an incomplete example for nginx configuration. For a complete (but unrelated) example, see [https://nginx.org/en/docs/example.html](https://nginx.org/en/docs/example.html). 
  ```nginx
-location / {
-    try_files   $uri $uri/ /index.php?$query_string;
-    }
+    listen 80; # for https, see https://nginx.org/en/docs/http/configuring_https_servers.html
 
-location /api/ {
-    try_files   $uri $uri/ /api/index.php?$query_string;
+    root /var/www/html;
+
+    client_max_body_size 1G;
+
+    location / {
+        try_files   $uri $uri/ /index.php?$query_string;
+        }
+
+    location /api/ {
+        try_files   $uri $uri/ /api/index.php?$query_string;
     }
 
     location ~* \.php$ {
@@ -173,6 +185,8 @@ location /api/ {
         include                         fcgi.conf;
         fastcgi_param PATH_INFO         $fastcgi_path_info;
         fastcgi_param SCRIPT_FILENAME   $document_root$fastcgi_script_name;
+        fastcgi_request_buffering off;
+        fastcgi_max_temp_file_size 0;
     }
 
     location ~ /\.ht {
@@ -183,15 +197,16 @@ location /api/ {
         return 403;
     }
 
-# block access to sqlite database file
-location = ~* /db\.sqlite$ {
-            deny all;
-}
-error_page 403 /403.html;
+    # block access to sqlite database file
+    location = ~* /db\.sqlite$ {
+                deny all;
+    }
+    error_page 403 /403.html;
 
-location ~* \.(?:ico|css|js|jpe?g|JPG|png|svg|woff)$ {
-        expires 365d;
-}
+    location ~* \.(?:ico|css|js|jpe?g|JPG|png|svg|woff)$ {
+            expires 365d;
+    }
+
  ```
 # Configuration
 **Configure MySQL** (not applicable if you are using SQLite)
@@ -200,7 +215,7 @@ mysql
 ```
 Login with your password you set earlier. <br />
 Create new user
-```MYSQL
+```sql
 CREATE USER 'solder'@'localhost' IDENTIFIED BY 'secret';
 ```
 > **NOTE: By writing *IDENTIFIED BY 'secret'* you set your password. Dont use *secret***
@@ -209,7 +224,7 @@ CREATE USER 'solder'@'localhost' IDENTIFIED BY 'secret';
 
 Create database solder and grant user *solder* access to it.
 
-```MYSQL
+```sql
 CREATE DATABASE solder;
 GRANT ALL ON solder.* TO 'solder'@'localhost';
 FLUSH PRIVILEGES;
@@ -229,8 +244,10 @@ The final step is to set your Solder URL in Solder Configuration (In your https:
 That's it. You have successfully installed and configured TechnicSolder. It's ready to use!
 
 # Updating
+1. PHP
+- Install/update to PHP8.3, and install+enable PHP8.3-PDO and PHP8.3-ZIP. See Installation above for  details.
 
-1. Files/folders
+2. Files/folders
 
 - If you originally used `git clone` to get these files:
     - Simply run `git pull` in the cloned directory.
@@ -240,6 +257,21 @@ That's it. You have successfully installed and configured TechnicSolder. It's re
     - Re-upload the new TechnicSolder files. 
     - Then move config.php back to functions.
 
-2. Database
+3. Database
 - If you were previously on v1.3.4, open `http[s]://[your host name]/functions/upgrade1.3.5to1.4.0.php` in your web browser. 
 - If you are on a version before 1.3.4, first update to v1.3.4, and then 1.4.0.
+
+# Upload larger files > 1GB
+
+This is a fairy simple process but can become complicated with nginx and apache2. Nextcloud has a great guide on this [here](https://docs.nextcloud.com/server/stable/admin_manual/configuration_files/big_file_upload_configuration.html).
+
+Essentially, you'll want to update PHP's `.user.ini` file to something higher.
+```php
+upload_max_filesize=10G  
+post_max_size=10G 
+```
+
+And then relevant settings in nginx/apache2, eg.
+```nginx
+client_max_body_size 10G;
+```
