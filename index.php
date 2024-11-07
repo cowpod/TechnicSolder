@@ -435,7 +435,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 if ($cacheq && !empty($cacheq[0]) && !empty($cacheq[0]['info'])) {
                                     $info = json_decode(base64_decode($cacheq[0]['info']), true);
                                 }
-                                elseif ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
+                                elseif (@$info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
                                     $time = time()+1800;
                                     $info_data = base64_encode(json_encode($info));
 
@@ -870,7 +870,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     if ($cacheq && !empty($cacheq[0]) && !empty($cacheq[0]['info'])) {
                         $info = json_decode(base64_decode($cacheq[0]['info']),true);
                     }
-                    elseif ($info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
+                    elseif (@$info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
                         $time = time()+1800;
                         $info_data = base64_encode(json_encode($info));
                         if (!empty($config['db-type']) && $config['db-type']=='sqlite') {
