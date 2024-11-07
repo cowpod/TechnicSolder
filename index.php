@@ -1100,13 +1100,14 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             ?>
                         </select>
                         <br />
-                        <select required="" name='build' id="buildlist" class="form-control">
+                        <select id="buildlist" required="" name='build' class="form-control">
                         </select>
                         <br />
                         <input pattern="^[a-zA-Z0-9.-]+$" type="text" name="newname" id="newname" required class="form-control" placeholder="New Build Name">
                         <span id="warn_newname" style="display: none" class="text-danger">Build with this name already exists.</span>
                         <br />
-                        <button type="submit" id="copybutton" name="submit" value="copy" class="btn btn-primary">Copy</button>
+                        <button type="submit" id="copybutton" name="submit" value="copy" class="btn btn-primary">Copy</button> 
+                        <button id="copylatestbutton" class="btn btn-primary" onclick="copylatest()">Copy latest</button>
                     </form>
                 </div>
             <?php } ?>
