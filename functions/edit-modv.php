@@ -25,13 +25,15 @@ if ($result) {
     assert(sizeof($result)==1);
     $mod = $result[0];
 }
+$url = isset($_POST['url']) ? $_POST['url'] : '';
+
 $db->execute("UPDATE `mods`
     SET link='".    $db->sanitize($_POST['link'])."',"
     ."author ='".   $db->sanitize($_POST['author'])."',"
     ."donlink='".   $db->sanitize($_POST['donlink'])."',"
     ."version='".   $db->sanitize($_POST['version'])."',"
     ."mcversion='". $db->sanitize($_POST['mcversion'])."',"
-    ."url='".       $db->sanitize($_POST['url'])."',"
+    ."url='".       $db->sanitize($url)."',"
     ."md5='".       $db->sanitize($_POST['md5'])."',"
     ."loadertype='".$db->sanitize($_POST['loadertype'])."'"
     ."WHERE id=".     $db->sanitize($_GET['id'])
