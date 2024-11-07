@@ -13,7 +13,22 @@
 
 TechnicSolder was originaly developed by Technic using the Laravel Framework. However, the application is difficult to install and use. Technic Solder - Solder.cf by TheGameSpider runs on pure PHP with zip and MySQL extensions and it's very easy to use. To install, you just need to install zip extension, setup MySQL database and download Solder to your server (No composer needed). And the usage is even easier! Just Drag n' Drop your mods.
 
-## Installation and configuration (without SSH/CLI access)
+## Docker installation (requires Docker and SSH access)
+
+[Image details on docker hub](https://hub.docker.com/cowpod/technicsolder)
+
+On the remote machine,
+
+Create volume (persistent storage)
+```bash
+docker volume create technicsolder_data
+```
+Run container in background
+```bash
+docker run --detach -p 80:80 -v /Users/henry/Documents/Projects/TechnicSolder:/var/www/html php:apache-bullseye sh -c 'a2enmod rewrite; apt update; apt install libzip-dev -y;docker-php-ext-install zip; docker-php-ext-install pdo; docker-php-ext-enable zip; docker-php-ext-enable pdo; apache2-foreground'
+```
+
+## Generic installation and configuration (without SSH/CLI access)
 If you are using a shared host, or for some reason don't have access to the command-line interface, the general set-up is as follows. This assumes you'll be using something like cPanel.
 
 - Set PHP version to 8.3. 
@@ -41,8 +56,9 @@ You should never, _EVER_ use root to do simple tasks, unless you want your compu
 sudo su -
 ``` 
 
-**4. Install Prerequisites (assuming you are using a system with APT)**<br />
-This command installs what's known as a LAMP Stack, which includes Apache2, MariaDB, and PHP.
+**4. Install Prerequisites (Apache-based)**<br />
+This command installs what's known as a LAMP Stack, which includes Apache2, MariaDB, and PHP.\
+Note: the name of packages may vary depending on your Linux distribution.
 ```bash
 apt update
 ```
@@ -115,7 +131,7 @@ You probably want to remove this file after this test because it could actually 
 ```bash
 rm /var/www/html/index.php
 ```
-**5. Enable RewriteEngine, configure apache**<br />
+**5. Enable RewriteEngine, Configure Apache**<br />
 ```bash
 a2enmod rewrite
 cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/TechnicSolder.conf
@@ -160,13 +176,13 @@ git clone https://github.com/TheGameSpider/TechnicSolder.git TechnicSolder
 ```
 Installation is complete. Now you need to configure TechnicSolder before using it
 
-**If you are using nginx:**  
+### If you are using nginx
 
 Here is an incomplete example for nginx configuration. For a complete (but unrelated) example, see [https://nginx.org/en/docs/example.html](https://nginx.org/en/docs/example.html). 
  ```nginx
     listen 80; # for https, see https://nginx.org/en/docs/http/configuring_https_servers.html
 
-    root /var/www/html;
+    root /var/www/TechnicSolder;
 
     client_max_body_size 1G;
 
@@ -208,6 +224,9 @@ Here is an incomplete example for nginx configuration. For a complete (but unrel
     }
 
  ```
+
+**You will also need to configure a PHP server seperately, eg. PHP-FPM, and make it available at `/run/php/php8.3-fpm.sock` or update the nginx configuration accordingly.**
+
 # Configuration
 **Configure MySQL** (not applicable if you are using SQLite)
 ```bash
@@ -252,10 +271,10 @@ That's it. You have successfully installed and configured TechnicSolder. It's re
 - If you originally used `git clone` to get these files:
     - Simply run `git pull` in the cloned directory.
 - Or if you used some other method like FTP:
-    - Copy functions/config.php, forges, mods, others to a safe location
-    - Delete all TechnicSolder-related files and folders in the location you installed TechnicSolder to. 
-    - Re-upload the new TechnicSolder files. 
-    - Then move config.php back to functions.
+    - Copy `/var/www/TechnicSolder/functions/config.php`, `/var/www/TechnicSolder/forges`, `/var/www/TechnicSolder/mods`,`/var/www/TechnicSolder/others` to a safe location.
+    - Delete folder (and contents) `/var/www/TechnicSolder`
+    - Re-upload new `TechnicSolder` folder to `/var/www/`
+    - Then move config.php back to `/var/www/TechnicSolder/functions/`
 
 3. Database
 - If you were previously on v1.3.4, open `http[s]://[your host name]/functions/upgrade1.3.5to1.4.0.php` in your web browser. 
