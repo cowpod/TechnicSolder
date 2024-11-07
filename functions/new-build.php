@@ -24,7 +24,7 @@ $db=new Db;
 $db->connect();
 
 if ($_GET['type']=="update") {
-    $db->execute("INSERT INTO builds(`name`,`minecraft`,`java`,`mods`,`modpack`,`public`) SELECT `name`,`minecraft`,`java`,`mods`,`modpack`,`public` FROM `builds` WHERE `modpack` = '".$db->sanitize($_GET['id'])."' ORDER BY `id` DESC LIMIT 1");
+    $db->execute("INSERT INTO builds(`name`,`minecraft`,`java`,`mods`,`modpack`,`public`,`loadertype`) SELECT `name`,`minecraft`,`java`,`mods`,`modpack`,`public`,`loadertype` FROM `builds` WHERE `modpack` = '".$db->sanitize($_GET['id'])."' ORDER BY `id` DESC LIMIT 1");
     $db->execute("UPDATE `builds` SET `name` = '".$db->sanitize($_GET['name'])."' WHERE `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC LIMIT 1");
     $db->execute("UPDATE `builds` SET `public` = 0 WHERE `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC LIMIT 1");
 } else {
