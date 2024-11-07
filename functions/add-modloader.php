@@ -72,7 +72,7 @@ if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_con
             '".$url."', 
             '".$type_links[$type]."', 
             '".$type_authors[$type]."', 
-            '".$type_descriptions."', 
+            '".$type_descriptions[$type]."', 
             '".$version."', 
             '".$mcversion."', 
             'forge-".$version.".zip', 
