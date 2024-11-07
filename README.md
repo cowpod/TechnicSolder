@@ -235,7 +235,7 @@ That's it. You have successfully installed and configured TechnicSolder. It's re
 - If you originally used `git clone` to get these files:
     - Simply run `git pull` in the cloned directory.
 - Or if you used some other method like FTP:
-    - Copy functions/config.php to a safe location
+    - Copy functions/config.php, forges, mods, others to a safe location
     - Delete all TechnicSolder-related files and folders in the location you installed TechnicSolder to. 
     - Re-upload the new TechnicSolder files. 
     - Then move config.php back to functions.
