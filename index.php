@@ -1789,8 +1789,15 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <tbody id="forge-available">
                         <?php
                         $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge' ORDER BY `id` DESC");
+                        $installed_mc_loaders=[];
                         if ($mods){
                             foreach ($mods as $mod){
+                                if ($mod['loadertype']=='fabric') {
+                                    // fabric versioning is different
+                                    array_push($installed_mc_loaders, $mod['loadertype'].'-'.$mod['mcversion']);
+                                } else {
+                                    array_push($installed_mc_loaders, $mod['loadertype'].'-'.$mod['version']);
+                                }
                             ?>
                             <tr id="mod-row-<?php echo $mod['id'] ?>">
                                 <td scope="row"><?php echo $mod['mcversion'] ?></td>
@@ -1809,11 +1816,23 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             <div class="btn-group btn-group-justified btn-block">
                 <button id="fetch-forge" onclick="fetch()" class="btn btn-primary">Fetch Forge Versions</button>
                 <button disabled id="save" onclick="window.location.reload()" style="display:none;" class="btn btn-success">(Forge) Save and Refresh</button>
-                <button id="fetch-fabric" onclick="fetchfabric()" class="btn btn-warning">Fetch Fabric Versions</button>
+                <button id="fetch-neoforge" onclick="fetch_neoforge()" class="btn btn-primary">Fetch Neoforge Versions</button>
+                <button id="fetch-fabric" onclick="fetchfabric()" class="btn btn-primary">Fetch Fabric Versions</button>
             </div>
 <!--            <button id="fetch" onclick="fetch()" class="btn btn-primary btn-block">Fetch Forge Versions from minecraftforge.net</button>-->
 <!--            <button style="display: none" id="save" onclick="window.location.reload()" class="btn btn-success btn-block">Save Forge Vesions and Refresh</button>-->
             <span id="info" class="text-danger"></span>
+            <div class="card" id="neoforges" style="display:none;">
+                <h2>Neoforge Installer</h2>
+                <form>
+                    <label for="lod">Loader Version</label>
+                    <select id="lod-neoforge" required></select><br>
+<!--                     <label for="ver">Game Version</label>
+                    <select id="ver-neoforge" required></select><br> -->
+                    <button id="sub-button-neoforge" type="button" onclick="download_neoforge()" class="btn btn-primary">Install</button>
+                </form>
+                <span id="sub-button-neoforge-message" style="display:hidden;"></span>
+            </div>
             <div class="card" id="fabrics" style="display:none;">
                 <h2>(α) Fabric Installer</h2>
                 <form>
@@ -1866,6 +1885,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </form>
             </div>
         <?php } ?>
+        <script><?php if (!empty($installed_mc_loaders)) echo 'let installed_mc_loaders=JSON.parse(\''.json_encode($installed_mc_loaders).'\');' ?></script>
             <script src="./resources/js/page_modloaders.js"></script>
         </div>
         <?php
