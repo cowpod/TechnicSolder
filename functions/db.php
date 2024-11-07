@@ -157,8 +157,12 @@ class Db {
 	}
 
 
-	public function sanitize($querystring) {
-		return addslashes(htmlspecialchars($querystring, ENT_QUOTES, 'UTF-8'));
+	public function sanitize($str) {
+		if (empty($str)) {
+			return $str; // allow either NULL or "" values
+		} else {
+			return addslashes(htmlspecialchars($str, ENT_QUOTES, 'UTF-8'));
+		}
 	}
 
 	public function insert_id() {
