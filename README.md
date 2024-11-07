@@ -29,7 +29,7 @@ Now open your server address, ie. ``http://localhost`` if running on a your loca
 - If using SQLite, simply set the type to SQLite.
 - For the Solder API key, go to [https://technicpack.net](https://technicpack.net), log in/create an account, go to my settings/profile, and click on "solder" on the left menu.
 
-# Detailed Installation (SSH/CLI access required)
+## Detailed Installation (SSH/CLI access required)
 > ***Note: If you already have a working web server with PDO and ZIP extensions and enabled rewrite mod, you can [skip to step 6.](#cloning-technicsolder-repository)***
 
 **1. Install Ubuntu Server (https://www.ubuntu.com/download/server)** <br />
@@ -146,52 +146,53 @@ Save and close the file and restart Apache:
 ```
 service apache2 restart
 ```
-## Cloning TechnicSolder repository
+
 **6. Clone TechnicSolder repository** 
 ```bash
 cd /var/www/
 git clone https://github.com/TheGameSpider/TechnicSolder.git TechnicSolder
 ```
-Installation is complete. Now you need to configure TechnicSolder before using it.
-> **If you are using nginx:**  
-> *here is an example for nginx configuration*
-> ```nginx
-> 	location / {
->         try_files   $uri $uri/ /index.php?$query_string;
->         }
->
-> 	location /api/ {
->         try_files   $uri $uri/ /api/index.php?$query_string;
->         }
->
->     location ~* \.php$ {
->             fastcgi_pass                    unix:/run/php/php8.3-fpm.sock;
->             fastcgi_index                   index.php;
->             fastcgi_split_path_info         ^(.+\.php)(.*)$;
->             include                         fcgi.conf;
->             fastcgi_param PATH_INFO         $fastcgi_path_info;
->             fastcgi_param SCRIPT_FILENAME   $document_root$fastcgi_script_name;
->     }
->
->     location ~ /\.ht {
->             deny all;
->     }
->
->     location ~ .*/\. {
->             return 403;
->     }
->
->    # block access to sqlite database file
->    location = ~* /db\.sqlite$ {
->             deny all;
->    }>
+Installation is complete. Now you need to configure TechnicSolder before using it
 
->     error_page 403 /403.html;
->     
->     location ~* \.(?:ico|css|js|jpe?g|JPG|png|svg|woff)$ {
->             expires 365d;
-> 	}
-> ```
+**If you are using nginx:**  
+
+Here is an incomplete example for nginx configuration. For a complete (but unrelated) example, see [https://nginx.org/en/docs/example.html](https://nginx.org/en/docs/example.html). 
+ ```nginx
+location / {
+    try_files   $uri $uri/ /index.php?$query_string;
+    }
+
+location /api/ {
+    try_files   $uri $uri/ /api/index.php?$query_string;
+    }
+
+    location ~* \.php$ {
+        fastcgi_pass                    unix:/run/php/php8.3-fpm.sock;
+        fastcgi_index                   index.php;
+        fastcgi_split_path_info         ^(.+\.php)(.*)$;
+        include                         fcgi.conf;
+        fastcgi_param PATH_INFO         $fastcgi_path_info;
+        fastcgi_param SCRIPT_FILENAME   $document_root$fastcgi_script_name;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    location ~ .*/\. {
+        return 403;
+    }
+
+# block access to sqlite database file
+location = ~* /db\.sqlite$ {
+            deny all;
+}
+error_page 403 /403.html;
+
+location ~* \.(?:ico|css|js|jpe?g|JPG|png|svg|woff)$ {
+        expires 365d;
+}
+ ```
 # Configuration
 **Configure MySQL** (not applicable if you are using SQLite)
 ```bash
@@ -226,3 +227,19 @@ Go to `http://your_server_IP_address` and fill out the form. If you followed the
 The final step is to set your Solder URL in Solder Configuration (In your https://technicpack.net profile)
 
 That's it. You have successfully installed and configured TechnicSolder. It's ready to use!
+
+# Updating
+
+1. Files/folders
+
+- If you originally used `git clone` to get these files:
+    - Simply run `git pull` in the cloned directory.
+- Or if you used some other method like FTP:
+    - Copy functions/config.php to a safe location
+    - Delete all TechnicSolder-related files and folders in the location you installed TechnicSolder to. 
+    - Re-upload the new TechnicSolder files. 
+    - Then move config.php back to functions.
+
+2. Database
+- If you were previously on v1.3.4, open `http[s]://[your host name]/functions/upgrade1.3.5to1.4.0.php` in your web browser. 
+- If you are on a version before 1.3.4, first update to v1.3.4, and then 1.4.0.
