@@ -718,7 +718,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                                 } ?>
                                             </div>
                                         </center>
-                                        <input <?php if (substr($_SESSION['perms'],3,1)!=="1") { echo "disabled"; } ?> type="file" name="fiels" multiple/>
+                                        <input <?php if (substr($_SESSION['perms'],3,1)!=="1") { echo "disabled"; } ?> type="file" name="fiels" accept=".jar" multiple/>
                                     </div>
                                 </form>
                             </div>
@@ -1591,7 +1591,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                     } ?>
                                 </div>
                             </center>
-                            <input <?php if (substr($_SESSION['perms'],3,1)!=="1") { echo "disabled"; } ?> type="file" name="fiels" multiple/>
+                            <input <?php if (substr($_SESSION['perms'],3,1)!=="1") { echo "disabled"; } ?> type="file" name="fiels" accept=".jar" multiple/>
                         </div>
                     </form>
                 </div>
@@ -1896,7 +1896,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                         } ?>
                                     </div>
                                 </center>
-                                <input <?php if (substr($_SESSION['perms'], 3, 1)!=="1") { echo "disabled"; } ?> type="file" name="fiels" multiple accept=".zip" />
+                                <input <?php if (substr($_SESSION['perms'], 3, 1)!=="1") { echo "disabled"; } ?> type="file" name="fiels" accept=".zip" multiple />
                             </div>
                     </form>
                 </div>
