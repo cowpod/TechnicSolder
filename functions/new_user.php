@@ -1,4 +1,6 @@
 <?php
+define('DEFAULT_PERMS', '0000000');
+
 session_start();
 $config = require("./config.php");
 
@@ -30,7 +32,12 @@ require_once("db.php");
 $db=new Db;
 $db->connect();
 
-$sql = $db->execute("INSERT INTO users(`name`,`display_name`,`pass`,`icon`) VALUES('".$_POST['name']."','".$_POST['display_name']."','".$pass."','".$icon."')");
+$sql = $db->execute("INSERT INTO users(`name`,`display_name`,`perms`,`pass`,`icon`) VALUES(
+    '".$_POST['name']."',
+    '".$_POST['display_name']."',
+    '".DEFAULT_PERMS."',
+    '".$pass."',
+    '".$icon."')");
 
 $db->disconnect();
 

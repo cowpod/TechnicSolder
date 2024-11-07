@@ -28,6 +28,7 @@ if (substr($_SESSION['perms'], 1, 1)!=="1") {
     die('Insufficient permission!');
 }
 
+
 $config = require('config.php');
 
 global $db;
@@ -42,7 +43,7 @@ if ($user) {
     assert(sizeof($user)==1);
     $user = $user[0];
 }
-$modslist = explode(',', $user['mods']);
+$modslist = isset($user['mods']) ? explode(',', $user['mods']) : [];
 if (sizeof($modslist)==1 && $modslist[0]==""){
     unset($modslist[0]);
 }
@@ -58,12 +59,23 @@ if ($_POST['forgec']!=="none"||empty($modslist)) {
     }
 }
 
-$ispublic = $_POST['ispublic']=="on" ? 1 : 0;
 
 $minecraft = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_POST['versions']));
 if ($minecraft) {
     assert(sizeof($minecraft)==1);
     $minecraft=$minecraft[0];
+}
+
+$ispublic = $_POST['ispublic']=="on" ? 1 : 0;
+
+$publicq = $db->query("SELECT public FROM builds WHERE id = ".$db->sanitize($_GET['id']));
+error_log('PUBLIC: '.json_encode($publicq));
+if ($publicq && sizeof($publicq)==1 && array_key_exists('public', $publicq[0])) {
+    if ($publicq[0]['public']!=$ispublic) {
+        if (substr($_SESSION['perms'], 2, 1)!=="1") {
+            die('Insufficient permission!');
+        }
+    }
 }
 
 // actually update build

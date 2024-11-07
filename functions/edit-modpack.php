@@ -20,10 +20,8 @@ if (!isset($db)){
     $db->connect();
 }
 
-$ispublic = 0;
-if ($_GET['ispublic']=="on") {
-    $ispublic=1;
-}
+$ispublic = (isset($_POST['ispublic']) && $_POST['ispublic']=="on") ? 1 : 0;
+
 $db->execute("UPDATE `modpacks`
     SET `name` = '".$db->sanitize($_GET['name'])."',
      `display_name` = '".$db->sanitize($_GET['display_name'])."',

@@ -95,7 +95,6 @@ if (isset($_POST['email']) && isset($_POST['password']) && $_POST['email'] !== "
                 header("Location: ".$config['dir']."login?ic");
                 exit();
             }
-
         }
     }
 }
@@ -1040,8 +1039,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <input hidden type="text" name="id" value="<?php echo $_GET['id'] ?>">
                         <br />
                         <div class="btn-group">
-                            <button id="create1" type="submit" name="type" value="new" class="btn btn-primary">Create Empty Build</button>
-                            <button id="create2" type="submit" name="type" value="update" class="btn btn-primary">Update latest version</button>
+                            <button id="create1" type="submit" name="type" value="new" class="btn btn-primary">Create</button>
                         </div>
 
                     </form><br />
@@ -1245,10 +1243,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <label for="memory">Memory (RAM in MB)</label>
                         <input class="form-control" type="number" id="memory" name="memory" value="<?php echo $user['memory'] ?>" min="1024" max="65536" placeholder="2048" step="512">
                         <br />
+                        <?php if (substr($_SESSION['perms'],2,1)=="1") { ?>
                         <div class="custom-control custom-checkbox">
                             <input <?php if ($user['public']==1) echo "checked" ?> type="checkbox" name="ispublic" class="custom-control-input" id="public">
                             <label class="custom-control-label" for="public">Public Build</label>
                         </div><br />
+                        <?php } ?>
                         <div style='display:none' id="wipewarn" class='text-danger'>Build will be wiped.</div>
                         <button type="submit" id="submit-button" class="btn btn-success">Save and Refresh</button>
                     </form>
@@ -1706,10 +1706,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         ?>
         <div class="main">
             <?php
-            $mres = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
-            if ($mres) {
-                assert(sizeof($mres)==1);
-                $mod = $mres[0];
+            if (isset($_GET['id'])) {
+                $mres = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
+                if ($mres) {
+                    assert(sizeof($mres)==1);
+                    $mod = $mres[0];
+                }
             }
             ?>
             <script>document.title = 'Add Mod - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -1813,19 +1815,19 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </tbody>
                 </table>
             </div>
+            <?php if (substr($_SESSION['perms'], 5, 1)=="1") { ?>
             <div class="btn-group btn-group-justified btn-block">
                 <button id="fetch-forge" onclick="fetch()" class="btn btn-primary">Fetch Forge Versions</button>
                 <button disabled id="save" onclick="window.location.reload()" style="display:none;" class="btn btn-success">(Forge) Save and Refresh</button>
                 <button id="fetch-neoforge" onclick="fetch_neoforge()" class="btn btn-primary">Fetch Neoforge Versions</button>
                 <button id="fetch-fabric" onclick="fetchfabric()" class="btn btn-primary">Fetch Fabric Versions</button>
             </div>
-<!--            <button id="fetch" onclick="fetch()" class="btn btn-primary btn-block">Fetch Forge Versions from minecraftforge.net</button>-->
-<!--            <button style="display: none" id="save" onclick="window.location.reload()" class="btn btn-success btn-block">Save Forge Vesions and Refresh</button>-->
+            <?php } ?>
             <span id="info" class="text-danger"></span>
             <div class="card" id="neoforges" style="display:none;">
                 <h2>Neoforge Installer</h2>
                 <form>
-                    <label for="lod">Loader Version</label>
+                    <label for="lod">Version</label>
                     <select id="lod-neoforge" required></select><br>
 <!--                     <label for="ver">Game Version</label>
                     <select id="ver-neoforge" required></select><br> -->
@@ -2312,7 +2314,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm3" disabled>
-                        <label class="custom-control-label" for="perm3">Set recommended build</label>
+                        <label class="custom-control-label" for="perm3">Set public/recommended build</label>
                     </div>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm4" disabled>
@@ -2334,8 +2336,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <h2>User Picture</h2>
                     <img class="img-thumbnail" style="width: 64px;height: 64px" src="data:image/png;base64,<?php
                     $sql = $db->query("SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
-                    $icon = ($sql);
-                    echo $icon['icon'];
+                    if ($sql && sizeof($sql)>=1) {
+                        $icon = $sql[0];
+                        echo $icon['icon'];
+                    } else {
+                        error_log("failed to get icon for name='".$_SESSION['user']."'");
+                    }
                      ?>">
                      <br/>
                      <h3>Change Icon</h3>
@@ -2471,7 +2477,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             </div>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="perm3">
-                                <label class="custom-control-label" for="perm3">Set recommended build</label>
+                                <label class="custom-control-label" for="perm3">Set public/recommended build</label>
                             </div>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="perm4">

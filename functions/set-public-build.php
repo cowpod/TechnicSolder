@@ -11,7 +11,7 @@ if (empty($_GET['ispublic'])) {
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
-if (substr($_SESSION['perms'], 1, 1)!=="1") {
+if (substr($_SESSION['perms'], 2, 1)!=="1") {
     die('{"status":"error","message":"Insufficient permission!"}');
 }
 

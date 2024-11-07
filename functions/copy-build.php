@@ -28,9 +28,9 @@ if ($sql) {
     assert(sizeof($sql)==1);
     $name = $sql[0];
 }
-echo $name['name'];
+
 if (substr($_SESSION['perms'], 1, 1)!=="1") {
-    echo 'Insufficient permission!';
+    echo '"{"status":"error","message":"Insufficient permission!"}';
     exit();
 }
 $db->execute("INSERT INTO builds(`name`,`minecraft`,`java`,`mods`,`modpack`)

@@ -1,9 +1,10 @@
 // var builds = "<?php echo addslashes(json_encode($mpab)) ?>";
 // var sbn = "<?php echo addslashes(json_encode($sbn)) ?>";
-var bd = JSON.parse(builds);
-var sbna = JSON.parse(sbn);
+var bd = (builds && builds.length>=0) ? JSON.parse(builds) : '{}';
+var sbna =(sbn && sbn.length>=0) ? JSON.parse(sbn) : '{}';
 console.log(sbna);
-$("#mplist").change(function() {
+
+function fillBuildlist() {
     $("#buildlist").children().each(function(){this.remove();});
     Object.keys(bd).forEach(function(element){
 
@@ -11,7 +12,11 @@ $("#mplist").change(function() {
             $("#buildlist").append("<option value='"+bd[element]['id']+"'>"+bd[element]['mpname']+" - "+bd[element]['name']+"</option>")
         }
     });
+}
+$("#mplist").change(function() {
+    fillBuildlist();
 });
+
 $("#newbname").on("keyup",function(){
     if (sbna.indexOf($("#newbname").val())==false) {
         $("#newbname").addClass("is-invalid");
@@ -139,4 +144,12 @@ function set_recommended(id) {
     };
     request.open("GET", "./functions/set-recommended.php?id="+id);
     request.send();
+}
+
+function copylatest() {
+    if ($('#mplist').prop('selectedIndex', 1)) {
+        if (fillBuildlist()) {
+            $('#buildlist').prop('selectedIndex', 0);
+        }
+    }
 }
