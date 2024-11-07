@@ -80,9 +80,10 @@ if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_con
             '".$type."'
         )
     ");
+    $id=$db->insert_id();
 
     if ($res) {
-        echo '{"status":"succ","message":"Mod has been saved."}';
+        echo '{"status":"succ","message":"Mod has been saved.", "id":"'.$id.'"}';
     } else {
         echo '{"status":"error","message":"Mod could not be added to database"}';
     }
