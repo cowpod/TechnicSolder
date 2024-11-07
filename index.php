@@ -64,12 +64,16 @@ if (isset($_POST['email']) && isset($_POST['password']) && $_POST['email'] !== "
             $_SESSION['name'] = $config['author'];
             $_SESSION['perms'] = "1111111";
         } else {
-            $user = $db->query("SELECT * FROM `users` WHERE `name` = '". addslashes($_POST['email']) ."'");
-            $user = ($user);
-            if ($user['pass']==$_POST['password']) {
-                $_SESSION['user'] = $_POST['email'];
-                $_SESSION['name'] = $user['display_name'];
-                $_SESSION['perms'] = $user['perms'];
+            $userq = $db->query("SELECT * FROM `users` WHERE `name` = '". addslashes($_POST['email']) ."'");
+            if ($userq && sizeof($userq)>=1 && $user=$userq[0]) {
+                if ($user['pass']==$_POST['password']) {
+                    $_SESSION['user'] = $_POST['email'];
+                    $_SESSION['name'] = $user['display_name'];
+                    $_SESSION['perms'] = $user['perms'];
+                } else {
+                    header("Location: ".$config['dir']."login?ic");
+                    exit();
+                }
             } else {
                 header("Location: ".$config['dir']."login?ic");
                 exit();
@@ -83,14 +87,18 @@ if (isset($_POST['email']) && isset($_POST['password']) && $_POST['email'] !== "
             $_SESSION['name'] = $config['author'];
             $_SESSION['perms'] = "1111111";
         } else {
-            $user = $db->query("SELECT * FROM `users` WHERE `name` = '". addslashes($_POST['email']) ."'");
-            $user = ($user);
-            if (password_verify($_POST['password'], $user['pass'])) {
-            // OLD PASSWORD AUTH METHOD (INSECURE):
-            //if ($user['pass']==hash("sha256",$_POST['password']."Solder.cf")) {
-                $_SESSION['user'] = $_POST['email'];
-                $_SESSION['name'] = $user['display_name'];
-                $_SESSION['perms'] = $user['perms'];
+            $userq = $db->query("SELECT * FROM `users` WHERE `name` = '". addslashes($_POST['email']) ."'");
+            if ($userq && sizeof($userq)>=1 && $user=$userq[0]) {
+                if (password_verify($_POST['password'], $user['pass'])) {
+                // OLD PASSWORD AUTH METHOD (INSECURE):
+                //if ($user['pass']==hash("sha256",$_POST['password']."Solder.cf")) {
+                    $_SESSION['user'] = $_POST['email'];
+                    $_SESSION['name'] = $user['display_name'];
+                    $_SESSION['perms'] = $user['perms'];
+                } else {
+                    header("Location: ".$config['dir']."login?ic");
+                    exit();
+                }
             } else {
                 header("Location: ".$config['dir']."login?ic");
                 exit();
@@ -374,8 +382,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 <?php if ($_SESSION['user']!==$config['mail']) { ?>
                 <img class="img-thumbnail" style="width: 40px;height: 40px" src="data:image/png;base64,<?php
                         $sql = $db->query("SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
-                        $icon = ($sql);
-                        echo $icon['icon'];
+                        if ($sql && sizeof($sql)>=1) {
+                            $icon = $sql[0];
+                            echo $icon['icon'];
+                        } else {
+                            error_log("failed to get icon for name='".$_SESSION['user']."'");
+                        }
                          ?>">
                         <?php } ?>
                 <span class="navbar-text"><?php echo $_SESSION['name'] ?> </span>
@@ -1015,7 +1027,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <?php
                     } ?>
                     <?php
-                    $clientlist = explode(',', $modpack['clients']);
+                    $clientlist = isset($modpack['clients']) ? explode(',', $modpack['clients']) : [];
                     foreach ($clients as $client) {
                         ?>
                         <div class="custom-control custom-checkbox">
@@ -1120,7 +1132,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 <td scope="row"><?php echo $user['name'] ?></td>
                                 <td><?php echo $user['minecraft'] ?></td>
                                 <td><?php echo $user['java'] ?></td>
-                                <td><?php echo count(explode(',', $user['mods'])) ?></td>
+                                <td><?php echo isset($user['mods']) ? count(explode(',', $user['mods'])) : '' ?></td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                     <?php if (substr($_SESSION['perms'],1,1)=="1") { ?> 
@@ -1165,8 +1177,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                 </div>
                 <script>
-                    var builds = "<?php echo addslashes(json_encode($mpab)) ?>";
-                    var sbn = "<?php echo addslashes(json_encode($sbn)) ?>";
+                    var builds = "<?php echo isset($mpab) ? addslashes(json_encode($mpab)) : '' ?>";
+                    var sbn = "<?php echo isset($sbn) ? addslashes(json_encode($sbn)) : '' ?>";
                 </script>
                 <script src="./resources/js/page_modpack.js"></script>
             </div>
@@ -1178,7 +1190,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             if ($user && sizeof($user)==1) {
                 $user = $user[0];
             }
-            $modslist = explode(',', $user['mods']);
+            $modslist = isset($user['mods']) ? explode(',', $user['mods']) : [];
             if (empty($modslist[0])){
                 unset($modslist[0]);
             }
@@ -1284,7 +1296,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <?php
                     } ?>
                     <?php
-                    $clientlist = explode(',', $user['clients']);
+                    $clientlist = isset($user['clients']) ? explode(',', $user['clients']) : [];
                     foreach ($clients as $client) {
                         ?>
                         <div class="custom-control custom-checkbox">
