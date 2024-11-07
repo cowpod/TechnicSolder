@@ -233,8 +233,8 @@ var nof = 0;
 var fiq = 0;
 let fetch = ()=> {
     $("#fetch-forge").attr("disabled", true);
-    $("#fetch-fabric").attr("disabled", true);
-    $("#fetch-neoforge").attr("disabled",true);
+    // $("#fetch-fabric").attr("disabled", true);
+    // $("#fetch-neoforge").attr("disabled",true);
     $("#fetch-forge").html("Fetching...<i class='fas fa-cog fa-spin fa-sm'></i>");
     var request = new XMLHttpRequest();
     request.open('GET', './functions/forge-links.php');
@@ -267,8 +267,9 @@ function chf(link,name,id,mc) {
                     $("#forge-table").append('<tr id="forge-'+id+'"><td scope="row">'+mc+'</td><td>'+name+'</td><td><a href="'+link+'">'+link+'</a></td><td><button id="button-add-'+id+'" onclick="add(\''+name+'\',\''+link+'\',\''+mc+'\',\''+id+'\')" class="btn btn-primary btn-sm">Add to Database</button></td><td><em id="cog-'+id+'" style="display:none" class="fas fa-spin fa-cog fa-2x"></em><em id="check-'+id+'" style="display:none" class="text-success fas fa-check fa-2x"></em><em id="times-'+id+'" style="display:none" class="text-danger fas fa-times fa-2x"></em></td></tr>');
                     if (fiq==nof) {
                         $("#fetch-forge").html("Fetch Forge Versions");
-                        $("#fetch-fabric").removeAttr("disabled");
-                        $("#fetch-neoforge").removeAttr("disabled");
+                        // $("#fetch-forge").removeAttr("disabled");
+                        // $("#fetch-fabric").removeAttr("disabled");
+                        // $("#fetch-neoforge").removeAttr("disabled");
                     }
                 }
             }
