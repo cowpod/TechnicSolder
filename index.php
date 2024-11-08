@@ -4,11 +4,13 @@ session_start();
 define('SUPPORTED_JAVA_VERSIONS', [21,20,19,18,17,16,15,14,13,12,11,1.8,1.7,1.6]);
 define('SOLDER_BUILD', '999');
 
-$config=['configured'=>false];
 if (file_exists('./functions/config.php')) {
     $config = include("./functions/config.php");
+} else {
+    $config = ['configured'=>false];
 }
 
+// regardless of config.php existing, configured=>false forces a re-configure.
 if ($config['configured']!==true) {
     header("Location: ".$config['dir']."configure.php");
     exit();
