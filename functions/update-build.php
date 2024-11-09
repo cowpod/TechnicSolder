@@ -68,16 +68,6 @@ if ($minecraft) {
 
 $ispublic = $_POST['ispublic']=="on" ? 1 : 0;
 
-$publicq = $db->query("SELECT public FROM builds WHERE id = ".$db->sanitize($_GET['id']));
-error_log('PUBLIC: '.json_encode($publicq));
-if ($publicq && sizeof($publicq)==1 && array_key_exists('public', $publicq[0])) {
-    if ($publicq[0]['public']!=$ispublic) {
-        if (substr($_SESSION['perms'], 2, 1)!=="1") {
-            die('Insufficient permission!');
-        }
-    }
-}
-
 // actually update build
 $db->execute("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic.", `loadertype` = '".$minecraft['loadertype']."' WHERE `id` = ".$db->sanitize($_GET['id']));
 

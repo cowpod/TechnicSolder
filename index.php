@@ -2325,11 +2325,11 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm2" disabled>
-                        <label class="custom-control-label" for="perm2">Create, delete and edit builds</label>
+                        <label class="custom-control-label" for="perm2">Create, delete, edit, and publish builds</label>
                     </div>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm3" disabled>
-                        <label class="custom-control-label" for="perm3">Set public/recommended build</label>
+                        <label class="custom-control-label" for="perm3">Set recommended build</label>
                     </div>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm4" disabled>
@@ -2488,11 +2488,11 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             </div>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="perm2">
-                                <label class="custom-control-label" for="perm2">Create, delete and edit builds</label>
+                                <label class="custom-control-label" for="perm2">Create, delete, edit, and publish builds</label>
                             </div>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="perm3">
-                                <label class="custom-control-label" for="perm3">Set public/recommended build</label>
+                                <label class="custom-control-label" for="perm3">Set recommended build</label>
                             </div>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="perm4">
