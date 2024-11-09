@@ -1768,7 +1768,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         ?>
         <script>document.title = 'Forge Versions - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
-            <div class="card">
             <div class="modal fade" id="removeMod" tabindex="-1" role="dialog" aria-labelledby="rm" aria-hidden="true">
               <div class="modal-dialog" role="document">
                 <div class="modal-content">
@@ -1789,14 +1788,88 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </div>
               </div>
             </div>
-            <h2>Mod loaders</h2>
-            <?php if (isset($_GET['errfilesize'])) {
-                echo '<span class="text-danger">File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'</span>';
-            } ?>
 
-            <?php if (isset($_GET['succ'])) {
-                echo '<span class="text-success">File has been uploaded.</span>';
-            } ?>
+            <?php if (substr($_SESSION['perms'], 5, 1)=="1") { ?>
+            <div class="btn-group btn-group-justified btn-block">
+                <button id="fetch-forge" onclick="fetch()" class="btn btn-primary mr-1">Show Forge Installer</button>
+                <!-- <button disabled id="save" onclick="window.location.reload()" style="display:none;" class="btn btn-success">(Forge) Save and Refresh</button> -->
+                <button id="fetch-neoforge" onclick="fetch_neoforge()" class="btn btn-primary mr-1">Show Neoforge Installer</button>
+                <button id="fetch-fabric" onclick="fetchfabric()" class="btn btn-primary mr-1">Show Fabric Installer</button>
+            </div>
+            <span id="info" class="text-danger"></span>
+            <div class="card" id="fabrics" style="display:none;">
+                <h2>(α) Fabric Installer</h2>
+                <form>
+                    <label for="lod">Loader Version</label>
+                    <select id="lod"></select><br>
+                    <label for="ver">Game Version</label>
+                    <select id="ver"></select><br>
+                    <button id="sub-button" type="button" onclick="download()" class="btn btn-primary">Install</button>
+                </form>
+            </div>
+            <div class="card" id="neoforges" style="display:none;">
+                <h2>Neoforge Installer</h2>
+                <form>
+                    <label for="lod">Version</label>
+                    <select id="lod-neoforge" required></select><br>
+<!--                     <label for="ver">Game Version</label>
+                    <select id="ver-neoforge" required></select><br> -->
+                    <button id="sub-button-neoforge" type="button" onclick="download_neoforge()" class="btn btn-primary">Install</button>
+                </form>
+                <span id="sub-button-neoforge-message" style="display:hidden;"></span>
+            </div>
+            <div class="card" id="fetched-mods" style="display: none">
+                <h2>Available Forge Versions</h2>
+                <table class="table table-striped table-responsive">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width:10%">Minecraft</th>
+                            <th scope="col" style="width:15%">Forge Version</th>
+                            <th scope="col" style="width:55%">Link</th>
+                            <th scope="col" style="width:15%"></th>
+                            <th scope="col" style="width:5%"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="forge-table">
+
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>Upload custom mod loader</h2>
+                <hr>
+                <form action="./functions/custom_modloader.php" method="POST" enctype="multipart/form-data">
+                    <input class="form-control" type="text" name="version" placeholder="Loader version" required="">
+                    <br />
+                    <input class="form-control" type="text" name="mcversion" placeholder="Minecraft Version" required="">
+                    <br />
+                    <div class="custom-file">
+                        <input name="file" accept=".jar" type="file" class="custom-file-input" id="forge" required>
+                        <label class="custom-file-label" for="forge">Choose modpack.jar file...</label>
+                    </div>
+                    <br /><br>
+                    <select name="type">
+                        <option value="forge">Forge</option>
+                        <option value="neoforge">Neoforge</option>
+                        <option value="fabric">Fabric</option>
+                    </select>
+                    <br/>
+                    <br/>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </form>
+            </div>
+            <?php } ?>
+
+            <div class="card">
+                <h2>Mod loaders</h2>
+                <?php if (isset($_GET['errfilesize'])) {
+                    echo '<span class="text-danger">File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'</span>';
+                } ?>
+
+                <?php if (isset($_GET['succ'])) {
+                    echo '<span class="text-success">File has been uploaded.</span>';
+                } ?>
 
                 <table class="table table-striped sortable">
                     <thead>
@@ -1835,87 +1908,16 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </tbody>
                 </table>
             </div>
-            <?php if (substr($_SESSION['perms'], 5, 1)=="1") { ?>
-            <div class="btn-group btn-group-justified btn-block">
-                <button id="fetch-forge" onclick="fetch()" class="btn btn-primary">Fetch Forge Versions</button>
-                <button disabled id="save" onclick="window.location.reload()" style="display:none;" class="btn btn-success">(Forge) Save and Refresh</button>
-                <button id="fetch-neoforge" onclick="fetch_neoforge()" class="btn btn-primary">Fetch Neoforge Versions</button>
-                <button id="fetch-fabric" onclick="fetchfabric()" class="btn btn-primary">Fetch Fabric Versions</button>
-            </div>
-            <?php } ?>
-            <span id="info" class="text-danger"></span>
-            <div class="card" id="neoforges" style="display:none;">
-                <h2>Neoforge Installer</h2>
-                <form>
-                    <label for="lod">Version</label>
-                    <select id="lod-neoforge" required></select><br>
-<!--                     <label for="ver">Game Version</label>
-                    <select id="ver-neoforge" required></select><br> -->
-                    <button id="sub-button-neoforge" type="button" onclick="download_neoforge()" class="btn btn-primary">Install</button>
-                </form>
-                <span id="sub-button-neoforge-message" style="display:hidden;"></span>
-            </div>
-            <div class="card" id="fabrics" style="display:none;">
-                <h2>(α) Fabric Installer</h2>
-                <form>
-                    <label for="lod">Loader Version</label>
-                    <select id="lod"></select><br>
-                    <label for="ver">Game Version</label>
-                    <select id="ver"></select><br>
-                    <button id="sub-button" type="button" onclick="download()" class="btn btn-primary">Install</button>
-                </form>
-            </div>
-            <div class="card" id="fetched-mods" style="display: none">
-                <h2>Available Forge Versions</h2>
-                <table class="table table-striped table-responsive">
-                    <thead>
-                        <tr>
-                            <th scope="col" style="width:10%">Minecraft</th>
-                            <th scope="col" style="width:15%">Forge Version</th>
-                            <th scope="col" style="width:55%">Link</th>
-                            <th scope="col" style="width:15%"></th>
-                            <th scope="col" style="width:5%"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="forge-table">
 
-                    </tbody>
-                </table>
-            </div>
-            <?php if (substr($_SESSION['perms'], 5, 1)=="1") { ?>
-            <div class="card">
-                <h2>Custom mod loader</h2>
-                <hr>
-                <form action="./functions/custom_modloader.php" method="POST" enctype="multipart/form-data">
-                    <input class="form-control" type="text" name="version" placeholder="Loader version" required="">
-                    <br />
-                    <input class="form-control" type="text" name="mcversion" placeholder="Minecraft Version" required="">
-                    <br />
-                    <div class="custom-file">
-                        <input name="file" accept=".jar" type="file" class="custom-file-input" id="forge" required>
-                        <label class="custom-file-label" for="forge">Choose modpack.jar file...</label>
-                    </div>
-                    <br /><br>
-                    <select name="type">
-                        <option value="forge">Forge</option>
-                        <option value="neoforge">Neoforge</option>
-                        <option value="fabric">Fabric</option>
-                    </select>
-                    <br/>
-                    <br/>
-                    <button type="submit" class="btn btn-primary">Upload</button>
-                </form>
-            </div>
-        <?php } ?>
-        <script>
-        <?php 
-        if (!empty($installed_mc_loaders)) {
-            echo 'let installed_mc_loaders=JSON.parse(\''.json_encode($installed_mc_loaders).'\');';
-        } else {
-            echo 'let installed_mc_loaders=[];';
-        }
-        ?>
-        </script>
+            <script>
+            <?php
+            if (!empty($installed_mc_loaders)) {
+                echo 'let installed_mc_loaders=JSON.parse(\''.json_encode($installed_mc_loaders).'\');';
+            } else {
+                echo 'let installed_mc_loaders=[];';
+            }
+            ?>
+            </script>
             <script src="./resources/js/page_modloaders.js"></script>
         </div>
         <?php

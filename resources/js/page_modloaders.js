@@ -71,7 +71,7 @@ let fetchfabric = () => {
     $("#fetch-fabric").attr("disabled",true)
     // $("#fetch-forge").attr("disabled",true)
     // $("#fetch-neoforge").attr("disabled",true)
-    $("#fetch-fabric").html("Fetching...<i class='fas fa-cog fa-spin fa-sm'></i>")
+    $("#fetch-fabric").html("Loading...<i class='fas fa-cog fa-spin fa-sm'></i>")
     let versions = new XMLHttpRequest()
     let loaders = new XMLHttpRequest()
     versions.open('GET','https://meta.fabricmc.net/v2/versions/game')
@@ -106,7 +106,7 @@ let fetchfabric = () => {
                         $("#lod")[0].add(ver)
                     }
                 }
-                $("#fetch-fabric").html("Fetch Fabric Versions")
+                $("#fetch-fabric").html("Show Fabric Installer")
                 $("#fabrics")[0].style.display = "flex";
             }
         }
@@ -171,7 +171,7 @@ let fetch_neoforge = () => {
     // $("#fetch-fabric").attr("disabled",true)
     // $("#fetch-forge").attr("disabled",true)
     $("#fetch-neoforge").attr("disabled",true)
-    $("#fetch-neoforge").html("Fetching...<i class='fas fa-cog fa-spin fa-sm'></i>")
+    $("#fetch-neoforge").html("Loading...<i class='fas fa-cog fa-spin fa-sm'></i>")
     let loaders = new XMLHttpRequest()
     loaders.open('GET','https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge')
     loaders.onreadystatechange = () => {
@@ -193,7 +193,7 @@ let fetch_neoforge = () => {
                         }
                     }
                 }
-                $("#fetch-neoforge").html("Fetch Neoforge Versions");
+                $("#fetch-neoforge").html("Show Neoforge Installer");
                 $("#neoforges")[0].style.display = "flex";
             }
         }
@@ -235,7 +235,7 @@ let fetch = ()=> {
     $("#fetch-forge").attr("disabled", true);
     // $("#fetch-fabric").attr("disabled", true);
     // $("#fetch-neoforge").attr("disabled",true);
-    $("#fetch-forge").html("Fetching...<i class='fas fa-cog fa-spin fa-sm'></i>");
+    $("#fetch-forge").html("Loading...<i class='fas fa-cog fa-spin fa-sm'></i>");
     var request = new XMLHttpRequest();
     request.open('GET', './functions/forge-links.php');
     request.onreadystatechange = function() {
@@ -266,7 +266,7 @@ function chf(link,name,id,mc) {
                     $("#fetched-mods").show();
                     $("#forge-table").append('<tr id="forge-'+id+'"><td scope="row">'+mc+'</td><td>'+name+'</td><td><a href="'+link+'">'+link+'</a></td><td><button id="button-add-'+id+'" onclick="add(\''+name+'\',\''+link+'\',\''+mc+'\',\''+id+'\')" class="btn btn-primary btn-sm">Add to Database</button></td><td><em id="cog-'+id+'" style="display:none" class="fas fa-spin fa-cog fa-2x"></em><em id="check-'+id+'" style="display:none" class="text-success fas fa-check fa-2x"></em><em id="times-'+id+'" style="display:none" class="text-danger fas fa-times fa-2x"></em></td></tr>');
                     if (fiq==nof) {
-                        $("#fetch-forge").html("Fetch Forge Versions");
+                        $("#fetch-forge").html("Show Forge Installer");
                         // $("#fetch-forge").removeAttr("disabled");
                         // $("#fetch-fabric").removeAttr("disabled");
                         // $("#fetch-neoforge").removeAttr("disabled");
