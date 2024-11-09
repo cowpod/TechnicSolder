@@ -1320,8 +1320,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <thead>
                                 <tr>
                                     <th scope="col" style="width: 40%" data-defaultsign="AZ">Mod Name</th>
-                                    <th scope="col" style="width: 25%" data-defaultsort="disabled">Version</th>
-                                    <th scope="col" style="width: 15%" data-defaultsort="disabled">Minecraft</th>
+                                    <th scope="col" style="width: 25%" data-defaultsign="_19">Version</th>
+                                    <th scope="col" style="width: 15%" data-defaultsign="_19">Minecraft</th>
                                     <th scope="col" style="width: 15%" data-defaultsort="disabled"></th>
                                     <th scope="col" style="width: 5%" data-defaultsort="disabled"></th>
                                 </tr>
@@ -1803,7 +1803,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <tr>
                             <th scope="col" style="width:30%" data-defaultsign="_19">Minecraft</th>
                             <th scope="col" style="width:25%" data-defaultsign="_19">Version</th>
-                            <th scope="col" style="width:20%" data-defaultsign="_19">Loader Type</th>
+                            <th scope="col" style="width:20%" data-defaultsign="AZ">Loader Type</th>
                             <th scope="col" style="width:20%" data-defaultsort="disabled"></th>
                             <th scope="col" style="width:5%" data-defaultsort="disabled"></th>
                         </tr>
@@ -1969,11 +1969,11 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             </div>
             <div class="card">
                 <h2>Available Files</h2>
-                <table class="table table-striped">
+                <table class="table table-striped sortable">
                     <thead>
                         <tr>
-                            <th style="width:65%" scope="col">File Name</th>
-                            <th style="width:35%" scope="col"></th>
+                            <th scope="col" style="width:65%" data-defaultsign="AZ">File Name</th>
+                            <th scope="col" style="width:35%" data-defaultsort="disabled"></th>
                         </tr>
                     </thead>
                     <tbody id="table-mods">
