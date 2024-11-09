@@ -923,6 +923,62 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     $info=['installs'=>0,'runs'=>0,'ratings'=>0];
                 }
 
+                $totaldownloads = $info['installs'];
+                $totalruns = $info['runs'];
+                $totallikes = $info['ratings'];
+
+                $num_downloads=number_suffix_string($totaldownloads);
+                $downloadsbig = $num_downloads['big'];
+                $downloadssmall = $num_downloads['small'];
+
+                $num_runs=number_suffix_string($totalruns);
+                $runsbig = $num_runs['big'];
+                $runssmall = $num_runs['small'];
+
+                $num_likes=number_suffix_string($totallikes);
+                $likesbig = $num_likes['big'];
+                $likessmall = $num_likes['small'];
+                
+                if (isset($runsbig)) {
+                ?>
+                <div style="margin-left: 0;margin-right: 0" class="row">
+                    <div class="col-4">
+                        <div class="card text-white bg-success" style="padding: 0">
+                            <div class="card-header">Runs</div>
+                            <div class="card-body">
+                                <center>
+                                    <h1 class="display-2 w-lg"><em class="fas fa-play d-icon"></em><span class="w-text"><?php echo $runsbig ?></span></h1>
+                                    <h1 class="display-4 w-sm"><em class="fas fa-play d-icon"></em><?php echo $runssmall ?></h1>
+                                </center>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card bg-info text-white" style="padding: 0">
+                            <div class="card-header">Downloads</div>
+                            <div class="card-body">
+                                <center>
+                                    <h1 class="display-2 w-lg"><em class="d-icon fas fa-download"></em><span class="w-text"><?php echo $downloadsbig ?></span></h1>
+                                    <h1 class="display-4 w-sm"><em class="d-icon fas fa-download"></em><?php echo $downloadssmall ?></h1>
+                                </center>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card bg-primary text-white" style="padding: 0">
+                            <div class="card-header">Likes</div>
+                            <div class="card-body">
+                                <center>
+                                    <h1 class="display-2 w-lg"><em class="fas fa-heart d-icon"></em><span class="w-text"><?php echo $likesbig ?></span></h1>
+                                    <h1 class="display-4 w-sm"><em class="fas fa-heart d-icon"></em><?php echo $likessmall ?></h1>
+                                </center>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php } ?>
+
+                <?php
                 if (substr($_SESSION['perms'],0,1)=="1") { ?>
                 <div class="card">
                     <h2>Edit Modpack</h2>
@@ -964,61 +1020,6 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     </div>
                 </div>
                 <?php
-                $totaldownloads = $info['installs'];
-                $totalruns = $info['runs'];
-                $totallikes = $info['ratings'];
-
-                $num_downloads=number_suffix_string($totaldownloads);
-                $downloadsbig = $num_downloads['big'];
-                $downloadssmall = $num_downloads['small'];
-
-                $num_runs=number_suffix_string($totalruns);
-                $runsbig = $num_runs['big'];
-                $runssmall = $num_runs['small'];
-
-                $num_likes=number_suffix_string($totallikes);
-                $likesbig = $num_likes['big'];
-                $likessmall = $num_likes['small'];
-                
-                if (isset($runsbig)) {
-                ?>
-                    <div style="margin-left: 0;margin-right: 0" class="row">
-                        <div class="col-4">
-                            <div class="card text-white bg-success" style="padding: 0">
-                                <div class="card-header">Runs</div>
-                                <div class="card-body">
-                                    <center>
-                                        <h1 class="display-2 w-lg"><em class="fas fa-play d-icon"></em><span class="w-text"><?php echo $runsbig ?></span></h1>
-                                        <h1 class="display-4 w-sm"><em class="fas fa-play d-icon"></em><?php echo $runssmall ?></h1>
-                                    </center>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="card bg-info text-white" style="padding: 0">
-                                <div class="card-header">Downloads</div>
-                                <div class="card-body">
-                                    <center>
-                                        <h1 class="display-2 w-lg"><em class="d-icon fas fa-download"></em><span class="w-text"><?php echo $downloadsbig ?></span></h1>
-                                        <h1 class="display-4 w-sm"><em class="d-icon fas fa-download"></em><?php echo $downloadssmall ?></h1>
-                                    </center>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="card bg-primary text-white" style="padding: 0">
-                                <div class="card-header">Likes</div>
-                                <div class="card-body">
-                                    <center>
-                                        <h1 class="display-2 w-lg"><em class="fas fa-heart d-icon"></em><span class="w-text"><?php echo $likesbig ?></span></h1>
-                                        <h1 class="display-4 w-sm"><em class="fas fa-heart d-icon"></em><?php echo $likessmall ?></h1>
-                                    </center>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <?php
-                    }
                     if (!$modpack['public']) {
                     $clients = $db->query("SELECT * FROM `clients`");
                 ?>
