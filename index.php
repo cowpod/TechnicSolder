@@ -1752,7 +1752,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <br />
                     <input required class="form-control" type="text" name="md5" placeholder="File md5 Hash"><br />
                     <input required class="form-control" required type="text" name="mcversion" placeholder="Minecraft Version"><br/>
-                    <input required class="form-control" required type="text" name="loadertype" placeholder="Loader type (forge, neoforge, fabric)" style="text-transform: lowercase;"><br />
+                    <select name="loadertype">
+                        <option value="forge">Forge</option>
+                        <option value="neoforge">Neoforge</option>
+                        <option value="fabric">Fabric</option>
+                    </select>
+                    <br /><br />
                     <input type="submit" name="submit" value="Save" class="btn btn-success">
                 </form>
             </div>
