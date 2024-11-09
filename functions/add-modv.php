@@ -22,6 +22,7 @@ if (empty($_POST['mcversion'])) {
 if (empty($_POST['loadertype'])) {
     die("Loader type not specified.");
 }
+
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
 }
@@ -37,16 +38,21 @@ if (!isset($db)){
     $db->connect();
 }
 
+$link = isset($_POST['link']) ? $db->sanitize($_POST['link']) : '';
+$auth = isset($_POST['author']) ? $db->sanitize($_POST['author']) : '';
+$desc = isset($_POST['description']) ? $db->sanitize($_POST['description']) : '';
+$donlink = isset($_POST['donlink']) ? $db->sanitize($_POST['donlink']) : '';
+
 $db->execute("INSERT INTO `mods`
     (`name`, `pretty_name`, `md5`, `url`, `link`, `author`, `donlink`, `description`, `version`, `mcversion`, `type`, `loadertype`) VALUES ( 
         '".$db->sanitize($_POST['name'])."',
         '".$db->sanitize($_POST['pretty_name'])."',
         '".$db->sanitize($_POST['md5'])."',
         '".$db->sanitize($_POST['url'])."',
-        '".$db->sanitize($_POST['link'])."',
-        '".$db->sanitize($_POST['author'])."',
-        '".$db->sanitize($_POST['donlink'])."',
-        '".$db->sanitize($_POST['dscription'])."',
+        '".$link."',
+        '".$auth."',
+        '".$donlink."',
+        '".$desc."',
         '".$db->sanitize($_POST['version'])."',
         '".$db->sanitize($_POST['mcversion'])."',
         'mod',
