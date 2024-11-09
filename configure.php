@@ -51,7 +51,7 @@ if (isset($_POST['host'])) {
         $sql = "CREATE TABLE metrics (
             name TEXT PRIMARY KEY,
             time_stamp INTEGER,
-            info TEXT";
+            info TEXT);";
         $db->execute($sql);
         $sql = "CREATE TABLE modpacks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
