@@ -1902,7 +1902,15 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </form>
             </div>
         <?php } ?>
-        <script><?php if (!empty($installed_mc_loaders)) echo 'let installed_mc_loaders=JSON.parse(\''.json_encode($installed_mc_loaders).'\');' ?></script>
+        <script>
+        <?php 
+        if (!empty($installed_mc_loaders)) {
+            echo 'let installed_mc_loaders=JSON.parse(\''.json_encode($installed_mc_loaders).'\');';
+        } else {
+            echo 'let installed_mc_loaders=[];';
+        }
+        ?>
+        </script>
             <script src="./resources/js/page_modloaders.js"></script>
         </div>
         <?php
