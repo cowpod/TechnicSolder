@@ -199,19 +199,23 @@ document.getElementById("link").addEventListener("keyup", function(event) {
 function get(){
     console.log("working");
     var link = document.getElementById("link").value;
+    if (link=="") {
+        return;
+    }
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             response = request.responseText;
             console.log(response);
-            var code = document.getElementById("responseRaw");
             var responseDIV = document.getElementById("responseR");
             var feedDIV = document.getElementById("feed");
             var solderInfoDIV = document.getElementById("solderInfo");
             var solderDIV = document.getElementById("solder");
-            code.innerHTML = response;
             responseObj = JSON.parse(response);
-            if (responseObj.error=="Modpack does not exist") {
+            if (Object.keys(responseObj).length==0) {
+                    console.log("Could not get data from Technic API");
+                    document.getElementById("response-title").innerHTML ="Could not get data from Technic API";
+            } else if (responseObj.error=="Modpack does not exist") {
                 responseDIV.innerHTML = "<strong>This modpack does not exists</strong>";
             } else {
                 if (responseObj.solder!==null) {
@@ -264,7 +268,7 @@ function get(){
             }
         }
     };
-    request.open("GET", "./functions/platform.php?slug="+link+"&build=<?php echo SOLDER_BUILD ?>");
+    request.open("GET", "./functions/platform.php?slug="+link+"&build="+SOLDER_BUILD);
     request.send();
 }
 

@@ -546,6 +546,12 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             </div>
             <script src="./resources/js/page_login.js"></script>
         </div>
+
+        <!-- script for all uris -->
+        <script>
+            const SOLDER_BUILD = "<?php echo SOLDER_BUILD ?>";
+        </script>
+
         <?php
         if (uri("/dashboard")){
             ?>
@@ -785,7 +791,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         ?>
                     </div>
                     <br />
-                    <?php if ($settings['use_verifier']=="on") { ?>
+                    <?php if (isset($settings['use_verifier']) && $settings['use_verifier']=="on") { ?>
                     <button class="btn btn-secondary" data-toggle="collapse" href="#collapseVerify" role="button" aria-expanded="false" aria-controls="collapseVerify">Solder Verifier</button>
                     <div class="collapse" id="collapseVerify">
                         <br />
@@ -795,8 +801,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                 <button class="<?php if ($_SESSION['dark']=="on") { echo "btn btn-primary";} else { echo "btn btn-outline-secondary";} ?>" onclick="get();" type="button" id="search">Search</button>
                             </div>
                         </div>
-                        <pre class="card border-primary" style="white-space: pre-wrap;width: 100%" id="responseRaw">
-                        </pre>
+                        <!-- <pre class="card border-primary" style="white-space: pre-wrap;width: 100%" id="responseRaw">
+                        </pre> -->
                         <h3 id="response-title"></h3>
                         <div id="response" style="width: 100%">
                             <span id="solder">
