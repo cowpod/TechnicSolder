@@ -7,7 +7,7 @@ define('SOLDER_BUILD', '999');
 if (file_exists('./functions/config.php')) {
     $config = include("./functions/config.php");
 } else {
-    $config = ['configured'=>false];
+    $config = ['configured'=>false, 'dir'=>''];
 }
 
 // regardless of config.php existing, configured=>false forces a re-configure.
