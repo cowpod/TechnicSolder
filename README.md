@@ -13,19 +13,38 @@
 
 TechnicSolder was originaly developed by Technic using the Laravel Framework. However, the application is difficult to install and use. Technic Solder - Solder.cf by TheGameSpider runs on pure PHP with zip and MySQL extensions and it's very easy to use. To install, you just need to install zip extension, setup MySQL database and download Solder to your server (No composer needed). And the usage is even easier! Just Drag n' Drop your mods.
 
-## Docker installation (requires Docker and SSH access)
+## Docker installation (requires Docker + Docker Compose and SSH access)
 
-[Image details on docker hub](https://hub.docker.com/cowpod/technicsolder)
+Easiest method, but requires docker, ssh, and docker-compose on the host machine.
 
-On the remote machine,
+Runs on port 80.
 
-Create volume (persistent storage)
+On the remote machine, as root (or prefix everything with sudo)
+Clone repository to a location of your choice (likely in your home folder)
 ```bash
-docker volume create technicsolder_data
+git clone https://github.com/TheGameSpider/TechnicSolder TechnicSolder
 ```
-Run container in background
+CD to cloned folder
 ```bash
-docker run --detach -p 80:80 -v /Users/henry/Documents/Projects/TechnicSolder:/var/www/html php:apache-bullseye sh -c 'a2enmod rewrite; apt update; apt install libzip-dev -y;docker-php-ext-install zip; docker-php-ext-install pdo; docker-php-ext-enable zip; docker-php-ext-enable pdo; apache2-foreground'
+cd ./TechnicSolder/docker
+```
+Open the compose.yaml file in nano
+```
+nano compose.yaml
+```
+Set `MYSQL_PASSWORD` to something secure, such as
+```
+      - MYSQL_PASSWORD=put_secure_password_here
+```
+Save and exit. 
+
+Now build the image
+```bash
+docker-compose build
+```
+Run it in background.
+```bash
+docker-compose up -d
 ```
 
 ## Generic installation and configuration (without SSH/CLI access)
