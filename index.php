@@ -1708,8 +1708,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
-                    <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                     <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
+                    <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                   </div>
                 </div>
               </div>
@@ -1783,8 +1783,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
-                    <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                     <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
+                    <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                   </div>
                 </div>
               </div>
@@ -2013,8 +2013,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
-                    <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                     <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
+                    <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                   </div>
                 </div>
               </div>
@@ -2122,8 +2122,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
-                        <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                         <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
+                        <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                       </div>
                     </div>
                   </div>
