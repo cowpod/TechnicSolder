@@ -1,8 +1,5 @@
 from php:apache-bullseye
 
-run rm -rf /var/www/html
-add --chown=www-data . /var/www/html
-
 run a2enmod rewrite
 run apt update
 run apt install libzip-dev -y

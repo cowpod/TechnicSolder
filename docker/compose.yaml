@@ -1,6 +1,5 @@
 volumes:
   db:
-  solder:
 
 services:
   db:
@@ -17,12 +16,12 @@ services:
       - default
   app:
     build:
-      context: ../
-      dockerfile: ./docker/app/Dockerfile
+      context: ./app
+      dockerfile: Dockerfile
     restart: always
     ports:
       - 80:80
     volumes:
-      - solder:/var/www/html
+      - ../:/var/www/html
     depends_on:
       - db
