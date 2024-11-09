@@ -150,10 +150,10 @@ class Db {
 		try {
 			$stmt = $this->conn->prepare($querystring);
 			$result = $stmt->execute();
+			return $result;
 		} catch (PDOException $e) {
 		    error_log("db.php: execute(): SQL query exception: ".$e->getMessage());
 		}
-		return $result;
 	}
 
 
