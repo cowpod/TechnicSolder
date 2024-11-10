@@ -2444,18 +2444,20 @@ if (isset($_SESSION['user'])) {
                             <th style="width:30%" scope="col"></th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="users">
                         <?php
                         $users = $db->query("SELECT * FROM `users`");
                         foreach ($users as $user) {
+                            // if editing remember to change in page_admin.js
                             ?>
-                            <tr>
+                            <tr id="user-<?php echo $user['id'] ?>">
                                 <td scope="row"><?php echo $user['display_name'] ?></td>
                                 <td><?php echo $user['name'] ?></td>
                                 <td><div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                        <button onclick="edit('<?php echo $user['name'] ?>','<?php echo $user['display_name'] ?>','<?php echo $user['perms'] ?>')" class="btn btn-primary" data-toggle="modal" data-target="#editUser" >Edit</button>
-                                        <button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeUser" class="btn btn-danger">Remove</button>
-                                    </div></td>
+                                    <font style="display:hidden" id="user-perms-<?php echo $user['id'] ?>" perms="<?php echo $user['perms'] ?>"></font>
+                                    <button id="user-edit-<?php echo $user['id'] ?>" onclick="edit(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>','<?php echo $user['display_name'] ?>')" class="btn btn-primary" data-toggle="modal" data-target="#editUser" >Edit</button>
+                                    <button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeUser" class="btn btn-danger">Remove</button>
+                                </div></td>
                             </tr>
                             <?php
                         }
@@ -2528,8 +2530,9 @@ if (isset($_SESSION['user'])) {
                         </form>
                       </div>
                       <div class="modal-footer">
+                        <font id="newUser-message"></font>
                         <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
-                        <button id="save-button" type="button" class="btn btn-success" disabled="disabled" onclick='new_user($("#email").val(),$("#name").val(),$("#pass1").val())' data-dismiss="modal">Save</button>
+                        <button id="save-button" type="button" class="btn btn-success" disabled="disabled" onclick='new_user($("#email").val(),$("#name").val(),$("#pass1").val())' >Save</button>
                       </div>
                     </div>
                   </div>
@@ -2546,6 +2549,7 @@ if (isset($_SESSION['user'])) {
                       </div>
                       <div class="modal-body">
                         <form>
+                            <input type="hidden" id="edit-user-id">
                             <input readonly id="mail2" placeholder="Email" class="form-control" type="text"><br />
                             <input id="name2" placeholder="Username" class="form-control" type="text"><br />
                             <h4>Permissions</h4>
@@ -2586,8 +2590,9 @@ if (isset($_SESSION['user'])) {
                         </form>
                       </div>
                       <div class="modal-footer">
+                        <font id="editUser-message"></font>
                         <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
-                        <button id="save-button-2" type="button" class="btn btn-success" disabled="disabled" onclick='edit_user($("#mail2").val(),$("#name2").val(),$("#perms").val())' data-dismiss="modal">Save</button>
+                        <button id="save-button-2" type="button" class="btn btn-success" disabled="disabled" onclick='edit_user($("#mail2").val(),$("#name2").val(),$("#perms").val())'>Save</button>
                       </div>
                     </div>
                   </div>

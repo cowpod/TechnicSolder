@@ -3,19 +3,19 @@ session_start();
 $config = require("./config.php");
 
 if (empty($_POST['name'])) {
-    die("Email not specified.");
+    die('{"status":"error","message":"Email not specified."}');
 }
 if (empty($_POST['display_name'])) {
-    die("Name not specified.");
+    die('{"status":"error","message":"Name not specified."}');
 }
 if (empty($_POST['perms'])) {
-    die("perms not specified.");
+    die('{"status":"error","message":"Perms not specified."}');
 }
 if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("Unauthorized request or login session has expired.");
+    die('{"status":"error","message":"Unauthorized request or login session has expired."}');
 }
 if ($_SESSION['user']!==$config['mail']) {
-    die("insufficient permission!");
+    die('{"status":"error","message":"Insufficient permission!"}');
 }
 
 global $db;
@@ -31,8 +31,8 @@ $sql = $db->execute("UPDATE `users`
 );
 
 if ($sql) {
-    echo '<span class="text-success">Saved.</span>';
+    echo '{"status":"succ","message":"Saved."}';
 } else {
-    echo '<span class="text-danger">An error has occurred</span>';
+    echo '{"status":"error","message":"An error has occurred"}';
 }
 exit();

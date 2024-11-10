@@ -5,8 +5,9 @@ function remove(id) {
     request.onreadystatechange = function() {
         if (request.readyState == 4) {
             console.log(request.responseText);
-            $("#info").html(request.responseText + "<br />");
+            // $("#info").html(request.responseText + "<br />");
             // setTimeout(function(){ window.location.reload(); }, 500);
+            $("#user-"+id).remove();
         }
 
     }
@@ -17,10 +18,12 @@ function remove_box(id,name) {
     $("#user-name-title").text(name);
     $("#remove-button").attr("onclick","remove("+id+")");
 }
-function edit(mail,name, perms) {
+function edit(id,mail,name) {
+    let perms = $('#user-perms-'+id).attr('perms');
     $("#save-button-2").attr("disabled", true);
     $("#mail2").val(mail);
     $("#name2").val(name);
+    $("#edit-user-id").val(id);
     if (perms.match("^[01]+$")) {
         $("#perms").val(perms);
     } else {
@@ -76,13 +79,63 @@ function edit_user(mail,name,perms) {
     request.onreadystatechange = function() {
         if (request.readyState == 4) {
             console.log(request.responseText);
-            $("#info").html(request.responseText + "<br />");
-            // setTimeout(function(){ window.location.reload(); }, 500);
+
+            json = JSON.parse(request.responseText);
+            if (json['status']=='succ') {
+                // $("#editUser-message").hide();
+                // $("#editUser-message").html('<span class="text-success"'+json['message'] + "</span><br />");
+                let id=$("#edit-user-id").val()
+                $('#user-perms-'+id).attr('perms',perms);
+                $('#editUser').modal('hide');
+            } else {
+                $("#editUser-message").show();
+                $("#editUser-message").html('<span class="text-danger"'+json['message'] + "</span><br />");
+            }
         }
 
     }
     request.send("name="+mail+"&display_name="+name+"&perms="+perms);
 }
+
+function new_user(email,name,pass) {
+    var request = new XMLHttpRequest();
+    request.open('POST', './functions/new_user.php');
+    request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    request.onreadystatechange = function() {
+        if (request.readyState == 4) {
+            console.log(request.responseText);
+
+            json=JSON.parse(request.responseText);
+            if (json['status']=='succ') {
+                // $("#info").html('<span class="text-success">'+json['message']+"</span><br />");
+                // setTimeout(function(){ window.location.reload(); }, 500);
+
+                // if editing remember to change in index.php
+                let newuserrow = $("<tr>", {
+                    id: "user-"+json['id'], 
+                    html: `<td scope="row">${name}</td>
+                    <td>${email}</td>
+                    <td>
+                        <font style="display:hidden" id="user-perms-${json['id']}" perms="0000000"></font>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                        <button id="user-edit-${json['id']}" onclick="edit(${json['id']},'${email}','${email}')" class="btn btn-primary" data-toggle="modal" data-target="#editUser" >Edit</button>
+                        <button onclick="remove_box(${json['id']},'${email}')" data-toggle="modal" data-target="#removeUser" class="btn btn-danger">Remove</button>
+                        </div>
+                    </td>
+                    `
+                });
+                $('#users').append(newuserrow);
+                $('#newUser').modal('hide');
+            } else {
+                $("#newUser-message").html('<span class="text-danger">'+json['message']+"</span><br />");
+                $("#newUser-message").show();
+            }
+        }
+
+    }
+    request.send("name="+email+"&display_name="+name+"&pass="+pass);
+}
+
 // https://gist.github.com/endel/321925f6cafa25bbfbde
 Number.prototype.pad = function(size) {
   var s = String(this);
@@ -159,21 +212,6 @@ $("#perm7").change(function(){
         $("#save-button-2").attr("disabled", false);
     }
 });
-
-function new_user(email,name,pass) {
-    var request = new XMLHttpRequest();
-    request.open('POST', './functions/new_user.php');
-    request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    request.onreadystatechange = function() {
-        if (request.readyState == 4) {
-            console.log(request.responseText);
-            $("#info").html(request.responseText + "<br />");
-            // setTimeout(function(){ window.location.reload(); }, 500);
-        }
-
-    }
-    request.send("name="+email+"&display_name="+name+"&pass="+pass);
-}
 $("#name2").on("keyup", function() {
     if ($("#name2").val()!=="") {
         $("#name2").addClass("is-valid");
