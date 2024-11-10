@@ -1,3 +1,20 @@
+function validatePassword(password) {
+    const minLength = password.length >= 8;
+    const hasNumber = /[0-9]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (!minLength) {
+        return false;
+    }
+    if (!hasNumber || !hasUpperCase || !hasLowerCase || !hasSpecialChar) {
+        return false;
+    }
+    return true;
+}
+
+
 function remove(id) {
     var request = new XMLHttpRequest();
     request.open('POST', './functions/remove_user.php');
@@ -229,7 +246,7 @@ $("#email").on("keyup", function() {
     if ($("#email").val()!=="") {
         $("#email").addClass("is-valid");
         $("#email").removeClass("is-invalid");
-        if ($("#email").val()!==""&$("#name").val()!==""&$("#pass1").val()!==""&$("#pass2").val()!==""&$("#pass1").val()==$("#pass2").val()) {
+        if ($("#email").val()!==""&&$("#name").val()!==""&&$("#pass1").val()!==""&&$("#pass2").val()!==""&&$("#pass1").val()==$("#pass2").val()) {
             $("#save-button").attr("disabled", false);
         }
     } else {
@@ -242,7 +259,7 @@ $("#name").on("keyup", function() {
     if ($("#name").val()!=="") {
         $("#name").addClass("is-valid");
         $("#name").removeClass("is-invalid");
-        if ($("#email").val()!==""&$("#name").val()!==""&$("#pass1").val()!==""&$("#pass2").val()!==""&$("#pass1").val()==$("#pass2").val()) {
+        if ($("#email").val()!==""&&$("#name").val()!==""&&$("#pass1").val()!==""&&$("#pass2").val()!==""&&$("#pass1").val()==$("#pass2").val()) {
             $("#save-button").attr("disabled", false);
         }
     } else {
@@ -252,10 +269,10 @@ $("#name").on("keyup", function() {
     }
 });
 $("#pass1").on("keyup", function() {
-    if ($("#pass1").val()!=="") {
+    if ($("#pass1").val()!=="" && validatePassword($("#pass1").val())) {
         $("#pass1").addClass("is-valid");
         $("#pass1").removeClass("is-invalid");
-        if ($("#email").val()!==""&$("#name").val()!==""&$("#pass1").val()!==""&$("#pass2").val()!==""&$("#pass1").val()==$("#pass2").val()) {
+        if ($("#email").val()!==""&&$("#name").val()!==""&&$("#pass1").val()!==""&&$("#pass2").val()!==""&&$("#pass1").val()==$("#pass2").val()) {
             $("#save-button").attr("disabled", false);
         }
     } else {
@@ -265,10 +282,10 @@ $("#pass1").on("keyup", function() {
     }
 });
 $("#pass2").on("keyup", function() {
-    if ($("#pass2").val()!==""&$("#pass2").val()==$("#pass1").val()) {
+    if ($("#pass2").val()!==""&&$("#pass2").val()==$("#pass1").val() && validatePassword($("#pass2").val())) {
         $("#pass2").addClass("is-valid");
         $("#pass2").removeClass("is-invalid");
-        if ($("#email").val()!==""&$("#name").val()!==""&$("#pass1").val()!==""&$("#pass2").val()!==""&$("#pass1").val()==$("#pass2").val()) {
+        if ($("#email").val()!==""&&$("#name").val()!==""&&$("#pass1").val()!==""&&$("#pass2").val()!==""&&$("#pass1").val()==$("#pass2").val()) {
             $("#save-button").attr("disabled", false);
         }
     } else {

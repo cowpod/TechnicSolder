@@ -2394,7 +2394,7 @@ if (isset($_SESSION['user'])) {
                      <h2>Change Password</h2>
                      <form method="POST" action="./functions/chpw.php">
                         <input id="pass1" placeholder="Password" class="form-control" type="password" name="pass"><br />
-                        <input id="pass2" placeholder="Password" class="form-control" type="password"><br />
+                        <input id="pass2" placeholder="Confirm Password" class="form-control" type="password"><br />
                         <input class="btn btn-success" type="submit" name="save" id="save-button" value="Save" disabled>
                      </form>
                 </div>
@@ -2530,7 +2530,7 @@ if (isset($_SESSION['user'])) {
                             <input id="email" placeholder="Email" class="form-control" type="email"> <br />
                             <input id="name" placeholder="Username" class="form-control" type="text"><br />
                             <input id="pass1" placeholder="Password" class="form-control" type="password"><br />
-                            <input id="pass2" placeholder="Password" class="form-control" type="password">
+                            <input id="pass2" placeholder="Confirm Password" class="form-control" type="password">
                         </form>
                       </div>
                       <div class="modal-footer">

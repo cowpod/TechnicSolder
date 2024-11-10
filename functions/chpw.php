@@ -16,11 +16,35 @@ if (!isset($config['encrypted'])|| !$config['encrypted']) {
     $pass = password_hash($_POST['pass'], PASSWORD_DEFAULT);
 }
 
+function isStrongPassword($password) {
+    if (strlen($password) < 8) {
+        return false;
+    }
+    if (!preg_match('/[a-z]/', $password)) {
+        return false;
+    }
+    if (!preg_match('/[A-Z]/', $password)) {
+        return false;
+    }
+    if (!preg_match('/[0-9]/', $password)) {
+        return false;
+    }
+
+    if (!preg_match('/[\W_]/', $password)) {
+        return false;
+    }
+    return true;
+}
+
 global $db;
 require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
+}
+
+if (!isStrongPassword($_POST['pass'])) {
+    die("Bad password.");
 }
 
 $sql = $db->execute("UPDATE `users` SET `pass` = '".$pass."' WHERE `name` = '".$_SESSION['user']."'"

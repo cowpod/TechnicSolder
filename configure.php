@@ -316,17 +316,25 @@ if (isset($_POST['host'])) {
                         <input id="dir" class="form-control" type="text" name="dir"
                                placeholder="Install Directory" value="/" required><br />
                     </div>
-                    <button id="save" type="submit" class="btn btn-success btn-block btn-lg">Save</button>
+                    <button id="save" type="submit" class="btn btn-success btn-block btn-lg" disabled>Save</button>
                 </form>
                 <script type="text/javascript">
-                    $(document).ready(function() {
-                        var loc = window.location.pathname;
-                        var dir = loc.substring(0, loc.lastIndexOf('/'));
-                        $("#dir").val(dir + "/");
-                        if ($("#dir").val()=="//") {
-                            $("#dir").val("/");
+                    function validatePassword(password) {
+                        const minLength = password.length >= 8;
+                        const hasNumber = /[0-9]/.test(password);
+                        const hasLowerCase = /[a-z]/.test(password);
+                        const hasUpperCase = /[A-Z]/.test(password);
+                        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+                        if (!minLength) {
+                            return false;
                         }
-                    });
+                        if (!hasNumber || !hasUpperCase || !hasLowerCase || !hasSpecialChar) {
+                            return false;
+                        }
+                        return true;
+                    }
+
                     $("#host").on("keyup", function() {
                         let hostval = $("#host").val();
                         if (hostval.startsWith("https://") || hostval.startsWith("http://")) {
@@ -335,9 +343,29 @@ if (isset($_POST['host'])) {
                             $("#host-warning").hide();
                         }
                     });
+                    $("#pass").on("keyup", function() {
+                        if (validatePassword($("#pass").val())) {
+                            $("#pass").addClass("is-valid");
+                            $("#pass").removeClass("is-invalid");
+                        } else {
+                            $("#pass").addClass("is-invalid");
+                            $("#pass").removeClass("is-valid");
+                            $("#save").attr("disabled", true);
+                        }
+                        if ($("#pass2").val()==$("#pass").val() && validatePassword($("#pass2").val())) {
+                            $("#pass2").addClass("is-valid");
+                            $("#pass2").removeClass("is-invalid");
+                            $("#pass").addClass("is-valid");
+                            $("#pass").removeClass("is-invalid");
+                            $("#save").attr("disabled", false);
+                        } else if($("#pass2").val()!="") {
+                            $("#pass2").addClass("is-invalid");
+                            $("#pass2").removeClass("is-valid");
+                            $("#save").attr("disabled", true);
+                        }
+                    });
                     $("#pass2").on("keyup", function() {
-                        // console.log($("#pass2").val()+"=="+$("#pass").val())
-                        if ($("#pass2").val()==$("#pass").val()) {
+                        if ($("#pass2").val()==$("#pass").val() && validatePassword($("#pass2").val())) {
                             $("#pass2").addClass("is-valid");
                             $("#pass2").removeClass("is-invalid");
                             $("#save").attr("disabled", false);
@@ -389,6 +417,15 @@ if (isset($_POST['host'])) {
                             }
                         }
                         http.send(params);
+                    });
+
+                    $(document).ready(function() {
+                        var loc = window.location.pathname;
+                        var dir = loc.substring(0, loc.lastIndexOf('/'));
+                        $("#dir").val(dir + "/");
+                        if ($("#dir").val()=="//") {
+                            $("#dir").val("/");
+                        }
                     });
                 </script>
             </div>

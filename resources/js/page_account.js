@@ -1,5 +1,21 @@
+function validatePassword(password) {
+    const minLength = password.length >= 8;
+    const hasNumber = /[0-9]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (!minLength) {
+        return false;
+    }
+    if (!hasNumber || !hasUpperCase || !hasLowerCase || !hasSpecialChar) {
+        return false;
+    }
+    return true;
+}
+
 $("#pass1").on("keyup", function() {
-    if ($("#pass1").val()!=="") {
+    if ($("#pass1").val()!=="" && validatePassword($("#pass1").val())) {
         $("#pass1").addClass("is-valid");
         $("#pass1").removeClass("is-invalid");
         if ($("#pass1").val()!==""&&$("#pass2").val()!==""&&$("#pass1").val()==$("#pass2").val()) {
@@ -12,7 +28,7 @@ $("#pass1").on("keyup", function() {
     }
 });
 $("#pass2").on("keyup", function() {
-    if ($("#pass2").val()!==""&$("#pass2").val()==$("#pass1").val()) {
+    if ($("#pass2").val()!==""&$("#pass2").val()==$("#pass1").val() && validatePassword($("#pass2").val())) {
         $("#pass2").addClass("is-valid");
         $("#pass2").removeClass("is-invalid");
         if ($("#pass1").val()!==""&&$("#pass2").val()!==""&&$("#pass1").val()==$("#pass2").val()) {
