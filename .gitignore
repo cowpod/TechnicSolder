@@ -1,12 +1,3 @@
-mods/
-forges/
-others/
-test.toml
-functions/config.php
-functions/cache.json
-db.sqlite
-db.sqlite-journal
-
 # IntelliJ
 .idea/
 
@@ -15,4 +6,13 @@ functions/.DS_Store
 functions/._*
 .DS_Store
 ._*
+
+mods/
+forges/
+others/
+test.toml
+functions/config.php
+functions/cache.json
+db.sqlite
+db.sqlite-journal
 functions/settings.php
