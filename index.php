@@ -2415,15 +2415,20 @@ if (isset($_SESSION['user'])) {
             <script src="./resources/js/page_account.js"></script>
             <?php
         } elseif (uri("/admin")) {
-            if (isset($_POST['dev_builds']) || isset($_POST['use_verifier'])) {
+            if (isset($_POST['bug-submit'])) {
                 if (isset($_POST['dev_builds'])) {
-                    $config['dev_builds']=$_POST['dev_builds'];
+                    $config['dev_builds']="on";
+                } else {
+                    $config['dev_builds']="off";
                 }
                 if (isset($_POST['use_verifier'])) {
-                    $config['use_verifier']=$_POST['use_verifier'];
+                    $config['use_verifier']="on";
+                } else {
+                    $config['use_verifier']="off";
                 }
-
                 file_put_contents('./functions/config.php', '<?php return '.var_export($config, true).'; ?>');
+            } else {
+                error_log('no post data');
             }
 
             ?>
@@ -2471,18 +2476,17 @@ if (isset($_SESSION['user'])) {
                     <hr>
                     <form method="POST">
                         <div class="custom-control custom-switch">
-                            <input <?php if (isset($config['dev_builds']) && $config['dev_builds']=="on") {echo "checked";} if (json_decode($api_version_json, true)['stream']=="Dev") {echo "checked disabled";} ?> type="checkbox" class="custom-control-input" name="dev_builds" id="dev_builds">
+                            <input id="dev_builds" type="checkbox" class="custom-control-input" name="dev_builds" <?php if (isset($config['dev_builds']) && $config['dev_builds']=="on") {echo "checked";} if (json_decode($api_version_json, true)['stream']=="Dev") {echo "checked disabled";} ?> >
                             <label class="custom-control-label" for="dev_builds">Subscribe to dev builds</label>
                         </div>
                         <div class="custom-control custom-switch">
-                            <input <?php if (isset($config['use_verifier']) && $config['use_verifier']=="on") {echo "checked";} ?> type="checkbox" class="custom-control-input" name="use_verifier" id="use_verifier">
+                            <input id="use_verifier" type="checkbox" class="custom-control-input" name="use_verifier" <?php if (isset($config['use_verifier']) && $config['use_verifier']=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="use_verifier">
                                 Enable Solder Verifier - uses cookies
                             </label>
+                            <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <br>
-                        <em>It might take a few moments to take effect.</em>
-                        <br><br>
                         <input type="submit" class="btn btn-primary" value="Save">
                     </form>
                 </div>
