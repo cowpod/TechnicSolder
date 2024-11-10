@@ -121,7 +121,7 @@ let download_neoforge = () => {
 
     let version = $("#lod-neoforge").children("option:selected").val();
     let minecraft = "1."+version.slice(0,version.lastIndexOf('.'));
-    let download_link = `${DOWNLOAD_URL}/${FORGE_GAV}/${encodeURIComponent(version)}/neoforge-${encodeURIComponent(version)}-installer.jar`;
+    let download_link = `${DOWNLOAD_URL}/${FORGE_GAV}/${encodeURIComponent(version)}/neoforge-${encodeURIComponent(version)}-universal.jar`;
     
     let function_url = "./functions/add-modloader.php?type=neoforge&version="+encodeURIComponent(version)+"&dl="+download_link+"&mcversion="+encodeURIComponent(minecraft);
 
@@ -182,7 +182,7 @@ let fetch_neoforge = () => {
                     let versions = response["versions"].reverse();
                     for (key in versions) {
                         let value = versions[key]
-                        if (!value.endsWith("-beta")) {
+                        // if (!value.endsWith("-beta")) {
                             if (!installed_mc_loaders.includes('neoforge-'+value)) {
                                 ver = document.createElement("option")
                                 ver.text = '1.'+value.substring(0, value.lastIndexOf('.'))+' - '+value;
@@ -190,7 +190,7 @@ let fetch_neoforge = () => {
                                 $("#lod-neoforge")[0].add(ver)
                                 installed_mc_loaders.push('neoforge-'+value);
                             }
-                        }
+                        // }
                     }
                 }
                 $("#fetch-neoforge").html("Show Neoforge Installer");
