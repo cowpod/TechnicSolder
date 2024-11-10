@@ -179,7 +179,7 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
         }
     }
 // } else { // build details (including mods)
-} elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)\/?([a-z\-|0-9]+)?$/", $url, $matches)) { // modpack details
+} elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)\/?([a-z\-|0-9\.]+)?$/", $url, $matches)) { // modpack details
     $uri_modpack = $matches[1];
     $uri_build = $matches[2];
     // could use a join on/using for better speed.
