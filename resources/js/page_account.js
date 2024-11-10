@@ -103,7 +103,7 @@ $("#save_api_key").on("click", function() {
                 console.log(request.responseText);
                 jsondata=JSON.parse(request.responseText);
                 if (jsondata['status']=='succ') {
-                    window.location.reload();
+                    // window.location.reload();
                 }
             }
         }
