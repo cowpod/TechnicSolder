@@ -28,19 +28,30 @@ if (!$dbres) {
     die('DB configuration error. Please check that config.php has all the necessary database values.');
 }
 
-echo "<hr/>Altering table columns<br/>";
+echo "<hr/>Adding table row<br/>";
 
-$db->execute("CREATE TABLE metrics (
+$addmetrics = $db->execute("CREATE TABLE metrics (
 name VARCHAR(128) PRIMARY KEY,
 time_stamp INT(64),
 info TEXT");
 // woot woot 64-bit timestamp support
+if (!$addmetrics) {
+    die("Couldn't add new table metrics! Are we already upgraded? <a href='/'>Click here to return to index</a>.");
+}
+
+echo "<hr/>Altering table columns<br/>";
+
+// per-user settings
+$addsettings=$db->execute("ALTER TABLE users ADD COLUMN settings LONGTEXT;");
+$addapikey=$db->execute("ALTER TABLE users ADD COLUMN api_key VARCHAR(128);");
+if (!$addsettings || !$addapikey) {
+    die("Couldn't add new column settings/api_key to table users! Are we already upgraded? <a href='/'>Click here to return to index</a>.");
+}
 
 // 1.4.0: mod version ranges
 // naturally, we assume user is using mysql.
 $addtype1=$db->execute("ALTER TABLE mods ADD COLUMN loadertype VARCHAR(32);");
 $addtype2=$db->execute("ALTER TABLE builds ADD COLUMN loadertype VARCHAR(32);");
-
 if (!$addtype||!$addtype) {
     die("Couldn't add new columns loadertype to table mods! Are we already upgraded? <a href='/'>Click here to return to index</a>.");
 }

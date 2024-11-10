@@ -32,7 +32,9 @@ if (isset($_POST['host'])) {
     // $_POST['pass'] = hash("sha256",$_POST['pass']."Solder.cf");
     $_POST['pass'] = password_hash($_POST['pass'], PASSWORD_DEFAULT);
     $_POST['encrypted'] = true;
+
     foreach ($_POST as $key => $value) {
+        if ($key=="api_key") continue; // we're putting it in admin-user's settings.php
         $cf .= "'".$key."' => '".$value."'";
         if ($key !== "encrypted") {
             $cf .= ",";
@@ -41,6 +43,8 @@ if (isset($_POST['host'])) {
     if ($cf." );" !== "<?php return array(  );") {
         file_put_contents("./functions/config.php", $cf." );");
     }
+
+    file_put_contents("./functions/settings.php", "<?php return array('api_key'=>'".$_POST['api_key']."') ?>");
 
     $connection_result = $db->connect();
 
@@ -77,6 +81,8 @@ if (isset($_POST['host'])) {
             pass TEXT,
             perms TEXT,
             icon TEXT,
+            api_key TEXT,
+            settings TEXT,
             UNIQUE (name));";
         $db->execute($sql);
         $sql = "CREATE TABLE clients (
@@ -143,6 +149,8 @@ if (isset($_POST['host'])) {
             pass VARCHAR(128),
             perms VARCHAR(512),
             icon LONGTEXT,
+            api_key VARCHAR(128),
+            settings LONGTEXT,
             UNIQUE (name));";
         $db->execute($sql);
         $sql = "CREATE TABLE clients (
@@ -224,7 +232,7 @@ if (isset($_POST['host'])) {
             <div class="card">
                 <?php
                 if (isset($_GET['reconfig'])) {
-                    echo "<a href='./dashboard'><button class='btn btn-secondary'>Cancel</button></a>";
+                    echo "<a href='". (isset($_GET['ret']) ? $_GET['ret'] : '/') ."'><button class='btn btn-secondary'>Cancel</button></a>";
                 }
                 if (isset($_GET['host'])&&!$connection_result) {
                     echo "<font class='text-danger'>Can't connect to database</font><br/>";
@@ -240,16 +248,9 @@ if (isset($_POST['host'])) {
                 </center>
                 <?php } ?>
                 <form method="POST">
+                    <h4>Your Account</h4>
                     <div class="form-group">
-                        <label for="name">Name</label>
-                        <input required type="text" class="form-control" name="author" id="name"
-                               aria-describedby="nameHelp" placeholder="Your Name">
-                        <small id="nameHelp" class="form-text text-muted">
-                            Author of custom files you add to your modpack.
-                        </small>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Login Credentials</label>
+                        <label for="email">Login credentials</label>
                         <input required type="text" class="form-control" name="mail" aria-describedby="emailHelp"
                                placeholder="Your Email"><br />
                         <input required type="password" class="form-control" id="pass" name="pass"
@@ -257,11 +258,26 @@ if (isset($_POST['host'])) {
                         <input required type="password" class="form-control" id="pass2"
                                placeholder="Confirm your password">
                         <small id="emailHelp" class="form-text text-muted">
-                            You will use these to log in to Technic Solder.
                         </small>
                     </div>
                     <div class="form-group">
-                        <label for="email">Database</label>
+                        <label for="name">Authoring name</label>
+                        <input required type="text" class="form-control" name="author" id="name"
+                               aria-describedby="nameHelp" placeholder="Your Name">
+                        <small id="nameHelp" class="form-text text-muted">
+                            Visible to other users and the public. Used for custom files you add to your modpack. 
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="api_key">Technic Solder API Key</label>
+                        <input name="api_key" type="text" class="form-control" placeholder="API Key" required>
+                        <small class="form-text text-muted">
+                            You can find your API Key in your profile at
+                            <a target="_blank" href="https://technicpack.net">technicpack.net</a>.
+                        </small>
+                    </div>
+                    <h4>Database</h4>
+                    <div class="form-group">
                         <select required name="db-type" class="form-control" id="db-type">
                             <option value="mysql" <?php if (!empty($_POST['db-type'])&&$_POST['db-type']=='mysql') echo 'selected' ?>>MySQL</option>
                             <option value="sqlite" <?php if (!empty($_POST['db-type'])&&$_POST['db-type']=='sqlite') echo 'selected' ?>>SQLite</option>
@@ -288,20 +304,15 @@ if (isset($_POST['host'])) {
                             Five tables will be created: users, clients, modpacks, builds, mods
                         </small>
                     </div>
+                    <h4>Server</h4>
                     <div class="form-group">
-                        <label for="email">Installation details</label>
                         <input id="host" name="host" type="text" class="form-control"
-                               placeholder="Webserver IP or hostname" required>
+                               placeholder="Webserver IP or hostname" value="<?php echo $_SERVER['HTTP_HOST'] ?>" required>
                         <small id="host-warning" class="form-text" style="display:none;">
                             IP/hostname should NOT start with http[s]://!
                         </small><br />
                         <input id="dir" class="form-control" type="text" name="dir"
                                placeholder="Install Directory" value="/" required><br />
-                        <input name="api_key" type="text" class="form-control" placeholder="API Key" required>
-                        <small class="form-text text-muted">
-                            You can find you API Key in your profile at
-                            <a target="_blank" href="https://technicpack.net">technicpack.net</a>
-                        </small>
                     </div>
                     <button id="save" type="submit" class="btn btn-success btn-block btn-lg">Save</button>
                 </form>

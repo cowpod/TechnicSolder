@@ -16,8 +16,6 @@ if ($config['configured']!==true) {
     exit();
 }
 
-$settings = include("./functions/settings.php");
-
 require_once("./functions/db.php");
 $db = new Db;
 if ($db->connect()===FALSE) {
@@ -25,6 +23,7 @@ if ($db->connect()===FALSE) {
 }
 
 $url = $_SERVER['REQUEST_URI'];
+$SERVER_PROTOCOL=strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
 
 require('functions/interval_range_utils.php');
 require('functions/format_number.php');
@@ -34,15 +33,7 @@ require('functions/mp_latest_recommended.php');
 if (strpos($url, '?') !== false) {
     $url = substr($url, 0, strpos($url, "?"));
 }
-if (!isset($_SESSION['dark'])) {
-    $_SESSION['dark'] = "off";
-}
-if (isset($_GET['dark'])) {
-    $_SESSION['dark'] = "on";
-}
-if (isset($_GET['light'])) {
-    $_SESSION['dark'] = "off";
-}
+
 if (substr($url,-1)=="/") {
     if ($_SERVER['QUERY_STRING']!=="") {
         header("Location: " . rtrim($url,'/') . "?" . $_SERVER['QUERY_STRING']);
@@ -125,13 +116,32 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
     header("Location: ".$config['dir']."login");
     exit();
 }
+
+require("functions/user-settings.php");
+
+// set user-settings in session from db
+if (isset($_SESSION['user'])) {
+    if (!got_settings()) {
+        read_settings($_SESSION['user']); // puts them in $_SESSION['user-settings']
+    }
+}
+
+if (isset($_SESSION['user'])) {
+    if (isset($_GET['dark'])) {
+        set_setting('dark','on');
+    } 
+    elseif (isset($_GET['light']) || !get_setting('dark')) {
+        set_setting('dark','off');
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <link rel="icon" href="./resources/wrenchIcon.png" type="image/png" />
         <title>Technic Solder</title>
-        <?php if ($_SESSION['dark']=="on") {
+        <?php if (get_setting('dark')=="on") {
             echo '<link rel="stylesheet" href="./resources/bootstrap/dark/bootstrap.min.css">';
         } else {
             echo '<link rel="stylesheet" href="./resources/bootstrap/bootstrap.min.css">';
@@ -238,7 +248,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 border-radius: 5px;
                 width: 100%;
                 height: 15em;
-                background-color: <?php if ($_SESSION['dark']=="on") {echo "#333";}else {echo "#ddd";} ?>;
+                background-color: <?php if (get_setting('dark')=="on") {echo "#333";}else {echo "#ddd";} ?>;
 
                 transition: 0.2s;
             }
@@ -258,7 +268,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 left: calc( 50% - 10em );
             }
             .upload-mods:hover{
-                background-color: <?php if ($_SESSION['dark']=="on") {echo "#444";}else {echo "#ccc";} ?>;
+                background-color: <?php if (get_setting('dark')=="on") {echo "#444";}else {echo "#ccc";} ?>;
             }
             .sidenav {
                 width:20em;
@@ -341,7 +351,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     display:block;
                 }
             }
-            <?php if ($_SESSION['dark']=="on") {?>
+            <?php if (get_setting('dark')=="on") {?>
             .custom-file-label::after {
                 background-color: #df691a;
             }
@@ -355,7 +365,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         </style>
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
-    <body style="<?php if ($_SESSION['dark']=="on") { echo "background-color: #202429";} else { echo "background-color: #f0f4f9";} ?>">
+    <body style="<?php if (get_setting('dark')=="on") { echo "background-color: #202429";} else { echo "background-color: #f0f4f9";} ?>">
     <?php
         if (uri("login")) {
         ?>
@@ -379,8 +389,8 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         } else {
             $api_version_json = file_get_contents('./api/version.json');
         ?>
-        <nav class="navbar <?php if ($_SESSION['dark']=="on") { echo "navbar-dark bg-dark sticky-top";}else { echo "navbar-light bg-white sticky-top";}?>">
-            <span class="navbar-brand"  href="#"><img id="techniclogo" alt="Technic logo" class="d-inline-block align-top" height="46px" src="./resources/wrenchIcon<?php if ($_SESSION['dark']=="on") {echo "W";}?>.svg"><em id="menuopen" class="fas fa-bars menu-bars"></em> Technic Solder <span id="solderinfo"><?php echo(json_decode($api_version_json,true))['version']; ?></span></span></span>
+        <nav class="navbar <?php if (get_setting('dark')=="on") { echo "navbar-dark bg-dark sticky-top";}else { echo "navbar-light bg-white sticky-top";}?>">
+            <span class="navbar-brand"  href="#"><img id="techniclogo" alt="Technic logo" class="d-inline-block align-top" height="46px" src="./resources/wrenchIcon<?php if (get_setting('dark')=="on") {echo "W";}?>.svg"><em id="menuopen" class="fas fa-bars menu-bars"></em> Technic Solder <span id="solderinfo"><?php echo(json_decode($api_version_json,true))['version']; ?></span></span></span>
             <span style="cursor: pointer;" class="dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <?php if ($_SESSION['user']!==$config['mail']) { ?>
                 <img class="img-thumbnail" style="width: 40px;height: 40px" src="data:image/png;base64,<?php
@@ -415,7 +425,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                     <a id="nav-settings" class="nav-link" href="#settings" data-toggle="tab" role="tab"><em class="fas fa-sliders-h fa-lg"></em></a>
                 </li>
                 <div style="position:absolute;bottom:5em;left:4em;" class="custom-control custom-switch">
-                    <input <?php if ($_SESSION['dark']=="on"){echo "checked";} ?> type="checkbox" class="custom-control-input" name="dark" id="dark">
+                    <input <?php if (get_setting('dark')=="on"){echo "checked";} ?> type="checkbox" class="custom-control-input" name="dark" id="dark">
                     <label class="custom-control-label" for="dark">Dark theme</label>
                 </div>
             </ul>
@@ -435,7 +445,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             }
 
                             $notechnic = true;
-                            if (!str_starts_with($modpack['name'], 'unnamed-modpack-') && !empty($config['api_key'])) {
+                            if (!str_starts_with($modpack['name'], 'unnamed-modpack-') && get_setting('api_key')) {
                                 $cache = [];
                                 $cached_info = [];
 
@@ -551,7 +561,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             <div class="main">
                 <?php
                 $version = json_decode(file_get_contents("./api/version.json"),true);
-                if ($version['stream']=="Dev"||$settings['dev_builds']=="on") {
+                if ($version['stream']=="Dev"||(isset($config['dev_builds']) && $config['dev_builds']=="on")) {
                     if ($newversion = json_decode(file_get_contents("https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/Dev/api/version.json"),true)) {
                         $checked = true;
                     } else {
@@ -568,7 +578,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 }
                 if (version_compare($newversion['version'], $version['version'], '>')) {
                 ?>
-                <div class="card alert-info <?php if ($_SESSION['dark']=="on"){echo "text-white";} ?>">
+                <div class="card alert-info <?php if (get_setting('dark')=="on"){echo "text-white";} ?>">
                     <p>Version <strong><?php echo $newversion['version'] ?></strong> is now available!</p>
                     <p><?php echo $newversion['ltcl']; ?></p>
                 </div>
@@ -783,14 +793,14 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         ?>
                     </div>
                     <br />
-                    <?php if (isset($settings['use_verifier']) && $settings['use_verifier']=="on") { ?>
+                    <?php if (isset($config['use_verifier']) && $config['use_verifier']=="on") { ?>
                     <button class="btn btn-secondary" data-toggle="collapse" href="#collapseVerify" role="button" aria-expanded="false" aria-controls="collapseVerify">Solder Verifier</button>
                     <div class="collapse" id="collapseVerify">
                         <br />
                         <div class="input-group">
-                            <input autocomplete="off" class="form-control <?php if ($_SESSION['dark']=="on") {echo "border-primary";}?>" type="text" id="link" placeholder="Modpack slug (same as on technicpack.net)"" aria-describedby="search" />
+                            <input autocomplete="off" class="form-control <?php if (get_setting('dark')=="on") {echo "border-primary";}?>" type="text" id="link" placeholder="Modpack slug (same as on technicpack.net)" aria-describedby="search" />
                             <div class="input-group-append">
-                                <button class="<?php if ($_SESSION['dark']=="on") { echo "btn btn-primary";} else { echo "btn btn-outline-secondary";} ?>" onclick="get();" type="button" id="search">Search</button>
+                                <button class="<?php if (get_setting('dark')=="on") { echo "btn btn-primary";} else { echo "btn btn-outline-secondary";} ?>" onclick="get();" type="button" id="search">Search</button>
                             </div>
                         </div>
                         <!-- <pre class="card border-primary" style="white-space: pre-wrap;width: 100%" id="responseRaw">
@@ -870,7 +880,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
             <div class="main">
                 <?php
                 $notechnic=true;
-                if (!str_starts_with($modpack['name'], 'unnamed-modpack-') && !empty($config['api_key'])) {
+                if (!str_starts_with($modpack['name'], 'unnamed-modpack-') && get_setting('api_key')) {
                     $cache = [];
                     $cached_info = [];
 
@@ -2099,7 +2109,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                             class="btn btn-primary">Edit</button>
                                     <button onclick="remove_box(<?php echo $mod['id'].",'".$mod['version']."','".$mod['filename']."'" ?>)" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
                                     <!-- url from api/index.php -->
-                                    <button onclick="window.location = '<?php echo !empty($mod['url']) ? $mod['url'] : strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://'.$config['host'].$config['dir'].$mod['type']."s/".$mod['filename'] ?>'" class="btn btn-secondary"><em class="fas fa-file-download"></em> .zip</button>
+                                    <button onclick="window.location = '<?php echo !empty($mod['url']) ? $mod['url'] : $SERVER_PROTOCOL.$config['host'].$config['dir'].$mod['type']."s/".$mod['filename'] ?>'" class="btn btn-secondary"><em class="fas fa-file-download"></em> .zip</button>
                                     <?php if (!empty($mod['filename'])) { ?><button onclick="window.location = './functions/mod_extract.php?id=<?php echo $mod['id']; ?>'" class="btn btn-secondary"><em class="fas fa-file-download"></em> .jar</button><?php } ?>
                                 </div>
                             </td>
@@ -2242,7 +2252,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
         }
         elseif (uri("/update")) {
             $version = json_decode(file_get_contents("./api/version.json"), true);
-            if ($version['stream']=="Dev"||$settings['dev_builds']=="on") {
+            if ($version['stream']=="Dev"||(isset($config['dev_builds']) && $config['dev_builds']=="on")) {
                 if ($newversion = json_decode(file_get_contents("https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/Dev/api/version.json"), true)) {
                     $checked = true;
                 } else {
@@ -2305,7 +2315,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                                     3. write: <br />
                                     <em>cd <?php echo dirname(dirname(get_included_files()[0])); ?> </em><br />
                                     <em>git clone
-                                        <?php if ($newversion['stream']=="Dev"||$settings['dev_builds']=="on") {
+                                        <?php if ($newversion['stream']=="Dev"||(isset($config['dev_builds']) && ['dev_builds']=="on")) {
                                             echo "--single-branch --branch Dev";
                                         } ?>
                                         https://github.com/TheGameSpider/TechnicSolder.git SolderUpdate </em> <br />
@@ -2388,11 +2398,34 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <input class="btn btn-success" type="submit" name="save" id="save-button" value="Save" disabled>
                      </form>
                 </div>
+                <div class="card">
+                    <h2>Solder integration</h2>
+                    <p>To integrate with the Technic API, you will need your API key at <a href="https://technicpack.net/" target="_blank">technicpack.net</a>.</p>
+                    <p>Sign in (or register), Click on "Edit [My] Profile" in the top right account menu, Click "Solder Configuration", and copy the API key and paste it in the text box below.</p>
+                    <form>
+                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if (get_setting('api_key')) echo 'value="'.get_setting('api_key').'"' ?>/>
+                        <br/>
+                        <input class="btn btn-success" type="button" id="save_api_key" value="Save" disabled />
+                    </form>
+                    <br/>
+                    <p>Then, copy <?php echo $SERVER_PROTOCOL.$config['host'].$config['dir'].'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
+                </div>
             </div>
             <script>document.title = 'My Account - <?php echo addslashes($_SESSION['name']) ?> - <?php echo addslashes($config['author']) ?>';</script>
             <script src="./resources/js/page_account.js"></script>
             <?php
         } elseif (uri("/admin")) {
+            if (isset($_POST['dev_builds']) || isset($_POST['use_verifier'])) {
+                if (isset($_POST['dev_builds'])) {
+                    $config['dev_builds']=$_POST['dev_builds'];
+                }
+                if (isset($_POST['use_verifier'])) {
+                    $config['use_verifier']=$_POST['use_verifier'];
+                }
+
+                file_put_contents('./functions/config.php', '<?php return '.var_export($config, true).'; ?>');
+            }
+
             ?>
             <div class="main">
                 <div class="card">
@@ -2440,7 +2473,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                             <label class="custom-control-label" for="dev_builds">Subscribe to dev builds</label>
                         </div>
                         <div class="custom-control custom-switch">
-                            <input <?php if (isset($settings['use_verifier']) && $settings['use_verifier']=="on") {echo "checked";} ?> type="checkbox" class="custom-control-input" name="use_verifier" id="use_verifier">
+                            <input <?php if (isset($config['use_verifier']) && $config['use_verifier']=="on") {echo "checked";} ?> type="checkbox" class="custom-control-input" name="use_verifier" id="use_verifier">
                             <label class="custom-control-label" for="use_verifier">
                                 Enable Solder Verifier - uses cookies
                             </label>

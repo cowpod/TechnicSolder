@@ -18,38 +18,57 @@ if (substr($url, -1)=="/" && substr($url, -4)!=="api/") {
 
 $config = require("../functions/config.php");
 
-if(str_ends_with($url, "api/")){
-	die('{"api":"Solder.cf","version":"v1.4.0","stream":"Release"}'); // todo: this is Dev not release, but may break things if changed...
-} 
-if (str_ends_with($url, "api/verify")) {
-    die('{"error":"No API key provided."}');
-}
-if (str_ends_with($url, "api/verify/".substr($url, strrpos($url, '/') + 1))) {
-    if (substr($url, strrpos($url, '/') + 1)==$config['api_key']) { // todo: actual validation?
-        die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
-    }
-    die('{"error":"Invalid key provided."}');
-}
-
-$PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
-
 require_once("../functions/db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
 }
 
+$adminuser_settings = require('../functions/settings.php');
+
+if(str_ends_with($url, "api/")){
+	die('{"api":"Solder.cf","version":"v1.4.0","stream":"Release"}'); // todo: this is Dev not release, but may break things if changed...
+} 
+if (str_ends_with($url, "api/verify")) {
+    die('{"error":"No API key provided."}');
+}
+
+if (str_ends_with($url, "api/verify/".substr($url, strrpos($url, '/') + 1))) {
+    $user_api_key=substr($url, strrpos($url, '/') + 1);
+
+    // check key for admin user
+    if (isset($adminuser_settings['api_key']) && $user_api_key==$adminuser_settings['api_key']) {
+        die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
+    }
+
+    // query db. multiple users could use the same technic api key...
+    $apikeysq = $db->query("SELECT 1 FROM users WHERE api_key='".$user_api_key."'");
+    if ($apikeysq) {
+        die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
+    }
+    
+    die('{"error":"Invalid key provided."}');
+}
+
+$PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+
 if (isset($_GET['cid'])) {
     $client_uuid=$_GET['cid'];
 } else {
     $client_uuid='';
 }
-if (isset($_GET['k'])) {
-    $client_api_key=$_GET['k'];
-} else {
-    $client_api_key='';
-}
 
+// i have a suspicion that this isn't part of the technicpack api specification...
+if (isset($_GET['k'])) {
+    $qk = $db->query("SELECT 1 FROM users WHERE api_key = '".$db->sanitize($_GET['k'])."'");
+    if ($qk) {
+        $valid_client_key = TRUE;
+    } else {
+        $valid_client_key = FALSE;
+    }
+} else {
+    $valid_client_key = FALSE;
+}
 
 if (preg_match("/api\/modpack$/", $url)) { // modpacks
     // $modpacksq = $db->query("SELECT * FROM `modpacks`");
@@ -73,13 +92,13 @@ if (preg_match("/api\/modpack$/", $url)) { // modpacks
 
             foreach($buildsq as $build) {
                 $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
-                if ($build['public']==1 || $clientsq || $_GET['k']==$config['api_key']) {
+                if ($build['public']==1 || $clientsq || $valid_client_key) {
                     $builds[$counter]=$build['name'];
                     $counter++;
                 }
             }
             $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
-            if ($modpack['public']==1 || $clientsq || $client_api_key==$config['api_key']) {
+            if ($modpack['public']==1 || $clientsq || $valid_client_key) {
                 $modpacks[$modpack['name']] = [
                     "name" => $modpack['name'],
                     "display_name" => $modpack['display_name'],
@@ -99,7 +118,7 @@ if (preg_match("/api\/modpack$/", $url)) { // modpacks
     } else {
         foreach($modpacksq as $modpack) {
             $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
-            if ($modpack['public']==1 || $clientsq || $client_api_key==$config['api_key']) {
+            if ($modpack['public']==1 || $clientsq || $valid_client_key) {
                 $mn = $modpack['name'];
                 $mpn = $modpack['display_name'];
                 $modpacks[$mn] = $mpn;
@@ -129,14 +148,14 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
 
     foreach($modpackq as $modpack) { // sql col `name` isn't guaranteed to be unique...
         $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
-        if ($modpack['public']==1 || $clientsq || $client_api_key==$config['api_key']) {
+        if ($modpack['public']==1 || $clientsq || $valid_client_key) {
             $builds = [];
             $counter=0;
             $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
 
             foreach($buildsq as $build) {
                 $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
-                if ($build['public']==1 || $clientsq || $client_api_key==$config['api_key']) {
+                if ($build['public']==1 || $clientsq || $valid_client_key) {
                     $builds[$counter]=$build['name'];
                     $counter++;
                 }
@@ -174,7 +193,7 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
 
         foreach($buildsq as $build) {
             $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
-            if ($build['public']==1 || $clientsq || $client_api_key==$config['api_key']) {
+            if ($build['public']==1 || $clientsq || $valid_client_key) {
                 $mods = [];
                 $modslist = explode(',', $build['mods']);
                 $modnumber = 0;
