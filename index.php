@@ -478,8 +478,8 @@ if (isset($_SESSION['user'])) {
                                                 '".$info_data."'
                                         )");
                                     }
-                                    $notechnic = false;
                                 }
+                                $notechnic = false;
                             }
                             
                             $info_icon = $modpack['icon'];
@@ -911,8 +911,8 @@ if (isset($_SESSION['user'])) {
                                     '".$info_data."'
                             )");
                         }
-                        $notechnic = false;
                     }
+                    $notechnic = false;
                 }
                 
                 if (isset($notechnic) &&$notechnic) {
