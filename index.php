@@ -593,7 +593,7 @@ if (isset($_SESSION['user'])) {
             if (isset($notechnic) && $notechnic) {
             ?>
                 <div class="card alert-warning">
-                    <strong>Warning! </strong>Cannot connect to Technic! Make sure you set your API key, have a valid name, and unique slug.
+                    <strong>Warning! </strong>Cannot connect to Technic! Verify you set your slug and API key in your <a href="/account">Account Settings</a>.
                 </div>
                 <?php
             } else {
@@ -917,7 +917,7 @@ if (isset($_SESSION['user'])) {
                 
                 if (isset($notechnic) &&$notechnic) {
                     ?><div class="card alert-warning">
-                        <strong>Warning! </strong>Cannot connect to Technic! Make sure you set your API key, have a valid name, and unique slug.
+                        <strong>Warning! </strong>Cannot connect to Technic! Verify you set your slug and API key in your <a href="/account">Account Settings</a>.
                     </div><?php
                 }
                 
