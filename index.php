@@ -108,6 +108,7 @@ if (isset($_POST['email']) && isset($_POST['password']) && $_POST['email'] !== "
         }
     }
 }
+
 function uri($uri) {
     global $url;
     $length = strlen($uri);
@@ -395,9 +396,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 <span class="navbar-text"><?php echo $_SESSION['name'] ?> </span>
                 <div style="left: unset;right: 2px;" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <a class="dropdown-item" href="?logout=true&logout=true" onclick="window.location = window.location+'?logout=true&logout=true'">Log Out</a>
-                    <?php if ($_SESSION['user']!==$config['mail']) { ?>
-                    <a class="dropdown-item" href="./user" onclick="window.location = './user'">My account</a>
-                    <?php } ?>
+                    <a class="dropdown-item" href="./account" onclick="window.location = './account'">My account</a>
                 </div>
             </span>
         </nav>
@@ -512,24 +511,17 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 <div class="tab-pane" id="settings" role="tabpanel">
                     <div style="overflow:auto;height: calc( 100% - 62px )">
                         <p class="text-muted">SETTINGS</p>
-                        <?php if ($_SESSION['user']==$config['mail']) { ?>
-                        <a href="./settings"><div class="modpack">
-                            <p><em class="fas fa-cog fa-lg"></em> <span style="margin-left:inherit;">Quick settings</span></p>
-                        </div></a>
-                        <a href="./configure.php?reconfig"><div class="modpack">
-                            <p><em class="fas fa-cogs fa-lg"></em> <span style="margin-left:inherit;">Solder Configuration</span></p>
-                        </div></a>
+                    <?php if ($_SESSION['user']==$config['mail']) { // admin account?>
                         <a href="./admin"><div class="modpack">
-                            <p><em class="fas fa-user-tie fa-lg"></em> <span style="margin-left:inherit;">Admin</span></p>
-                        </div></a>
-                    <?php } else { ?>
-                        <a href="./user"><div class="modpack">
-                            <p><em class="fas fa-user fa-lg"></em> <span style="margin-left:inherit;">My Account</span></p>
+                            <p><em class="fas fa-user-tie fa-lg"></em> <span style="margin-left:inherit;">Admin & Server Settings</span></p>
                         </div></a>
                     <?php } ?>
+                        <a href="./account"><div class="modpack">
+                            <p><em class="fas fa-cog fa-lg"></em> <span style="margin-left:inherit;">My Account</span></p>
+                        </div></a>
                     <?php if (substr($_SESSION['perms'],6,1)=="1") { ?>
                         <a href="./clients"><div class="modpack">
-                            <p><em class="fas fa-users fa-lg"></em> <span style="margin-left:inherit;">Clients</span></p>
+                            <p><em class="fas fa-users fa-lg"></em><span style="margin-left:inherit;">Clients</span></p>
                         </div></a>
                         <?php } ?>
                         <a href="./about"><div class="modpack">
@@ -770,7 +762,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         <div id="dbform">
                             <input type="text" class="form-control" id="orighost" placeholder="Address of the database you want to migrate from (e.g. 127.0.0.1)"><br>
                             <input type="text" class="form-control" id="origdatabase" placeholder="Name of the database"><br>
-                            <input autocomplete="off" type="text" class="form-control" id="origname" placeholder="Username for the databse"><br>
+                            <input autocomplete="off" type="text" class="form-control" id="origname" placeholder="Username for the database"><br>
                             <input autocomplete="off" type="password" class="form-control" id="origpass" placeholder="Password for the database"><br>
                             <button class="btn btn-primary" id="submitdbform">Connect</button>
                         </div>
@@ -2332,7 +2324,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 });
             </script>
         <?php
-        } elseif (uri("/user")) {
+        } elseif (uri("/account")) {
             ?>
             <div class="main">
                 <div class="card">
@@ -2398,7 +2390,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 </div>
             </div>
             <script>document.title = 'My Account - <?php echo addslashes($_SESSION['name']) ?> - <?php echo addslashes($config['author']) ?>';</script>
-            <script src="./resources/js/page_user.js"></script>
+            <script src="./resources/js/page_account.js"></script>
             <?php
         } elseif (uri("/admin")) {
             ?>
@@ -2437,6 +2429,30 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                         ?>
                     </tbody>
                     </table>
+                </div>
+
+                <div class="card">
+                    <h1>Settings</h1>
+                    <hr>
+                    <form method="POST">
+                        <div class="custom-control custom-switch">
+                            <input <?php if (isset($config['dev_builds']) && $config['dev_builds']=="on") {echo "checked";} if (json_decode($api_version_json, true)['stream']=="Dev") {echo "checked disabled";} ?> type="checkbox" class="custom-control-input" name="dev_builds" id="dev_builds">
+                            <label class="custom-control-label" for="dev_builds">Subscribe to dev builds</label>
+                        </div>
+                        <div class="custom-control custom-switch">
+                            <input <?php if (isset($settings['use_verifier']) && $settings['use_verifier']=="on") {echo "checked";} ?> type="checkbox" class="custom-control-input" name="use_verifier" id="use_verifier">
+                            <label class="custom-control-label" for="use_verifier">
+                                Enable Solder Verifier - uses cookies
+                            </label>
+                        </div>
+                        <br>
+                        <em>It might take a few moments to take effect.</em>
+                        <br><br>
+                        <input type="submit" class="btn btn-primary" value="Save">
+                    </form>
+                </div>
+                <div class="card">
+                    <a href="./configure.php?reconfig&ret=/admin">Reconfigure Server</a>
                 </div>
                 <div class="modal fade" id="removeUser" tabindex="-1" role="dialog" aria-labelledby="rm"
                      aria-hidden="true">
@@ -2546,48 +2562,7 @@ if (!isset($_SESSION['user'])&&!uri("/login")) {
                 <script>document.title = 'Admin - <?php echo addslashes($config['author']) ?>';</script>
                 <script src="./resources/js/page_admin.js"></script>
             </div>
-            <?php
-        } elseif (uri('/settings')) {
-            if (isset($_POST['submit'])) {
-                $cf = '<?php return array( ';
-                foreach ($_POST as $key => $value) {
-                    $cf .= '"'.$key.'" => "'.$value.'"';
-                    if ($key !== "submit") {
-                        $cf .= ",";
-                    }
-                }
-                if ($cf." );" !== "<?php return array(  );") {
-                    file_put_contents("./functions/settings.php", $cf . " );");
-                }
-            }
-        ?>
-        <div class="main">
-            <div class="card">
-                <h1>Quick Settings</h1>
-                <hr>
-                <form method="POST">
-                    <div class="custom-control custom-switch">
-                        <input <?php if ($settings['dev_builds']=="on") {echo "checked";} if (json_decode($api_version_json, true)['stream']=="Dev") {echo "checked disabled";} ?> type="checkbox" class="custom-control-input" name="dev_builds" id="dev_builds">
-                        <label class="custom-control-label" for="dev_builds">Subscribe to dev builds</label>
-                    </div>
-                    <div class="custom-control custom-switch">
-                        <input <?php if ($settings['use_verifier']=="on") {echo "checked";} ?> type="checkbox" class="custom-control-input" name="use_verifier" id="use_verifier">
-                        <label class="custom-control-label" for="use_verifier">
-                            Enable Solder Verifier - uses cookies
-                        </label>
-                    </div>
-                    <br>
-                    <em>It might take a few moments to take effect.</em>
-                    <br><br>
-                    <input type="submit" class="btn btn-primary" name="submit" value="Save">
-                </form>
-            </div>
-        </div>
-        <script>
-            $(document).ready(function(){
-                $("#nav-settings").trigger('click');
-            });
-        </script>
+        
         <?php } elseif (uri('/clients')) {
         ?>
         <script>document.title = 'Clients - <?php echo addslashes($_SESSION['name']) ?>';</script>

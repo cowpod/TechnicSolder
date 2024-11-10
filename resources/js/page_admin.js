@@ -6,7 +6,7 @@ function remove(id) {
         if (request.readyState == 4) {
             console.log(request.responseText);
             $("#info").html(request.responseText + "<br />");
-            setTimeout(function(){ window.location.reload(); }, 500);
+            // setTimeout(function(){ window.location.reload(); }, 500);
         }
 
     }
@@ -77,7 +77,7 @@ function edit_user(mail,name,perms) {
         if (request.readyState == 4) {
             console.log(request.responseText);
             $("#info").html(request.responseText + "<br />");
-            setTimeout(function(){ window.location.reload(); }, 500);
+            // setTimeout(function(){ window.location.reload(); }, 500);
         }
 
     }
@@ -168,7 +168,7 @@ function new_user(email,name,pass) {
         if (request.readyState == 4) {
             console.log(request.responseText);
             $("#info").html(request.responseText + "<br />");
-            setTimeout(function(){ window.location.reload(); }, 500);
+            // setTimeout(function(){ window.location.reload(); }, 500);
         }
 
     }
