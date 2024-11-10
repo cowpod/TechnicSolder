@@ -121,7 +121,7 @@ let download_neoforge = () => {
 
     let version = $("#lod-neoforge").children("option:selected").val();
     let minecraft = "1."+version.slice(0,version.lastIndexOf('.'));
-    let download_link = `${DOWNLOAD_URL}/${FORGE_GAV}/${encodeURIComponent(version)}/neoforge-${encodeURIComponent(version)}-universal.jar`;
+    let download_link = `${DOWNLOAD_URL}/${FORGE_GAV}/${encodeURIComponent(version)}/neoforge-${encodeURIComponent(version)}-installer.jar`;
     
     let function_url = "./functions/add-modloader.php?type=neoforge&version="+encodeURIComponent(version)+"&dl="+download_link+"&mcversion="+encodeURIComponent(minecraft);
 
