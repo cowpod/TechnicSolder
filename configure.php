@@ -5,8 +5,10 @@ $config=['configured'=>false];
 if (file_exists('./functions/config.php')) {
     $config = include("./functions/config.php");
 }
-
-$settings = include("./functions/settings.php");
+$settings=[];
+if (file_exists('./functions/settings.php')) {
+    $settings = include("./functions/settings.php");
+}
 if (!isset($_GET['reconfig'])) {
     if ($config['configured']) {
         sleep(1);
