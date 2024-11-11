@@ -29,10 +29,6 @@ function isStrongPassword($password) {
     if (!preg_match('/[0-9]/', $password)) {
         return false;
     }
-
-    if (!preg_match('/[\W_]/', $password)) {
-        return false;
-    }
     return true;
 }
 

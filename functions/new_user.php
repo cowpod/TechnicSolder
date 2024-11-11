@@ -1,6 +1,22 @@
 <?php
 define('DEFAULT_PERMS', '0000000');
 
+function isStrongPassword($password) {
+    if (strlen($password) < 8) {
+        return false;
+    }
+    if (!preg_match('/[a-z]/', $password)) {
+        return false;
+    }
+    if (!preg_match('/[A-Z]/', $password)) {
+        return false;
+    }
+    if (!preg_match('/[0-9]/', $password)) {
+        return false;
+    }
+    return true;
+}
+
 session_start();
 $config = require("./config.php");
 
@@ -12,6 +28,9 @@ if (empty($_POST['display_name'])) {
 }
 if (empty($_POST['pass'])) {
     die('{"status":"error","message":"password not specified."}');
+}
+if (!isStrongPassword($_POST['pass'])) {
+    die('{"status":"error","message":"Bad password."}');
 }
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die('{"status":"error","message":"Unauthorized request or login session has expired."}');
