@@ -43,7 +43,7 @@ if (isset($_POST['host'])) {
     $name = $_POST['author'];
     $pass = $_POST['pass'];
     $api_key = $_POST['api_key'];
-    $api_key_serverwide = isset($_POST['api_key_serverwide']) ? $_POST['api_key_serverwide'] : "off";
+    $api_key_serverwide = isset($_POST['api_key_serverwide']) ? TRUE : FALSE;
 
     if (!preg_match('/^[\w\.\-\+]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$/', $email)) {
         die('Bad input data; email');
@@ -99,7 +99,7 @@ if (isset($_POST['host'])) {
         'configured'=>true,
         'config_version'=>CONFIG_VERSION
     ];
-    if ($api_key_serverwide=="on") {
+    if ($api_key_serverwide) {
         $config_contents['api_key'] = $api_key;
     }
 
@@ -115,7 +115,7 @@ if (isset($_POST['host'])) {
                 name TEXT PRIMARY KEY,
                 time_stamp INTEGER,
                 info TEXT
-            ";
+            )";
             $db->execute($sql);
             $sql = "CREATE TABLE modpacks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -191,7 +191,7 @@ if (isset($_POST['host'])) {
                 name VARCHAR(128) PRIMARY KEY,
                 time_stamp BIGINT UNSIGNED,
                 info TEXT
-            ";
+            )";
             $db->execute($sql);
             $sql = "CREATE TABLE modpacks (
                 id INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -265,10 +265,10 @@ if (isset($_POST['host'])) {
         }
 
         // if user already exists, replace
-        $userexistsq = $db->query("SELECT 1 FORM users WHERE name='".$db->sanitize($email)."'");
+        $userexistsq = $db->query("SELECT 1 FROM users WHERE name='".$db->sanitize($email)."'");
         if ($userexistsq && sizeof($userexistsq)==1) { // `name` is unique
             if (OVERWRITE_USER) {
-                $db->execute("DELETE FORM users WHERE name='".$db->sanitize($email)."'");
+                $db->execute("DELETE FROM users WHERE name='".$db->sanitize($email)."'");
             } else {
                 die("User with that email exists. Please go back and try again with different information.");
             }
@@ -370,8 +370,8 @@ if (isset($_POST['host'])) {
                         <label for="api_key">Technic Solder API Key</label>
                         <input id="api_key" name="api_key" type="text" class="form-control" placeholder="API Key" required>
                         <div class="form-check">
-                            <input id="api_key_serverwide" name="api_key_serverwide" type="checkbox" class="form-check-input">
-                            <label for="api_key_serverwide" class="form-check-label ">Server-wide</label>
+                            <input id="api_key_serverwide" name="api_key_serverwide" type="checkbox" class="form-check-input" checked>
+                            <label for="api_key_serverwide" class="form-check-label">Server-wide</label>
                         </div>
                         <small class="form-text text-muted">
                             You can find your API Key in your profile at
