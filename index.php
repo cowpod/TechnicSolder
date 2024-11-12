@@ -2347,7 +2347,7 @@ if (isset($_SESSION['user'])) {
                      <form enctype="multipart/form-data">
                         <div class="custom-file">
                             <input type="file" class="custom-file-input" id="newIcon" required>
-                            <label class="custom-file-label" for="newIcon">Choose file...</label>
+                            <label class="custom-file-label" for="newIcon">Choose file... (max 15MB)</label>
                         </div>
                      </form>
                      <hr />
