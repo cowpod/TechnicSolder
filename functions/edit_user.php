@@ -14,7 +14,7 @@ if (empty($_POST['perms'])) {
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die('{"status":"error","message":"Unauthorized request or login session has expired."}');
 }
-if ($_SESSION['privileged']) {
+if (!$_SESSION['privileged']) {
     die('{"status":"error","message":"Insufficient permission!"}');
 }
 
