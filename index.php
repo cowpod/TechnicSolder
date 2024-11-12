@@ -2347,16 +2347,25 @@ if (isset($_SESSION['user'])) {
                      </form>
                 </div>
                 <div class="card">
-                    <h2>Solder integration</h2>
+                    <h2>Technic Solder integration</h2>
+                    <?php if (!empty($config['api_key'])) { ?>
+                    <font class="text-danger">A server-wide API key has been set.</font>
+                    As such, you cannot set your own API key. Contact your server administrator if you think this is a mistake.
+                    <?php } else { ?>
                     <p>To integrate with the Technic API, you will need your API key at <a href="https://technicpack.net/" target="_blank">technicpack.net</a>.</p>
                     <p>Sign in (or register), Click on "Edit [My] Profile" in the top right account menu, Click "Solder Configuration", and copy the API key and paste it in the text box below.</p>
                     <form>
-                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if (get_setting('api_key')) echo 'value="'.get_setting('api_key').'"' ?>/>
+                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if (get_setting('api_key')) echo 'value="'.get_setting('api_key').'"' ?> <?php if (!empty($config['api_key'])) echo "disabled" ?>/>
                         <br/>
                         <input class="btn btn-success" type="button" id="save_api_key" value="Save" disabled />
                     </form>
                     <br/>
                     <p>Then, copy <?php echo $SERVER_PROTOCOL.$config['host'].$config['dir'].'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
+                    <?php } ?>
+                    <?php if ($_SESSION['privileged']) { ?>
+                    <hr/>
+                    <b>You, an administrator, can update the server-wide API key in <a href="admin#solder">Server Settings</a></b>
+                    <?php } ?>
                 </div>
             </div>
             <script>
@@ -2452,6 +2461,22 @@ if (isset($_SESSION['user'])) {
                         <input type="submit" class="btn btn-primary" value="Save">
                     </form>
                 </div>
+                <div class="card">
+                    <a name="solder"/>
+                    <h2>Server-wide Technic Solder integration</h2>
+                    <p>To integrate with the Technic API, you will need your API key at <a href="https://technicpack.net/" target="_blank">technicpack.net</a>.</p>
+                    <p>Sign in (or register), Click on "Edit [My] Profile" in the top right account menu, Click "Solder Configuration", and copy the API key and paste it in the text box below.</p>
+                    <form>
+                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if (!empty($config['api_key'])) echo 'value="'.$config['api_key'].'"' ?>/>
+                        <br/>
+                        <input class="btn btn-success" type="button" id="save_api_key" value="Save" disabled />
+                    </form>
+                    <br/>
+                    <p>Then, copy <?php echo $SERVER_PROTOCOL.$config['host'].$config['dir'].'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
+                    <hr/>
+                    <b>Setting an API key here will make it available to all other users, and will prevent them from using their own key.</b>
+                </div>
+
                 <div class="card">
                     <a href="./configure.php?reconfig&ret=/admin">Reconfigure Server</a>
                 </div>

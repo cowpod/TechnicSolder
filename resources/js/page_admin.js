@@ -294,6 +294,35 @@ $("#pass2").on("keyup", function() {
     }
 });
 
+$("#api_key").on("keyup", function() {
+    // if ($("#api_key").val()=="") {
+    //     $("#save_api_key").attr("disabled",true);
+    // } else {
+        $("#save_api_key").attr("disabled",false);
+    // }
+});
+
+$("#save_api_key").on("click", function() {
+    // if ($("#api_key").val()=="") {
+    //     return;
+    // } else {
+        let formData = new FormData();
+        let request = new XMLHttpRequest();
+        formData.set('api_key', $("#api_key").val());
+        request.open('POST', './functions/save_api_key.php?serverwide=1');
+        request.onreadystatechange = function() {
+            if (request.readyState == 4) {
+                console.log(request.responseText);
+                jsondata=JSON.parse(request.responseText);
+                if (jsondata['status']=='succ') {
+                    // window.location.reload();
+                }
+            }
+        }
+        request.send(formData);
+    // }
+});
+
 $(document).ready(function(){
     $("#nav-settings").trigger('click');
 });

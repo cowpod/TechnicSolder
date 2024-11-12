@@ -98,17 +98,17 @@ if (perm7==1) {
 
 
 $("#api_key").on("keyup", function() {
-    if ($("#api_key").val()=="") {
-        $("#save_api_key").attr("disabled",true);
-    } else {
+    // if ($("#api_key").val()=="") {
+    //     $("#save_api_key").attr("disabled",true);
+    // } else {
         $("#save_api_key").attr("disabled",false);
-    }
+    // }
 });
 
 $("#save_api_key").on("click", function() {
-    if ($("#api_key").val()=="") {
-        return;
-    } else {
+    // if ($("#api_key").val()=="") {
+    //     return;
+    // } else {
         let formData = new FormData();
         let request = new XMLHttpRequest();
         formData.set('api_key', $("#api_key").val());
@@ -123,7 +123,7 @@ $("#save_api_key").on("click", function() {
             }
         }
         request.send(formData);
-    }
+    // }
 });
 
 $(document).ready(function(){

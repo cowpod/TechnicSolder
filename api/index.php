@@ -2,6 +2,7 @@
 header('Content-Type: application/json');
 
 $url = $_SERVER['REQUEST_URI'];
+$PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
 
 // remove args
 if (strpos($url, '?') !== FALSE) {
@@ -31,36 +32,43 @@ if (str_ends_with($url, "api/verify")) {
     die('{"error":"No API key provided."}');
 }
 
-if (str_ends_with($url, "api/verify/".substr($url, strrpos($url, '/') + 1))) {
-    $user_api_key=substr($url, strrpos($url, '/') + 1);
+$server_wide_api_key='';
+if (!empty($config['api_key'])) {
+    $server_wide_api_key=$config['api_key'];
+}
 
-    // query db. multiple users could use the same technic api key...
-    $apikeysq = $db->query("SELECT 1 FROM users WHERE api_key='".$user_api_key."'");
-    if ($apikeysq) {
-        die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
+if (preg_match("/api\/verify\/([a-zA-Z0-9]+)$/", $url, $matches)) {
+    $client_api_key = $matches[1];
+
+    if ($server_wide_api_key) {
+        if ($client_api_key==$server_wide_api_key) {
+            die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
+        }
+    } else {
+        // query db. multiple users could use the same technic api key...
+        $apikeysq = $db->query("SELECT 1 FROM users WHERE api_key='{$client_api_key}'");
+        if ($apikeysq) {
+            die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
+        }
     }
     
     die('{"error":"Invalid key provided."}');
 }
 
-$PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+$client_uuid = isset($_GET['cid']) ? $_GET['cid'] : '';
 
-if (isset($_GET['cid'])) {
-    $client_uuid=$_GET['cid'];
-} else {
-    $client_uuid='';
-}
-
-// i have a suspicion that this isn't part of the technicpack api specification...
+$valid_client_key = FALSE;
 if (isset($_GET['k'])) {
-    $qk = $db->query("SELECT 1 FROM users WHERE api_key = '".$db->sanitize($_GET['k'])."'");
-    if ($qk) {
-        $valid_client_key = TRUE;
+    if ($server_wide_api_key) {
+        if ($_GET['k']==$server_wide_api_key) {
+            $valid_client_key = TRUE;
+        }
     } else {
-        $valid_client_key = FALSE;
+        $qk = $db->query("SELECT 1 FROM users WHERE api_key = '".$db->sanitize($_GET['k'])."'");
+        if ($qk) {
+            $valid_client_key = TRUE;
+        } 
     }
-} else {
-    $valid_client_key = FALSE;
 }
 
 if (preg_match("/api\/modpack$/", $url)) { // modpacks

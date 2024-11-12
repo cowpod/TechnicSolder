@@ -13,11 +13,7 @@ $settings=[];
 if (file_exists('./functions/settings.php')) {
     $settings = include("./functions/settings.php");
 }
-if (isset($config['configured']) && $config['configured']) {
-    error_log("configure.php: already configured, redirecting to login");
-    header("Location: ".$config['dir']."login");
-    exit();
-} elseif (isset($_GET['reconfig'])) {
+if (isset($_GET['reconfig'])) {
     error_log("configure.php: reconfiguring");
     if (!isset($_SESSION['user'])) {
         die("You need to be logged in!");
@@ -25,6 +21,10 @@ if (isset($config['configured']) && $config['configured']) {
     if (!$_SESSION['privileged']) {
         die("Insufficient permission!");
     }
+} elseif (isset($config['configured']) && $config['configured']) {
+    error_log("configure.php: already configured, redirecting to login");
+    header("Location: ".$config['dir']."login");
+    exit();
 }
 
 require_once("./functions/db.php");
@@ -43,6 +43,7 @@ if (isset($_POST['host'])) {
     $name = $_POST['author'];
     $pass = $_POST['pass'];
     $api_key = $_POST['api_key'];
+    $api_key_serverwide = isset($_POST['api_key_serverwide']) ? $_POST['api_key_serverwide'] : "off";
 
     if (!preg_match('/^[\w\.\-\+]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$/', $email)) {
         die('Bad input data; email');
@@ -65,24 +66,42 @@ if (isset($_POST['host'])) {
     $host = strtolower($_POST['host']);
     $dir = $_POST['dir'];
 
-    if (!ctype_alnum($dbtype)||!ctype_alnum($dbuser)||!ctype_alnum($dbname)) {
-        die("Bad input data; db type/user/name");
+    if ($dbtype!="sqlite") {
+        if (!ctype_alnum($dbtype)||!ctype_alnum($dbuser)||!ctype_alnum($dbname)) {
+            die("Bad input data; db type/user/name");
+        }
+        if (!preg_match("/^[a-z0-9\.\-]+$/", $dbhost)) {
+            die("Bad input data; db host");
+        }
+    } else {
+        // sqlite doesn't need these
+        $dbhost = '';
+        $dbuser = '';
+        $dbpass = '';
+        $dbname = '';
     }
-    if (!preg_match("/^[a-z0-9\.\-]+$/", $dbhost) || !preg_match("/^[a-z0-9\.\-]+$/", $host)) {
-        die("Bad input data; host,db host");
+
+    if (!preg_match("/^[a-z0-9\.\-]+$/", $host)) {
+        die("Bad input data; host");
+    }
+    if (!preg_match("/^[a-zA–Z0–9\-\._~!\$&'\(\)\*\+;=:@%\/]+$/", $dir)) {
+        die("Bad input data; dir (path)");
     }
 
     $config_contents = [
-        'db-type'=>strtolower($dbtype),
-        'db-host'=>strtolower($dbhost),
-        'db-user'=>strtolower($dbuser),
-        'db-pass'=>strtolower($dbpass),
-        'db-name'=>strtolower($dbname),
-        'host'=>strtolower($host),
-        'dir'=>strtolower($dir),
+        'db-type'=>$dbtype,
+        'db-host'=>$dbhost,
+        'db-user'=>$dbuser,
+        'db-pass'=>$dbpass,
+        'db-name'=>$dbname,
+        'host'=>$host,
+        'dir'=>$dir,
         'configured'=>true,
         'config_version'=>CONFIG_VERSION
     ];
+    if ($api_key_serverwide=="on") {
+        $config_contents['api_key'] = $api_key;
+    }
 
     file_put_contents('./functions/config.php', '<?php return '.var_export($config_contents, true).' ?>');
 
@@ -95,7 +114,8 @@ if (isset($_POST['host'])) {
             $sql = "CREATE TABLE metrics (
                 name TEXT PRIMARY KEY,
                 time_stamp INTEGER,
-                info TEXT);";
+                info TEXT
+            ";
             $db->execute($sql);
             $sql = "CREATE TABLE modpacks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -112,7 +132,8 @@ if (isset($_POST['host'])) {
                 recommended TEXT,
                 public INTEGER,
                 clients TEXT,
-                UNIQUE (name));";
+                UNIQUE (name)
+            )";
             $db->execute($sql);
             $sql = "CREATE TABLE users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -124,13 +145,15 @@ if (isset($_POST['host'])) {
                 icon TEXT,
                 api_key TEXT,
                 settings TEXT,
-                UNIQUE (name));";
+                UNIQUE (name)
+            )";
             $db->execute($sql);
             $sql = "CREATE TABLE clients (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT,
                 UUID TEXT,
-                UNIQUE (UUID));";
+                UNIQUE (UUID)
+            )";
             $db->execute($sql);
             $sql = "CREATE TABLE builds (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -142,7 +165,8 @@ if (isset($_POST['host'])) {
                 memory TEXT,
                 mods TEXT,
                 public INTEGER,
-                clients TEXT);";
+                clients TEXT
+            )";
             $db->execute($sql);
             $sql = "CREATE TABLE mods (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -159,16 +183,18 @@ if (isset($_POST['host'])) {
                 filename TEXT,
                 filesize INTEGER,
                 type TEXT,
-                loadertype TEXT);";
+                loadertype TEXT
+            )";
             $db->execute($sql);
         } else {
             $sql = "CREATE TABLE metrics (
                 name VARCHAR(128) PRIMARY KEY,
                 time_stamp BIGINT UNSIGNED,
-                info TEXT";
+                info TEXT
+            ";
             $db->execute($sql);
             $sql = "CREATE TABLE modpacks (
-                id int(64) AUTO_INCREMENT PRIMARY KEY,
+                id INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(128),
                 display_name VARCHAR(128),
                 url VARCHAR(512),
@@ -182,10 +208,11 @@ if (isset($_POST['host'])) {
                 recommended VARCHAR(512),
                 public BOOLEAN,
                 clients LONGTEXT,
-                UNIQUE (name));";
+                UNIQUE (name)
+            )";
             $db->execute($sql);
             $sql = "CREATE TABLE users (
-                id int(8) AUTO_INCREMENT PRIMARY KEY,
+                id INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(128),
                 display_name VARCHAR(128),
                 pass VARCHAR(128),
@@ -194,17 +221,19 @@ if (isset($_POST['host'])) {
                 icon LONGTEXT,
                 api_key VARCHAR(128),
                 settings LONGTEXT,
-                UNIQUE (name));";
+                UNIQUE (name)
+            )";
             $db->execute($sql);
             $sql = "CREATE TABLE clients (
-                id int(8) AUTO_INCREMENT PRIMARY KEY,
+                id INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(128),
                 UUID VARCHAR(128),
-                UNIQUE (UUID));";
+                UNIQUE (UUID)
+            )";
             $db->execute($sql);
             $sql = "CREATE TABLE builds (
-                id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                modpack INT(6) NOT NULL,
+                id INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                modpack INTEGER UNSIGNED NOT NULL,
                 name VARCHAR(128) NOT NULL,
                 minecraft VARCHAR(128),
                 java VARCHAR(512),
@@ -212,10 +241,11 @@ if (isset($_POST['host'])) {
                 memory VARCHAR(512),
                 mods VARCHAR(1024),
                 public BOOLEAN,
-                clients LONGTEXT);";
+                clients LONGTEXT
+            )";
             $db->execute($sql);
             $sql = "CREATE TABLE mods (
-                id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                id INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(128) NOT NULL,
                 pretty_name VARCHAR(128) NOT NULL,
                 url VARCHAR(512),
@@ -229,7 +259,8 @@ if (isset($_POST['host'])) {
                 filename VARCHAR(128),
                 filesize INTEGER,
                 type VARCHAR(128),
-                loadertype VARCHAR(32));";
+                loadertype VARCHAR(32)
+            )";
             $db->execute($sql);
         }
 
@@ -338,9 +369,14 @@ if (isset($_POST['host'])) {
                     <div class="form-group">
                         <label for="api_key">Technic Solder API Key</label>
                         <input id="api_key" name="api_key" type="text" class="form-control" placeholder="API Key" required>
+                        <div class="form-check">
+                            <input id="api_key_serverwide" name="api_key_serverwide" type="checkbox" class="form-check-input">
+                            <label for="api_key_serverwide" class="form-check-label ">Server-wide</label>
+                        </div>
                         <small class="form-text text-muted">
                             You can find your API Key in your profile at
-                            <a target="_blank" href="https://technicpack.net">technicpack.net</a>.
+                            <a target="_blank" href="https://technicpack.net">technicpack.net</a>.<br/>
+                            Making your API key server-wide makes it available to all other users, and prevents them from using their own.
                         </small>
                     </div>
                     <h4>Database</h4>
