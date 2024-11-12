@@ -14,7 +14,7 @@ $api_key=$_POST['api_key'];
 if (!empty($api_key) && !ctype_alnum($api_key)) {
     die('{"status":"error", "message":"invalid api_key provided"}');
 }
-if (strlen($api_key)!=32) {
+if (strlen($api_key)!=32 && strlen($api_key)!=0) {
     die('{"status":"error", "message":"invalid api_key provided"}');
 }
 
