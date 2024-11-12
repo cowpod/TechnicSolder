@@ -75,7 +75,7 @@ if (move_uploaded_file($fileTmpLoc, "../others/".$fileName)) {
     
     $pretty_name = $db->sanitize($fileName);
     $name = slugify($pretty_name);
-    $author = $config['author'];
+    $author = $_SESSION['name'];
     $url = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL'])))."://".$config['host'].$config['dir']."others/".$fileName;
     $md5 = md5_file("../others/".$fileName);
 

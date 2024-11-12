@@ -1,28 +1,12 @@
 <?php
 // purely a function file.
-// requires $db, $config in scope.
+// requires $db
 function write_settings($settings, $user) {
     // write to db/disk settings for a user
     global $db;
-    global $config;
     assert(!empty($user));
     assert(!empty($settings));
-    // since for some reason admin is NOT in db •–•
-    if ($user==$config['mail']) {
-        if (is_dir('./functions')) {
-            $path='./functions/settings.php';
-        } else {
-            $path='./settings.php';
-        }
-        @$ret = file_put_contents($path, '<?php return '.var_export($settings, true).'; ?>');
-        if ($ret) {
-            return TRUE;
-        } else {
-            error_log("failed to write admin-user settings");
-            return FALSE;
-        }
-    }
-    // for normal users, api_key is seperate from settings.
+    // api_key is stored in a seperate field
     if (isset($settings['api_key'])) {
         $usersettingsq = $db->execute("UPDATE users SET api_key='".$settings['api_key']."' WHERE name='".$db->sanitize($user)."'");
         if (!$usersettingsq) {
@@ -40,33 +24,20 @@ function write_settings($settings, $user) {
 }
 function read_settings($user) {
     // read settings for a user
-    global $config;
     global $db;
     assert(!empty($user));
-    // since for some reason admin is NOT in db •–•
-    if ($user==$config['mail']) {
-        if (!file_exists("./functions/settings.php")) {
-            $_SESSION['user-settings']=[];
-        } else {
-            $data = require("./functions/settings.php");
-            $_SESSION['user-settings'] = $data;
-            error_log("got admin-user settings ".json_encode($data));
-        }
+    $usersettingsq = $db->query("SELECT settings FROM users WHERE name='".$db->sanitize($user)."'");
+    if ($usersettingsq && sizeof($usersettingsq)==1 && isset($usersettingsq[0]['settings'])) {
+        $_SESSION['user-settings'] = json_decode(base64_decode($usersettingsq[0]['settings']),true);
+        error_log("got user settings from database");
     } else {
-        $usersettingsq = $db->query("SELECT settings FROM users WHERE name='".$db->sanitize($user)."'");
-        if ($usersettingsq && sizeof($usersettingsq)==1 && isset($usersettingsq[0]['settings'])) {
-            $_SESSION['user-settings'] = json_decode(base64_decode($usersettingsq[0]['settings']),true);
-            error_log("got user settings from database");
-        } else {
-            error_log("unable to get user settings");
-        }
-
-        // for normal users, api_key is seperate from settings.
-        $userapikeyq = $db->query("SELECT api_key FROM users WHERE name='".$db->sanitize($user)."'");
-        if ($userapikeyq && sizeof($userapikeyq)==1) {
-            $_SESSION['user-settings']['api_key'] = $userapikeyq[0]['api_key'];
-            error_log("got api key from database");
-        }
+        error_log("unable to get user settings");
+    }
+    // for normal users, api_key is seperate from settings.
+    $userapikeyq = $db->query("SELECT api_key FROM users WHERE name='".$db->sanitize($user)."'");
+    if ($userapikeyq && sizeof($userapikeyq)==1) {
+        $_SESSION['user-settings']['api_key'] = $userapikeyq[0]['api_key'];
+        error_log("got api key from database");
     }
 }
 function got_settings() {

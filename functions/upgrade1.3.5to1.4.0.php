@@ -1,20 +1,17 @@
 <?php
+define('CONFIG_VERSION', 1);
 session_start();
 $config = require("./config.php");
 
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("Unauthorized request or login session has expired!");
-}
-
-if (!empty($config['db-type'])) {
-    die("<b>This script is only meant to be run when upgrading a 1.3.5 install to 1.4.0.</b><br/>You appear to have already run this script (your config has specified 'db-type').");
+if (!empty($config['config-version']) && $config['config-version']==CONFIG_VERSION) {
+    die("<h2>This script is only meant to be run when upgrading a 1.3.5 install to 1.4.0.</h2>");
 }
 
 echo "<hr/>Adding db-type to config<br/>";
-$config_old=$config;
-$config['db-type']='mysql';
+$config_old = $config;
 
-// write config
+// write db-type to config immediately
+$config['db-type']='mysql';
 file_put_contents("./config.php", '<?php return ('.var_export($config,true).') ?>');
 
 // test db
@@ -22,19 +19,19 @@ require_once("./db.php");
 $db=new Db;
 $dbres = $db->connect();
 
+// write back old config since it didn't work.
 if (!$dbres) {
-    // put back old config
     file_put_contents("./config.php", '<?php return ('.var_export($config_old,true).') ?>');
-    die('DB configuration error. Please check that config.php has all the necessary database values.');
+    die('DB configuration error. Please check that config.php has all the necessary database values: db-type,db-host,db-name,db-user,db-pass');
 }
 
 echo "<hr/>Adding table row<br/>";
 
 $addmetrics = $db->execute("CREATE TABLE metrics (
-name VARCHAR(128) PRIMARY KEY,
-time_stamp INT(64),
-info TEXT");
-// woot woot 64-bit timestamp support
+    name VARCHAR(128) PRIMARY KEY,
+    time_stamp BIGINT,
+    info TEXT
+");
 if (!$addmetrics) {
     die("Couldn't add new table metrics! Are we already upgraded? <a href='/'>Click here to return to index</a>.");
 }
@@ -42,10 +39,11 @@ if (!$addmetrics) {
 echo "<hr/>Altering table columns<br/>";
 
 // per-user settings
-$addsettings=$db->execute("ALTER TABLE users ADD COLUMN settings LONGTEXT;");
-$addapikey=$db->execute("ALTER TABLE users ADD COLUMN api_key VARCHAR(128);");
-if (!$addsettings || !$addapikey) {
-    die("Couldn't add new column settings/api_key to table users! Are we already upgraded? <a href='/'>Click here to return to index</a>.");
+$addsettings = $db->execute("ALTER TABLE users ADD COLUMN settings LONGTEXT;");
+$addapikey = $db->execute("ALTER TABLE users ADD COLUMN api_key VARCHAR(128);");
+$addpriv = $db->execute("ALTER TABLE users ADD COLUMN privileged BOOLEAN;");
+if (!$addsettings || !$addapikey || !$addpriv) {
+    die("Couldn't add new column settings/api_key/privileged to table users! Are we already upgraded? <a href='/'>Click here to return to index</a>.");
 }
 
 // 1.4.0: mod version ranges
@@ -56,9 +54,38 @@ if (!$addtype||!$addtype) {
     die("Couldn't add new columns loadertype to table mods! Are we already upgraded? <a href='/'>Click here to return to index</a>.");
 }
 
-mkdir('../upgrade_work');
+echo "<hr/>Migrating admin user<br/>";
+
+$icon = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB9ElEQVR4Xu2bSytEcRiHZyJRaDYWRhJilFlYKjakNOWS7OxEGCRGpAg1KykRSlHSKLkO0YyFhSiRIQmbIcVEsnCXW/EJPB/g9Jvt0/8s3t73+b3nnDnmpZWaXxP8dssRm6yL+XTc9OO1Ib+9GWCe60BuyUpEvvDYiNysAqgDNAJygCSoFPi/AoaPwbCvXnRAKKoZc/T7rA/5kasEeV1wEvlJnBf5lM+KfD16mPcAFUAdoBGQA8gSkqBSwOAxmBZ8QQdsOTIwRzsPOae7Iy/w/Op3DvLwZd4zgrYnPJ83Xcp7gAqgDtAIyAFkCUlQKWDwGKzdPeUH//ftmKPz9ePIQ6m1yANufq+QPteK58s6tpHvRZTxHqACqAM0AnIAWkISVAoYOwaf13bQAZn2WSzAQ1EB38/3FyP/9R0jz/K/I/cMxSM3VSTzHqACqAM0AnIAWUISVAoYPAbfe6/RAV07b5ijH/uFyD8Dd8jnejy8R+TwnuG8GsTzpXdJvAeoAOoAjYAcQJaQBJUCBo9B+6sDHfDSUoM5Wm1uQ34Z60YeMzOB3DJygNy5yU+sHGNNvAeoAOoAjYAcQJaQBJUCBo/B7Cr+aMrvnMEctVbx9wCVXbxINboS8Pqu0DnyFDf//2B0o4H3ABVAHaARwD1ADpAElQKGjsE/aSRgFj7BEuwAAAAASUVORK5CYII=";
+$name = $config['author'];
+$email= $config['mail'];
+$pass = $config['pass'];
+$perms = "1111111";
+$api_key = $config['api_key'];
+
+// hash password
+if (empty($config['encrypted']||!$config['encrypted'])){
+    $pass = password_hash($pass, PASSWORD_DEFAULT);
+}
+
+$db->execute("INSERT INTO users (name,display_name,pass,perms,privileged,icon,api_key) array_values(
+    '".$email."',
+    '".$name."',
+    '".$pass."',
+    '".$perms."',
+    TRUE,
+    '".$icon."',
+    '".$api_key."'
+);");
+
+unset($config['author']);
+unset($config['mail']);
+unset($config['pass']);
+unset($config['encrypted']);
 
 echo "<hr/>Updating mod entries<br/>";
+
+mkdir('../upgrade_work');
 
 require('modInfo.php');
 $mi = new modInfo();
@@ -196,5 +223,9 @@ rmdir('../upgrade_work/mods');
 rmdir('../upgrade_work');
 
 $db->disconnect();
+
+
+$config['config-version']=CONFIG_VERSION;
+file_put_contents("./config.php", '<?php return ('.var_export($config,true).') ?>');
 exit();
 

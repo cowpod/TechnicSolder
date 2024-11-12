@@ -8,8 +8,8 @@ if (empty($_POST['id'])) {
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired.");
 }
-if ($_SESSION['user']!==$config['mail']) {
-    die("insufficient permission!");
+if (!$_SESSION['privileged']) {
+    die("Insufficient permission!");
 }
 
 require_once("db.php");

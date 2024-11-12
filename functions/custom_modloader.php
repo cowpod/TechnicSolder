@@ -81,7 +81,7 @@ if (move_uploaded_file($fileTmpLoc, "../forges/modpack-".$version."/modpack.jar"
                         '".$md5."',
                         '".$url."',
                         '',
-                        '".$config['author']."',
+                        '".$_SESSION['name']."',
                         'Custom mod loader',
                         '".$version."',
                         '".$mcversion."',

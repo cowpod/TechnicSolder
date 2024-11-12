@@ -1,4 +1,8 @@
 <?php
+define('CONFIG_VERSION', 1);
+define('ICON', "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB9ElEQVR4Xu2bSytEcRiHZyJRaDYWRhJilFlYKjakNOWS7OxEGCRGpAg1KykRSlHSKLkO0YyFhSiRIQmbIcVEsnCXW/EJPB/g9Jvt0/8s3t73+b3nnDnmpZWaXxP8dssRm6yL+XTc9OO1Ib+9GWCe60BuyUpEvvDYiNysAqgDNAJygCSoFPi/AoaPwbCvXnRAKKoZc/T7rA/5kasEeV1wEvlJnBf5lM+KfD16mPcAFUAdoBGQA8gSkqBSwOAxmBZ8QQdsOTIwRzsPOae7Iy/w/Op3DvLwZd4zgrYnPJ83Xcp7gAqgDtAIyAFkCUlQKWDwGKzdPeUH//ftmKPz9ePIQ6m1yANufq+QPteK58s6tpHvRZTxHqACqAM0AnIAWkISVAoYOwaf13bQAZn2WSzAQ1EB38/3FyP/9R0jz/K/I/cMxSM3VSTzHqACqAM0AnIAWUISVAoYPAbfe6/RAV07b5ijH/uFyD8Dd8jnejy8R+TwnuG8GsTzpXdJvAeoAOoAjYAcQJaQBJUCBo9B+6sDHfDSUoM5Wm1uQ34Z60YeMzOB3DJygNy5yU+sHGNNvAeoAOoAjYAcQJaQBJUCBo/B7Cr+aMrvnMEctVbx9wCVXbxINboS8Pqu0DnyFDf//2B0o4H3ABVAHaARwD1ADpAElQKGjsE/aSRgFj7BEuwAAAAASUVORK5CYII=");
+define('DEFAULT_PERMS', '1111111'); // and 'privileged'=>'1' makes you an admin.
+define('OVERWRITE_USER', TRUE);
 session_start();
 
 $config=['configured'=>false];
@@ -9,192 +13,251 @@ $settings=[];
 if (file_exists('./functions/settings.php')) {
     $settings = include("./functions/settings.php");
 }
-if (!isset($_GET['reconfig'])) {
-    if ($config['configured']) {
-        sleep(1);
-        header("Location: ".$config['dir']."login");
-        exit();
-    }
-} else {
+if (isset($config['configured']) && $config['configured']) {
+    error_log("configure.php: already configured, redirecting to login");
+    header("Location: ".$config['dir']."login");
+    exit();
+} elseif (isset($_GET['reconfig'])) {
+    error_log("configure.php: reconfiguring");
     if (!isset($_SESSION['user'])) {
         die("You need to be logged in!");
     }
-    if ($_SESSION['user']!==$config['mail']) {
-        die("insufficient permission!");
+    if (!$_SESSION['privileged']) {
+        die("Insufficient permission!");
     }
 }
 
 require_once("./functions/db.php");
 $db=new Db;
 
-$connection_result=false;
+$connection_failed=FALSE;
+
 if (isset($_POST['host'])) {
-    $cf = '<?php return array( "configured" => true, ';
     // OLD HASHING METHOD (INSECURE)
     // $_POST['pass'] = hash("sha256",$_POST['pass']."Solder.cf");
     $_POST['pass'] = password_hash($_POST['pass'], PASSWORD_DEFAULT);
-    $_POST['encrypted'] = true;
 
-    foreach ($_POST as $key => $value) {
-        if ($key=="api_key") continue; // we're putting it in admin-user's settings.php
-        $cf .= "'".$key."' => '".$value."'";
-        if ($key !== "encrypted") {
-            $cf .= ",";
+    // todo: hash password client-side
+    
+    $email = strtolower($_POST['email']);
+    $name = $_POST['author'];
+    $pass = $_POST['pass'];
+    $api_key = $_POST['api_key'];
+
+    if (!preg_match('/^[\w\.\-\+]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$/', $email)) {
+        die('Bad input data; email');
+    }
+    if (!preg_match("/^[a-zA-Z\s\-\.\s]+$/", $name)) {
+        die("Bad input data; name");
+    }
+    // if (!preg_match("/^[a-zA-Z0-9+\/]+={,2}$/", $pass)) {
+    //     die("Bad input data; pass");
+    // }
+    if (!ctype_alnum($api_key) || strlen($api_key)!=32) {
+        die("Bad input data; api_key");
+    }
+
+    $dbtype = strtolower($_POST['db-type']);
+    $dbhost = strtolower($_POST['db-host']);
+    $dbuser = $_POST['db-user'];
+    $dbpass = $_POST['db-pass'];
+    $dbname = $_POST['db-name'];
+    $host = strtolower($_POST['host']);
+    $dir = $_POST['dir'];
+
+    if (!ctype_alnum($dbtype)||!ctype_alnum($dbuser)||!ctype_alnum($dbname)) {
+        die("Bad input data; db type/user/name");
+    }
+    if (!preg_match("/^[a-z0-9\.\-]+$/", $dbhost) || !preg_match("/^[a-z0-9\.\-]+$/", $host)) {
+        die("Bad input data; host,db host");
+    }
+
+    $config_contents = [
+        'db-type'=>strtolower($dbtype),
+        'db-host'=>strtolower($dbhost),
+        'db-user'=>strtolower($dbuser),
+        'db-pass'=>strtolower($dbpass),
+        'db-name'=>strtolower($dbname),
+        'host'=>strtolower($host),
+        'dir'=>strtolower($dir),
+        'configured'=>true,
+        'config_version'=>CONFIG_VERSION
+    ];
+
+    file_put_contents('./functions/config.php', '<?php return '.var_export($config_contents, true).' ?>');
+
+    $conn = $db->connect();
+    if ($conn) {
+        if ($_POST['db-type']=='sqlite') {
+            // sqlite: bigtext,varchar => text
+            // int => integer
+            // unsigned doesn't exist.
+            $sql = "CREATE TABLE metrics (
+                name TEXT PRIMARY KEY,
+                time_stamp INTEGER,
+                info TEXT);";
+            $db->execute($sql);
+            $sql = "CREATE TABLE modpacks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                display_name TEXT,
+                url TEXT,
+                icon TEXT,
+                icon_md5 TEXT,
+                logo TEXT,
+                logo_md5 TEXT,
+                background TEXT,
+                background_md5 TEXT,
+                latest TEXT,
+                recommended TEXT,
+                public INTEGER,
+                clients TEXT,
+                UNIQUE (name));";
+            $db->execute($sql);
+            $sql = "CREATE TABLE users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                display_name TEXT,
+                pass TEXT,
+                perms TEXT,
+                privileged INTEGER,
+                icon TEXT,
+                api_key TEXT,
+                settings TEXT,
+                UNIQUE (name));";
+            $db->execute($sql);
+            $sql = "CREATE TABLE clients (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                UUID TEXT,
+                UNIQUE (UUID));";
+            $db->execute($sql);
+            $sql = "CREATE TABLE builds (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                modpack INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                minecraft TEXT,
+                java TEXT,
+                loadertype TEXT,
+                memory TEXT,
+                mods TEXT,
+                public INTEGER,
+                clients TEXT);";
+            $db->execute($sql);
+            $sql = "CREATE TABLE mods (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                pretty_name TEXT NOT NULL,
+                url TEXT,
+                link TEXT,
+                author TEXT,
+                donlink TEXT,
+                description TEXT,
+                version TEXT,
+                md5 TEXT,
+                mcversion TEXT,
+                filename TEXT,
+                type TEXT,
+                loadertype TEXT);";
+            $db->execute($sql);
+        } else {
+            $sql = "CREATE TABLE metrics (
+                name VARCHAR(128) PRIMARY KEY,
+                time_stamp BIGINT UNSIGNED,
+                info TEXT";
+            $db->execute($sql);
+            $sql = "CREATE TABLE modpacks (
+                id int(64) AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(128),
+                display_name VARCHAR(128),
+                url VARCHAR(512),
+                icon VARCHAR(512),
+                icon_md5 VARCHAR(512),
+                logo VARCHAR(512),
+                logo_md5 VARCHAR(512),
+                background VARCHAR(512),
+                background_md5 VARCHAR(512),
+                latest VARCHAR(512),
+                recommended VARCHAR(512),
+                public BOOLEAN,
+                clients LONGTEXT,
+                UNIQUE (name));";
+            $db->execute($sql);
+            $sql = "CREATE TABLE users (
+                id int(8) AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(128),
+                display_name VARCHAR(128),
+                pass VARCHAR(128),
+                perms VARCHAR(512),
+                privileged BOOLEAN,
+                icon LONGTEXT,
+                api_key VARCHAR(128),
+                settings LONGTEXT,
+                UNIQUE (name));";
+            $db->execute($sql);
+            $sql = "CREATE TABLE clients (
+                id int(8) AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(128),
+                UUID VARCHAR(128),
+                UNIQUE (UUID));";
+            $db->execute($sql);
+            $sql = "CREATE TABLE builds (
+                id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                modpack INT(6) NOT NULL,
+                name VARCHAR(128) NOT NULL,
+                minecraft VARCHAR(128),
+                java VARCHAR(512),
+                loadertype VARCHAR(32),
+                memory VARCHAR(512),
+                mods VARCHAR(1024),
+                public BOOLEAN,
+                clients LONGTEXT);";
+            $db->execute($sql);
+            $sql = "CREATE TABLE mods (
+                id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(128) NOT NULL,
+                pretty_name VARCHAR(128) NOT NULL,
+                url VARCHAR(512),
+                link VARCHAR(512),
+                author VARCHAR(512),
+                donlink VARCHAR(512),
+                description VARCHAR(1024),
+                version VARCHAR(512),
+                md5 VARCHAR(512),
+                mcversion VARCHAR(128),
+                filename VARCHAR(128),
+                type VARCHAR(128),
+                loadertype VARCHAR(32));";
+            $db->execute($sql);
         }
-    }
-    if ($cf." );" !== "<?php return array(  );") {
-        file_put_contents("./functions/config.php", $cf." );");
-    }
 
-    file_put_contents("./functions/settings.php", "<?php return array('api_key'=>'".$_POST['api_key']."') ?>");
+        // if user already exists, replace
+        $userexistsq = $db->query("SELECT 1 FORM users WHERE name='".$db->sanitize($email)."'");
+        if ($userexistsq && sizeof($userexistsq)==1) { // `name` is unique
+            if (OVERWRITE_USER) {
+                $db->execute("DELETE FORM users WHERE name='".$db->sanitize($email)."'");
+            } else {
+                die("User with that email exists. Please go back and try again with different information.");
+            }
+        }
 
-    $connection_result = $db->connect();
+        $adduserq = $db->execute("INSERT INTO users (name,display_name,perms,privileged,pass,icon,api_key) VALUES(
+            '".$db->sanitize($email)."',
+            '".$db->sanitize($name)."',
+            '".DEFAULT_PERMS."',
+            1,
+            '".$pass."',
+            '".ICON."',
+            '".$db->sanitize($api_key)."'
+        )");
 
-    if ($_POST['db-type']=='sqlite') {
-        // sqlite: bigtext,varchar => text
-        // int => integer
-        // unsigned doesn't exist.
-        $sql = "CREATE TABLE metrics (
-            name TEXT PRIMARY KEY,
-            time_stamp INTEGER,
-            info TEXT);";
-        $db->execute($sql);
-        $sql = "CREATE TABLE modpacks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            display_name TEXT,
-            url TEXT,
-            icon TEXT,
-            icon_md5 TEXT,
-            logo TEXT,
-            logo_md5 TEXT,
-            background TEXT,
-            background_md5 TEXT,
-            latest TEXT,
-            recommended TEXT,
-            public BOOLEAN,
-            clients TEXT,
-            UNIQUE (name));";
-        $db->execute($sql);
-        $sql = "CREATE TABLE users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            display_name TEXT,
-            pass TEXT,
-            perms TEXT,
-            icon TEXT,
-            api_key TEXT,
-            settings TEXT,
-            UNIQUE (name));";
-        $db->execute($sql);
-        $sql = "CREATE TABLE clients (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            UUID TEXT,
-            UNIQUE (UUID));";
-        $db->execute($sql);
-        $sql = "CREATE TABLE builds (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            modpack INTEGER NOT NULL,
-            name TEXT NOT NULL,
-            minecraft TEXT,
-            java TEXT,
-            loadertype TEXT,
-            memory TEXT,
-            mods TEXT,
-            public BOOLEAN,
-            clients TEXT);";
-        $db->execute($sql);
-        $sql = "CREATE TABLE mods (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            pretty_name TEXT NOT NULL,
-            url TEXT,
-            link TEXT,
-            author TEXT,
-            donlink TEXT,
-            description TEXT,
-            version TEXT,
-            md5 TEXT,
-            mcversion TEXT,
-            filename TEXT,
-            type TEXT,
-            loadertype TEXT);";
-        $db->execute($sql);
+        $db->disconnect();
+
+        header("Location: ".substr($_SERVER['REQUEST_URI'], 0, -strlen($_SERVER['REQUEST_URI']))."login");
+        exit();
     } else {
-        $sql = "CREATE TABLE metrics (
-            name VARCHAR(128) PRIMARY KEY,
-            time_stamp int(64),
-            info TEXT";
-        $db->execute($sql);
-        $sql = "CREATE TABLE modpacks (
-            id int(64) AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(128),
-            display_name VARCHAR(128),
-            url VARCHAR(512),
-            icon VARCHAR(512),
-            icon_md5 VARCHAR(512),
-            logo VARCHAR(512),
-            logo_md5 VARCHAR(512),
-            background VARCHAR(512),
-            background_md5 VARCHAR(512),
-            latest VARCHAR(512),
-            recommended VARCHAR(512),
-            public BOOLEAN,
-            clients LONGTEXT,
-            UNIQUE (name));";
-        $db->execute($sql);
-        $sql = "CREATE TABLE users (
-            id int(8) AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(128),
-            display_name VARCHAR(128),
-            pass VARCHAR(128),
-            perms VARCHAR(512),
-            icon LONGTEXT,
-            api_key VARCHAR(128),
-            settings LONGTEXT,
-            UNIQUE (name));";
-        $db->execute($sql);
-        $sql = "CREATE TABLE clients (
-            id int(8) AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(128),
-            UUID VARCHAR(128),
-            UNIQUE (UUID));";
-        $db->execute($sql);
-        $sql = "CREATE TABLE builds (
-            id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            modpack INT(6) NOT NULL,
-            name VARCHAR(128) NOT NULL,
-            minecraft VARCHAR(128),
-            java VARCHAR(512),
-            loadertype VARCHAR(32),
-            memory VARCHAR(512),
-            mods VARCHAR(1024),
-            public BOOLEAN,
-            clients LONGTEXT);";
-        $db->execute($sql);
-        $sql = "CREATE TABLE mods (
-            id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(128) NOT NULL,
-            pretty_name VARCHAR(128) NOT NULL,
-            url VARCHAR(512),
-            link VARCHAR(512),
-            author VARCHAR(512),
-            donlink VARCHAR(512),
-            description VARCHAR(1024),
-            version VARCHAR(512),
-            md5 VARCHAR(512),
-            mcversion VARCHAR(128),
-            filename VARCHAR(128),
-            type VARCHAR(128),
-            loadertype VARCHAR(32));";
-        $db->execute($sql);
+        $connection_failed=TRUE;
     }
-
-    $db->disconnect();
-
-    header("Location: ".substr($_SERVER['REQUEST_URI'], 0, -strlen($_SERVER['REQUEST_URI']))."login");
-    exit();
 }
 ?>
 
@@ -236,7 +299,7 @@ if (isset($_POST['host'])) {
                 if (isset($_GET['reconfig'])) {
                     echo "<a href='". (isset($_GET['ret']) ? $_GET['ret'] : '/') ."'><button class='btn btn-secondary'>Cancel</button></a>";
                 }
-                if (isset($_GET['host'])&&!$connection_result) {
+                if (isset($_GET['host']) && $connection_failed) {
                     echo "<font class='text-danger'>Can't connect to database</font><br/>";
                 }
                 if (isset($_GET['reconfig'])) { ?>
@@ -253,7 +316,7 @@ if (isset($_POST['host'])) {
                     <h4>Your Account</h4>
                     <div class="form-group">
                         <label for="email">Login credentials</label>
-                        <input required type="text" class="form-control" name="mail" aria-describedby="emailHelp"
+                        <input required type="text" class="form-control" name="email" aria-describedby="emailHelp"
                                placeholder="Your Email"><br />
                         <input required type="password" class="form-control" id="pass" name="pass"
                                placeholder="Your new password"><br />
@@ -272,7 +335,7 @@ if (isset($_POST['host'])) {
                     </div>
                     <div class="form-group">
                         <label for="api_key">Technic Solder API Key</label>
-                        <input name="api_key" type="text" class="form-control" placeholder="API Key" required>
+                        <input id="api_key" name="api_key" type="text" class="form-control" placeholder="API Key" required>
                         <small class="form-text text-muted">
                             You can find your API Key in your profile at
                             <a target="_blank" href="https://technicpack.net">technicpack.net</a>.
@@ -324,12 +387,11 @@ if (isset($_POST['host'])) {
                         const hasNumber = /[0-9]/.test(password);
                         const hasLowerCase = /[a-z]/.test(password);
                         const hasUpperCase = /[A-Z]/.test(password);
-                        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
                         if (!minLength) {
                             return false;
                         }
-                        if (!hasNumber || !hasUpperCase || !hasLowerCase || !hasSpecialChar) {
+                        if (!hasNumber || !hasUpperCase || !hasLowerCase) {
                             return false;
                         }
                         return true;
@@ -417,6 +479,17 @@ if (isset($_POST['host'])) {
                             }
                         }
                         http.send(params);
+                    });
+                    $("#api_key").on("keyup", function() {
+                        if ($("#api_key").val().length==32 && /^[a-zA-Z0-9]+$/.test($('#api_key').val())) {
+                            $("#api_key").addClass("is-valid");
+                            $("#api_key").removeClass("is-invalid");
+                            $("#save").attr("disabled", false);
+                        } else {
+                            $("#api_key").removeClass("is-valid");
+                            $("#api_key").addClass("is-invalid");
+                            $("#save").attr("disabled", true);
+                        }
                     });
 
                     $(document).ready(function() {

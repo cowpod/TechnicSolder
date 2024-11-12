@@ -247,7 +247,7 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
                     "mods" => $mods,
                 ]));
             } else {
-                die('{"error":"\n\rThis build is private. \n\rPlease contact '.$config['author'].' for more information."}');
+                die('{"error":"\n\rThis build is private."}');
             }
         }
         die('{"error":"Build does not exist"}');

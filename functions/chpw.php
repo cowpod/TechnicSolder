@@ -8,13 +8,6 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
 if (empty($_POST['pass'])) {
     die("Password not specified.");
 }
-if (!isset($config['encrypted'])|| !$config['encrypted']) {
-    $pass = $_POST['pass'];
-} else {
-    // OLD HASHING METHOD (INSECURE)
-    // $pass = hash("sha256",$_POST['pass']."Solder.cf");
-    $pass = password_hash($_POST['pass'], PASSWORD_DEFAULT);
-}
 
 function isStrongPassword($password) {
     if (strlen($password) < 8) {

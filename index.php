@@ -30,6 +30,15 @@ require('functions/format_number.php');
 
 require('functions/mp_latest_recommended.php');
 
+function uri($uri) {
+    global $url;
+    $length = strlen($uri);
+    if ($length == 0) {
+        return true;
+    }
+    return (substr($url, -$length) === $uri);
+}
+
 if (strpos($url, '?') !== false) {
     $url = substr($url, 0, strpos($url, "?"));
 }
@@ -50,64 +59,28 @@ if (isset($_GET['logout']) && $_GET['logout']) {
 $user=[];
 $modslist=[];
 
-if (isset($_POST['email']) && isset($_POST['password']) && $_POST['email'] !== "" && $_POST['password'] !== "") {
-    if (!isset($config['encrypted']) || !$config['encrypted']) {
-        if ($_POST['email']==$config['mail'] && $_POST['password']==$config['pass']) {
+if (!empty($_POST['email']) && !empty($_POST['password'])) {
+    $userq = $db->query("SELECT * FROM users WHERE name = '". addslashes($_POST['email']) ."' LIMIT 1");
+    if ($userq && sizeof($userq)==1) {
+        $user = $userq[0];
+        if (password_verify($_POST['password'], $user['pass'])) {
+        // OLD PASSWORD AUTH METHOD (INSECURE):
+        //if ($user['pass']==hash("sha256",$_POST['password']."Solder.cf")) {
             $_SESSION['user'] = $_POST['email'];
-            $_SESSION['name'] = $config['author'];
-            $_SESSION['perms'] = "1111111";
+            $_SESSION['name'] = $user['display_name'];
+            $_SESSION['perms'] = $user['perms'];
+            $_SESSION['privileged'] = ($user['privileged']=='1') ? TRUE : FALSE;
         } else {
-            $userq = $db->query("SELECT * FROM `users` WHERE `name` = '". addslashes($_POST['email']) ."'");
-            if ($userq && sizeof($userq)>=1 && $user=$userq[0]) {
-                if ($user['pass']==$_POST['password']) {
-                    $_SESSION['user'] = $_POST['email'];
-                    $_SESSION['name'] = $user['display_name'];
-                    $_SESSION['perms'] = $user['perms'];
-                } else {
-                    header("Location: ".$config['dir']."login?ic");
-                    exit();
-                }
-            } else {
-                header("Location: ".$config['dir']."login?ic");
-                exit();
-            }
+            header("Location: ".$config['dir']."login?ic");
+            exit();
         }
     } else {
-        if ($_POST['email']==$config['mail'] && password_verify($_POST['password'], $config['pass'])) {
-        // OLD PASSWORD AUTH METHOD (INSECURE):
-        //if ($_POST['email']==$config['mail'] && hash("sha256",$_POST['password']."Solder.cf")==$config['pass']) {
-            $_SESSION['user'] = $_POST['email'];
-            $_SESSION['name'] = $config['author'];
-            $_SESSION['perms'] = "1111111";
-        } else {
-            $userq = $db->query("SELECT * FROM `users` WHERE `name` = '". addslashes($_POST['email']) ."'");
-            if ($userq && sizeof($userq)>=1 && $user=$userq[0]) {
-                if (password_verify($_POST['password'], $user['pass'])) {
-                // OLD PASSWORD AUTH METHOD (INSECURE):
-                //if ($user['pass']==hash("sha256",$_POST['password']."Solder.cf")) {
-                    $_SESSION['user'] = $_POST['email'];
-                    $_SESSION['name'] = $user['display_name'];
-                    $_SESSION['perms'] = $user['perms'];
-                } else {
-                    header("Location: ".$config['dir']."login?ic");
-                    exit();
-                }
-            } else {
-                header("Location: ".$config['dir']."login?ic");
-                exit();
-            }
-        }
+        header("Location: ".$config['dir']."login?ic");
+        exit();
     }
+        
 }
 
-function uri($uri) {
-    global $url;
-    $length = strlen($uri);
-    if ($length == 0) {
-        return true;
-    }
-    return (substr($url, -$length) === $uri);
-}
 if (isset($_SESSION['user']) && (uri("/login")||uri("/"))) {
     header("Location: ".$config['dir']."dashboard");
     exit();
@@ -366,8 +339,18 @@ if (isset($_SESSION['user'])) {
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
     <body style="<?php if (get_setting('dark')=="on") { echo "background-color: #202429";} else { echo "background-color: #f0f4f9";} ?>">
-    <?php
-        if (uri("login")) {
+        <?php
+        // prompt to upgrade
+        // you'll want to check config_version value to determine what to do.
+        if (empty($config['config_version'])) { ?>
+        <div class="container">
+            <div class="alert alert-danger text-center">
+                <h2>Upgrade required.</h2>
+                <a href="./functions/upgrade1.3.5to1.4.0.php">Click here to upgrade</a>
+            </div>
+        </div>
+        <?php 
+        } elseif (uri("login")) {
         ?>
         <div class="container">
             <div id="logindiv">
@@ -392,17 +375,15 @@ if (isset($_SESSION['user'])) {
         <nav class="navbar <?php if (get_setting('dark')=="on") { echo "navbar-dark bg-dark sticky-top";}else { echo "navbar-light bg-white sticky-top";}?>">
             <span class="navbar-brand"  href="#"><img id="techniclogo" alt="Technic logo" class="d-inline-block align-top" height="46px" src="./resources/wrenchIcon<?php if (get_setting('dark')=="on") {echo "W";}?>.svg"><em id="menuopen" class="fas fa-bars menu-bars"></em> Technic Solder <span id="solderinfo"><?php echo(json_decode($api_version_json,true))['version']; ?></span></span></span>
             <span style="cursor: pointer;" class="dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <?php if ($_SESSION['user']!==$config['mail']) { ?>
                 <img class="img-thumbnail" style="width: 40px;height: 40px" src="data:image/png;base64,<?php
-                        $sql = $db->query("SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
-                        if ($sql && sizeof($sql)>=1) {
-                            $icon = $sql[0];
-                            echo $icon['icon'];
-                        } else {
-                            error_log("failed to get icon for name='".$_SESSION['user']."'");
-                        }
-                         ?>">
-                        <?php } ?>
+                    $iconq = $db->query("SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
+                    if ($iconq && sizeof($iconq)>=1 && isset($iconq[0]['icon'])) {
+                        echo $iconq[0]['icon'];
+                    } else {
+                        error_log("failed to get icon for name='".$_SESSION['user']."'");
+                    }
+                ?>">
+
                 <span class="navbar-text"><?php echo $_SESSION['name'] ?> </span>
                 <div style="left: unset;right: 2px;" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <a class="dropdown-item" href="?logout=true&logout=true" onclick="window.location = window.location+'?logout=true&logout=true'">Log Out</a>
@@ -521,7 +502,7 @@ if (isset($_SESSION['user'])) {
                 <div class="tab-pane" id="settings" role="tabpanel">
                     <div style="overflow:auto;height: calc( 100% - 62px )">
                         <p class="text-muted">SETTINGS</p>
-                    <?php if ($_SESSION['user']==$config['mail']) { // admin account?>
+                    <?php if ($_SESSION['privileged']) { ?>
                         <a href="./admin"><div class="modpack">
                             <p><em class="fas fa-user-tie fa-lg"></em> <span style="margin-left:inherit;">Admin & Server Settings</span></p>
                         </div></a>
@@ -647,26 +628,6 @@ if (isset($_SESSION['user'])) {
                     </div>
                 <?php } ?>
 
-                <?php
-                    if ((!isset($config['encrypted'])|| !$config['encrypted'])&&$_SESSION['user']==$config['mail']) {
-                        ?>
-                        <div class="card alert-warning">
-                            <h2>Warning!</h2>
-                            <p>
-                                Your password is not encrypted and will be visible to anyone who has access to your
-                                files and database. It is recommended that you encrypt your passwords.
-                                <a href="./functions/passencrypt.php">Click here to proceed</a>
-                            </p>
-                            <p>
-                                <strong>
-                                    Note: If this message is still here after clicking the above link, the passwords are
-                                    still being encrypted. Do not click it again. Instead, refresh the page.
-                                </strong>
-                            </p>
-                        </div>
-                        <?php
-                    }
-                ?>
                 <!--todo: check the compatibility of instant modpack's mods-->
                 <div class="card">
                     <center>
@@ -2374,10 +2335,9 @@ if (isset($_SESSION['user'])) {
                     <hr />
                     <h2>User Picture</h2>
                     <img class="img-thumbnail" style="width: 64px;height: 64px" src="data:image/png;base64,<?php
-                    $sql = $db->query("SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
-                    if ($sql && sizeof($sql)>=1) {
-                        $icon = $sql[0];
-                        echo $icon['icon'];
+                    $iconq = $db->query("SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
+                    if ($iconq && sizeof($iconq)>=1 && isset($iconq[0]['icon'])) {
+                        echo $iconq[0]['icon'];
                     } else {
                         error_log("failed to get icon for name='".$_SESSION['user']."'");
                     }
@@ -2411,20 +2371,22 @@ if (isset($_SESSION['user'])) {
                     <p>Then, copy <?php echo $SERVER_PROTOCOL.$config['host'].$config['dir'].'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
                 </div>
             </div>
-            <script>document.title = 'My Account - <?php echo addslashes($_SESSION['name']) ?> - <?php echo addslashes($config['author']) ?>';</script>
+            <script>
+                document.title = 'My Account - <?php echo addslashes($_SESSION['name']) ?>';
+            </script>
             <script src="./resources/js/page_account.js"></script>
             <?php
         } elseif (uri("/admin")) {
             if (isset($_POST['bug-submit'])) {
                 if (isset($_POST['dev_builds'])) {
-                    $config['dev_builds']="on";
+                    $config['dev_builds'] = "on";
                 } else {
-                    $config['dev_builds']="off";
+                    $config['dev_builds'] = "off";
                 }
                 if (isset($_POST['use_verifier'])) {
-                    $config['use_verifier']="on";
+                    $config['use_verifier'] = "on";
                 } else {
-                    $config['use_verifier']="off";
+                    $config['use_verifier'] = "off";
                 }
                 file_put_contents('./functions/config.php', '<?php return '.var_export($config, true).'; ?>');
             } else {
@@ -2453,18 +2415,30 @@ if (isset($_SESSION['user'])) {
                         <?php
                         $users = $db->query("SELECT * FROM `users`");
                         foreach ($users as $user) {
-                            // if editing remember to change in page_admin.js
-                            ?>
-                            <tr id="user-<?php echo $user['id'] ?>">
-                                <td scope="row"><?php echo $user['display_name'] ?></td>
-                                <td><?php echo $user['name'] ?></td>
-                                <td><div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                    <font style="display:hidden" id="user-perms-<?php echo $user['id'] ?>" perms="<?php echo $user['perms'] ?>"></font>
-                                    <button id="user-edit-<?php echo $user['id'] ?>" onclick="edit(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>','<?php echo $user['display_name'] ?>')" class="btn btn-primary" data-toggle="modal" data-target="#editUser" >Edit</button>
-                                    <button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeUser" class="btn btn-danger">Remove</button>
-                                </div></td>
-                            </tr>
+                            if ($user['name']===$_SESSION['user']) {
+                                // if editing remember to change in page_admin.js
+                                ?>
+                                <tr>
+                                    <td><?php echo $user['display_name'] ?></td>
+                                    <td><?php echo $user['name'] ?></td>
+                                    <td>(you)</td>
+                                </tr>
                             <?php
+                            } else {
+                                ?>
+                                <tr id="user-<?php echo $user['id'] ?>">
+                                    <td scope="row"><?php echo $user['display_name'] ?></td>
+                                    <td><?php echo $user['name'] ?></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                                            <font style="display:hidden" id="user-perms-<?php echo $user['id'] ?>" perms="<?php echo $user['perms'] ?>"></font>
+                                            <button id="user-edit-<?php echo $user['id'] ?>" onclick="edit(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>','<?php echo $user['display_name'] ?>')" class="btn btn-primary" data-toggle="modal" data-target="#editUser" >Edit</button>
+                                            <button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeUser" class="btn btn-danger">Remove</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php
+                            }
                         }
                         ?>
                     </tbody>
@@ -2601,7 +2575,7 @@ if (isset($_SESSION['user'])) {
                     </div>
                   </div>
                 </div>
-                <script>document.title = 'Admin - <?php echo addslashes($config['author']) ?>';</script>
+                <script>document.title = 'Admin - <?php echo addslashes($_SESSION['name']) ?>';</script>
                 <script src="./resources/js/page_admin.js"></script>
             </div>
         
