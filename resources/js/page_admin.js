@@ -295,32 +295,42 @@ $("#pass2").on("keyup", function() {
 });
 
 $("#api_key").on("keyup", function() {
-    // if ($("#api_key").val()=="") {
-    //     $("#save_api_key").attr("disabled",true);
-    // } else {
+    if (/^[a-zA-Z0-9]{32}$/.test($("#api_key").val())||$("#api_key").val().length==0) {
         $("#save_api_key").attr("disabled",false);
-    // }
+        $("#api_key").removeClass("is-invalid");
+    } else {
+        $("#save_api_key").attr("disabled",true);
+        $("#api_key").removeClass("is-valid");
+        $("#api_key").addClass("is-invalid");
+    }
 });
 
 $("#save_api_key").on("click", function() {
-    // if ($("#api_key").val()=="") {
-    //     return;
-    // } else {
+    if (/^[a-zA-Z0-9]{32}$/.test($("#api_key").val())||$("#api_key").val().length==0) {
         let formData = new FormData();
         let request = new XMLHttpRequest();
         formData.set('api_key', $("#api_key").val());
-        request.open('POST', './functions/save_api_key.php?serverwide=1');
+        request.open('POST', './functions/save_api_key.php');
         request.onreadystatechange = function() {
             if (request.readyState == 4) {
                 console.log(request.responseText);
-                jsondata=JSON.parse(request.responseText);
+                let jsondata=JSON.parse(request.responseText);
                 if (jsondata['status']=='succ') {
-                    // window.location.reload();
+                    $("#api_key").addClass("is-valid");
+                    $("#api_key").removeClass("is-invalid");
+                } else {
+                    $("#api_key").addClass("is-invalid");
+                    $("#api_key").removeClass("is-valid");
                 }
+                $("#save_api_key").attr("disabled",true);
             }
         }
         request.send(formData);
-    // }
+    } else {
+        $("#save_api_key").attr("disabled",true);
+        $("#api_key").addClass("is-invalid");
+        $("#api_key").removeClass("is-valid");
+    }
 });
 
 $(document).ready(function(){
