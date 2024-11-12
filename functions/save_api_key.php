@@ -14,6 +14,9 @@ $api_key=$_POST['api_key'];
 if (!empty($api_key) && !ctype_alnum($api_key)) {
     die('{"status":"error", "message":"invalid api_key provided"}');
 }
+if (strlen($api_key)!=32) {
+    die('{"status":"error", "message":"invalid api_key provided"}');
+}
 
 if (isset($_SESSION['api_key']) && $_SESSION['api_key']==$api_key) {
     die('{"status":"succ", "message":"api_key is the same"}');
