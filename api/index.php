@@ -24,8 +24,6 @@ if (!isset($db)){
     $db->connect();
 }
 
-$adminuser_settings = require('../functions/settings.php');
-
 if(str_ends_with($url, "api/")){
 	die('{"api":"Solder.cf","version":"v1.4.0","stream":"Release"}'); // todo: this is Dev not release, but may break things if changed...
 } 
@@ -35,11 +33,6 @@ if (str_ends_with($url, "api/verify")) {
 
 if (str_ends_with($url, "api/verify/".substr($url, strrpos($url, '/') + 1))) {
     $user_api_key=substr($url, strrpos($url, '/') + 1);
-
-    // check key for admin user
-    if (isset($adminuser_settings['api_key']) && $user_api_key==$adminuser_settings['api_key']) {
-        die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
-    }
 
     // query db. multiple users could use the same technic api key...
     $apikeysq = $db->query("SELECT 1 FROM users WHERE api_key='".$user_api_key."'");
@@ -125,7 +118,7 @@ if (preg_match("/api\/modpack$/", $url)) { // modpacks
             }
         }
     }
-    die(json_encode(["modpacks"=>$modpacks, "mirror_url"=>"http://".$config['host']."/mods"]));
+    die(json_encode(["modpacks"=>$modpacks, "mirror_url"=>"http://".$config['host']."/mods"], JSON_UNESCAPED_SLASHES));
 } 
 elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modpack details
     $uri_modpack = $matches[1];
@@ -160,20 +153,32 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
                     $counter++;
                 }
             }
-            die(json_encode([
-                "name" => $modpack['name'],
-                "display_name" => $modpack['display_name'],
-                "url" => $modpack['url'],
-                "icon" => $modpack['icon'],
-                "icon_md5" => $modpack['icon_md5'],
-                "logo" => $modpack['logo'],
-                "logo_md5" => $modpack['logo_md5'],
-                "background" => $modpack['background'],
-                "background_md5" => $modpack['background_md5'],
-                "recommended" => $modpack['recommended_name'],
-                "latest" => $modpack['latest_name'],
-                "builds" => $builds
-            ]));
+
+            if (isset($_GET['include']) && $_GET['include'] == "full") {
+                $data=[
+                    "name" => $modpack['name'],
+                    "display_name" => $modpack['display_name'],
+                    "url" => $modpack['url'],
+                    "icon" => $modpack['icon'],
+                    "icon_md5" => $modpack['icon_md5'],
+                    "logo" => $modpack['logo'],
+                    "logo_md5" => $modpack['logo_md5'],
+                    "background" => $modpack['background'],
+                    "background_md5" => $modpack['background_md5'],
+                    "recommended" => $modpack['recommended_name'],
+                    "latest" => $modpack['latest_name'],
+                    "builds" => $builds
+                ];
+            } else {
+                $data=[
+                    "name" => $modpack['name'],
+                    "display_name" => $modpack['display_name'],
+                    "recommended" => $modpack['recommended_name'],
+                    "latest" => $modpack['latest_name'],
+                    "builds" => $builds
+                ];
+            }
+            die(json_encode($data, JSON_UNESCAPED_SLASHES));
         } else {
             die('{"error":"This modpack is private."}');
         }
@@ -234,18 +239,19 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
                             "name" => $mod['name'],
                             "version" => $mod['version'],
                             "md5" => $mod['md5'],
-                            "url" => !empty($mod['url']) ? $mod['url'] : $PROTO_STR.$config['host'].$config['dir'].$mod['type']."s/".$mod['filename']
+                            "url" => !empty($mod['url']) ? $mod['url'] : $PROTO_STR.$config['host'].$config['dir'].$mod['type']."s/".$mod['filename'],
+                            "filesize"=>0
                         ];
                     }
                     $modnumber++;
                 }
                 die(json_encode([
                     "minecraft" => str_replace("f", "", $build['minecraft']),
-                    "java" => $build['java'],
-                    "memory" => $build['memory'],
                     "forge" => null, // todo: is this a bool? or a forge version? or are there more keys for fabric/etc?
+                    "java" => $build['java'],
+                    "memory" => intval($build['memory']),
                     "mods" => $mods,
-                ]));
+                ], JSON_UNESCAPED_SLASHES));
             } else {
                 die('{"error":"\n\rThis build is private."}');
             }

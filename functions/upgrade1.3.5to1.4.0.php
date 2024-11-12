@@ -49,10 +49,15 @@ if (!$addsettings || !$addapikey || !$addpriv) {
 
 // 1.4.0: mod version ranges
 // naturally, we assume user is using mysql.
-$addtype1=$db->execute("ALTER TABLE mods ADD COLUMN loadertype VARCHAR(32);");
-$addtype2=$db->execute("ALTER TABLE builds ADD COLUMN loadertype VARCHAR(32);");
-if (!$addtype||!$addtype) {
-    die("Couldn't add new columns loadertype to table mods! Are we already upgraded? <a href='/'>Click here to return to index</a>.");
+$addtype=$db->execute("ALTER TABLE mods ADD COLUMN loadertype VARCHAR(32);");
+$addsize=$db->execute("ALTER TABLE mods ADD COLUMN filesize INTEGER;");
+if (!$addtype||!$addsize) {
+    die("Couldn't add new columns loadertype,filesize to table mods! Are we already upgraded? <a href='/'>Click here to return to index</a>.");
+}
+
+$addtype=$db->execute("ALTER TABLE builds ADD COLUMN loadertype VARCHAR(32);");
+if (!$addtype) {
+    die("Couldn't add new columns loadertype to table builds! Are we already upgraded? <a href='/'>Click here to return to index</a>.");
 }
 
 echo "<hr/>Migrating admin user<br/>";

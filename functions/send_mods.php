@@ -94,23 +94,25 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
             rename($mod_zip_path_tmp, $mod_zip_path);
 
             $mod_zip_md5 = md5_file($mod_zip_path);
+            $zip_size= filesize($mod_zip_path);
 
             $mcvrange = parse_interval_range($modinfo['mcversion']);
 
-            $addq = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`) VALUES ("
-                ."'".$db->sanitize($modinfo['modid'])."',"
-                ."'".$db->sanitize($modinfo['name'])."',"
-                ."'".$db->sanitize($mod_zip_md5)."',"
-                ."'"."',"
-                ."'".$db->sanitize($modinfo['url'])."',"
-                ."'".$db->sanitize($modinfo['authors'])."',"
-                ."'".$db->sanitize($modinfo['description'])."',"
-                ."'".$db->sanitize($modinfo['version'])."',"
-                ."'".$db->sanitize($modinfo['mcversion'])."',"
-                ."'".$db->sanitize(basename($mod_zip_path))."',"
-                ."'mod',"
-                ."'".$db->sanitize($modinfo['loadertype'])."'"
-                .")");
+            $addq = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`,`filesize`) VALUES (
+                '{$db->sanitize($modinfo['modid'])}',
+                '{$db->sanitize($modinfo['name'])}',
+                '{$db->sanitize($mod_zip_md5)}',
+                '',
+                '{$db->sanitize($modinfo['url'])}',
+                '{$db->sanitize($modinfo['authors'])}',
+                '{$db->sanitize($modinfo['description'])}',
+                '{$db->sanitize($modinfo['version'])}',
+                '{$db->sanitize($modinfo['mcversion'])}',
+                '{$db->sanitize(basename($mod_zip_path))}',
+                'mod',
+                '{$db->sanitize($modinfo['loadertype'])}',
+                {$zip_size}
+                );");
 
             if ($addq) {
                 assert(!empty($db->insert_id()));

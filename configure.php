@@ -157,6 +157,7 @@ if (isset($_POST['host'])) {
                 md5 TEXT,
                 mcversion TEXT,
                 filename TEXT,
+                filesize INTEGER,
                 type TEXT,
                 loadertype TEXT);";
             $db->execute($sql);
@@ -226,6 +227,7 @@ if (isset($_POST['host'])) {
                 md5 VARCHAR(512),
                 mcversion VARCHAR(128),
                 filename VARCHAR(128),
+                filesize INTEGER,
                 type VARCHAR(128),
                 loadertype VARCHAR(32));";
             $db->execute($sql);
