@@ -1553,6 +1553,8 @@ if (isset($_SESSION['user'])) {
         ?>
         <script>document.title = 'Mod Library - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
+
+            <?php if (substr($_SESSION['perms'],3,1)=="1") { ?>
             <div id="upload-card" class="card">
                 <h2>Upload mods</h2>
                 <div class="card-img-bottom">
@@ -1560,20 +1562,9 @@ if (isset($_SESSION['user'])) {
                         <div class="upload-mods">
                             <center>
                                 <div>
-                                    <?php
-                                    if (substr($_SESSION['perms'],3,1)=="1") {
-                                        echo "
-                                        Drag n' Drop .jar files here.
-                                        <br />
-                                        <em class='fas fa-upload fa-4x'></em>
-                                        ";
-                                    } else {
-                                        echo "
-                                        Insufficient permissions!
-                                        <br />
-                                        <em class='fas fa-times fa-4x'></em>
-                                        ";
-                                    } ?>
+                                    Drag n' Drop .jar files here.
+                                    <br />
+                                    <em class='fas fa-upload fa-4x'></em>
                                 </div>
                             </center>
                             <input <?php if (substr($_SESSION['perms'],3,1)!=="1") { echo "disabled"; } ?> type="file" name="fiels" accept=".jar" multiple/>
@@ -1581,7 +1572,6 @@ if (isset($_SESSION['user'])) {
                     </form>
                 </div>
             </div>
-             <?php if (substr($_SESSION['perms'],3,1)=="1") { ?><p class="ml-3"><a href="./add-mods"><em class="fas fa-plus-circle"></em> Add remote mods</a></p><?php } ?>
             <div style="display: none" id="u-mods" class="card">
                 <h2>New Mods</h2>
                 <table class="table">
@@ -1596,6 +1586,10 @@ if (isset($_SESSION['user'])) {
                 </table>
                 <button id="btn-done" disabled class="btn btn-success btn-block" onclick="window.location.reload();">Done</button>
             </div>
+            <div class="card">
+                <p class="ml-3"><a href="./add-mods"><em class="fas fa-plus-circle"></em> Add remote mods</a></p>
+            </div>
+            <?php } ?>
             <div class="card">
                 <h2>Available Mods</h2>
                 <hr>
@@ -1664,6 +1658,7 @@ if (isset($_SESSION['user'])) {
                     </tbody>
                 </table>
             </div>
+
             <div class="modal fade" id="removeMod" tabindex="-1" role="dialog" aria-labelledby="rm" aria-hidden="true">
               <div class="modal-dialog" role="document">
                 <div class="modal-content">
@@ -1895,6 +1890,7 @@ if (isset($_SESSION['user'])) {
         ?>
         <script>document.title = 'Other Files - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
+            <?php if (substr($_SESSION['perms'], 3, 1)=="1") { ?>
             <div id="upload-card" class="card">
                 <h2>Upload files</h2>
                 <div class="card-img-bottom">
@@ -1902,24 +1898,13 @@ if (isset($_SESSION['user'])) {
                         <div class="upload-mods">
                             <center>
                                 <div>
-                                    <?php
-                                        if (substr($_SESSION['perms'], 3, 1)=="1") {
-                                            echo "
-                                            Drag n' Drop .zip files here.
-                                            <br />
-                                            <em class='fas fa-upload fa-4x'></em>
-                                            ";
-                                        } else {
-                                            echo "
-                                            Insufficient permissions!
-                                            <br />
-                                            <em class='fas fa-times fa-4x'></em>
-                                            ";
-                                        } ?>
-                                    </div>
-                                </center>
-                                <input <?php if (substr($_SESSION['perms'], 3, 1)!=="1") { echo "disabled"; } ?> type="file" name="fiels" accept=".zip" multiple />
-                            </div>
+                                    Drag n' Drop .zip files here.
+                                    <br />
+                                    <em class='fas fa-upload fa-4x'></em>
+                                </div>
+                            </center>
+                            <input <?php if (substr($_SESSION['perms'], 3, 1)!=="1") { echo "disabled"; } ?> type="file" name="fiels" accept=".zip" multiple />
+                        </div>
                     </form>
                 </div>
                 <p>These files will be extracted to modpack's root directory. (e.g. Config files, worlds, resource packs....)</p>
@@ -1939,6 +1924,7 @@ if (isset($_SESSION['user'])) {
                 </table>
                 <button id="btn-done" disabled class="btn btn-success btn-block" onclick="window.location.reload();">Done</button>
             </div>
+            <?php } ?>
             <div class="card">
                 <h2>Available Files</h2>
                 <table class="table table-striped sortable">
