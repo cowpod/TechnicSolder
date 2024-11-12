@@ -3,8 +3,9 @@ define('CONFIG_VERSION', 1);
 session_start();
 $config = require("./config.php");
 
-if (!empty($config['config-version']) && $config['config-version']==CONFIG_VERSION) {
-    die("<h2>This script is only meant to be run when upgrading a 1.3.5 install to 1.4.0.</h2>");
+if (!empty($config['config_version']) && $config['config_version']==CONFIG_VERSION) {
+    $index = isset($config['dir']) ? $config['dir'] : '.';
+    die("<h2>This script is only meant to be run when upgrading a 1.3.5 install to 1.4.0.</h2><a href='{$index}'>return to index</a>");
 }
 
 echo "<hr/>Adding db-type to config<br/>";
@@ -225,7 +226,7 @@ rmdir('../upgrade_work');
 $db->disconnect();
 
 
-$config['config-version']=CONFIG_VERSION;
+$config['config_version']=CONFIG_VERSION;
 file_put_contents("./config.php", '<?php return ('.var_export($config,true).') ?>');
 exit();
 
