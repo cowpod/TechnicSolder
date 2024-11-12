@@ -47,6 +47,12 @@ Run it in background.
 docker-compose up -d
 ```
 
+By default, the MySQL login details are:
+- host: docker-db-1
+- database: solder
+- username: solder
+- password: solder (which you changed previously)
+
 ## Generic installation and configuration (without SSH/CLI access)
 If you are using a shared host, or for some reason don't have access to the command-line interface, the general set-up is as follows. This assumes you'll be using something like cPanel.
 
