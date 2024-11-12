@@ -1092,9 +1092,9 @@ if (isset($_SESSION['user'])) {
                                 <th style="width:20%" data-defaultsign="AZ" scope="col">Build</th>
                                 <th style="width:20%" data-defaultsign="AZ" scope="col">Minecraft</th>
                                 <th style="width:20%" data-defaultsign="AZ" scope="col">Java</th>
-                                <th style="width:5%" data-defaultsign="_19" scope="col">Mods</th>
-                                <th style="width:30%" data-defaultsign="disabled" scope="col"></th>
-                                <th style="width:5%" data-defaultsign="disabled" scope="col"></th>
+                                <th style="width:5%"  data-defaultsign="_19" scope="col">Mods</th>
+                                <th style="width:30%" data-defaultsort="disabled" scope="col"></th>
+                                <th style="width:5%"  data-defaultsort="disabled" scope="col"></th>
                             </tr>
                         </thead>
                         <tbody id="table-builds">
@@ -1296,7 +1296,7 @@ if (isset($_SESSION['user'])) {
                                     <th scope="col" style="width: 5%" data-defaultsort="disabled"></th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="mods-in-build">
                                 <?php
                                 $modsluglist = Array();
                                 $build_mod_ids = $modslist;
@@ -1360,7 +1360,7 @@ if (isset($_SESSION['user'])) {
                                             echo $mod['name'] ?>"><?php
 
                                             // get versions for mod
-                                            $modv = $db->query("SELECT version FROM mods WHERE name='".$mod['name']."'");
+                                            $modv = $db->query("SELECT id,version FROM mods WHERE name='".$mod['name']."'");
                                             if($modv && sizeof($modv)>0) {
                                                 foreach ($modv as $mv) {
                                                     if ($mv['id'] == $mod['id']) {
@@ -1383,7 +1383,7 @@ if (isset($_SESSION['user'])) {
                                         // todo: we should switch type to be 'loader' instead of 'forge' for loaders.
                                         if (substr($_SESSION['perms'], 1, 1)=="1" && (empty($mod) || $mod['type'] == "mod" || $mod['type'] == "other")) {
                                             ?>
-                                            <button onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo empty($mod)?'missing-'.$build_mod_id:$mod['name'] ?>')" class="btn btn-danger">
+                                            <button onclick="remove_mod(<?php echo $build_mod_id ?>)" class="btn btn-danger">
                                                 <em class="fas fa-times"></em>
                                             </button>
                                             <?php
@@ -1464,38 +1464,39 @@ if (isset($_SESSION['user'])) {
                             } else {
                                 foreach ($name_version_details as $tuple=>$version_details) {
                                     [$name, $prettyname] = unserialize($tuple);
+                                    $mcversion="";
+                                    $version="";
                                     ?>
                                     <tr id="mod-add-row-<?php echo $name ?>">
-                                        <td scope="row"><?php 
-                                        echo $prettyname ?></td>
+                                        <td scope="row"><?php echo $prettyname ?></td>
                                         <td>
                                             <select class="form-control" name="version" id="versionselect-<?php echo $name ?>" modname="<?php echo $name ?>">
-                                                <?php
-
-                                                $num_missing_version=0;
-                                                $num_hidden_version=0;
-                                                $num=sizeof($version_details);
-                                                $disable_add_button=FALSE;
-                                                foreach ($version_details as $vals) {
-                                                    [$id,$version,$mcversion] = $vals;
-                                                    if (in_range($mcversion, $user['minecraft'])|| (!empty($_SESSION['showall']) && $_SESSION['showall'])) {
-                                                        if (empty($version)) {
-                                                            echo "<option value='".$id."' missing='true' disabled='disabled'>NONE".((!empty($_SESSION['showall']) && $_SESSION['showall']) ? " - ".$mcversion : "")."</option>";
-                                                            $num_missing_version+=1;
-                                                        } else {
-                                                            echo "<option value='".$id."'>".$version.((!empty($_SESSION['showall']) && $_SESSION['showall']) ? " - ".$mcversion : "")."</option>";
-                                                        }
-                                                    } else {
-                                                        $num_hidden_version+=1;
-                                                    }
-                                                }
-                                                if ($num_missing_version+$num_hidden_version==$num) {
-                                                    $disable_add_button=TRUE;
-                                                }
-                                                ?>
+                                    <?php
+                                    $num_missing_version=0;
+                                    $num_hidden_version=0;
+                                    $num=sizeof($version_details);
+                                    $disable_add_button=FALSE;
+                                    foreach ($version_details as $vals) {
+                                        [$id,$version,$mcversion] = $vals;
+                                        if (in_range($mcversion, $user['minecraft'])|| (!empty($_SESSION['showall']) && $_SESSION['showall'])) {
+                                            if (empty($version)) {
+                                                echo "<option value='".$id."' missing='true' disabled='disabled'>NONE".((!empty($_SESSION['showall']) && $_SESSION['showall']) ? " - ".$mcversion : "")."</option>";
+                                                $num_missing_version+=1;
+                                            } else {
+                                                echo "<option value='".$id."'>".$version.((!empty($_SESSION['showall']) && $_SESSION['showall']) ? " - ".$mcversion : "")."</option>";
+                                            }
+                                        } else {
+                                            $num_hidden_version+=1;
+                                        }
+                                    }
+                                    if ($num_missing_version+$num_hidden_version==$num) {
+                                        $disable_add_button=TRUE;
+                                    }
+                                    ?>
                                             </select>
                                         </td>
-                                        <td><button id="btn-add-mod-<?php echo $name ?>" onclick="add('<?php echo $name ?>')" class="btn btn-primary" <?php if ($disable_add_button) echo 'disabled="disabled"' ?>>Add to Build</button></td>
+                                        <!--remember to modify page_build.js too -->
+                                        <td><button id="btn-add-mod-<?php echo $name ?>" onclick="add('<?php echo $name ?>','<?php echo $version ?>','<?php echo $mcversion ?>')" class="btn btn-primary" <?php if ($disable_add_button) echo 'disabled="disabled"' ?>>Add to Build</button></td>
                                         <td><em id="cog-<?php echo $name ?>" style="display:none" class="fas fa-cog fa-spin fa-2x"></em><em id="check-<?php echo $name ?>" style="display:none" class="text-success fas fa-check fa-2x"></em></td>
                                     </tr>
                                 <?php
@@ -1572,6 +1573,7 @@ if (isset($_SESSION['user'])) {
                     </form>
                 </div>
             </div>
+
             <div style="display: none" id="u-mods" class="card">
                 <h2>New Mods</h2>
                 <table class="table">
@@ -1590,17 +1592,18 @@ if (isset($_SESSION['user'])) {
                 <p class="ml-3"><a href="./add-mods"><em class="fas fa-plus-circle"></em> Add remote mods</a></p>
             </div>
             <?php } ?>
+
             <div class="card">
                 <h2>Available Mods</h2>
                 <hr>
                 <input placeholder="Search..." type="text" id="search" class="form-control"><br />
-                <table id="modstable" class="table table-striped table-responsive sortable">
+                <table id="modstable" class="table table-striped sortable">
                     <thead>
                         <tr>
                             <th style="width:30%" scope="col" data-defaultsign="AZ">Mod name</th>
                             <th style="width:30%" scope="col" data-defaultsign="AZ">Author</td>
-                            <th style="width:10%" scope="col" data-defaultsign="_19">Versions</td>
-                            <th style="width:30%" scope="col" data-defaultsort="disabled"></th>
+                            <th style="width:30%" scope="col" data-defaultsign="_19">Versions</td>
+                            <th style="width:10%" scope="col" data-defaultsort="disabled"></th>
                         </tr>
                     </thead>
                     <tbody id="table-mods">
@@ -1785,18 +1788,17 @@ if (isset($_SESSION['user'])) {
             </div>
             <div class="card" id="fetched-mods" style="display: none">
                 <h2>Available Forge Versions</h2>
-                <table class="table table-striped table-responsive">
+                <table class="table table-striped sortable">
                     <thead>
                         <tr>
-                            <th scope="col" style="width:10%">Minecraft</th>
-                            <th scope="col" style="width:15%">Forge Version</th>
-                            <th scope="col" style="width:55%">Link</th>
-                            <th scope="col" style="width:15%"></th>
-                            <th scope="col" style="width:5%"></th>
+                            <th scope="col" style="width:10%" data-defaultsign="_19">Minecraft</th>
+                            <th scope="col" style="width:15%" data-defaultsign="_19">Forge Version</th>
+                            <th scope="col" style="width:55%" data-defaultsign="AZ">Link</th>
+                            <th scope="col" style="width:15%" data-defaultsort="disabled"></th>
+                            <th scope="col" style="width:5%"  data-defaultsort="disabled"></th>
                         </tr>
                     </thead>
                     <tbody id="forge-table">
-
                     </tbody>
                 </table>
             </div>
@@ -1843,7 +1845,7 @@ if (isset($_SESSION['user'])) {
                             <th scope="col" style="width:25%" data-defaultsign="_19">Version</th>
                             <th scope="col" style="width:20%" data-defaultsign="AZ">Loader Type</th>
                             <th scope="col" style="width:20%" data-defaultsort="disabled"></th>
-                            <th scope="col" style="width:5%" data-defaultsort="disabled"></th>
+                            <th scope="col" style="width:5%"  data-defaultsort="disabled"></th>
                         </tr>
                     </thead>
                     <tbody id="forge-available">

@@ -30,4 +30,6 @@ $modslist = implode(',', $nmodlist);
 $db->execute("UPDATE `builds` SET `mods` = '".$modslist."' WHERE `id` = ".$db->sanitize($_GET['bid']));
 
 $db->disconnect();
+
+echo 'Mod removed';
 exit();

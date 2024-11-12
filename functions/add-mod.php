@@ -24,4 +24,6 @@ if ($modsq) {
     $mods = $modsq[0];
 }
 $db->execute("UPDATE `builds` SET `mods` = '".$mods['mods'].",".$_GET['id']."' WHERE `id` = ".$_GET['bid']);
+
+echo 'Mod added';
 exit();
