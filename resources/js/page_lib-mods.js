@@ -60,12 +60,12 @@ function sendFile(file, i) {
                                 $("#" + i).attr("id", i + "-done");
                                 break;
                             }
-                            case "error":
+                            case "info":
                             {
                                 $("#cog-" + i).hide();
-                                $("#times-" + i).show();
+                                $("#inf-" + i).show();
                                 $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                $("#" + i).addClass("bg-danger");
+                                $("#" + i).addClass("bg-success");
                                 $("#info-" + i).text(response.message);
                                 $("#" + i).attr("id", i + "-done");
                                 break;
@@ -80,16 +80,43 @@ function sendFile(file, i) {
                                 $("#" + i).attr("id", i + "-done");
                                 break;
                             }
-                            case "info":
+                            case "error":
                             {
                                 $("#cog-" + i).hide();
-                                $("#inf-" + i).show();
+                                $("#times-" + i).show();
                                 $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                $("#" + i).addClass("bg-success");
+                                $("#" + i).addClass("bg-danger");
                                 $("#info-" + i).text(response.message);
                                 $("#" + i).attr("id", i + "-done");
                                 break;
                             }
+                        }
+                        let num_versions = response['modid'].length;
+                        let author = response['author'];
+                        let name = response['name'];
+                        let pretty_name = response['pretty_name'];
+                        let mcversion = response['mcversion'];
+                        let version = response['version'];
+                        // console.log(response['status']);
+                        if (response['status']!="error") {
+                            // console.log('add new row');
+                            let i=0;
+                            // for (let id of response['modid']) {
+                                $('#table-available-mods').append(`
+                                    <tr id="mod-row-${name[i]}">
+                                        <td scope="row" data-value="${pretty_name[i]}">${pretty_name[i]}</td>
+                                        <td data-value="${author[i]}">${author[i]}</td>
+                                        <td data-value="${num_versions}">${num_versions}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                                                <button onclick="window.location='./mod?id=${name[i]}'" class="btn btn-primary">Edit</button>
+                                                <button onclick="remove_box('${name[i]}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `);
+                                // i==1;
+                            // }
                         }
                     } else {
                         $("#cog-" + i).hide();
