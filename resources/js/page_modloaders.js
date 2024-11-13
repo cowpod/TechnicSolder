@@ -228,61 +228,81 @@ function add(v,link,mcv,id) {
     request.send();
 }
 
+const forge_link = "https://maven.minecraftforge.net/net/minecraftforge/forge";
+
 // Fetch forge versions
-var nof = 0;
-var fiq = 0;
-let fetch = ()=> {
+async function fetch_forges() {
     $("#fetch-forge").attr("disabled", true);
     // $("#fetch-fabric").attr("disabled", true);
     // $("#fetch-neoforge").attr("disabled",true);
     $("#fetch-forge").html("Loading...<i class='fas fa-cog fa-spin fa-sm'></i>");
     var request = new XMLHttpRequest();
     request.open('GET', './functions/forge-links.php');
-    request.onreadystatechange = function() {
-        if (request.readyState == 4) {
-            if (request.status == 200) {
-                response = JSON.parse(this.response);
-                nof=0;
-                fiq=0;
-                for (var key in response) {
-                    nof++;
-                    chf(response[key]["link"],response[key]["name"],response[key]["id"],response[key]["mc"]);
+    request.onreadystatechange = async function() {
+        if (request.readyState == 4 && request.status == 200) {
+            response = JSON.parse(this.response);
+
+            response = Object.fromEntries(
+                Object.entries(response).reverse()
+            );
+
+            $("#fetched-mods").show();
+            console.log("ignore 404s, they're supposed to be suppressed/catched with onerror")
+            let onesix_404ed=false;
+            for (var key in response) {
+                // if below problematic version 1.6.1, AND we couldn't get 1.6.1, skip the rest
+                if (compareVersions(key,'1.6.0')<0 && onesix_404ed) {
+                    continue;
+                } else {
+                    try {
+                        await chf(response[key]["link"],response[key]["name"],response[key]["id"],response[key]["mc"]);
+                    } catch (e) {
+                        console.log(`ignoring 404 #4: '${key}'`);
+                        if (compareVersions(key,'1.6.0')<0) {
+                            onesix_404ed=true;
+                        }
+                    }
                 }
             }
+
+            $("#fetch-forge").html("Show Forge Installer");
+            // $("#fetch-forge").removeAttr("disabled");
+            // $("#fetch-fabric").removeAttr("disabled");
+            // $("#fetch-neoforge").removeAttr("disabled");
         }
     }
+    
     request.send();
 }
 
 // add item to installer list
-function chf(link,name,id,mc) {
-    var chf = new XMLHttpRequest();
-    chf.open('GET', "./functions/chf.php?link="+link);
-    chf.onreadystatechange = function() {
-        if (chf.readyState == 4) {
-            if (chf.status == 200) {
-                fiq++;
-                if (chf.response == "OK") {
-                    $("#fetched-mods").show();
-                    $("#forge-table").append(`
-                        <tr id="forge-${id}">
-                            <td scope="row" data-value="${mc}">${mc}</td>
-                            <td data-value="${name}">${name}</td>
-                            <td data-value="${link}"><a href="${link}">${link}</a></td>
-                            <td><button id="button-add-${id}" onclick="add(\'${name}\', \'${link}\', \'${mc}', \'${id}\')" class="btn btn-primary btn-sm">Add to Database</button></td>
-                            <td><em id="cog-${id}" style="display:none" class="fas fa-spin fa-cog fa-2x"></em><em id="check-${id}" style="display:none" class="text-success fas fa-check fa-2x"></em><em id="times-${id}" style="display:none" class="text-danger fas fa-times fa-2x"></em></td>
-                        </tr>`);
-                    if (fiq==nof) {
-                        $("#fetch-forge").html("Show Forge Installer");
-                        // $("#fetch-forge").removeAttr("disabled");
-                        // $("#fetch-fabric").removeAttr("disabled");
-                        // $("#fetch-neoforge").removeAttr("disabled");
-                    }
-                }
+async function chf(link,name,id,mc) {
+    return new Promise((resolve, reject) => {
+        fetch(link, { method:'HEAD' })
+        .then(response=> {
+            if (response.status == 404) {
+                // console.log('ignoring 404 #1');
+                reject(id);
+            } else if (response.status == 200) {
+                $("#forge-table").append(`
+                <tr id="forge-${id}">
+                    <td scope="row" data-value="${mc}">${mc}</td>
+                    <td data-value="${name}">${name}</td>
+                    <td data-value="${link}" style="overflow-wrap: break-word;"><a href="${link}" style="word-break: break-all;">${link}</a></td>
+                    <td><button id="button-add-${id}" onclick="add(\'${name}\', \'${link}\', \'${mc}', \'${id}\')" class="btn btn-primary btn-sm">Add to Database</button></td>
+                    <td><em id="cog-${id}" style="display:none" class="fas fa-spin fa-cog fa-2x"></em><em id="check-${id}" style="display:none" class="text-success fas fa-check fa-2x"></em><em id="times-${id}" style="display:none" class="text-danger fas fa-times fa-2x"></em></td>
+                </tr>`);
+                resolve(id);
             }
-        }
-    }
-    chf.send();
+        })
+        .catch(error=>{
+            // console.log('ignoring 404 #2');
+            reject(id);
+        });
+    }).catch(error=>{
+        // console.log('ignoring 404 #3');
+        reject(id);
+    });
 }
 
 // add item to installed list
