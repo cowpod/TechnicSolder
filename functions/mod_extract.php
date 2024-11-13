@@ -18,7 +18,7 @@ define('MAX_DOWNLOAD_TIME', 60*20); // 20 minutes
 
 $filenameq = $db->query("SELECT `filename` FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
 if ($filenameq) {
-    assert(sizeof($q)==1);
+    assert(sizeof($filenameq)==1);
     $filenameq=$filenameq[0];
 }
 $fileName = $filenameq['filename'];

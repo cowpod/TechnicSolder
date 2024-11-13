@@ -166,12 +166,12 @@ class Db {
 	}
 
 	public function insert_id() {
-		error_log("db.php: insert_id(): ".$this->conn->lastInsertId());
+		// error_log("db.php: insert_id(): ".$this->conn->lastInsertId());
 		return $this->conn->lastInsertId();
 	}
 
 	public function error() {
-		error_log("db.php: error(): ".$this->conn->errorInfo());
+		// error_log("db.php: error(): ".$this->conn->errorInfo());
 		return $this->conn->errorInfo();
 	}
 }
