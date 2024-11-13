@@ -138,6 +138,7 @@ function parse_interval_range($mcversion) {
 	} 
 	// we assume it's a number
 	else {
+		$mcversion=trim(trim(trim(trim($mcversion,'['),']'),'['),']'); // [1.20.1]
 		$min=$mcversion;
 		$exp=explode('.',$mcversion);
 		error_log($exp[sizeof($exp)-1]);
