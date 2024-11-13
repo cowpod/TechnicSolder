@@ -4,6 +4,11 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d  
 RewriteRule .* index.php [L] 
 
+php_value max_execution_time 600
+php_value upload_max_filesize 1G
+php_value post_max_size 1G
+php_value output_buffering 0
+
 <Files "db.sqlite">
 Require all denied
 </Files>
