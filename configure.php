@@ -97,7 +97,9 @@ if (isset($_POST['host'])) {
         'host'=>$host,
         'dir'=>$dir,
         'configured'=>true,
-        'config_version'=>CONFIG_VERSION
+        'config_version'=>CONFIG_VERSION,
+        'modrinth_integration'=>'on',
+        'use_verifier'=>'on'
     ];
     if ($api_key_serverwide) {
         $config_contents['api_key'] = $api_key;
