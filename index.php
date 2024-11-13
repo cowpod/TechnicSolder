@@ -122,8 +122,7 @@ if (isset($_SESSION['user'])) {
         <script src="./resources/js/jquery.min.js"></script>
         <script src="./resources/js/popper.min.js"></script>
         <script src="./resources/js/fontawesome.js"></script>
-        <script src="./resources/js/slugify.js"></script>
-        <script src="./resources/js/getQueryVariable.js"></script>
+        <script src="./resources/js/global.js"></script>
         <script src="./resources/bootstrap/bootstrap.min.js"></script>
         <script src="./resources/bootstrap/bootstrap-sortable.js"></script>
         <link rel="stylesheet" href="./resources/bootstrap/bootstrap-sortable.css" type="text/css">
