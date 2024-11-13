@@ -179,7 +179,15 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
 
 $mi = new modInfo();
 $modinfos = $mi->getModInfo($file_tmp, $file_name);
-error_log(json_encode($modinfos));
+$warn = $mi->getWarnings();
+
+foreach ($modinfos as $type=>$mod) {
+    if (!empty($mod) && empty($mod['mcversion'])) {
+        assert($_POST['fallback_mcversion']);
+        $modinfos[$type]['mcversion']=$db->sanitize($_POST['fallback_mcversion']);
+        unset($warn[array_search('Missing mcversion!', array_keys($warn))]);
+    }
+}
 
 $added_ids=[];
 $added_modids=[];
@@ -189,7 +197,6 @@ $added_versions=[];
 $added_mcversions=[];
 $num_mods_to_add=sizeof($modinfos);
 
-$warn = $mi->getWarnings();
 $num_already_added=0;
 $num_process_failed=0;
 

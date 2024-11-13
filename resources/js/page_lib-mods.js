@@ -204,7 +204,7 @@ function getdescription(id) {
         showdetails(id);
     } else if (get_cached('details_'+id)) {
         console.log('got cached details from localstorage');
-        details[id]=JSON.parse(localStorage['details_'+id]);
+        details[id] = JSON.parse(get_cached('details_'+id));
         showdetails(id);
     } else {
         var request = new XMLHttpRequest();
