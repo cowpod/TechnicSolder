@@ -382,6 +382,7 @@ function installmod() {
                 $('#installations-cancel').text('Ignore');
                 $('#install-'+slug).attr('disabled',true);
                 $('#install-'+slug).text('Issue(s)');
+                $('#install-'+slug).attr('onclick',`window.location.replace("mod?id=${json['name'][0]}")`)
                 $('#install-'+slug).addClass('btn-warning');
                 fetch_installed();
             } else {
