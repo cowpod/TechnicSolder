@@ -1897,23 +1897,25 @@ if (isset($_SESSION['user'])) {
                 <h2>Upload custom mod loader</h2>
                 <hr>
                 <form action="./functions/custom_modloader.php" method="POST" enctype="multipart/form-data">
-                    <input class="form-control" type="text" name="version" placeholder="Loader version" required="">
-                    <br />
-                    <input class="form-control" type="text" name="mcversion" placeholder="Minecraft Version" required="">
-                    <br />
-                    <div class="custom-file">
-                        <input name="file" accept=".jar" type="file" class="custom-file-input" id="forge" required>
-                        <label class="custom-file-label" for="forge">Choose modpack.jar file...</label>
-                    </div>
-                    <br /><br>
-                    <select name="type">
-                        <option value="forge">Forge</option>
-                        <option value="neoforge">Neoforge</option>
-                        <option value="fabric">Fabric</option>
-                    </select>
-                    <br/>
-                    <br/>
-                    <button type="submit" class="btn btn-primary">Upload</button>
+                    <div class="form-group">
+                        <input class="form-control" type="text" name="version" placeholder="Loader version" required="">
+                        <br />
+                        <input class="form-control" type="text" name="mcversion" placeholder="Minecraft Version" required="">
+                        <br />
+                        <div class="custom-file">
+                            <input id="forge" type="file" class="form-control-file" name="file" accept=".jar" required>
+                            <label class="custom-file-label" for="forge">Choose modpack.jar file...</label>
+                        </div>
+                        <br /><br>
+                        <select class="form-control" name="type">
+                            <option value="forge">Forge</option>
+                            <option value="neoforge">Neoforge</option>
+                            <option value="fabric">Fabric</option>
+                        </select>
+                        <br/>
+                        <br/>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
                 </form>
             </div>
             <?php } ?>

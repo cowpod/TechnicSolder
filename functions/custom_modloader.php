@@ -14,13 +14,13 @@ if (!isset($_POST['version'])) {
 if (!isset($_POST['mcversion'])) {
     die('mcversion missing!');
 }
-if (!isset($_POST['file'])) {
+if (!isset($_FILES['file']) || !isset($_FILES["file"]["name"]) || !isset($_FILES["file"]["tmp_name"])) {
     die('file missing!');
 }
 if (!isset($_POST['type'])) {
     die('type missing!');
 } elseif (!in_array($_POST['type'], ['fabric','forge','neoforge'])) {
-    die('type is invalid! only accepted are fabric,forge,neoforge')l
+    die('type is invalid! only accepted are fabric,forge,neoforge');
 }
 
 $fileName = $_FILES["file"]["name"];
@@ -75,18 +75,21 @@ if (move_uploaded_file($fileTmpLoc, "../forges/modpack-".$version."/modpack.jar"
     $md5 = md5_file("../forges/forge-".$version.".zip");
     $url = "http://".$config['host'].$config['dir']."forges/forge-".$version.".zip";
     $insertq = $db->execute("INSERT INTO `mods`
-                (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`)
-                VALUES ('".$type."',
-                        'Custom mod loader',
-                        '".$md5."',
-                        '".$url."',
-                        '',
-                        '".$_SESSION['name']."',
-                        'Custom mod loader',
-                        '".$version."',
-                        '".$mcversion."',
-                        'forge-".$version.".zip',
-                        '".$type."')"
+        (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`)
+        VALUES (
+            'customloader',
+            'Custom mod loader',
+            '".$md5."',
+            '".$url."',
+            '',
+            '".$_SESSION['name']."',
+            'Custom mod loader',
+            '".$version."',
+            '".$mcversion."',
+            'forge-".$version.".zip',
+            'forge',
+            '".$type."'
+        )"
     );
     if ($insertq) {
         // echo '{"status":"succ","message":"Mod has been saved."}';
