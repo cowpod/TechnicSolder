@@ -8,8 +8,8 @@ function remove(id,force) {
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
+            console.log(this.response);
             response = JSON.parse(this.response);
-            console.log(response);
             if (response['status']=='succ') {
                 console.log('success!');
                 $("#mod-row-"+id).remove();
