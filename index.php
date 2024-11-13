@@ -1560,6 +1560,7 @@ if (isset($_SESSION['user'])) {
 
             <?php if (substr($_SESSION['perms'],3,1)=="1") { ?>
 
+            <?php if ($config['modrinth_integration']=='on') { ?>
             <div class="card">
                 <h2>Get mods - Modrinth</h2>
                 <form class="row" action="javascript:void(0)">
@@ -1640,6 +1641,8 @@ if (isset($_SESSION['user'])) {
                 </div>
               </div>
             </div>
+
+            <?php } ?>
 
             <div id="upload-card" class="card">
                 <h2>Upload mods</h2>
@@ -2472,6 +2475,11 @@ if (isset($_SESSION['user'])) {
                 } else {
                     $config['use_verifier'] = "off";
                 }
+                if (isset($_POST['modrinth_integration'])) {
+                    $config['modrinth_integration'] = "on";
+                } else {
+                    $config['modrinth_integration'] = "off";
+                }
                 file_put_contents('./functions/config.php', '<?php return '.var_export($config, true).'; ?>');
             } else {
                 error_log('no post data');
@@ -2530,7 +2538,7 @@ if (isset($_SESSION['user'])) {
                 </div>
 
                 <div class="card">
-                    <h1>Settings</h1>
+                    <h1>Server Settings</h1>
                     <hr>
                     <form method="POST">
                         <div class="custom-control custom-switch">
@@ -2541,6 +2549,13 @@ if (isset($_SESSION['user'])) {
                             <input id="use_verifier" type="checkbox" class="custom-control-input" name="use_verifier" <?php if (isset($config['use_verifier']) && $config['use_verifier']=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="use_verifier">
                                 Enable Solder Verifier - uses cookies
+                            </label>
+                            <input type="hidden" name="bug-submit" value="bug-submit">
+                        </div>
+                        <div class="custom-control custom-switch">
+                            <input id="modrinth_integration" type="checkbox" class="custom-control-input" name="modrinth_integration" <?php if (isset($config['modrinth_integration']) && $config['modrinth_integration']=="on") {echo "checked";} ?> >
+                            <label class="custom-control-label" for="modrinth_integration">
+                                Enable Modrinth integration - uses cookies
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>

@@ -22,8 +22,8 @@ if (isset($_FILES['fiels']) && isset($_FILES["fiels"]["name"]) && isset($_FILES[
     $file_name = $_FILES["fiels"]["name"];
     $file_tmp = $_FILES["fiels"]["tmp_name"];
 } else {
-    // only accept url to a JAR file.
-    if (isset($_POST['url'])) {
+    // accept urls via POST (for modrinth)
+    if (isset($config['modrinth_integration']) && $config['modrinth_integration'] == 'on' && isset($_POST['url'])) {
         if (preg_match('/^(https?:\/\/)([a-zA-Z0-9-.]+)([a-zA-Z0-9\-\_\.\~\/\:\@\&\=\+\$\,\;\?\#\%]+)$/', $_POST['url'])) {
             $apiversiondata = json_decode(file_get_contents('../api/version.json'),true);
             if (!$apiversiondata) {
