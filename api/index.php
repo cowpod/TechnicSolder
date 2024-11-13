@@ -70,8 +70,49 @@ if (isset($_GET['k'])) {
         } 
     }
 }
+if (preg_match("/api\/mod$/", $url)) { 
+    $modslist=[];
+    $modq = $db->query("SELECT * FROM mods");
+    if ($modq) {
+        foreach ($modq as $mod) {
+            $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
+            $modentry = [
+                'pretty_name'=>$mod['pretty_name'],
+                'name'=>$mod['name'], 
+                'version'=>$mod['version'], 
+                'mcversion'=>$mod['mcversion'],
+                'md5'=>$mod['md5'], 
+                'url'=>$mod['url'], 
+                'filesize'=>$filesize
+            ];
 
-if (preg_match("/api\/modpack$/", $url)) { // modpacks
+            array_push($modslist,$modentry);
+        }
+    }
+    echo json_encode($modslist, JSON_UNESCAPED_SLASHES);
+}
+else if (preg_match("/api\/mod\/([\w\-\.]+)$/", $url, $matches)) { 
+    $modslist=[];
+    $modq = $db->query("SELECT * FROM mods WHERE name='{$matches[1]}'");
+    if ($modq) {
+        foreach ($modq as $mod) {
+            $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
+            $modentry = [
+                'pretty_name'=>$mod['pretty_name'],
+                'name'=>$mod['name'], 
+                'version'=>$mod['version'], 
+                'mcversion'=>$mod['mcversion'],
+                'md5'=>$mod['md5'], 
+                'url'=>$mod['url'], 
+                'filesize'=>$filesize
+            ];
+            array_push($modslist,$modentry);
+        }
+    }
+    echo json_encode($modslist, JSON_UNESCAPED_SLASHES);
+    
+}
+else if (preg_match("/api\/modpack$/", $url)) { // modpacks
     // $modpacksq = $db->query("SELECT * FROM `modpacks`");
     $modpacksq = $db->query("
     SELECT M.*, 
