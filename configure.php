@@ -167,7 +167,8 @@ if (isset($_POST['host'])) {
                 memory TEXT,
                 mods TEXT,
                 public INTEGER,
-                clients TEXT
+                clients TEXT,
+                UNIQUE(name)
             )";
             $db->execute($sql);
             $sql = "CREATE TABLE mods (
@@ -243,7 +244,8 @@ if (isset($_POST['host'])) {
                 memory VARCHAR(512),
                 mods VARCHAR(1024),
                 public BOOLEAN,
-                clients LONGTEXT
+                clients LONGTEXT,
+                UNIQUE(name)
             )";
             $db->execute($sql);
             $sql = "CREATE TABLE mods (
