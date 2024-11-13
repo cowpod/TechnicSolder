@@ -1086,12 +1086,12 @@ if (isset($_SESSION['user'])) {
                 <div class="card">
                     <h2>Builds</h2>
                     <hr>
-                    <table class="table table-responsive sortable table-striped">
+                    <table class="table sortable table-striped">
                         <thead>
                             <tr>
-                                <th style="width:20%" data-defaultsign="AZ" scope="col">Build</th>
+                                <th style="width:20%" data-defaultsign="AZ" scope="col">Name</th>
                                 <th style="width:20%" data-defaultsign="AZ" scope="col">Minecraft</th>
-                                <th style="width:20%" data-defaultsign="AZ" scope="col">Java</th>
+                                <th style="width:20%" data-defaultsign="AZ" scope="col" class="d-none d-md-table-cell">Java</th>
                                 <th style="width:5%"  data-defaultsign="_19" scope="col">Mods</th>
                                 <th style="width:30%" data-defaultsort="disabled" scope="col"></th>
                                 <th style="width:5%"  data-defaultsort="disabled" scope="col"></th>
@@ -1104,7 +1104,7 @@ if (isset($_SESSION['user'])) {
                             <tr rec="<?php if ($packdata['recommended']==$user['id']){ echo "true"; } else { echo "false"; } ?>" id="b-<?php echo $user['id'] ?>">
                                 <td scope="row"><?php echo $user['name'] ?></td>
                                 <td><?php echo $user['minecraft'] ?></td>
-                                <td><?php echo $user['java'] ?></td>
+                                <td class="d-none d-md-table-cell"><?php echo $user['java'] ?></td>
                                 <td><?php echo isset($user['mods']) ? count(explode(',', $user['mods'])) : '' ?></td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
@@ -1292,9 +1292,8 @@ if (isset($_SESSION['user'])) {
                                 <tr>
                                     <th scope="col" style="width: 40%" data-defaultsign="AZ">Mod Name</th>
                                     <th scope="col" style="width: 25%" data-defaultsign="_19">Version</th>
-                                    <th scope="col" style="width: 15%" data-defaultsign="_19">Minecraft</th>
+                                    <th scope="col" style="width: 15%" data-defaultsign="_19" class="d-none d-sm-table-cell">Minecraft</th>
                                     <th scope="col" style="width: 15%" data-defaultsort="disabled"></th>
-                                    <th scope="col" style="width: 5%" data-defaultsort="disabled"></th>
                                 </tr>
                             </thead>
                             <tbody id="mods-in-build">
@@ -1343,11 +1342,20 @@ if (isset($_SESSION['user'])) {
                                         echo '<span id="warn-incompatible-'.$mod['name'].'">: For Minecraft '.$mod['mcversion'].', you have '.$user['minecraft'].'. May not be compatible!</span>';
                                     }
                                     ?></td>
-                                    <td>
+                                    <td <?php 
+                                        if (isset($mod['type']) && $mod['type']=='mod') { 
+                                            if (empty($mod['version'])) { 
+                                                echo 'class="table-danger" ';
+                                            } else {
+                                                echo "data-value='{$mod['version']}'";
+                                            }
+                                        } 
+                                    ?>>
                                         <?php 
                                         if (!empty($mod) && $mod['type'] !== "mod") {
                                             echo $mod['version'];
-                                        } elseif(!empty($mod)) { ?>
+                                        } elseif(empty($mod)) { ?>
+                                        <?php } else { ?>
                                             <select class="form-control" onchange="changeversion(this.value,<?php 
                                             echo $mod['id'] 
                                                 ?>,'<?php 
@@ -1376,7 +1384,7 @@ if (isset($_SESSION['user'])) {
                                         ?>
                                         </select>
                                     </td>
-                                    <td><?php
+                                    <td  class="d-none d-sm-table-cell"><?php
                                         if (!empty($mod)) {
                                             echo $mod['mcversion'];
                                         }
@@ -1391,9 +1399,6 @@ if (isset($_SESSION['user'])) {
                                             <?php
                                         }
                                     ?></td>
-                                    <td>
-                                        <em style="font-size: 2em;display: none;" class="fas fa-cog fa-spin" id="spinner-<?php echo empty($mod)?'MISSING':$mod['name'] ?>"></em>
-                                    </td>
                                 </tr>
                                 <?php
                                 }
@@ -1401,113 +1406,31 @@ if (isset($_SESSION['user'])) {
                             </tbody>
                         </table>
                     </div>
+
                     <?php if (substr($_SESSION['perms'],1,1)=="1") { ?>
                     <div class="card">
-                        <h2>Mods <?php 
-                        if (empty($_SESSION['showall'])) { 
-                            echo 'for Minecraft '.$user['minecraft']; 
-                        } 
-
-                        echo !empty($user['loadertype']) ? ' - '.$user['loadertype'] : ' - Missing LoaderType! Please run <a href=/functions/upgrade1.3.5to1.4.0.php>/functions/upgrade1.3.5to1.4.0.php</a>';
-
-                        ?></h2>
+                        <h2>Mods <font id='mods-for-version-string' style='display:none'></font></h2>
                         <hr>
-                        <button onclick="window.location.href = window.location.href" class="btn btn-primary">Refresh</button>
-                        <br />
                         <input id="search" type="text" placeholder="Search..." class="form-control">
                         <br />
                         <div class="custom-control custom-checkbox">
-                            <input <?php if (isset($_SESSION['showall'])&&$_SESSION['showall']){echo "checked";} ?> type="checkbox" name="showall" class="custom-control-input" id="showall">
+                            <input type="checkbox" name="showall" class="custom-control-input" id="showall">
                             <label class="custom-control-label" for="showall">Show all</label>
                         </div>
                         <br />
                         <table id="modstable" class="table table-striped sortable">
                             <thead>
                                 <tr>
-                                    <th scope="col" style="width: 40%" data-defaultsign="AZ">Mod Name</th>
+                                    <th scope="col" style="width: 50%" data-defaultsign="AZ">Mod Name</th>
                                     <th scope="col" style="width: 25%" data-defaultsign="_19">Version</th>
-                                    <th scope="col" style="width: 30%" data-defaultsort="disabled"></th>
-                                    <th scope="col" style="width: 5%" data-defaultsort="disabled"></th>
+                                    <th scope="col" style="width: 25%" data-defaultsort="disabled"></th>
                                 </tr>
                             </thead>
-                            <tbody>
-                            <?php
-                            // band-aid for missing loadertype for modloader
-
-                            $mods_compatq = $db->query("SELECT * FROM mods WHERE type = 'mod' AND loadertype = '".$loadertype."'");
-                            // todo: use a group-by?
-
-                            $name_version_details=[]; // [serialize([name,prettyname])=>[id,version,mcversion],...]
-
-                            if ($mods_compatq && sizeof($mods_compatq)>0) {
-                                foreach($mods_compatq as $mod){
-                                    // skip if any version of this mod is already in build
-                                    if (in_array($mod['name'], $modsluglist))
-                                        continue;
-
-                                    // skip incompatible mods as long as we're not showing all
-                                    if (!in_range($mod['mcversion'], $user['minecraft']) && (empty($_SESSION['showall']) || !$_SESSION['showall']))
-                                        continue;
-
-                                    $tuple=serialize([$mod['name'],$mod['pretty_name']]);
-
-                                    if (empty($name_version_details[$tuple])) {
-                                        $name_version_details[$tuple]=[];
-                                    }
-
-                                    array_push($name_version_details[$tuple], [$mod['id'], !empty($mod['version']) ? $mod['version'] : '', $mod['mcversion']]);
-                                }
-                            }
-
-                            if (sizeof($name_version_details)==0) {
-                                echo "<div style='display:block' class='invalid-feedback'>There are no mods available for this version. Upload mods in <a href='./lib-mods'>Mod Library</a>.</div>";
-                            } else {
-                                foreach ($name_version_details as $tuple=>$version_details) {
-                                    [$name, $prettyname] = unserialize($tuple);
-                                    $mcversion="";
-                                    $version="";
-                                    ?>
-                                    <tr id="mod-add-row-<?php echo $name ?>">
-                                        <td scope="row"><?php echo $prettyname ?></td>
-                                        <td>
-                                            <select class="form-control" name="version" id="versionselect-<?php echo $name ?>" modname="<?php echo $name ?>">
-                                    <?php
-                                    $num_missing_version=0;
-                                    $num_hidden_version=0;
-                                    $num=sizeof($version_details);
-                                    $disable_add_button=FALSE;
-                                    foreach ($version_details as $vals) {
-                                        [$id,$version,$mcversion] = $vals;
-                                        if (in_range($mcversion, $user['minecraft'])|| (!empty($_SESSION['showall']) && $_SESSION['showall'])) {
-                                            if (empty($version) || empty($mcversion)) {
-                                                echo "<option value='".$id."' missing='true' disabled='disabled'>Missing info".((!empty($_SESSION['showall']) && $_SESSION['showall']) ? " - ".$mcversion : "")."</option>";
-                                                $num_missing_version+=1;
-                                            } else {
-                                                echo "<option value='".$id."'>".$version.((!empty($_SESSION['showall']) && $_SESSION['showall']) ? " - ".$mcversion : "")."</option>";
-                                            }
-                                        } else {
-                                            $num_hidden_version+=1;
-                                        }
-                                    }
-                                    if ($num_missing_version+$num_hidden_version==$num) {
-                                        $disable_add_button=TRUE;
-                                    }
-                                    ?>
-                                            </select>
-                                        </td>
-                                        <!--remember to modify page_build.js too -->
-                                        <?php if ($disable_add_button) { ?>
-                                        <td><a id="btn-add-mod-<?php echo $name ?>" href="mod?id=<?php echo $name ?>" class="btn btn-warning">Issue(s)</a></td>
-                                        <?php } else { ?>
-                                        <td><a id="btn-add-mod-<?php echo $name ?>" onclick="add('<?php echo $name ?>','<?php echo $version ?>','<?php echo $mcversion ?>')" class="btn btn-primary">Add to Build</a></td>
-                                        <?php } ?>
-                                        <td><em id="cog-<?php echo $name ?>" style="display:none" class="fas fa-cog fa-spin fa-2x"></em><em id="check-<?php echo $name ?>" style="display:none" class="text-success fas fa-check fa-2x"></em></td>
-                                    </tr>
-                                <?php
-                                }
-                            } ?>
+                            <tbody id="build-available-mods">
                             </tbody>
                         </table>
+                        <div id='no-mods-available' class='text-center' style='display:none'>There are no mods available for this version. Upload mods in <a href='./lib-mods'>Mod Library</a>.</div>
+                        <div id='no-mods-available-search-results' class='text-center' style='display:none'>No mods match your search.</div>
                     </div>
                     <div class="card">
                         <h2>Other Files</h2>
@@ -1532,7 +1455,7 @@ if (isset($_SESSION['user'])) {
                                         ?>
                                         <tr>
                                             <td scope="row"><?php echo $mod['pretty_name'] ?></td>
-                                            <td><button id="btn-add-o-<?php echo $mod['id'] ?>" onclick="add_o(<?php echo $mod['id'] ?>)" class="btn btn-primary">Add to Build</button></td>
+                                            <td><button id="btn-add-o-<?php echo $mod['id'] ?>" onclick="add_o(<?php echo $mod['id'] ?>)" class="btn btn-primary">Add to build</button></td>
                                             <td><em id="cog-o-<?php echo $mod['id'] ?>" style="display:none" class="fas fa-cog fa-spin fa-2x"></em><em id="check-o-<?php echo $mod['id'] ?>" style="display:none" class="text-success fas fa-check fa-2x"></em></td>
                                         </tr>
                                         <?php
@@ -1549,6 +1472,8 @@ if (isset($_SESSION['user'])) {
                 <script>
                     var modslist_0 = '<?php echo sizeof($modslist)>0 ? $modslist[0] : "" ?>';
                     var build_id = '<?php echo $user['id'] ?>';
+                    var mcv="<?php echo $user['minecraft'] ?>";
+                    var type="<?php echo $user['loadertype'] ?>";
                 </script>
                 <script src="./resources/js/page_build.js"></script>
             </div>
@@ -1590,9 +1515,9 @@ if (isset($_SESSION['user'])) {
                     <thead>
                         <tr>
                             <th scope="col" style="width:15%" data-defaultsign="AZ">Name</th>
-                            <th scope="col" style="width:15%" data-defaultsign="AZ">Category</th>
+                            <th scope="col" style="width:15%" data-defaultsign="AZ" class="d-none d-md-table-cell">Category</th>
                             <th scope="col" style="width:35%" data-defaultsign="AZ">Desc.</th>
-                            <th scope="col" style="width:10%" data-defaultsign="AZ">Author</th>
+                            <th scope="col" style="width:10%" data-defaultsign="AZ" class="d-none d-md-table-cell">Author</th>
                             <th scope="col" style="width:10%" data-defaultsort="disabled"></th>
                         </tr>
                     </thead>
@@ -1690,10 +1615,10 @@ if (isset($_SESSION['user'])) {
                 <table id="modstable" class="table table-striped sortable">
                     <thead>
                         <tr>
-                            <th style="width:30%" scope="col" data-defaultsign="AZ">Mod name</th>
-                            <th style="width:30%" scope="col" data-defaultsign="AZ">Author</td>
-                            <th style="width:30%" scope="col" data-defaultsign="_19">Versions</td>
-                            <th style="width:10%" scope="col" data-defaultsort="disabled"></th>
+                            <th style="width:35%" scope="col" data-defaultsign="AZ">Mod name</th>
+                            <th style="width:30%" scope="col" data-defaultsign="AZ" class="d-none d-md-table-cell">Author</td>
+                            <th style="width:15%" scope="col" data-defaultsign="_19">Versions</td>
+                            <th style="width:20%" scope="col" data-defaultsort="disabled"></th>
                         </tr>
                     </thead>
                     <tbody id="table-available-mods">
@@ -1733,7 +1658,7 @@ if (isset($_SESSION['user'])) {
                             ?>
                                 <tr id="mod-row-<?php echo $mod['name'] ?>">
                                     <td scope="row" <?php if (empty($mod['pretty_name'])) echo 'class="table-danger"' ?>><?php echo empty($mod['pretty_name']) ? "<span class='text-danger'>Unknown</span>" : $mod['pretty_name'] ?></td>
-                                    <td <?php if (implode(", ", $mod['author'])=="") echo 'class="table-danger"' ?>><?php if (implode(", ", $mod['author'])!=="") { echo implode(", ", $mod['author']); } else { echo "<span class='text-danger'>Unknown</span>"; } ?></td>
+                                    <td <?php if (implode(", ", $mod['author'])=="") echo 'class="table-danger"' ?> class="d-none d-md-table-cell"><?php if (implode(", ", $mod['author'])!=="") { echo implode(", ", $mod['author']); } else { echo "<span class='text-danger'>Unknown</span>"; } ?></td>
                                     <td><?php echo count($mod['versions']); ?></td>
                                     <td>
                                         <?php if (substr($_SESSION['perms'], 4, 1)=="1") { ?>
@@ -1884,7 +1809,7 @@ if (isset($_SESSION['user'])) {
                         <tr>
                             <th scope="col" style="width:10%" data-defaultsign="_19">Minecraft</th>
                             <th scope="col" style="width:15%" data-defaultsign="_19">Forge Version</th>
-                            <th scope="col" style="width:55%" data-defaultsign="AZ">Link</th>
+                            <th scope="col" style="width:55%" data-defaultsign="AZ" class="d-none d-md-table-cell">Link</th>
                             <th scope="col" style="width:15%" data-defaultsort="disabled"></th>
                             <th scope="col" style="width:5%"  data-defaultsort="disabled"></th>
                         </tr>
@@ -1934,10 +1859,10 @@ if (isset($_SESSION['user'])) {
                 <table class="table table-striped sortable">
                     <thead>
                         <tr>
-                            <th scope="col" style="width:30%" data-defaultsign="_19">Minecraft</th>
-                            <th scope="col" style="width:25%" data-defaultsign="_19">Version</th>
-                            <th scope="col" style="width:20%" data-defaultsign="AZ">Loader Type</th>
-                            <th scope="col" style="width:20%" data-defaultsort="disabled"></th>
+                            <th scope="col" style="width:35%" data-defaultsign="_19">Minecraft</th>
+                            <th scope="col" style="width:30%" data-defaultsign="_19">Version</th>
+                            <th scope="col" style="width:20%" data-defaultsign="AZ">Type</th>
+                            <th scope="col" style="width:10%" data-defaultsort="disabled"></th>
                             <th scope="col" style="width:5%"  data-defaultsort="disabled"></th>
                         </tr>
                     </thead>
@@ -2130,7 +2055,7 @@ if (isset($_SESSION['user'])) {
                             <th style="width:20%" data-defaultsort="AZ" scope="col">Version</th>
                             <th style="width:15%" data-defaultsort="AZ" scope="col">Minecraft</th>
                             <th style="width:10%" data-defaultsort="AZ" scope="col">Loader</th>
-                            <th style="width:30%" data-defaultsort="AZ" scope="col">File</th>
+                            <th style="width:30%" data-defaultsort="AZ" scope="col" class="d-none d-md-table-cell">File</th>
                             <th style="width:25%" scope="col"></th>
                         </tr>
                     </thead>
@@ -2144,7 +2069,7 @@ if (isset($_SESSION['user'])) {
                             <td <?php if (empty($mod['version'])) echo 'class="table-danger"'; ?> scope="row"><?php echo empty($mod['version'])? '<span class="text-danger">Unknown</span>' : $mod['version'] ?></td>
                             <td <?php if (empty($mod['mcversion'])) echo 'class="table-danger"'; ?>><?php echo empty($mod['mcversion'])? '<span class="text-danger">Unknown</span>' : $mod['mcversion'] ?></td>
                             <td <?php if (empty($mod['loadertype'])) echo 'class="table-danger"'; ?>><?php echo empty($mod['loadertype'])? '<span class="text-danger">Unknown</span>' : $mod['loadertype'] ?></td>
-                            <td <?php if (empty($mod['filename'])) echo 'class="table-danger"'; ?>><?php echo empty($mod['filename'])? '<span class="text-danger">Unknown</span>' : $mod['filename'] ?></td>
+                            <td <?php if (empty($mod['filename'])) echo 'class="table-danger"'; ?> class="d-none d-md-table-cell"><?php echo empty($mod['filename'])? '<span class="text-danger">Unknown</span>' : $mod['filename'] ?></td>
                             <td>
                                 <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                     <button onclick="window.location = './modv?id=<?php echo $mod['id'] ?>'"

@@ -18,7 +18,7 @@ $("#mplist").change(function() {
 });
 
 $("#newbname").on("keyup",function(){
-    if (sbna.indexOf($("#newbname").val())==false) {
+    if (sbna.includes($("#newbname").val())) {
         $("#newbname").addClass("is-invalid");
         $("#warn_newbname").show();
         $("#create1").prop("disabled",true);
@@ -31,7 +31,7 @@ $("#newbname").on("keyup",function(){
     }
 });
 $("#newname").on("keyup",function(){
-    if (sbna.indexOf($("#newname").val())==false) {
+    if (sbna.includes($("#newname").val())) {
         $("#newname").addClass("is-invalid");
         $("#warn_newname").show();
         $("#copybutton").prop("disabled",true);
@@ -42,7 +42,7 @@ $("#newname").on("keyup",function(){
     }
 });
 
-                        function edit(id) {
+function edit(id) {
     window.location = "./build?id="+id;
 }
 function remove_box(id,name) {
@@ -100,6 +100,14 @@ function remove(id) {
             } else {
                 $("#latest-v-li").hide();
                 $("#latest-mc-li").hide();
+            }
+
+            for (let b of bd) {
+                if (b['id']==id) {
+                    let name=b['name'];
+                    bd.splice(bd.indexOf(b),1);
+                    sbna.splice(sbna.indexOf(name),1);
+                }
             }
 
         }

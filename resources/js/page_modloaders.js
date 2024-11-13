@@ -288,7 +288,7 @@ async function chf(link,name,id,mc) {
                 <tr id="forge-${id}">
                     <td scope="row" data-value="${mc}">${mc}</td>
                     <td data-value="${name}">${name}</td>
-                    <td data-value="${link}" style="overflow-wrap: break-word;"><a href="${link}" style="word-break: break-all;">${link}</a></td>
+                    <td data-value="${link}" class="d-none d-md-table-cell" style="overflow-wrap: break-word;"><a href="${link}" style="word-break: break-all;">${link}</a></td>
                     <td><button id="button-add-${id}" onclick="add(\'${name}\', \'${link}\', \'${mc}', \'${id}\')" class="btn btn-primary btn-sm">Add to Database</button></td>
                     <td><em id="cog-${id}" style="display:none" class="fas fa-spin fa-cog fa-2x"></em><em id="check-${id}" style="display:none" class="text-success fas fa-check fa-2x"></em><em id="times-${id}" style="display:none" class="text-danger fas fa-times fa-2x"></em></td>
                 </tr>`);

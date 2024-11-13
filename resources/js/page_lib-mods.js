@@ -108,7 +108,7 @@ function sendFile(file, i) {
                                 $('#table-available-mods').append(`
                                     <tr id="mod-row-${name[i]}">
                                         <td scope="row" data-value="${pretty_name[i]}">${pretty_name[i]}</td>
-                                        <td data-value="${author[i]}">${author[i]}</td>
+                                        <td data-value="${author[i]}" class="d-none d-sm-table-cell">${author[i]}</td>
                                         <td data-value="${num_versions}">${num_versions}</td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
@@ -189,9 +189,9 @@ function addrow(hit) {
     var row = `
         <tr>
             <td data-value='${hit['title']}'>${hit['title']}</td>
-            <td data-value='str${categories}...' style='overflow-wrap: break-word;' onclick="showcategories('${hit['slug']}')"><a href="javascript:void(0)"onclick="showcategories('${hit['slug']}')" style="word-wrap: break-all">${categories}</a></td>
+            <td data-value='str${categories}...' class="d-none d-md-table-cell" style='overflow-wrap: break-word;' onclick="showcategories('${hit['slug']}')"><a href="javascript:void(0)"onclick="showcategories('${hit['slug']}')" style="word-wrap: break-all">${categories}</a></td>
             <td data-value='${description}' style='overflow-wrap: break-word;' onclick="getdescription('${hit['slug']}')"><a href="javascript:void(0)" onclick="getdescription('${hit['slug']}')" style="word-wrap: break-all">${description}</a></td>
-            <td data-value='${author}'>${author}</td>
+            <td data-value='${author}' class="d-none d-md-table-cell">${author}</td>
             <td>${btn}</td>
         </tr>
     `;
@@ -202,7 +202,7 @@ function getdescription(id) {
     if (id in details) {
         console.log('got cached details');
         showdetails(id);
-    } else if (havelocalstorage && 'details_'+id in localStorage) {
+    } else if (get_cached('details_'+id)) {
         console.log('got cached details from localstorage');
         details[id]=JSON.parse(localStorage['details_'+id]);
         showdetails(id);
@@ -216,9 +216,7 @@ function getdescription(id) {
         request.onreadystatechange = function() {
             if (request.readyState == 4 && request.status == 200) {
                 let obj = JSON.parse(request.responseText);
-                if (havelocalstorage && !(id in localStorage)) {
-                    localStorage['details_'+id]=request.responseText;
-                }
+                set_cached('details_'+id, request.responseText,1800);
                 details[id]=obj;
                 console.log('got new description');
                 showdetails(id);
@@ -280,7 +278,7 @@ async function getversions(id) {
             request.onreadystatechange = function() {
                 if (request.readyState == 4 && request.status == 200) {
                     let obj = JSON.parse(request.responseText);
-                    set_cached('versions_'+id, request.responseText);
+                    set_cached('versions_'+id, request.responseText, 1800);
                     console.log('got new versions for id='+id);
                     versions[id] = obj;
 
@@ -348,6 +346,9 @@ function installmod() {
 
     console.log(url);
 
+    let mcv = $('#mcv option:selected').attr('mc');
+    let type = $('#mcv option:selected').attr('type');
+
     var request = new XMLHttpRequest();
     var postdata=new FormData();
     postdata.append('url',url);
@@ -355,6 +356,9 @@ function installmod() {
         var filename=url.substring(url.lastIndexOf('/') + 1);
         postdata.append('filename', filename);
     }
+    postdata.append('fallback_mcversion', mcv);
+    // postdata.append('fallback_type', type);
+
     request.open("POST", "./functions/send_mods.php", true);
     request.onreadystatechange = function() {
         if (request.readyState == 4 && request.status == 200) {
@@ -402,7 +406,7 @@ function installmod() {
                 $('#table-available-mods').append(`
                     <tr id="mod-row-${name[i]}">
                         <td scope="row" data-value="${pretty_name[i]}">${pretty_name[i]}</td>
-                        <td data-value="${author[i]}">${author[i]}</td>
+                        <td data-value="${author[i]}" class="d-none d-md-table-cell">${author[i]}</td>
                         <td data-value="${num_versions}">${num_versions}</td>
                         <td>
                             <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
@@ -526,7 +530,7 @@ $('#searchbutton').on('click', async function() {
 
                         results[searchquery]=hits;
                     
-                        set_cached(searchquery, hits);
+                        set_cached(searchquery, hits, 1800);
                         
                     } else {
                         console.log('no hits');
@@ -560,10 +564,5 @@ $(document).ready(function() {
     while (installed==null && loop_count < 3) {
         installed=fetch_installed()
         loop_count+=1
-    }
-    let loop_count2=0;
-    while (havelocalstorage==null && loop_count2 < 3) {
-        havelocalstorage = isLocalStorageAvailable();
-        loop_count2+=1
     }
 });

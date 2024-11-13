@@ -75,8 +75,10 @@ if (preg_match("/api\/mod$/", $url)) {
     $modq = $db->query("SELECT * FROM mods");
     if ($modq) {
         foreach ($modq as $mod) {
+            if ($mod['type']!='mod') continue;
             $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
             $modentry = [
+                'id'=>$mod['id'],
                 'pretty_name'=>$mod['pretty_name'],
                 'name'=>$mod['name'], 
                 'version'=>$mod['version'], 
@@ -86,7 +88,7 @@ if (preg_match("/api\/mod$/", $url)) {
                 'filesize'=>$filesize
             ];
 
-            array_push($modslist,$modentry);
+            array_push($modslist, $modentry);
         }
     }
     echo json_encode($modslist, JSON_UNESCAPED_SLASHES);

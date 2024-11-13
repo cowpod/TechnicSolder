@@ -15,6 +15,28 @@ function compareVersions(version1, version2) {
   return 0; // Versions are equal
 }
 
+function isVersionInInterval(version, interval) {
+    // console.log(version,interval)
+    // Remove whitespace
+    interval = interval.replace(/\s+/g, '');
+
+    // Check interval boundaries for inclusivity/exclusivity
+    const startInclusive = interval[0] === '[';
+    const endInclusive = interval[interval.length - 1] === ']';
+
+    // Extract version bounds
+    const [startVersion, endVersion] = interval.slice(1, -1).split(',');
+
+    // Use compareVersions to check if version is within the range
+    const compareStart = compareVersions(version, startVersion);
+    const compareEnd = compareVersions(version, endVersion);
+
+    const inLowerBound = startInclusive ? compareStart >= 0 : compareStart > 0;
+    const inUpperBound = endInclusive ? compareEnd <= 0 : compareEnd < 0;
+
+    return inLowerBound && inUpperBound;
+}
+
 function slugify (str) {
     str = str.replace(/^\s+|\s+$/g, '');
     str = str.toLowerCase();
@@ -56,10 +78,13 @@ function isLocalStorageAvailable(){
     }
 }
 function get_cached(key) {
+    if (havelocalstorage==null) {
+        havelocalstorage=isLocalStorageAvailable()
+    }
     if (havelocalstorage) {
         if (key in localStorage) {
             tv = JSON.parse(localStorage[key]);
-            if (Math.round(Date.now() / 1000) < tv[0]) {
+            if (tv[0]==-1 || Math.round(Date.now() / 1000) < tv[0]) {
                 return tv[1];
             } else {
                 localStorage.removeItem(key)
@@ -74,10 +99,17 @@ function get_cached(key) {
         }
     }
 }
-function set_cached(key,value) {
+function set_cached(key,value,ttl) {
+    if (havelocalstorage==null) {
+        havelocalstorage=isLocalStorageAvailable()
+    }
     // cache for 30 mins
     if (havelocalstorage) {
-        timestamp = Math.round(Date.now() / 1000)+1800;
+        if (ttl==Infinity||ttl==-1) {
+            var timestamp = -1;
+        } else {
+            var timestamp = Math.round(Date.now() / 1000)+ttl;
+        }
         val=JSON.stringify([timestamp, value]);
         localStorage[key]=val
         return value;
