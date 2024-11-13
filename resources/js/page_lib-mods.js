@@ -444,7 +444,7 @@ async function fetch_installed() {
         installed=get_cached('installed_mods');
     } else {
         installed = await fetch_installed_from_api();
-        set_cached('installed_mods', installed, 30);
+        set_cached('installed_mods', installed, 5);
     }
     return installed;
 
