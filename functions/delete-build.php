@@ -38,10 +38,9 @@ if ($bq) {
 
 // get latest public build
 $lpq = $db->query("SELECT id FROM build WHERE public = 1 AND modpack = ".$db->sanitize($_GET['pack'])." ORDER BY id DESC LIMIT 1");
-if ($lpq && sizeof($lpq)==1) {
-    $latest_public_build = $lpq[0];
-    $db->execute("UPDATE modpacks SET latest = ".$latest_public_build['id']." WHERE id = ".$db->sanitize($_GET['pack']));
-} else if (sizeof($lpq)==0) {
+if ($lpq) {
+    $db->execute("UPDATE modpacks SET latest = ".$lpq[0]['id']." WHERE id = ".$db->sanitize($_GET['pack']));
+} else {
     $db->execute("UPDATE modpacks SET latest = null WHERE id = ".$db->sanitize($_GET['pack']));
 }
 

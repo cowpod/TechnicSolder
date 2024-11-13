@@ -3,7 +3,7 @@ session_start();
 $config = require("./config.php");
 
 if (empty($_GET['id'])) {
-    die("Modpack not specified.");
+    die("Modpack ID not specified.");
 }
 if (empty($_GET['name'])) {
     die("Name not specified.");
@@ -15,27 +15,20 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
 }
 if (substr($_SESSION['perms'],1,1)!=="1") {
-    echo 'Insufficient permission!';
-    exit();
+    die('Insufficient permission!');
 }
 
 require_once("db.php");
 $db=new Db;
 $db->connect();
 
-if ($_GET['type']=="update") {
-    $db->execute("INSERT INTO builds(`name`,`minecraft`,`java`,`mods`,`modpack`,`public`,`loadertype`) SELECT `name`,`minecraft`,`java`,`mods`,`modpack`,`public`,`loadertype` FROM `builds` WHERE `modpack` = '".$db->sanitize($_GET['id'])."' ORDER BY `id` DESC LIMIT 1");
-    $db->execute("UPDATE `builds` SET `name` = '".$db->sanitize($_GET['name'])."' WHERE `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC LIMIT 1");
-    $db->execute("UPDATE `builds` SET `public` = 0 WHERE `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC LIMIT 1");
-} else {
-    $db->execute("INSERT INTO builds(`name`,`modpack`,`public`) VALUES ('".$db->sanitize($_GET['name'])."','".$db->sanitize($_GET['id'])."',0)");
+$nameexistsq = $db->query("SELECT 1 FROM builds WHERE name = '{$db->sanitize($_GET['name'])}' AND modpack = {$db->sanitize($_GET['id'])} LIMIT 1");
+if ($nameexistsq) {
+    die("Build with name {$_GET['name']} already exists");
 }
-
-// get latest public build
-$lpq = $db->query("SELECT id FROM builds WHERE public = 1 AND modpack = ".$db->sanitize($_GET['id'])." ORDER BY id DESC LIMIT 1");
-if ($lpq && sizeof($lpq)==1) {
-    $latest_public_build = $lpq[0];
-    $db->execute("UPDATE modpacks SET latest = ".$latest_public_build['id']." WHERE id = ".$db->sanitize($_GET['id']));
+$addbuild = $db->execute("INSERT INTO builds(name,modpack,public) VALUES ('{$db->sanitize($_GET['name'])}', '{$db->sanitize($_GET['id'])}', 0)");
+if (!$addbuild) {
+    die("Could not add build.");
 }
 
 $db->disconnect();

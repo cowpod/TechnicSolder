@@ -22,6 +22,11 @@ if (!isset($db)){
     $db->connect();
 }
 
+$hasminecraft = $db->query("SELECT 1 FROM builds WHERE minecraft IS NOT NULL AND id = {$db->sanitize($_GET['id'])}");
+if (!$hasminecraft) {
+    die('{"status":"error","message":"Build details are empty!"}');
+}
+
 $db->execute("UPDATE builds SET public = ".$db->sanitize($_GET['ispublic'])." WHERE id = ".$db->sanitize($_GET['id']));
 
 $latest_and_rec = $db->query("SELECT latest,recommended FROM modpacks WHERE latest=".$db->sanitize($_GET['id'])." OR recommended=".$db->sanitize($_GET['id']));

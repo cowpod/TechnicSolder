@@ -1109,11 +1109,11 @@ if (isset($_SESSION['user'])) {
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                     <?php if (substr($_SESSION['perms'],1,1)=="1") { ?> 
-                                        <button onclick="edit(<?php echo $user['id'] ?>)" class="btn btn-primary">Edit</button>
+                                        <button onclick="edit(<?php echo $user['id'] ?>)" class="btn <?php echo empty($user['minecraft']) ? 'btn-warning' : 'btn-primary'; ?>">Edit</button>
                                         <button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeModal" class="btn btn-danger">Remove</button> 
                                     <?php } 
                                     if (substr($_SESSION['perms'],2,1)=="1") { ?>
-                                        <button bid="<?php echo $user['id'] ?>" id="pub-<?php echo $user['id']?>" class="btn btn-success" onclick="set_public(<?php echo $user['id'] ?>)" style="display:<?php echo ($user['public']!='1')?'block':'none' ?>" <?php if (empty($user['minecraft'])) echo 'disabled title="Minecraft version not set!"'?>>Publish</button>
+                                        <button bid="<?php echo $user['id'] ?>" id="pub-<?php echo $user['id']?>" class="btn btn-success" onclick="set_public(<?php echo $user['id'] ?>)" style="display:<?php echo (isset($user['minecraft']) && $user['public']!='1')?'block':'none' ?>">Publish</button>
                                         <!-- if public is null then MC version and loader hasn't been set yet-->
 
                                         <button bid="<?php echo $user['id'] ?>" id="rec-<?php echo $user['id']?>" class="btn btn-success" onclick="set_recommended(<?php echo $user['id'] ?>)" style="display:<?php echo ($packdata['recommended']!=$user['id']&&$user['public']=='1')?'block':'none' ?>">Recommend</button>
@@ -1193,7 +1193,8 @@ if (isset($_SESSION['user'])) {
                 <div class="card">
                     <h2>Build <?php echo $user['name'] ?></h2>
                     <hr>
-                    <form method="POST" action="./functions/update-build.php?id=<?php echo $_GET['id'] ?>">
+                    <form method="POST" action="./functions/update-build.php">
+                        <input type="hidden" name="id" value="<?php echo $_GET['id'] ?>">
                         <label for="versions">Select minecraft version</label>
                         <select id="versions" name="versions" class="form-control">
                             <?php
@@ -1208,10 +1209,10 @@ if (isset($_SESSION['user'])) {
                                     } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - <?php echo $version['loadertype'] ?> <?php echo $version['version'] ?></option><?php
                                 }
                                 echo "</select>";
-                            } else {
-                                echo "</select>";
-                                echo "<div style='display:block' class='invalid-feedback'>There are no versions available. Please fetch versions in the <a href='./modloaders'>Forge Library</a></div>";
-                            }
+                            } else { ?>
+                                </select>
+                                "<div style='display:block' class='invalid-feedback'>There are no versions available. Please fetch versions in the <a href='./modloaders'>Forge Library</a></div>
+                            <?php }
                             // error_log($loadertype);
                             ?>
                             <input type="text" name="forgec" id="forgec" value="none" hidden required>

@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if (empty($_GET['id'])) {
+if (empty($_POST['id'])) {
     die("id (build id) not specified");
 }
 if (empty($_POST['versions'])) {
@@ -38,7 +38,7 @@ if (!isset($db)){
     $db->connect();
 }
 
-$user = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
+$user = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_POST['id']));
 if ($user) {
     assert(sizeof($user)==1);
     $user = $user[0];
@@ -51,11 +51,11 @@ if (sizeof($modslist)==1 && $modslist[0]==""){
 // todo: rewrite this. no need to write to builds twice!
 if ($_POST['forgec']!=="none"||empty($modslist)) {
     if ($_POST['forgec']=="wipe"||empty($modslist)) {
-        $db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize($_POST['versions'])."' WHERE `id` = ".$db->sanitize($_GET['id']));
+        $db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize($_POST['versions'])."' WHERE `id` = ".$db->sanitize($_POST['id']));
     } else {
         $modslist2 = $modslist;
         $modslist2[0] = $_POST['versions'];
-        $db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize(implode(',',$modslist2))."' WHERE `id` = ".$db->sanitize($_GET['id']));
+        $db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize(implode(',',$modslist2))."' WHERE `id` = ".$db->sanitize($_POST['id']));
     }
 }
 
@@ -68,7 +68,7 @@ if ($minecraft) {
 
 $ispublic = $_POST['ispublic']=="on" ? 1 : 0;
 
-$publicq = $db->query("SELECT public FROM builds WHERE id = ".$db->sanitize($_GET['id']));
+$publicq = $db->query("SELECT public FROM builds WHERE id = ".$db->sanitize($_POST['id']));
 error_log('PUBLIC: '.json_encode($publicq));
 if ($publicq && sizeof($publicq)==1 && array_key_exists('public', $publicq[0])) {
     if ($publicq[0]['public']!=$ispublic) {
@@ -79,13 +79,11 @@ if ($publicq && sizeof($publicq)==1 && array_key_exists('public', $publicq[0])) 
 }
 
 // actually update build
-$db->execute("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic.", `loadertype` = '".$minecraft['loadertype']."' WHERE `id` = ".$db->sanitize($_GET['id']));
+$db->execute("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic.", `loadertype` = '".$minecraft['loadertype']."' WHERE `id` = ".$db->sanitize($_POST['id']));
 
-// get latest public build
-$lpq = $db->query("SELECT id FROM builds WHERE public = 1 AND modpack = ".$user['modpack']." ORDER BY id DESC LIMIT 1");
-if ($lpq && sizeof($lpq)==1) {
-    $latest_public_build = $lpq[0];
-    $db->execute("UPDATE modpacks SET latest = ".$latest_public_build['id']." WHERE id = ".$user['modpack']);
+// set latest public build.
+if ($ispublic) {
+    $db->execute("UPDATE modpacks SET latest = {$db->sanitize($_POST['id'])} WHERE id = {$user['modpack']}");
 }
 
-header('Location: '.$config['dir'].'build?id='.$_GET['id']);
+header('Location: '.$config['dir'].'build?id='.$_POST['id']);
