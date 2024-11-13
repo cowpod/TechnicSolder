@@ -439,9 +439,13 @@ function fetch_installed_from_api() {
     });
 }
 async function fetch_installed() {
-    res = await fetch_installed_from_api();
-    installed=res;
-    return res;
+    if (get_cached('installed_mods')) {
+        installed=get_cached('installed_mods');
+    } else {
+        installed = await fetch_installed_from_api();
+        set_cached('installed_mods', installed, 30);
+    }
+    return installed;
 
 }
 function is_installed(pretty_name) {
@@ -501,9 +505,9 @@ $('#searchbutton').on('click', async function() {
             results[searchquery].forEach(function(hit) {
                 addrow(hit);
             });
-        } else if (get_cached(searchquery)) {
+        } else if (get_cached('search_'+searchquery)) {
             $('#searchresults').empty();
-            results[searchquery]=get_cached(searchquery);
+            results[searchquery]=get_cached('search_'+searchquery);
             results[searchquery].forEach(function(hit) {
                 addrow(hit);
             });
@@ -530,7 +534,7 @@ $('#searchbutton').on('click', async function() {
 
                         results[searchquery]=hits;
                     
-                        set_cached(searchquery, hits, 1800);
+                        set_cached('search_'+searchquery, hits, 1800);
                         
                     } else {
                         console.log('no hits');
