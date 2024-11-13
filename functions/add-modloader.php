@@ -61,10 +61,11 @@ if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_con
     unlink("../forges/modpack-".$version."/modpack.jar");
     rmdir("../forges/modpack-".$version);
     $md5 = md5_file("../forges/forge-".$version.".zip");
+    $filesize=filesize("../forges/forge-".$version.".zip");
     $url = "http://".$config['host'].$config['dir']."forges/forge-".$version.".zip";
 
     $res = $db->execute("
-        INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`) 
+        INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`filesize`,`type`,`loadertype`) 
         VALUES (
             '".$type."', 
             '".$type_pretty_names[$type]."', 
@@ -75,7 +76,8 @@ if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_con
             '".$type_descriptions[$type]."', 
             '".$version."', 
             '".$mcversion."', 
-            'forge-".$version.".zip', 
+            'forge-".$version.".zip',
+            ".$filesize.",
             'forge',
             '".$type."'
         )
