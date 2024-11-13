@@ -49,6 +49,9 @@ class Toml {
         // O(nm)
         $ret=[];
         $table=&$ret;
+
+        $json_key=null;
+        $json_str=null;
         
         $multiline_string=null; // different from ''. later points to a value for a key.
         
@@ -94,6 +97,18 @@ class Toml {
                     
                 $table=&$temp_nested_table_ref;
                 unset($temp_nested_table_ref);
+            } else if ($json_key && trim($element)==']') { 
+                $json_str=trim($json_str, ',');
+                $json_str.=']';
+                $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
+                $parsedjson = preg_replace('/\'([^\']*)\'/', '"$1"', $parsedjson);
+                // error_log('got complete json: '.$json_key.'='.$parsedjson);
+                $ret[$json_key] = json_decode($parsedjson,true);
+                $json_key=NULL;
+                $json_str=NULL;
+            } else if ($json_key) { 
+                // error_log('got json data row: '.$element);
+                $json_str.=$element;
             } else {
                 // KEY=VALUE
                 $keyval = explode("=", $element, 2);
@@ -130,13 +145,27 @@ class Toml {
                             $table[$key]=$value; // unecessary write, with a refactor?
                             unset($multiline_string); // unecessary set+unset, with a refactor?
                         }
+                    } else if ($value=='[') { // EXPECT JSON
+                        // error_log('start json data');
+                        $json_key=$key;
+                        $json_str='[';
+                    } else if ($value==']') { // DONE WITH JSON
+                        $json_str=trim($json_str, ',');
+                        $json_str.=']';
+                        // technically not json. so needs some work.
+                        $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
+                        $parsedjson = preg_replace('/\'([^\']+)\'/', '"$1"', $parsedjson);
+                        // error_log('got complete json: '.$json_key.'='.$parsedjson);
+                        $ret[$json_key] = json_decode($parsedjson,true);
+                        $json_key=NULL;
+                        $json_str=NULL;
                     } else {
                         $table[$key]=$value;
                     }
                 }
             }
         }
-        
+        // error_log(json_encode($ret, JSON_UNESCAPED_SLASHES));
         return $ret;
     }
 
