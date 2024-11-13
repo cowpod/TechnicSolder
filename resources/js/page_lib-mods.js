@@ -377,7 +377,7 @@ function installmod() {
                 $('#installation-versions option:selected').attr("disabled",true);
                 $('#installations-button').attr('disabled',false);
                 $('#installations-cancel').attr('disabled',false);
-                $('#installations-button').attr('onclick',`window.location.replace("mod?id=${json['name']}")`)
+                $('#installations-button').attr('onclick',`window.location.replace("mod?id=${json['name'][0]}")`)
                 $('#installations-button').text('Fix now');
                 $('#installations-cancel').text('Ignore');
                 $('#install-'+slug).attr('disabled',true);
