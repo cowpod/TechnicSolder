@@ -79,17 +79,52 @@ if (preg_match("/api\/mod$/", $url)) {
         $mcversion=$_GET['mcversion'];
     }
     if (!empty($loadertype) && !empty($mcversion)) {
-        $modq = $db->query("SELECT * FROM mods WHERE loadertype='{$loadertype}' AND ('{$mcversion}' LIKE mcversion || '%' OR mcversion LIKE '{$mcversion}' || '%')");
+        $modq = $db->query("SELECT * FROM mods WHERE type='mod' AND loadertype='{$loadertype}' AND ('{$mcversion}' LIKE mcversion || '%' OR mcversion LIKE '{$mcversion}' || '%')");
     } elseif (!empty($loadertype)) {
-        $modq = $db->query("SELECT * FROM mods WHERE loadertype='{$loadertype}'");
+        $modq = $db->query("SELECT * FROM mods WHERE type='mod' AND loadertype='{$loadertype}'");
     } elseif (!empty($mcversion)) {
-        $modq = $db->query("SELECT * FROM mods WHERE '{$mcversion}' LIKE mcversion || '%'");
+        $modq = $db->query("SELECT * FROM mods WHERE type='mod' AND '{$mcversion}' LIKE mcversion || '%'");
     } else {
-        $modq = $db->query("SELECT * FROM mods");
+        $modq = $db->query("SELECT * FROM mods WHERE type='mod'");
     }
     if ($modq) {
         foreach ($modq as $mod) {
-            if ($mod['type']!='mod') continue;
+            $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
+            $modentry = [
+                'id'=>$mod['id'],
+                'pretty_name'=>$mod['pretty_name'],
+                'name'=>$mod['name'], 
+                'version'=>$mod['version'], 
+                'mcversion'=>$mod['mcversion'],
+                'md5'=>$mod['md5'], 
+                'url'=>$mod['url'], 
+                'filesize'=>$filesize
+            ];
+
+            array_push($modslist, $modentry);
+        }
+    }
+    echo json_encode($modslist, JSON_UNESCAPED_SLASHES);
+}
+else if (preg_match("/api\/loader$/", $url)) {
+    $modslist=[];
+    if (!empty($_GET['loadertype']) && ctype_alnum($_GET['loadertype'])) {
+        $loadertype=$_GET['loadertype'];
+    }
+    if (!empty($_GET['mcversion']) && preg_match('/^[a-zA-Z0-9\-\.]+$/', $_GET['mcversion'])) {
+        $mcversion=$_GET['mcversion'];
+    }
+    if (!empty($loadertype) && !empty($mcversion)) {
+        $modq = $db->query("SELECT * FROM mods WHERE type='forge' AND loadertype='{$loadertype}' AND ('{$mcversion}' LIKE mcversion || '%' OR mcversion LIKE '{$mcversion}' || '%')");
+    } elseif (!empty($loadertype)) {
+        $modq = $db->query("SELECT * FROM mods WHERE type='forge' AND loadertype='{$loadertype}'");
+    } elseif (!empty($mcversion)) {
+        $modq = $db->query("SELECT * FROM mods WHERE type='forge' AND '{$mcversion}' LIKE mcversion || '%'");
+    } else {
+        $modq = $db->query("SELECT * FROM mods WHERE type='forge'");
+    }
+    if ($modq) {
+        foreach ($modq as $mod) {
             $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
             $modentry = [
                 'id'=>$mod['id'],

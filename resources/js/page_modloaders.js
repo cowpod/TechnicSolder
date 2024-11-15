@@ -1,10 +1,19 @@
-function remove_box(id,name) {
-    $("#mod-name-title").text(name);
-    $("#mod-name").text(name);
-    $("#remove-button").attr("onclick","remove("+id+",false)");
-    $("#remove-button-force").attr("onclick","remove("+id+",true)");
+const CACHE_INSTALLER_TTL=3600;
+
+function remove_box(id,name,minecraft,version) {
+    if (used_loaders.includes(name+'-'+minecraft+'-'+version)) {
+        $("#mod-name-title").html(name+' <b>(in use)</b>');
+        $("#mod-name").html(name+' <b>(in use)</b>');
+        $("#remove-button").attr("onclick",`remove(${id},'${name}','${minecraft}','${version}',true)`);
+        $("#remove-button").text('Force delete')
+    } else {
+        $("#mod-name-title").text(name);
+        $("#mod-name").text(name);
+        $("#remove-button").attr("onclick",`remove(${id},'${name}','${minecraft}','${version}',false)`);
+        $("#remove-button").text('Delete')
+    }
 }
-function remove(id,force) {
+function remove(id,name,minecraft,version,force) {
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
@@ -12,12 +21,11 @@ function remove(id,force) {
             if (response['status']=='succ') {
                 console.log('success!');
                 $("#mod-row-"+id).remove();
-            } else {
-                // todo: use styled alert instead of this
-                // alert("Cannot delete modloader as it is used by a build.");
-                // $("#removeModWarn").show();
-                if (confirm(response['message']+" Press OK to go to '"+response['bname']+"'")) {
-                    window.location.href="/build?id="+response['bid'];
+                if (used_loaders.includes(name+'-'+minecraft+'-'+version)) {
+                    const index = used_loaders.indexOf(name+'-'+minecraft+'-'+version);
+                    if (index > -1) {
+                      used_loaders.splice(index, 1);
+                    }
                 }
             }
         }
@@ -28,7 +36,7 @@ function remove(id,force) {
 }
 
 // Fabric Download
-let download = () => {
+let download_fabric = () => {
     let minecraft = $("#ver").children("option:selected").val();
     let version = $("#lod").children("option:selected").val();
     if ($("#ver").children("option:selected").attr("disabled")!==undefined && $("#ver").children("option:selected").attr("disabled")!==false) {
@@ -37,89 +45,128 @@ let download = () => {
         $("#sub-button").attr("disabled","true")
         $("#sub-button")[0].innerHTML = "<i class='fas fa-cog fa-spin'></i>"
         let packager = new XMLHttpRequest();
-        packager.open('GET', './functions/package-fabric.php?version='+encodeURIComponent(minecraft)+"&loader="+encodeURIComponent(version))
+        packager.open('GET', './functions/add-modloader-fabric.php?version='+encodeURIComponent(minecraft)+"&loader="+encodeURIComponent(version))
         packager.onreadystatechange = () => {
             if (packager.readyState === 4) {
                 if (packager.status === 200) {
+                    console.log(packager.response)
                     parsed = JSON.parse(packager.response)
                     if (parsed["status"] === "succ") {
-                        // $("#sub-button")[0].classList.remove("btn-primary")
-                        // $("#sub-button")[0].classList.add("btn-success")
-                        // $("#sub-button")[0].innerHTML = "<i class='fas fa-check'></i> Please reload the page."
-                        // window.location.reload();
-
                         $("#ver").children("option:selected").attr("disabled",true);
-                        // $("#ver").children("option:selected").innerHTML=$("#ver").children("option:selected").innerHTML+" (installed)";
                         $("#sub-button")[0].innerHTML = "Install";
-
-                        add_item(minecraft, version, 'fabric', parsed['id']);
-
-                        // $("#lod").children("option:selected").attr("disabled",true);
-                        // $("#ver").next().attr("selected","selected");
+                        add_item(parsed['id'], 'fabric', minecraft, version);
+                        $('#installfabricinfo').addClass('text-success')
+                        $('#installfabricinfo').removeClass('text-danger')
+                        installed_loaders.push('fabric-'+minecraft+'-'+parsed['version'])
+                        $('#ver option:selected').attr('disabled',true);
+                    } else {
+                        $('#installfabricinfo').addClass('text-danger')
+                        $('#installfabricinfo').removeClass('text-success')
                     }
-                    // $("#fetch-forge").removeAttr("disabled");
-                    // $("#fetch-neoforge").removeAttr("disabled");
                     $("#sub-button").removeAttr("disabled");
+                    $('#installfabricinfo').html(parsed['message'])
+                    $('#installfabricinfo').show()
                 }
             }
         }
         packager.send()
     }
 }
+
 // Fetch Fabric Versions
-let fetchfabric = () => {
-    $("#fetch-fabric").attr("disabled",true)
-    // $("#fetch-forge").attr("disabled",true)
-    // $("#fetch-neoforge").attr("disabled",true)
-    $("#fetch-fabric").html("Loading...<i class='fas fa-cog fa-spin fa-sm'></i>")
-    let versions = new XMLHttpRequest()
-    let loaders = new XMLHttpRequest()
-    versions.open('GET','https://meta.fabricmc.net/v2/versions/game')
-    loaders.open('GET','https://meta.fabricmc.net/v2/versions/loader')
-    versions.onreadystatechange = () => {
-        if (versions.readyState === 4) {
-            if (versions.status === 200) {
-                response = JSON.parse(versions.response)
-                for (key in response) {
-                    if (response[key]["stable"]) {
-                        if (!installed_mc_loaders.includes('fabric-'+response[key]["version"])) {
-                            ver = document.createElement("option")
-                            ver.text = response[key]["version"]
-                            ver.value = response[key]["version"]
-                            $("#ver")[0].add(ver)
-                            installed_mc_loaders.push('fabric-'+response[key]["version"]);
-                        }
-                    } 
-                }
-            }
-        }
-    }
-    loaders.onreadystatechange = () => {
-        if (loaders.readyState === 4) {
-            if (loaders.status === 200) {
-                response = JSON.parse(loaders.response)
-                for (key in response) {
-                    if (response[key]["stable"]) {
-                        ver = document.createElement("option")
-                        ver.text = response[key]["version"]
-                        ver.value = response[key]["version"]
-                        $("#lod")[0].add(ver)
+async function fetch_fabric() {
+    async function fetch_versions() {
+        return new Promise((resolve, reject) => {
+            let versions = new XMLHttpRequest()
+            versions.open('GET','https://meta.fabricmc.net/v2/versions/game')
+            versions.onreadystatechange = () => {
+                if (versions.readyState === 4) {
+                    if (versions.status === 200) {
+                        set_cached('installer_fabric_versions', versions.response, CACHE_INSTALLER_TTL)
+                        resolve(versions.response)
+                        return versions.response
                     }
                 }
-                $("#fetch-fabric").html("Show Fabric Installer")
-                $("#fabrics")[0].style.display = "flex";
+            }
+            versions.onerror = function() {
+                resolve([]);
+            };
+            versions.send()
+        });
+    }
+    async function fetch_loaders() {
+        return new Promise((resolve, reject) => {
+            let loaders = new XMLHttpRequest()
+            loaders.open('GET','https://meta.fabricmc.net/v2/versions/loader')
+            loaders.onreadystatechange = () => {
+                if (loaders.readyState === 4) {
+                    if (loaders.status === 200) {
+                        set_cached('installer_fabric_loaders', loaders.response, CACHE_INSTALLER_TTL)
+                        // response = JSON.parse(loaders.response)
+                        resolve(loaders.response)
+                        return loaders.response
+                    }
+                }
+            }
+            loaders.onerror = function() {
+                resolve([])
+            }
+            loaders.send()
+        });
+    }
+
+    if (get_cached('installer_fabric_versions')) {
+        var versions=JSON.parse(get_cached('installer_fabric_versions'));
+    } else {
+        var versions=JSON.parse(await fetch_versions());
+    }
+    if (get_cached('installer_fabric_loaders')) {
+        var loaders=JSON.parse(get_cached('installer_fabric_loaders'));
+    } else {
+        var loaders=JSON.parse(await fetch_loaders());
+    }
+
+    versions = versions.filter((v) => v['stable'] == true);
+    loaders = loaders.filter((v) => v['stable'] == true);
+
+    let merged = versions.map((v, i) => [v['version'], loaders[0]['version']]);
+
+    for (v of merged) {
+        let minecraft=v[0];
+        let loader=v[1]
+            // console.log($("#ver")[0])
+        if (!installed_loaders.includes('fabric-'+minecraft+'-'+loader)) {
+            if ($(`#lod option[value='${loader}']`).length == 0) {
+                lod = document.createElement("option")
+                lod.text = loader
+                lod.value = loader
+                $("#lod")[0].add(lod)
+            }
+            if ($(`#ver option[value='${minecraft}']`).length == 0) {
+                mcv = document.createElement("option")
+                mcv.text = minecraft
+                mcv.value = minecraft
+                $("#ver")[0].add(mcv)
             }
         }
+        
     }
-    loaders.send()
-    versions.send()
+
+    $('#sub-button').attr('disabled',false);
+    $('#sub-button').text('Install');
+    $("#fetch-fabric").html("Show Fabric Installer")
+    $("#fabrics")[0].style.display = "flex";
+    
+
 }
+// neoforge download
 let download_neoforge = () => {
     let VERSIONS_ENDPOINT = 'https://maven.neoforged.net/api/maven/versions/releases/'
     let FORGE_GAV = 'net/neoforged/neoforge'
     let DOWNLOAD_URL = 'https://maven.neoforged.net/releases'
 
     let version = $("#lod-neoforge").children("option:selected").val();
+    // let minecraft = $("#ver-neoforge").children("option:selected").val();  
     let minecraft = "1."+version.slice(0,version.lastIndexOf('.'));
     let download_link = `${DOWNLOAD_URL}/${FORGE_GAV}/${encodeURIComponent(version)}/neoforge-${encodeURIComponent(version)}-installer.jar`;
     
@@ -129,7 +176,7 @@ let download_neoforge = () => {
         return;
     } else {
         $("#sub-button-neoforge").attr("disabled","true")
-        $("#sub-button-neoforge-message").hide();
+        $("#installneoforgeinfo").hide();
         $("#sub-button-neoforge")[0].innerHTML = "<i class='fas fa-cog fa-spin'></i>"
 
         let packager = new XMLHttpRequest();
@@ -140,26 +187,27 @@ let download_neoforge = () => {
                     console.log(packager.response);
                     parsed = JSON.parse(packager.response)
                     if (parsed["status"] === "succ") {
-                        // $("#sub-button-neoforge")[0].classList.remove("btn-primary")
-                        // $("#sub-button-neoforge")[0].classList.add("btn-success")
-                        // $("#sub-button-neoforge")[0].innerHTML = "<i class='fas fa-check'></i> Please reload the page."
-                        // window.location.reload();
                         $("#lod-neoforge").children("option:selected").attr("disabled",true);
                         $("#lod-neoforge").children("option:selected").innerHTML=$("#lod-neoforge").children("option:selected").innerHTML+" (installed)";
                         $("#sub-button-neoforge")[0].innerHTML = "Install";
 
-                        add_item(minecraft, version, 'neoforge', parsed['id']);
+                        add_item(parsed['id'], 'neoforge', minecraft, version);
                         $("#lod-neoforge").next().attr("selected","selected");
+                        $('#installneoforgeinfo').addClass('text-success');
+                        $('#installneoforgeinfo').removeClass('text-danger');
+                        installed_loaders.push('neoforge-'+minecraft+'-'+parsed['version'])
                     } else {
                         $("#sub-button-neoforge").removeAttr("disabled")
-                        $("#sub-button-neoforge-message").show();
-                        $("#sub-button-neoforge-message")[0].innerHTML = parsed["message"];
+                        $("#installneoforgeinfo").show();
+                        $("#installneoforgeinfo")[0].innerHTML = parsed["message"];
                         $("#lod-neoforge").children("option:selected").attr("disabled",true);
                         $("#sub-button-neoforge")[0].innerHTML = "Install"
+                        $('#installneoforgeinfo').addClass('text-danger');
+                        $('#installneoforgeinfo').removeClass('text-success');
                     }
-                    // $("#fetch-forge").removeAttr("disabled");
-                    // $("#fetch-fabric").removeAttr("disabled");
                     $("#sub-button-neoforge").removeAttr("disabled")
+                    $('#installneoforgeinfo').html(parsed['message'])
+                    $('#installneoforgeinfo').show();
                 }
             }
         }
@@ -168,10 +216,35 @@ let download_neoforge = () => {
 }
 // Fetch Neoforge Versions
 let fetch_neoforge = () => {
-    // $("#fetch-fabric").attr("disabled",true)
-    // $("#fetch-forge").attr("disabled",true)
+    function parse_versions(versions) {
+        for (key in versions) {
+            let loader = versions[key]
+            let minecraft = '1.'+loader.substring(0, loader.lastIndexOf('.'));
+            if (!installed_loaders.includes('neoforge-'+minecraft+'-'+loader)) {
+                if ($(`#lod-neoforge option[value='${loader}']`).length == 0) {
+                    lod = document.createElement("option")
+                    lod.text = minecraft+' - '+loader;
+                    lod.value = loader
+                    $("#lod-neoforge")[0].add(lod)
+                }
+
+                // if ($(`#ver-neoforge option[value='${minecraft}']`).length == 0) {
+                //     ver = document.createElement("option")
+                //     ver.text = minecraft;
+                //     ver.value = minecraft
+                //     $("#ver-neoforge")[0].add(ver)
+                // }
+            }
+        }
+        $('#sub-button-neoforge').attr('disabled',false);
+        $('#sub-button-neoforge').text('Install');
+    }
     $("#fetch-neoforge").attr("disabled",true)
     $("#fetch-neoforge").html("Loading...<i class='fas fa-cog fa-spin fa-sm'></i>")
+    if (get_cached('installer_neoforge_versions')) {
+        let versions=JSON.parse(get_cached('installer_neoforge_versions'));
+        parse_versions(versions);
+    }
     let loaders = new XMLHttpRequest()
     loaders.open('GET','https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge')
     loaders.onreadystatechange = () => {
@@ -180,18 +253,9 @@ let fetch_neoforge = () => {
                 response = JSON.parse(loaders.response)
                 if (response["versions"]) {
                     let versions = response["versions"].reverse();
-                    for (key in versions) {
-                        let value = versions[key]
-                        // if (!value.endsWith("-beta")) {
-                            if (!installed_mc_loaders.includes('neoforge-'+value)) {
-                                ver = document.createElement("option")
-                                ver.text = '1.'+value.substring(0, value.lastIndexOf('.'))+' - '+value;
-                                ver.value = value
-                                $("#lod-neoforge")[0].add(ver)
-                                installed_mc_loaders.push('neoforge-'+value);
-                            }
-                        // }
-                    }
+                    versions = versions.filter((v) => !v.endsWith('beta'));
+                    set_cached('installer_neoforge_versions', JSON.stringify(versions), CACHE_INSTALLER_TTL) // 1 hour
+                    parse_versions(versions);
                 }
                 $("#fetch-neoforge").html("Show Neoforge Installer");
                 $("#neoforges")[0].style.display = "flex";
@@ -201,12 +265,12 @@ let fetch_neoforge = () => {
     loaders.send()
 }
 
-// add forge version
-function add(v,link,mcv,id) {
+// download forge version
+function download_forge(id,minecraft,version,link) {
     $("#button-add-"+id).attr("disabled",true);
     $("#cog-"+id).show();
     var request = new XMLHttpRequest();
-    request.open('GET', './functions/add-modloader.php?type=forge&version='+v+'&dl='+link+'&mcversion='+mcv);
+    request.open('GET', './functions/add-modloader.php?type=forge&version='+version+'&dl='+link+'&mcversion='+minecraft);
     request.onreadystatechange = function() {
         if (request.readyState == 4) {
             if (request.status == 200) {
@@ -216,12 +280,17 @@ function add(v,link,mcv,id) {
                 $("#fetch-neoforge").removeAttr("disabled");
                 if (response['status']=="succ") {
                     $("#check-"+id).show();
-                    add_item(mcv,v,'forge',response['id']);
+                    add_item(response['id'], 'forge', minecraft, version);
+                    $("#installforgeinfo").addClass('text-success');
+                    $("#installforgeinfo").removeClass('text-danger');
+                    installed_loaders.push('forge-'+minecraft+'-'+version)
                 } else {
                     $("#times-"+id).show();
-                    $("#info").text(response['message']);
+                    $("#installforgeinfo").addClass('text-danger');
+                    $("#installforgeinfo").removeClass('text-success');
                 }
-
+                $("#installforgeinfo").text(response['message']);
+                $("#installforgeinfo").show();
             }
         }
     }
@@ -232,93 +301,108 @@ const forge_link = "https://maven.minecraftforge.net/net/minecraftforge/forge";
 
 // Fetch forge versions
 async function fetch_forges() {
-    $("#fetch-forge").attr("disabled", true);
-    // $("#fetch-fabric").attr("disabled", true);
-    // $("#fetch-neoforge").attr("disabled",true);
-    $("#fetch-forge").html("Loading...<i class='fas fa-cog fa-spin fa-sm'></i>");
-    var request = new XMLHttpRequest();
-    request.open('GET', './functions/forge-links.php');
-    request.onreadystatechange = async function() {
-        if (request.readyState == 4 && request.status == 200) {
-            response = JSON.parse(this.response);
-
-            response = Object.fromEntries(
-                Object.entries(response).reverse()
-            );
-
-            $("#fetched-mods").show();
-            console.log("ignore 404s, they're supposed to be suppressed/catched with onerror")
-            let onesix_404ed=false;
+    async function verify_link_then_add(id,minecraft,version,link) {
+        console.log('verifying '+link)
+        // check each version and then add it to list
+        return new Promise((resolve, reject) => {
+            fetch(link, { method:'HEAD' })
+            .then(response=> {
+                if (response.status == 404) {
+                    reject(id);
+                } else if (response.status == 200) {
+                    $("#forge-table").append(`
+                    <tr id="forge-${id}">
+                        <td scope="row" data-value="${minecraft}">${minecraft}</td>
+                        <td data-value="${version}">${version}</td>
+                        <td data-value="${link}" class="d-none d-md-table-cell" style="overflow-wrap: break-word;"><a href="${link}" style="word-break: break-all;">${link}</a></td>
+                        <td><button id="button-add-${id}" onclick="download_forge(${id}, '${minecraft}', '${version}', '${link}')" class="btn btn-primary btn-sm">Add to Database</button></td>
+                        <td><em id="cog-${id}" style="display:none" class="fas fa-spin fa-cog fa-2x"></em><em id="check-${id}" style="display:none" class="text-success fas fa-check fa-2x"></em><em id="times-${id}" style="display:none" class="text-danger fas fa-times fa-2x"></em></td>
+                    </tr>`);
+                    resolve(true);
+                }
+            })
+            .catch(error=>{
+                reject(false);
+            });
+        }).catch(error=>{
+            reject(false);
+        });
+    }
+    async function parse_versions(response){
+        if (get_cached('installer_forge_versions')) {
+            let response=JSON.parse(get_cached('installer_forge_versions'));
             for (var key in response) {
-                // if below problematic version 1.6.1, AND we couldn't get 1.6.1, skip the rest
-                if (compareVersions(key,'1.6.0')<0 && onesix_404ed) {
-                    continue;
-                } else {
-                    try {
-                        await chf(response[key]["link"],response[key]["name"],response[key]["id"],response[key]["mc"]);
-                    } catch (e) {
-                        console.log(`ignoring 404 #4: '${key}'`);
-                        if (compareVersions(key,'1.6.0')<0) {
-                            onesix_404ed=true;
+                console.log(response[key])
+                await verify_link_then_add(response[key]["id"], response[key]["mc"], response[key]['name'], response[key]["link"]);
+            }
+        } else {
+            let valid=[];
+            console.log("ignore 404s, they're supposed to be suppressed/catched with onerror")
+            let onesix_worked=false;
+            for (var key in response) {
+                if (!installed_loaders.includes('forge-'+response[key]['minecraft']+'-'+response[key]['name'])) {
+                    if (onesix_worked || compareVersions(key,'1.6.0')>0) {
+                        // if 1.6.0 worked, or we are above 1.6.0
+                        try {
+                            let isvalid = await verify_link_then_add(response[key]['id'], response[key]['name'], response[key]['mc'], response[key]['link']);
+                            if (isvalid) {
+                                valid.push(response[key]);
+                            if (compareVersions(key,'1.6.0')<0) {
+                                onesix_worked=false;
+                            }
+                            }
+                        } catch (e) {
+                            if (compareVersions(key,'1.6.0')<0) {
+                                onesix_worked=false;
+                            }
                         }
                     }
                 }
             }
-
-            $("#fetch-forge").html("Show Forge Installer");
-            // $("#fetch-forge").removeAttr("disabled");
-            // $("#fetch-fabric").removeAttr("disabled");
-            // $("#fetch-neoforge").removeAttr("disabled");
+            set_cached('installer_forge_versions', JSON.stringify(valid), CACHE_INSTALLER_TTL);
         }
+        $("#fetch-forge").hide();
     }
-    
-    request.send();
-}
 
-// add item to installer list
-async function chf(link,name,id,mc) {
-    return new Promise((resolve, reject) => {
-        fetch(link, { method:'HEAD' })
-        .then(response=> {
-            if (response.status == 404) {
-                // console.log('ignoring 404 #1');
-                reject(id);
-            } else if (response.status == 200) {
-                $("#forge-table").append(`
-                <tr id="forge-${id}">
-                    <td scope="row" data-value="${mc}">${mc}</td>
-                    <td data-value="${name}">${name}</td>
-                    <td data-value="${link}" class="d-none d-md-table-cell" style="overflow-wrap: break-word;"><a href="${link}" style="word-break: break-all;">${link}</a></td>
-                    <td><button id="button-add-${id}" onclick="add(\'${name}\', \'${link}\', \'${mc}', \'${id}\')" class="btn btn-primary btn-sm">Add to Database</button></td>
-                    <td><em id="cog-${id}" style="display:none" class="fas fa-spin fa-cog fa-2x"></em><em id="check-${id}" style="display:none" class="text-success fas fa-check fa-2x"></em><em id="times-${id}" style="display:none" class="text-danger fas fa-times fa-2x"></em></td>
-                </tr>`);
-                resolve(id);
+    $("#fetch-forge").attr("disabled", true);
+    $("#fetch-forge").html("Loading...<i class='fas fa-cog fa-spin fa-sm'></i>");
+    $("#table-fetched-mods").show();
+
+    if (get_cached('installer_forge_versions')) {
+        let response=JSON.parse(get_cached('installer_forge_versions'));
+        parse_versions(response);
+    } else {
+        var request = new XMLHttpRequest();
+        request.open('GET', './functions/forge-links.php');
+        request.onreadystatechange = async function() {
+            if (request.readyState == 4 && request.status == 200) {
+                response = JSON.parse(this.response);
+                response = Object.fromEntries(Object.entries(response).reverse());
+                // cached in parse_versions
+                parse_versions(response);
             }
-        })
-        .catch(error=>{
-            // console.log('ignoring 404 #2');
-            reject(id);
-        });
-    }).catch(error=>{
-        // console.log('ignoring 404 #3');
-        reject(id);
-    });
+        }
+        
+        request.send();
+    }
 }
 
 // add item to installed list
-function add_item(minecraft,version,type,dbid) {
+function add_item(id,name,minecraft,version) {
     let item = $('<tr>', { 
-        id: 'mod-row-'+dbid, 
+        id: 'mod-row-'+id, 
         html: `
         <td scope="row" data-value="${minecraft}">${minecraft}</td>
         <td data-value="${version}">${version}</td>
-        <td data-value="${type}">${type}</td>
-        <td data-value="Remove"><button onclick="remove_box(${dbid},'${type} ${version}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger btn-sm">Remove</button></td>
-        <td data-value><svg style="display: none;" class="svg-inline--fa fa-cog fa-w-16 fa-spin fa-sm" aria-hidden="true" data-prefix="fas" data-icon="cog" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg=""><path fill="currentColor" d="M444.788 291.1l42.616 24.599c4.867 2.809 7.126 8.618 5.459 13.985-11.07 35.642-29.97 67.842-54.689 94.586a12.016 12.016 0 0 1-14.832 2.254l-42.584-24.595a191.577 191.577 0 0 1-60.759 35.13v49.182a12.01 12.01 0 0 1-9.377 11.718c-34.956 7.85-72.499 8.256-109.219.007-5.49-1.233-9.403-6.096-9.403-11.723v-49.184a191.555 191.555 0 0 1-60.759-35.13l-42.584 24.595a12.016 12.016 0 0 1-14.832-2.254c-24.718-26.744-43.619-58.944-54.689-94.586-1.667-5.366.592-11.175 5.459-13.985L67.212 291.1a193.48 193.48 0 0 1 0-70.199l-42.616-24.599c-4.867-2.809-7.126-8.618-5.459-13.985 11.07-35.642 29.97-67.842 54.689-94.586a12.016 12.016 0 0 1 14.832-2.254l42.584 24.595a191.577 191.577 0 0 1 60.759-35.13V25.759a12.01 12.01 0 0 1 9.377-11.718c34.956-7.85 72.499-8.256 109.219-.007 5.49 1.233 9.403 6.096 9.403 11.723v49.184a191.555 191.555 0 0 1 60.759 35.13l42.584-24.595a12.016 12.016 0 0 1 14.832 2.254c24.718 26.744 43.619 58.944 54.689 94.586 1.667 5.366-.592 11.175-5.459 13.985L444.788 220.9a193.485 193.485 0 0 1 0 70.2zM336 256c0-44.112-35.888-80-80-80s-80 35.888-80 80 35.888 80 80 80 80-35.888 80-80z"></path></svg></td>` 
+        <td data-value="${name}">${name}</td>
+        <td data-value="Remove"><button onclick="remove_box(${id},'${name}','${minecraft}','${version}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger btn-sm">Remove</button></td>
+        <td data-value><em style="display: none" class="fas fa-cog fa-spin fa-sm"></em></td>` 
     });
     $("#forge-available").append(item);
 }
 
 $(document).ready(function(){
     $("#nav-mods").trigger('click');
+    fetch_fabric()
+    fetch_neoforge()
 });

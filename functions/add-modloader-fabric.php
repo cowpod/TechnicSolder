@@ -18,8 +18,12 @@ if (!file_exists("../forges/modpack-".$version)) {
     exit();
 }
 
+global $db;
 require_once("db.php");
-$db=new Db;
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
+}
 
 if (file_put_contents("../forges/modpack-".$version."/version.json", file_get_contents("https://meta.fabricmc.net/v2/versions/loader/".$mcversion."/".urlencode($version)."/profile/json"))) {
     $zip = new ZipArchive();
@@ -36,21 +40,34 @@ if (file_put_contents("../forges/modpack-".$version."/version.json", file_get_co
     unlink("../forges/modpack-".$version."/version.json");
     rmdir("../forges/modpack-".$version);
     $md5 = md5_file("../forges/fabric-".$version.".zip");
+    $file_size=filesize("../forges/fabric-".$version.".zip");
     $url = "http://".$config['host'].$config['dir']."forges/fabric-".urlencode($version).".zip";
-
-    $db->connect();
-    $res = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`) VALUES ('fabric','Fabric (alpha)','".$md5."','".$url."','https://fabricmc.net/','FabricMC Team', 'Fabric is a lightweight, experimental modding toolchain for Minecraft.', '".$version."','".$mcversion."','fabric-".$version.".zip','forge', 'fabric')");
-    $db->disconnect();
-    
+    $res = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`filesize`,`type`,`loadertype`) VALUES (
+        'fabric',
+        'Fabric (alpha)',
+        '{$md5}',
+        '{$url}',
+        'https://fabricmc.net/',
+        'FabricMC Team', 
+        'Fabric is a lightweight, experimental modding toolchain for Minecraft.', 
+        '{$version}',
+        '{$mcversion}',
+        'fabric-{$version}.zip',
+        '{$file_size}',
+        'forge',
+        'fabric'
+    )");
     if ($res) {
-        echo '{"status":"succ","message":"Mod has been saved."}';
+        echo '{"status":"succ","message":"Loader has been saved.", "id": '.$db->insert_id().'}';
     } else {
-        echo '{"status":"error","message":"Mod could not be added to database"}';
+        echo '{"status":"error","message":"Loader could not be added to database"}';
     }
+
 } else {
     echo '{"status":"error","message":"File download failed."}';
     unlink("../forges/modpack-".$version."/version.json");
     rmdir("../forges/modpack-".$version);
 }
 
+$db->disconnect();
 exit();

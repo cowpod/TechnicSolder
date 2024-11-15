@@ -792,6 +792,7 @@ if (isset($_SESSION['user'])) {
                 $_GET['name'] = $modpack['name'];
             ?>
             <script>document.title = 'Modpack - <?php echo addslashes($modpack['display_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
+            
             <ul class="nav justify-content-end info-versions">
                 <li class="nav-item">
                     <a class="nav-link" href="./dashboard"><em class="fas fa-arrow-left fa-lg"></em> <?php echo $modpack['display_name'] ?></a>
@@ -838,6 +839,7 @@ if (isset($_SESSION['user'])) {
                 </li>
                 <div style="width:30px"></div>
             </ul>
+
             <div class="main">
                 <?php
                 $notechnic=true;
@@ -944,22 +946,22 @@ if (isset($_SESSION['user'])) {
                 <?php
                 if (substr($_SESSION['perms'],0,1)=="1") { ?>
                 <div class="card">
-                    <h2>Edit Modpack</h2>
+                    <h2>Modpack details</h2>
                     <hr>
                     <form action="./functions/edit-modpack.php" method="">
                         <input hidden type="text" name="id" value="<?php echo $_GET['id'] ?>">
-                        <input autocomplete="off" id="dn" class="form-control" type="text" name="display_name" placeholder="Modpack name" value="<?php echo $modpack['display_name'] ?>" />
+                        <input autocomplete="off" id="dn" class="form-control" type="text" name="display_name" placeholder="Name" value="<?php echo $modpack['display_name'] ?>" />
                         <br />
-                        <input autocomplete="off" id="slug" pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Modpack slug (same as on technicpack.net)" value="<?php echo $modpack['name'] ?>" />
+                        <input autocomplete="off" id="slug" pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Unqiue ID (technicpack.net slug)" value="<?php echo $modpack['name'] ?>" />
                         <br />
                         <div class="custom-control custom-checkbox">
                             <input <?php if ($modpack['public']==1){echo "checked";} ?> type="checkbox" name="ispublic" class="custom-control-input" id="public">
-                            <label class="custom-control-label" for="public">Public Modpack</label>
+                            <label class="custom-control-label" for="public">Public</label>
                         </div><br />
-                        <div class="btn-group" role="group" aria-label="Actions">
+                        <!-- <div class="btn-group" role="group" aria-label="Actions"> -->
                             <button type="submit" name="type" value="rename" class="btn btn-primary">Save</button>
-                            <button data-toggle="modal" data-target="#removeModpack" type="button" class="btn btn-danger">Remove Modpack</button>
-                        </div>
+                            <button data-toggle="modal" data-target="#removeModpack" type="button" class="btn btn-danger">Delete</button>
+                        <!-- </div> -->
 
                     </form>
                     <div class="modal fade" id="removeModpack" tabindex="-1" role="dialog" aria-labelledby="rmp" aria-hidden="true">
@@ -1027,6 +1029,8 @@ if (isset($_SESSION['user'])) {
                         </div>
 
                     </form><br />
+                </div>
+                <div class="card">
                     <h2>Copy Build</h2>
                     <hr>
                     <form action="./functions/copy-build.php" method="">
@@ -1079,7 +1083,7 @@ if (isset($_SESSION['user'])) {
                         <span id="warn_newname" style="display: none" class="text-danger">Build with this name already exists.</span>
                         <br />
                         <button type="submit" id="copybutton" name="submit" value="copy" class="btn btn-primary">Copy</button> 
-                        <button id="copylatestbutton" class="btn btn-primary" onclick="copylatest()">Copy latest</button>
+                        <button id="copylatestbutton" class="btn btn-secondary" onclick="copylatest()">Latest</button>
                     </form>
                 </div>
             <?php } ?>
@@ -1484,11 +1488,19 @@ if (isset($_SESSION['user'])) {
         <script>document.title = 'Mod Library - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
 
+            <div class="card">
+                <h2>Mods</h2>
+                <div>
+                    A mod is a file that does things to your game. All mods which rely on Forge, Neoforge, or Fabric are supported.
+                    <br/>Here, you can install mods from <a href="https://modrinth.com" target="_blank">modrinth</a>, or mods you've downloaded from somewhere else.
+                    <br/>Note you will need to install a mod loader before using a mod.
+                </div>
+            </div>
             <?php if (substr($_SESSION['perms'],3,1)=="1") { ?>
 
             <?php if ($config['modrinth_integration']=='on') { ?>
             <div class="card">
-                <h2>Get mods - Modrinth</h2>
+                <h2>Modrinth</h2>
                 <form class="row" action="javascript:void(0)">
                     <div class="col-md-12 col-12 mb-2">
                         <select class="form-control" id="mcv">
@@ -1571,7 +1583,7 @@ if (isset($_SESSION['user'])) {
             <?php } ?>
 
             <div id="upload-card" class="card">
-                <h2>Upload mods</h2>
+                <h2>Upload</h2>
                 <div class="card-img-bottom">
                     <form id="modsform" enctype="multipart/form-data">
                         <div class="upload-mods">
@@ -1589,7 +1601,7 @@ if (isset($_SESSION['user'])) {
             </div>
 
             <div style="display: none" id="u-mods" class="card">
-                <h2>New Mods</h2>
+                <h2>New</h2>
                 <table class="table">
                     <thead>
                         <tr>
@@ -1609,7 +1621,7 @@ if (isset($_SESSION['user'])) {
             <?php } ?>
 
             <div class="card">
-                <h2>Available Mods</h2>
+                <h2>Installed</h2>
                 <hr>
                 <input placeholder="Search..." type="text" id="search" class="form-control"><br />
                 <table id="modstable" class="table table-striped sortable">
@@ -1691,7 +1703,6 @@ if (isset($_SESSION['user'])) {
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
-                    <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
                     <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                   </div>
                 </div>
@@ -1756,55 +1767,68 @@ if (isset($_SESSION['user'])) {
               <div class="modal-dialog" role="document">
                 <div class="modal-content">
                   <div class="modal-header">
-                    <h5 class="modal-title" id="rm">Delete mod <span id="mod-name-title"></span>?</h5>
+                    <h5 class="modal-title" id="rm">Delete loader <span id="mod-name-title"></span>?</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                       <span aria-hidden="true">&times;</span>
                     </button>
                   </div>
                   <div class="modal-body">
-                    Are you sure you want to delete mod <span id="mod-name"></span>? Mod's file will be deleted too.
+                    Are you sure you want to delete loader <span id="mod-name"></span>? Mod's file will be deleted too.
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
-                    <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
                     <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                   </div>
                 </div>
               </div>
             </div>
 
+
+            <div class="card">
+                <h2>Mod loaders</h2>
+                <div>
+                    A mod loader is a mod that loads other mods.
+                    <br/>It is almost always required for your modpack, and must be added to a build before using any other mods.
+                    <br/>You can install loaders here, or, you can upload your own <a href="https://support.technicpack.net/hc/en-us/articles/17049267195021-How-to-Create-a-Client-Modpack#Installing-a-mod-loader" target="_blank">modpack.jar</a>.
+                </div>
+            </div>
+
             <?php if (substr($_SESSION['perms'], 5, 1)=="1") { ?>
-            <div class="btn-group btn-group-justified btn-block">
+<!--             <div class="btn-group btn-group-justified btn-block">
                 <button id="fetch-forge" onclick="fetch_forges()" class="btn btn-primary mr-1">Show Forge Versions</button>
-                <!-- <button disabled id="save" onclick="window.location.reload()" style="display:none;" class="btn btn-success">(Forge) Save and Refresh</button> -->
                 <button id="fetch-neoforge" onclick="fetch_neoforge()" class="btn btn-primary mr-1">Show Neoforge Versions</button>
                 <button id="fetch-fabric" onclick="fetchfabric()" class="btn btn-primary mr-1">Show Fabric Versions</button>
-            </div>
-            <span id="info" class="text-danger"></span>
-            <div class="card" id="fabrics" style="display:none;">
-                <h2>(α) Fabric Installer</h2>
+            </div> -->
+            <div class="card" id="fabrics">
+                <h2>Fabric</h2>
                 <form>
                     <label for="lod">Loader Version</label>
                     <select id="lod"></select><br>
                     <label for="ver">Game Version</label>
                     <select id="ver"></select><br>
-                    <button id="sub-button" type="button" onclick="download()" class="btn btn-primary">Install</button>
+                    <button id="sub-button" type="button" onclick="download_fabric()" class="btn btn-primary" disabled><em class="fas fa-cog fa-lg fa-spin"></em></button>
                 </form>
+                <span id="installfabricinfo" style="display:none;"></span>
             </div>
-            <div class="card" id="neoforges" style="display:none;">
-                <h2>Neoforge Installer</h2>
+
+            <div class="card" id="neoforges">
+                <h2>Neoforge</h2>
                 <form>
                     <label for="lod">Version</label>
                     <select id="lod-neoforge" required></select><br>
-<!--                     <label for="ver">Game Version</label>
-                    <select id="ver-neoforge" required></select><br> -->
-                    <button id="sub-button-neoforge" type="button" onclick="download_neoforge()" class="btn btn-primary">Install</button>
+                    <!-- <label for="ver">Game Version</label> -->
+                    <!-- <select id="ver-neoforge" required></select><br> -->
+                    <button id="sub-button-neoforge" type="button" onclick="download_neoforge()" class="btn btn-primary" disabled><em class="fas fa-cog fa-lg fa-spin"></em></button>
                 </form>
-                <span id="sub-button-neoforge-message" style="display:hidden;"></span>
+                <span id="installneoforgeinfo" style="display:none;"></span>
             </div>
-            <div class="card" id="fetched-mods" style="display: none">
-                <h2>Available Forge Versions</h2>
-                <table class="table table-striped sortable">
+
+            <div class="card" id="fetched-mods">
+                <h2>Forge</h2>
+                <form>
+                    <button id="fetch-forge" onclick="fetch_forges()" class="btn btn-primary">Show Versions</button>
+                </form>
+                <table id="table-fetched-mods" style="display:none" class="table table-striped sortable">
                     <thead>
                         <tr>
                             <th scope="col" style="width:10%" data-defaultsign="_19">Minecraft</th>
@@ -1817,10 +1841,11 @@ if (isset($_SESSION['user'])) {
                     <tbody id="forge-table">
                     </tbody>
                 </table>
+                <span id="installforgeinfo" class="text-danger" style="display:none;"></span>
             </div>
 
             <div class="card">
-                <h2>Upload custom mod loader</h2>
+                <h2>Custom</h2>
                 <hr>
                 <form action="./functions/custom_modloader.php" method="POST" enctype="multipart/form-data">
                     <div class="form-group">
@@ -1847,7 +1872,7 @@ if (isset($_SESSION['user'])) {
             <?php } ?>
 
             <div class="card">
-                <h2>Mod loaders</h2>
+                <h2>Installed</h2>
                 <?php if (isset($_GET['errfilesize'])) {
                     echo '<span class="text-danger">File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'</span>';
                 } ?>
@@ -1868,22 +1893,34 @@ if (isset($_SESSION['user'])) {
                     </thead>
                     <tbody id="forge-available">
                         <?php
+
+                        $buildsq=$db->query("SELECT id,name,mods FROM builds");
+                        $installed_loader_ids=[];
+                        if ($buildsq){
+                            foreach ($buildsq as $build){
+                                $mods=explode(',', $build['mods'],2);
+                                // echo $mods[0];
+                                array_push($installed_loader_ids, $mods[0]);
+                            }
+                        }
+
+                        $used_loaders=[];
+                        $installed_loaders=[];
                         $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge' ORDER BY `id` DESC");
-                        $installed_mc_loaders=[];
                         if ($mods){
-                            foreach ($mods as $mod){
-                                if ($mod['loadertype']=='fabric') {
-                                    // fabric versioning is different
-                                    array_push($installed_mc_loaders, $mod['loadertype'].'-'.$mod['mcversion']);
-                                } else {
-                                    array_push($installed_mc_loaders, $mod['loadertype'].'-'.$mod['version']);
+                            foreach ($mods as $mod) {
+                                if (in_array($mod['id'],$installed_loader_ids)) {
+                                    array_push($used_loaders, $mod['loadertype'].'-'.$mod['mcversion'].'-'.$mod['version']);
                                 }
-                            ?>
+                                array_push($installed_loaders, $mod['loadertype'].'-'.$mod['mcversion'].'-'.$mod['version']);
+
+                                $remove_box_str="{$mod['id']}, '{$mod['loadertype']}', '{$mod['mcversion']}', '{$mod['version']}', ";
+                                ?>
                             <tr id="mod-row-<?php echo $mod['id'] ?>">
                                 <td scope="row"><?php echo $mod['mcversion'] ?></td>
                                 <td><?php echo $mod['version'] ?></td>
                                 <td><?php echo $mod['loadertype']?></td>
-                                <td> <?php if (substr($_SESSION['perms'], 5, 1)=="1") { ?><button  onclick="remove_box(<?php echo $mod['id'].",'".$mod['pretty_name']." ".$mod['version']."'" ?>)" data-toggle="modal" data-target="#removeMod" class="btn btn-danger btn-sm">Remove</button><?php } ?></td>
+                                <td><?php if (substr($_SESSION['perms'], 5, 1)=="1") { ?><button  onclick="remove_box(<?php echo $remove_box_str ?>)" data-toggle="modal" data-target="#removeMod" class="btn btn-danger btn-sm">Remove</button><?php } ?></td>
                                 <td><em style="display: none" class="fas fa-cog fa-spin fa-sm"></em></td>
                             </tr>
                             <?php
@@ -1896,10 +1933,17 @@ if (isset($_SESSION['user'])) {
 
             <script>
             <?php
-            if (!empty($installed_mc_loaders)) {
-                echo 'let installed_mc_loaders=JSON.parse(\''.json_encode($installed_mc_loaders).'\');';
+            if (!empty($installed_loaders)) {
+                $installed_loaders_json=json_encode($installed_loaders, JSON_UNESCAPED_SLASHES);
+                echo "let installed_loaders=JSON.parse('{$installed_loaders_json}');";
             } else {
-                echo 'let installed_mc_loaders=[];';
+                echo 'let installed_loaders=[];';
+            }
+            if (!empty($used_loaders)) {
+                $used_loaders_json = json_encode($used_loaders, JSON_UNESCAPED_SLASHES);
+                echo "let used_loaders=JSON.parse('{$used_loaders_json}');";
+            } else {
+                echo 'let used_loaders=[];';
             }
             ?>
             </script>
@@ -1946,7 +1990,7 @@ if (isset($_SESSION['user'])) {
             </div>
             <?php } ?>
             <div class="card">
-                <h2>Available Files</h2>
+                <h2>Files</h2>
                 <table class="table table-striped sortable">
                     <thead>
                         <tr>

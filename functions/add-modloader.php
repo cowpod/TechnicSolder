@@ -48,7 +48,7 @@ $type_descriptions=["forge"=>"Minecraft Forge is a free, open-source modding API
 
 if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_contents($download_link))) {
     $zip = new ZipArchive();
-    if ($zip->open("../forges/forge-".$version.".zip", ZIPARCHIVE::CREATE) !== true) {
+    if ($zip->open("../forges/".$type."-".$version.".zip", ZIPARCHIVE::CREATE) !== true) {
         echo '{"status":"error","message":"Could not open archive"}';
         exit();
     }
@@ -60,10 +60,9 @@ if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_con
     $zip->close();
     unlink("../forges/modpack-".$version."/modpack.jar");
     rmdir("../forges/modpack-".$version);
-    $md5 = md5_file("../forges/forge-".$version.".zip");
-    $filesize=filesize("../forges/forge-".$version.".zip");
-    $url = "http://".$config['host'].$config['dir']."forges/forge-".$version.".zip";
-
+    $md5 = md5_file("../forges/".$type."-".$version.".zip");
+    $file_size = filesize("../forges/".$type."-".$version.".zip");
+    $url = "http://".$config['host'].$config['dir']."forges/".$type."-".$version.".zip";
     $res = $db->execute("
         INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`filesize`,`type`,`loadertype`) 
         VALUES (
@@ -76,23 +75,21 @@ if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_con
             '".$type_descriptions[$type]."', 
             '".$version."', 
             '".$mcversion."', 
-            'forge-".$version.".zip',
-            ".$filesize.",
+            '".$type."-".$version.".zip',
+            ".$file_size.",
             'forge',
             '".$type."'
         )
     ");
-    $id=$db->insert_id();
-
     if ($res) {
-        echo '{"status":"succ","message":"Mod has been saved.", "id":"'.$id.'"}';
+        echo '{"status":"succ","message":"Loader has been saved.", "id":"'.$db->insert_id().'"}';
     } else {
-        echo '{"status":"error","message":"Mod could not be added to database"}';
+        echo '{"status":"error","message":"Loader could not be added to database"}';
     }
 } else {
     echo '{"status":"error","message":"File download failed."}';
     unlink("../forges/modpack-".$version."/modpack.jar");
     rmdir("../forges/modpack-".$version);
 }
-
+$db->disconnect();
 exit();
