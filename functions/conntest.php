@@ -1,11 +1,13 @@
 <?php
-define('DBHOST', $_POST['db-host']);
-define('DBUSER', $_POST['db-user']);
-define('DBPASS', $_POST['db-pass']);
-define('DBNAME', $_POST['db-name']);
-$conn = mysqli_connect(DBHOST, DBUSER, DBPASS, DBNAME);
-if (!$conn) {
-    die('error');
+require_once("db.php");
+$db=new Db;
+
+if ($db->test2($_POST['db-type'], $_POST['db-host'], $_POST['db-user'], $_POST['db-pass'], $_POST['db-name'])) {
+	echo 'success';
+	// return('success');
 } else {
-    die('success');
+	echo 'error';
+	// return('error');
 }
+
+exit();

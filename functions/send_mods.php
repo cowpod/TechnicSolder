@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: application/json');
+
 session_start();
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die('{"status":"error","message":"Login session has expired"}');
@@ -9,213 +10,270 @@ if (substr($_SESSION['perms'],3,1)!=="1") {
     exit();
 }
 $config = require("config.php");
-require("dbconnect.php");
-$fileName = $_FILES["fiels"]["name"];
-$fileJarInTmpLocation = $_FILES["fiels"]["tmp_name"];
-if (!$fileJarInTmpLocation) {
-    echo '{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') andupload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}';
-    exit();
-}
-include('toml.php');
-function slugify($text) {
-  $text = preg_replace('~[^\pL\d]+~u', '-', $text);
-  //$text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
-  $text = preg_replace('~[^-\w]+~', '', $text);
-  $text = trim($text, '-');
-  $text = preg_replace('~-+~', '-', $text);
-  $text = strtolower($text);
-  if (empty($text)) {
-    return 'n-a';
-  }
-  return $text;
-}
-$fileNameTmp = explode("-",slugify($fileName));
-array_pop($fileNameTmp);
-$fileNameShort=implode("-",$fileNameTmp);
-$fileNameZip=$fileNameShort.".zip";
-$fileName=$fileNameShort.".jar";
-$fileJarInFolderLocation="../mods/mods-".$fileNameShort."/".$fileName;
-$fileZipLocation="../mods/".$fileNameZip;
-$fileInfo=array();
-if (!file_exists("../mods/mods-".$fileNameShort)) {
-    mkdir("../mods/mods-".$fileNameShort);
+
+global $db;
+require_once("db.php");
+
+// fiels = name of input in index.php
+
+// download from given _POST data
+// todo: download directly to disk or buffer 
+if (isset($_FILES['fiels']) && isset($_FILES["fiels"]["name"]) && isset($_FILES["fiels"]["tmp_name"])) {
+    $file_name = $_FILES["fiels"]["name"];
+    $file_tmp = $_FILES["fiels"]["tmp_name"];
 } else {
-    echo '{"status":"error","message":"Folder mods-'.$fileNameShort.' already exists!"}';
-    exit();
-}
-function processFile($zipExists, $md5) {
-    global $fileName;
-    global $fileNameZip;
-    global $fileNameShort;
-    global $fileJarInFolderLocation;
-    global $fileZipLocation;
-    global $conn;
-    global $warn;
-    global $fileInfo;
-    $legacy=false;
-    $mcmod=array();
-    $result = @file_get_contents("zip://".realpath($fileJarInFolderLocation)."#META-INF/mods.toml");
-    if (!$result) {
-        # fail 1.14+ or fabric mod check
-        $result = file_get_contents("zip://".realpath($fileJarInFolderLocation)."#mcmod.info");
-        if (!$result) {
-            # fail legacy mod check
-            $warn['b'] = true;
-            $warn['level'] = "warn";
-            $warn['message'] = "File does not contain mod info. Manual configuration required.";
-        } elseif (file_get_contents("zip://".realpath("../mods/mods-".$fileName."/".$fileName)."#fabric.mod.json")) {
-            # is a fabric mod
-            $result = file_get_contents("zip://" . realpath("../mods/mods-" . $fileName . "/" . $fileName) . "#fabric.mod.json");
-            $q = json_decode(preg_replace('/\r|\n/', '', trim($result)), true);
-            $mcmod = $q;
-            $mcmod["modid"] = $mcmod["id"];
-            $mcmod["url"] = $mcmod["contact"]["sources"];
-            if (!$mcmod['modid'] || !$mcmod['name'] || !$mcmod['description'] || !$mcmod['version'] || !$mcmod['mcversion'] || !$mcmod['url'] || !$mcmod['authorList']) {
-                $warn['b'] = true;
-                $warn['level'] = "info";
-                $warn['message'] = "There is some information missing in fabric.mod.json.";
+    // accept urls via POST (for modrinth)
+    if (isset($config['modrinth_integration']) && $config['modrinth_integration'] == 'on' && isset($_POST['url'])) {
+        if (preg_match('/^(https?:\/\/)([a-zA-Z0-9-.]+)([a-zA-Z0-9\-\_\.\~\/\:\@\&\=\+\$\,\;\?\#\%]+)$/', $_POST['url'])) {
+            $apiversiondata = json_decode(file_get_contents('../api/version.json'),true);
+            if (!$apiversiondata) {
+                die('{"status":"error","message": "could not get solder version"}');
+            }
+            $apiversion=$apiversiondata['version'];
+
+            $options = [
+                'http' => [
+                    'method' => 'GET',
+                    'header' => 'User-Agent: TheGameSpider/TechnicSolder/'.$apiversion.' (Download to package mod into ZIP)\r\nContent-Type: application/json'
+                ]
+            ];
+            $context = stream_context_create($options);
+            @$getfile = file_get_contents($_POST['url'], false, $context);
+            if ($getfile && strlen($getfile)>0) {
+                if (!empty($_POST['filename']) && preg_match('/^[a-zA-Z0-9_\-\.\(\)\[\]\s\!\?\#\@\&\*\=\+\~\s]+.jar$/', $_POST['filename'])) {
+                    $file_name = $_POST['filename'];
+                    error_log('using given name: '.$file_name);
+                } else {
+                    $file_name = bin2hex(random_bytes(32)).'.jar';
+                    error_log("using random name: {$file_name}, invalid name given: {$_POST['filename']}");
+                }
+                $file_tmp = sys_get_temp_dir().'/'.bin2hex(random_bytes(32)).'.jar';
+                @$putfile = file_put_contents($file_tmp, $getfile);
+                if ($putfile) {
+                    error_log('file downloaded to '.$file_tmp);
+                } else {
+                    die('{"status":"error","message":"Could not save file"}');
+                }
+            } else {
+                die('{"status":"error","message":"Could not download file"}');
             }
         } else {
-            # is legacy mod
-            $legacy=true;
-            $mcmod = json_decode(preg_replace('/\r|\n/','',trim($result)),true)[0];
-            if (!$mcmod['modid']||!$mcmod['name']||!$mcmod['description']||!$mcmod['version']||!$mcmod['mcversion']||!$mcmod['url']||!$mcmod['authorList']) {
-                $warn['b'] = true;
-                $warn['level'] = "info";
-                $warn['message'] = "There is some information missing in mcmod.info.";
-            }
+            die('{"status":"error","message":"Invalid URL (not a JAR?)"}');
         }
-    } else { # is 1.14+ mod
-        $legacy=false;
-        $mcmod = parseToml($result);
-        //error_log(json_encode($mcmod, JSON_PRETTY_PRINT));
-        if (!$mcmod['mods']['modId']||!$mcmod['mods']['displayName']||!$mcmod['mods']['description']||!$mcmod['mods']['version']||!$mcmod['mods']['displayURL']||!($mcmod['mods']['author'] && $mcmod['mods']['authors'])) {
-            $warn['b'] = true;
-            $warn['level'] = "info";
-            $warn['message'] = "There is some information missing in mcmod.info.";
-        }
-    }
-    if ($zipExists) { // while we could put a file check here, it'd be redundant (it's checked before).
-        // cached zip
     } else {
-        $zip = new ZipArchive();
-        if ($zip->open($fileZipLocation, ZIPARCHIVE::CREATE) !== TRUE) {
-            echo '{"status":"error","message":"Could not open archive"}';
-            exit();
-        }
+        die('{"status":"error","message":"No file uploaded."}');
+    }
+}
+
+if (empty($file_tmp)) {
+    error_log ('{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}');
+    die ('{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}');
+}
+
+if (str_ends_with($file_name, '.jar')) {
+    // check file magic
+    // JAR files can be either java-archive or zip.
+    $filetype=mime_content_type($file_tmp);
+    if ($filetype!='application/java-archive'&&$filetype!='application/zip') {
+        error_log ('{"status":"error","message":"Not a JAR file."}');
+        die ('{"status":"error","message":"Not a JAR file."}');
+    }
+} else {
+    error_log ('{"status":"error","message":"Not a JAR file."}');
+    die ('{"status":"error","message":"Not a JAR file."}');
+}
+
+require('slugify.php');
+require('compareZipContents.php');
+require('modInfo.php');
+
+if (!file_exists($file_tmp)){
+    error_log ('{"status":"error","message":"Uploaded file does not exist!?"}');
+    die ('{"status":"error","message":"Uploaded file does not exist!?"}');
+}
+
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
+}
+
+function processFile(string $filePath, string $fileName, array $modinfo): int {
+    // todo: it is possible to craft a 'bad' modinfo data entry. mitigate it?
+
+    error_log("processFile()");
+    if (!is_dir('../mods/tmp')) {
+        mkdir('../mods/tmp',0755,TRUE);
+    }
+
+    global $db;
+    global $config;
+
+    $slugified_mcv=!empty($modinfo['mcversion']) ? slugify2($modinfo['mcversion']) : '';
+
+    $mod_zip_name = $modinfo['modid'].'-'.$slugified_mcv.'-'.$modinfo['version'].'.zip';
+    $mod_zip_path_tmp ='../mods/tmp/'.$mod_zip_name;
+    $mod_zip_path ='../mods/'.$mod_zip_name;
+    $zip = new ZipArchive();
+
+    if ($zip->open($mod_zip_path_tmp, ZipArchive::CREATE|ZipArchive::OVERWRITE)===TRUE) {
         $zip->addEmptyDir('mods');
-        if (is_file($fileJarInFolderLocation)) {
-            $zip->addFile($fileJarInFolderLocation, "mods/".$fileName) or die ('{"status":"error","message":"Could not add file $key"}');
-        }
-        $zip->close();
-    }
-    if ($legacy) {
-        if (!$mcmod['name']) {
-            $pretty_name = mysqli_real_escape_string($conn, $fileNameShort);
-        } else {
-            $pretty_name = mysqli_real_escape_string($conn, $mcmod['name']);
-        }
-        if (!$mcmod['modid']) {
-            $name = slugify($pretty_name);
-        } else {
-            if (@preg_match("^[a-z0-9]+(?:-[a-z0-9]+)*$", $mcmod['modid'])) {
-                $name = $mcmod['modid'];
-            } else {
-                $name = slugify($mcmod['modid']);
-            }
-        }
-        $link = $mcmod['url'];
-        $author = mysqli_real_escape_string($conn, implode(', ', $mcmod['authorList']));
-        $description = mysqli_real_escape_string($conn, $mcmod['description']);
-        $version = $mcmod['version'];
-        $mcversion = $mcmod['mcversion'];
-    } else {
-        if (!$mcmod['mods']['displayName']) {
-            $pretty_name = mysqli_real_escape_string($conn, $fileNameShort);
-        } else {
-            $pretty_name = mysqli_real_escape_string($conn, $mcmod['mods']['displayName']);
-        }
-        if (!$mcmod['mods']['modId']) {
-            $name = slugify($pretty_name);
-        } else {
-            if (preg_match("^[a-z0-9]+(?:-[a-z0-9]+)*$", $mcmod['mods']['modId'])) {
-                $name = $mcmod['mods']['modId'];
-            } else {
-                $name = slugify($mcmod['mods']['modId']);
-            }
-        }
-        $link = empty($mcmod['mods']['displayURL'])? $mcmod[0]['displayURL'] : $mcmod['mods']['displayURL'];
-        $authorRoot=empty($mcmod[0]['authors'])? $mcmod[0]['author'] : $mcmod[0]['authors'];
-        $authorMods=empty($mcmod['mods']['authors'])? $mcmod['mods']['author'] : $mcmod['mods']['authors'];
-        $author = mysqli_real_escape_string($conn, empty($authorRoot)? $authorMods : $authorRoot);
-        $description = mysqli_real_escape_string($conn, $mcmod['mods']['description']);
-        $mcversion=$mcmod['dependencies.'.$mcmod['mods']['modId']]['versionRange'];
-        // let the user fill in if not absolutely certain.
-        /* if (empty($mcversion)) { //if there is no dependency specified, get from filename
-            // THIS SHOULD NEVER BE NECESSARY, BUT SOME MODS (OptiFine) DON'T HAVE A MINECRAFT DEPENDENCY LISTED
-            $divideDash=explode('-', $fileNameShort);
-            $mcversion=$divideDash[1].'.'.$divideDash[2]; // we get modname-1-16-5-1-1-1.jar. we don't know if it is 1-16 or 1-16-5, so it's safer to assume 1-16
-        } */
-        $version = $mcmod['mods']['version'];
-        if ($version == "\${file.jarVersion}" ) {
-            $tmpFilename=explode('-', $fileNameShort);
-            array_shift($tmpFilename);
-            $tmpFilename = implode('.', $tmpFilename);
-            $version=$tmpFilename;
-        }
-        // let the user fill in if not absolutely certain. (except for above if)
-        /* if (empty($version)) { //if there is no dependency specified, get from filename
-            // THIS SHOULD NEVER BE NECESSARY, BUT SOME MODS (OptiFine) DON'T HAVE A MINECRAFT DEPENDENCY LISTED
-            $divideDash=explode('-', $fileNameShort);
-            $version=end($divideDash); // we get modname-1-16-5-1-1-1.jar. just take the last - as we don't know.
-        } */
-    }
-    if ($zipExists) {
-        // cached zip, use given md5. (md5 is not checked empty(); should always be given if cached!)
-    } else {
-        $md5 = md5_file("../mods/".$fileInfo['filename'].".zip");
-    }
-    //$url = "http://".$config['host'].$config['dir']."mods/".$fileInfo['filename'].".zip";
-    $res = mysqli_query($conn, "INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`) VALUES ('".$name."','".$pretty_name."','".$md5."','','".$link."','".$author."','".$description."','".$version."','".$mcversion."','".$fileNameZip."','mod')");
-    if ($res) {
-        if (@$warn['b']==true) {
-            if ($warn['level']=="info") {
-                echo '{"status":"info","message":"'.$warn['message'].'","modid":'.mysqli_insert_id($conn).'}';
-            } else {
-                echo '{"status":"warn","message":"'.$warn['message'].'","modid":'.mysqli_insert_id($conn).'}';
-            }
+        $zip->setCompressionName('mods', ZipArchive::CM_STORE); 
 
+        if ($zip->addFile($filePath, 'mods/'.$fileName)) { 
+            $zip->setCompressionName($filePath, ZipArchive::CM_STORE); 
+            $zip->close();
+
+            // if a file exists with same name, look for a file with duplicate contents OR rename it
+
+            // if we got a file with the same name and is DIFFERENT
+            if (file_exists($mod_zip_path) && compareZipContents($mod_zip_path, $mod_zip_path_tmp)===FALSE) {
+                $counter=1;
+                $new_dest_name = str_replace('.zip', '-'.$counter.'.zip', $mod_zip_path);
+                // if our new name also exists and is DIFFERENT
+                while(file_exists($new_dest_name) && compareZipContents($new_dest_name, $mod_zip_path_tmp)!==FALSE) {
+                    $counter+=1;
+                    $new_dest_name = str_replace('.zip', '-'.$counter.'.zip', $mod_zip_path);
+                }
+                $mod_zip_path = $new_dest_name;
+             }
+
+            // move tmp zip to actual zip, overwriting if identical
+            rename($mod_zip_path_tmp, $mod_zip_path);
+
+            $mod_zip_md5 = md5_file($mod_zip_path);
+            $zip_size= filesize($mod_zip_path);
+
+            $mcvrange = parse_interval_range($modinfo['mcversion']);
+            // error_log('adding mod of loadertype='.$modinfo['loadertype']);
+            $addq = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`,`filesize`) VALUES (
+                '{$db->sanitize($modinfo['modid'])}',
+                '{$db->sanitize($modinfo['name'])}',
+                '{$db->sanitize($mod_zip_md5)}',
+                '',
+                '{$db->sanitize($modinfo['url'])}',
+                '{$db->sanitize($modinfo['authors'])}',
+                '{$db->sanitize($modinfo['description'])}',
+                '{$db->sanitize($modinfo['version'])}',
+                '{$db->sanitize($modinfo['mcversion'])}',
+                '{$db->sanitize(basename($mod_zip_path))}',
+                'mod',
+                '{$db->sanitize($modinfo['loadertype'])}',
+                {$zip_size}
+                );");
+
+            if ($addq) {
+                assert(!empty($db->insert_id()));
+                return $db->insert_id();
+            } else {
+                return -1;
+            }
         } else {
-            echo '{"status":"succ","message":"Mod has been uploaded and saved.","modid":'.mysqli_insert_id($conn).'}';
+            error_log ('{"status":"error","message":"Could not create zip. Out of disk space?"}');
+            die ('{"status":"error","message":"Could not create zip. Out of disk space?"}');
         }
     } else {
-        echo '{"status":"error","message":"Mod could not be added to database"}';
+        error_log ('{"status":"error","message":"Could not create zip. Bad folder permissions?"}');
+        die ('{"status":"error","message":"Could not create zip. Bad folder permissions?"}');
     }
 }
 
-if (move_uploaded_file($fileJarInTmpLocation, $fileJarInFolderLocation)) {
-    $fileInfo = pathinfo($fileJarInFolderLocation);
-    if (file_exists($fileZipLocation)) {
-        $md5_1 = md5_file($fileJarInFolderLocation);
-        $md5_2 = md5_file("zip://".realpath($fileZipLocation)."#mods/".$fileName);
-        if ($md5_1 !== $md5_2) {
-            echo '{"status":"error","message":"File with name \''.$fileName.'\' already exists!","md51":"'.$md5_1.'","md52":"'.$md5_2.'","zip":"'.$fileJarInFolderLocation.'"}';
-            //exit();
+$mi = new modInfo();
+$modinfos = $mi->getModInfo($file_tmp, $file_name);
+$warn = $mi->getWarnings();
+
+foreach ($modinfos as $type=>$mod) {
+    if (!empty($mod) && empty($mod['mcversion'])) {
+        assert($_POST['fallback_mcversion']);
+        $modinfos[$type]['mcversion']=$db->sanitize($_POST['fallback_mcversion']);
+        unset($warn[array_search('Missing mcversion!', array_keys($warn))]);
+    }
+}
+
+$added_ids=[];
+$added_modids=[];
+$added_authors=[];
+$added_pretty_names=[];
+$added_versions=[];
+$added_mcversions=[];
+$num_mods_to_add=sizeof($modinfos);
+
+$num_already_added=0;
+$num_process_failed=0;
+
+foreach ($modinfos as $modinfo) {
+    if (empty($modinfo)) {
+        $num_mods_to_add = $num_mods_to_add-1;
+        // error_log('{"status":"error","message":"Unable to add mod to database (empty).", "name": "'.$file_name.'"}');
+        // die('{"status":"error","message":"Unable to add mod to database (empty).", "name": "'.$file_name.'"}');
+        continue;
+    }
+    // if we have another mod of same name, version, mcversion, type, loadertype
+    $query_mod_exists = $db->query("SELECT id,name FROM mods 
+        WHERE name = '{$db->sanitize($modinfo['modid'])}' 
+        AND version = '{$db->sanitize($modinfo['version'])}' 
+        AND mcversion = '{$db->sanitize($modinfo['mcversion'])}' 
+        AND type = 'mod' 
+        AND loadertype = '{$db->sanitize($modinfo['loadertype'])}'");
+
+    if ($query_mod_exists && sizeof($query_mod_exists)>0) {
+        error_log('{"status": "info","message":"Mod already in database!","modid":"'.$query_mod_exists[0]['id'].'","name":"'.$query_mod_exists[0]['name'].'"}');
+        if ($num_mods_to_add==1) {
+            die('{"status": "info","message":"Mod already in database!","modid":"'.$query_mod_exists[0]['id'].'","name":"'.$query_mod_exists[0]['name'].'"}');
         } else {
-            $fq = mysqli_query($conn, "SELECT `id` FROM `mods` WHERE `filename` = '".$fileNameZip."'");
-            if (mysqli_num_rows($fq)==1) {
-                echo '{"status":"info","message":"This mod is already in the database.","modid":'.mysqli_fetch_array($fq)['id'].'}';
-            } else {
-                processFile(true, $md5_1); // use existing zip
-            }
+            array_push($warn, 'Mod already in database (#'.$num_mods_to_add.')');
+            $num_already_added+=1;
+            continue;
+        }
+    }
+    // consequence: we allow multiple loadertypes (ie fabric, forge) of the exact same mod
+    $result_mod_id = processFile($file_tmp, $file_name, $modinfo);
+    if ($result_mod_id === -1) {
+        error_log('{"status":"error","message":"Unable to add mod to database (-1).", "name": "'.$file_name.'"}');
+        if ($num_mods_to_add==1) {
+            die('{"status":"error","message":"Unable to add mod to database (-1).", "name": "'.$file_name.'"}');
+        } else {
+            array_push($warn, 'Unable to add mod to database -1 (#'.$num_mods_to_add.')');
+            $num_process_failed+=1;
+            continue;
         }
     } else {
-        processFile(false, ''); // create zip
+        error_log('Successfully added modid='.$modinfo['modid'].' id='.$result_mod_id.' to database!');
+        error_log(json_encode($modinfo));
+        array_push($added_modids, $modinfo['modid']);
+        array_push($added_ids, $result_mod_id);
+        array_push($added_authors, $modinfo['authors']);
+        array_push($added_pretty_names, $modinfo['name']);
+        array_push($added_versions, $modinfo['version']);
+        array_push($added_mcversions, $modinfo['mcversion']);
     }
-    unlink($fileJarInFolderLocation);
-    rmdir("../mods/mods-".$fileNameShort);
+}
 
+$db->disconnect();
+
+// error_log(json_encode($added_ids));
+
+if (sizeof($added_ids)+$num_already_added+$num_process_failed==0) {
+    error_log('{"status":"error","message":"Unable to add mod to database."}');
+    die('{"status":"error","message":"Unable to add mod to database."}');
+}
+
+$moredata='"modid":'.json_encode($added_ids,JSON_UNESCAPED_SLASHES).',"name":'.json_encode($added_modids,JSON_UNESCAPED_SLASHES).', "pretty_name": '.json_encode($added_pretty_names,JSON_UNESCAPED_SLASHES).', "author": '.json_encode($added_authors,JSON_UNESCAPED_SLASHES).',"mcversion":'.json_encode($added_mcversions,JSON_UNESCAPED_SLASHES).',"version": '.json_encode($added_versions,JSON_UNESCAPED_SLASHES);
+
+// if we got warnings
+if (!empty($warn) && sizeof($warn)>0) {
+    // accumulate them all into one, as we dont support displaying multiple seperate ones in index.php.
+    $acc_message='';
+    foreach ($warn as $w) {
+        $acc_message.=$w.' ';
+    }
+    echo '{"status":"warn","message":"'.$acc_message.'Issue(s) must be addressed before using this mod.", '.$moredata.'}';
 } else {
-    echo '{"status":"error","message":"Permission denied! Please open SSH and run \'chown -R www-data '.addslashes(dirname(dirname(get_included_files()[0]))).'\'"}';
+    // get the last one added. we don't support displaying multiple..
+    // todo: support displaying multiple in index.php
+    // modid appears to be the id in the database, name appears to be modid...
+    error_log('{"status":"succ","message":"Mod added.", '.$moredata.'}');
+    die('{"status":"succ","message":"Mod added.", '.$moredata.'}');
 }
+
+exit();
 ?>

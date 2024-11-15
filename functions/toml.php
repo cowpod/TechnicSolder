@@ -1,170 +1,181 @@
 <?php
 /*
 TOML Parser
-Super inefficient, but gets the job done.
-Limitation: only gets the first dependency. TODO: split dependency.* into it's own array, and stuff the * into their own id within dependency to prevent overwrite.
-
-MIT License, see LICENSE file, with the difference of:
-Copyright 2021 Henry Gross-Hellsen
+O(n(m+t)), where n = number of lines in file, m = chars in line, t = number of nested tables (aaa.bbb.ccc. etc. up to m) specified in a line.
+todo: make static?
 */
-function p1($inputToml) {
-    //remove commented lines
-    $lines=array();
-    $counter=0;
-    foreach (explode("\n", $inputToml) as $line) {
-        $line=ltrim($line);
-        if ($line[0] == '#') continue;
-        $lines[$counter]=$line;
-        $counter++;
-    }
-    // form back into inputToml
-    $fileContents=implode("\n", $lines);
 
-    // break inputToml into blocks by scope
-    $fileArray = explode("[[", $fileContents);
-    $counter=0;
-    foreach ($fileArray as $fileElement) {
-        if ($counter > 0) {
-               $fileArray[$counter]='[['.$fileElement;
-           }
-           $counter++;
-       }
-    return $fileArray;
-}
-function p2($inputArray) {
-    // breaks each block line into array of lines, remove empty elements
-    $lines=array();
-    $cc=0;
-    //print_r($inputArray);
-    foreach ($inputArray as $block) {
-        $block=ltrim($block);
-        // if (empty($block)) {
-            // unset ($inputArray[$cc]);
-            // continue;
-        // }
-        $tmp=explode("\n", $block);
-        $c=0;
-        foreach ($tmp as $line) {
-            $line=ltrim($line);
-            if (empty($line)) {
-                unset($tmp[$c]);
-                $tmp=array_values($tmp);
+class Toml {
+    private function clean_lines($arr) {
+        $ret=[];
+        for ($i=0; $i<sizeof($arr); $i++) {
+            $line=ltrim($arr[$i]); // deal with indented lines, todo: handles tabs?
+            if (($line)==='') {
                 continue;
             }
-            $tmp[$c]=$line;
-            $c=$c+1;
-         }
-         array_push($lines, $tmp);
-         $cc=$cc+1;
-    }
-
-    return $lines;
-}
-function p3($inputArray) { 
-    // set the block array key to the first row of the block, if it has a scope value ('[[')
-    $c=0;
-    //print_r($inputArray);
-    foreach ($inputArray as $lineBlock) {
-        if (substr($lineBlock[0], 0, 2) == '[[') {
-            unset($inputArray[$c][0]);
-            $inputArray[trim(trim(trim(explode('#', $lineBlock[0])[0], ' '), ']]'),'[[')] = $inputArray[$c];
-            unset($inputArray[$c]);
-        }
-        $c++;
-    }
-    return $inputArray;
-}
-
-function p4($inputArray) {
-    // break each row/line element of each block array into left and right values.
-    // these values are then stored as key $right => value $left.
-    $keys=array_keys($inputArray);
-    $c=0;
-    foreach ($inputArray as $block) {
-        $keys2=array_keys($block);
-        $c2=0;
-        foreach ($block as $row) {
-            $rowArray=explode('=', $row);
-            if (count($rowArray) == 1) { // just push if no key
-                array_push($inputArray[$keys[$c]], $rowArray[0]);
-                unset($inputArray[$keys[$c]][$keys2[$c2]]);
-            } else { // assign value to key
-                $left=$rowArray[0];
-                $right=end($rowArray);
-                $left=explode('#', $left)[0];
-                $right=explode('#', $right)[0];
-                $left=trim(trim(str_replace("\t", ' ', $left), ' '), '"');
-                $right=trim(trim(str_replace("\t", ' ', $right), ' '), '"');
-                unset($inputArray[$keys[$c]][$keys2[$c2]]);
-                if (ctype_alpha($left)) {
-                    // while we already did remove commented lines, and exploded by comment, some new rows/lines MAY still have a comment in them.
-                    if ($row[0] == '#') continue;
-                    if ($left[0] == '#' || $right[0] == '#') continue;
-                    $inputArray[$keys[$c]][$left]=$right;
-                }
+            // eliminate line-comments
+            if ($line[0]=="#") {
+                continue;
+            }
+            
+            // eliminate in-line comments
+            $pos = strpos($line, '#');
+            if (!empty($pos)) {
+                $line = substr($line, 0, $pos);
             }
 
-            $c2++;
+            array_push($ret, rtrim($line));
         }
-        $c++;
+        return $ret;
     }
-    return $inputArray;
-}
 
-function p5($inputArray) {
-    // handle multiline comments ''' or """..?
-    //print_r($inputArray);
-    $continuous='';
-    $continuousCount=0;
-    $continuousKey='';
-
-    $keySet=array_keys($inputArray);
-    $counter=0;
-    foreach ($inputArray as $block) {
-        $blockKeySet=array_keys($block);
-        $counter2=0;
-
-        //print_r($block);
-        foreach ($block as $row) {
-            if (substr($row, 0, 3) == '"""' || substr($row, 0, 3) == "'''") {
-                if ($continuousCount==0) { // multi-line begin
-                    //echo "BEGIN: ".$row."\n";
-                    $continuousCount=1;
-                    $continuousKey=$counter2;
-                    unset ($inputArray[$keySet[$counter]][$blockKeySet[$counter2]]);
-                } elseif ($continuousCount==1) { // multi-line end
-                    //echo "END: ".$row."\n";
-                    $continuousCount=0;
-                    $inputArray[$keySet[$counter]][$blockKeySet[$continuousKey]]=$continuous;
-                    unset ($inputArray[$keySet[$counter]][$blockKeySet[$counter2]]);
-                }
-            } elseif ($continuousCount == 1) { // append multi-line
-                $continuous=$continuous.$row."\n";
-                unset ($inputArray[$keySet[$counter]][$blockKeySet[$counter2]]);
-                //echo "APPEND: ".$continuous."\n";
+    private function fast_str_len_compare($str, $len) {
+        // O(1) assuming that $len is hardcoded.
+        for ($i=0; $i<$len; $i++) {
+            if (!isset($str[$i])) {
+                assert($i-$len != 0); // obviously if we return 0 then we're fine, WHICH WE'RE NOT!
+                return $i-$len; // we are $i-$len short (negative)!
             }
-            $counter2++;
         }
-
-        $counter++;
+        if (!isset($str[$len])) {
+            // if all chars up to $len are set, but $len itself isn't, we are $len in length!
+            return 0;
+        } else {
+            return 1; // FUQ U i'm not counting the whole string length. we're 1+ over $len!
+        } 
     }
-    //echo "\n\n";
-    //print_r($newArray);
-    return $inputArray;
-}
 
-function parseToml($tomlData) {
-    // one large call to all the functions.
-    $tomlData=str_replace("\r", '', $tomlData);
-    //error_log(json_encode($tomlData, JSON_PRETTY_PRINT));
-    return p5(p4(p3(p2(p1($tomlData)))));
-}
+    private function actual_parse($arr) {
+        // O(nm)
+        $ret=[];
+        $table=&$ret;
 
-// test.toml is a mods.toml pulled from a mod.jar/META-INF.
-// parseToml is called with toml file data as an argument..
-// if ($_GET['a']=='test') {
-    // header('content-type: application/json');
-    // echo json_encode(parseToml(file_get_contents('../test.toml')), JSON_UNESCAPED_SLASHES);
-// }
+        $json_key=null;
+        $json_str=null;
+        
+        $multiline_string=null; // different from ''. later points to a value for a key.
+        
+        foreach ($arr as $element) {
+            if ($this->fast_str_len_compare($element, 4)>0 && $element[0]=='[' && $element[1]=='[' && $element[-1]==']' && $element[-2]==']') {
+                // [[ TABLE ]]
+                $table_name=ltrim($element,'[[');
+                $table_name=rtrim($table_name,']]');
+                $nested_table_array=explode('.',$table_name);
+
+                // start at root
+                $temp_nested_table_ref=&$ret; 
+                    
+                foreach($nested_table_array as $t) { 
+                    if (!array_key_exists($t, $temp_nested_table_ref)) {
+                        $temp_nested_table_ref[$t]=[]; 
+                    }
+                    
+                    $temp_nested_table_ref = &$temp_nested_table_ref[$t]; 
+                }
+                
+                $table=&$temp_nested_table_ref[sizeof($temp_nested_table_ref)];
+                
+                unset($temp_nested_table_ref);
+
+            } else if ($this->fast_str_len_compare($element, 2)>0 && $element[0]=='[' && $element[-1]==']') {
+                // [ TABLE ]
+                $table_name=ltrim($element,'[[');
+                $table_name=rtrim($table_name,']]');
+                $nested_table_array=explode('.',$table_name);
+                
+                // start at root
+                $temp_nested_table_ref=&$ret; 
+                    
+                foreach($nested_table_array as $t) { 
+                    if (!array_key_exists($t, $temp_nested_table_ref)) {
+                        $temp_nested_table_ref[$t]=[]; // create it if necessary. 
+                    }
+                        
+                    // update pointer to nested table
+                    $temp_nested_table_ref = &$temp_nested_table_ref[$t];
+                }
+                    
+                $table=&$temp_nested_table_ref;
+                unset($temp_nested_table_ref);
+            } else if ($json_key && trim($element)==']') { 
+                $json_str=trim($json_str, ',');
+                $json_str.=']';
+                $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
+                $parsedjson = preg_replace('/\'([^\']*)\'/', '"$1"', $parsedjson);
+                // error_log('got complete json: '.$json_key.'='.$parsedjson);
+                $ret[$json_key] = json_decode($parsedjson,true);
+                $json_key=NULL;
+                $json_str=NULL;
+            } else if ($json_key) { 
+                // error_log('got json data row: '.$element);
+                $json_str.=$element;
+            } else {
+                // KEY=VALUE
+                $keyval = explode("=", $element, 2);
+                if (sizeof($keyval)==1) {
+                    // got a string?
+                    $value=$keyval[0];
+                    
+                    if ($this->fast_str_len_compare($value,3)>=0 && (($value[-1]=="'" && $value[-2]=="'" && $value[-3]=="'") || ($value[-1]=='"' && $value[-2]=='"' && $value[-3]=='"'))) {
+                        // END OF MULTI-LINE STRING
+                        $value=rtrim($value, "'''");
+                        $value=rtrim($value, '"""');
+                        $multiline_string=$multiline_string.$value;
+                        unset($multiline_string); 
+                    } else {
+                        $multiline_string=$multiline_string.$value."\n";
+                    }
+                    
+                } else {
+                    $key=trim(trim($keyval[0]),'"');
+                    $value=trim(trim($keyval[1]),'"');
+                        
+                    if (($value[0]=="'" && $value[1]=="'" && $value[2]=="'") || ($value[0]=='"' && $value[1]=='"' && $value[2]=='"')) {
+                        // START OF MULTILINE STRING
+                        $value=ltrim($value,"'''");
+                        $value=ltrim($value,'"""');
+                        $table[$key]=$value."\n";
+                        $multiline_string=&$table[$key];
+                        
+                        // sometimes, a multi-line string can actually be a single-line string...
+                        if ($this->fast_str_len_compare($value,6)>=0 && (($value[-1]=="'" && $value[-2]=="'" && $value[-3]=="'") || ($value[-1]=='"' && $value[-2]=='"' && $value[-3]=='"'))) {
+                            // END OF MULTI-LINE STRING
+                            $value=rtrim($value, "'''");
+                            $value=rtrim($value, '"""');
+                            $table[$key]=$value; // unecessary write, with a refactor?
+                            unset($multiline_string); // unecessary set+unset, with a refactor?
+                        }
+                    } else if ($value=='[') { // EXPECT JSON
+                        // error_log('start json data');
+                        $json_key=$key;
+                        $json_str='[';
+                    } else if ($value==']') { // DONE WITH JSON
+                        $json_str=trim($json_str, ',');
+                        $json_str.=']';
+                        // technically not json. so needs some work.
+                        $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
+                        $parsedjson = preg_replace('/\'([^\']+)\'/', '"$1"', $parsedjson);
+                        // error_log('got complete json: '.$json_key.'='.$parsedjson);
+                        $ret[$json_key] = json_decode($parsedjson,true);
+                        $json_key=NULL;
+                        $json_str=NULL;
+                    } else {
+                        $table[$key]=$value;
+                    }
+                }
+            }
+        }
+        // error_log(json_encode($ret, JSON_UNESCAPED_SLASHES));
+        return $ret;
+    }
+
+    public function parse($raw) {
+        $raw_arr=explode("\n", $raw);
+        $cleaned=$this->clean_lines($raw_arr);
+        $parsed=$this->actual_parse($cleaned);
+        
+        return $parsed;
+    }
+}
 
 ?>

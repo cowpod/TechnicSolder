@@ -1,7 +1,11 @@
 <?php
 session_start();
 $config = require("./config.php");
-require("dbconnect.php");
+
+require_once("db.php");
+$db=new Db;
+$db->connect();
+
 if (empty($_GET['name'])) {
     die("Name not specified.");
 }
@@ -15,6 +19,10 @@ if (substr($_SESSION['perms'],6,1)!=="1") {
     echo 'Insufficient permission!';
     exit();
 }
-mysqli_query($conn, "INSERT INTO clients(`name`,`UUID`) VALUES ('".mysqli_real_escape_string($conn, $_GET['name'])."', '".mysqli_real_escape_string($conn, $_GET['uuid'])."')");
+
+$db->execute("INSERT INTO clients(`name`,`UUID`) VALUES ('".$db->sanitize($_GET['name'])."', '".$db->sanitize($_GET['uuid'])."')");
+
+$db->disconnect();
+
 header("Location: ".$config['dir']."clients");
 exit();

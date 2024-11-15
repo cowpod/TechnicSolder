@@ -1,0 +1,27 @@
+volumes:
+  db:
+
+services:
+  db:
+    image: mariadb:lts
+    restart: always
+    volumes:
+      - db:/var/lib/mysql:Z
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=1
+      - MYSQL_PASSWORD=solder
+      - MYSQL_DATABASE=solder
+      - MYSQL_USER=solder
+    networks:
+      - default
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - ../:/var/www/html
+    depends_on:
+      - db

@@ -1,0 +1,19 @@
+/*#fetch-neoforge {
+	background-color: rgba(53,200,205,1);
+}
+#fetch-fabric {
+	background-color: rgba(205,150,100,1);
+}*/
+
+#sub-button-neoforge-message {
+	color: rgba(200,50,50,1);
+}
+.custom-table-error {
+	background-color:rgba(255,100,100,0.5); /* transparent to accomodate dark mode */
+}
+#newUser-message{
+	display:hidden; width:99%;text-align:left; font-weight:bold;
+}
+#editUser-message{
+	display:hidden; width:99%;text-align:left; font-weight:bold;
+}

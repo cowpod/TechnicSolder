@@ -1,8 +1,7 @@
 <?php
 header('Content-Type: application/json');
 session_start();
-global $conn;
-require("dbconnect.php");
+
 if (empty($_GET['id']) || empty($_GET['pack'])) {
     die("Build not specified.");
 }
@@ -12,16 +11,20 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
 if (substr($_SESSION['perms'], 1, 1)!=="1") {
     die("Insufficient permission!");
 }
-mysqli_query($conn, "DELETE FROM `builds` WHERE `id` = '".mysqli_real_escape_string($conn, $_GET['id'])."'");
-$bq = mysqli_query(
-    $conn,
-    "SELECT * FROM `builds`
-         WHERE `modpack` = '".mysqli_real_escape_string($conn, $_GET['pack'])."' AND `public` = 1
-         ORDER BY `id` DESC LIMIT 1"
-);
+
+global $db;
+require_once("db.php");
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
+}
+
+$db->execute("DELETE FROM `builds` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
+$bq = $db->query("SELECT * FROM `builds` WHERE `modpack` = '".$db->sanitize($_GET['pack'])."' AND `public` = 1 ORDER BY `id` DESC LIMIT 1");
+
 if ($bq) {
-    $build = mysqli_fetch_array($bq);
-    //mysqli_query($conn, "UPDATE `modpacks` SET `latest` = '".$build['name']."' WHERE `id` = '".$build['modpack']."'");
+    assert(sizeof($bq)==1);
+    $build = $bq[0];
     $response = array(
         "exists" => true,
         "name" => $build['name'],
@@ -32,16 +35,14 @@ if ($bq) {
         "exists" => false
     );
 }
-$lpq = mysqli_query(
-    $conn,
-    "SELECT `name`,`modpack`,`public` FROM `builds`
-            WHERE `public` = 1 AND `modpack` = ".mysqli_real_escape_string($conn, $_GET['pack'])." ORDER BY `id` DESC"
-);
-$latest_public = mysqli_fetch_array($lpq);
-mysqli_query(
-    $conn,
-    "UPDATE `modpacks` SET `latest` = '".$latest_public['name']."'
-    WHERE `id` = ".mysqli_real_escape_string($conn, $_GET['pack'])
-);
+
+// get latest public build
+$lpq = $db->query("SELECT id FROM build WHERE public = 1 AND modpack = ".$db->sanitize($_GET['pack'])." ORDER BY id DESC LIMIT 1");
+if ($lpq) {
+    $db->execute("UPDATE modpacks SET latest = ".$lpq[0]['id']." WHERE id = ".$db->sanitize($_GET['pack']));
+} else {
+    $db->execute("UPDATE modpacks SET latest = null WHERE id = ".$db->sanitize($_GET['pack']));
+}
+
 echo json_encode($response);
 exit();

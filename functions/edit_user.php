@@ -1,31 +1,38 @@
 <?php
 session_start();
 $config = require("./config.php");
-global $conn;
-require("dbconnect.php");
+
 if (empty($_POST['name'])) {
-    die("Email not specified.");
+    die('{"status":"error","message":"Email not specified."}');
 }
 if (empty($_POST['display_name'])) {
-    die("Name not specified.");
+    die('{"status":"error","message":"Name not specified."}');
 }
 if (empty($_POST['perms'])) {
-    die("perms not specified.");
+    die('{"status":"error","message":"Perms not specified."}');
 }
 if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("Unauthorized request or login session has expired.");
+    die('{"status":"error","message":"Unauthorized request or login session has expired."}');
 }
-if ($_SESSION['user']!==$config['mail']) {
-    die("insufficient permission!");
+if (!$_SESSION['privileged']) {
+    die('{"status":"error","message":"Insufficient permission!"}');
 }
-$sql = mysqli_query(
-    $conn,
-    "UPDATE `users`
+
+global $db;
+require_once("db.php");
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
+}
+
+$sql = $db->execute("UPDATE `users`
     SET `display_name` = '".$_POST['display_name']."', `perms` = '".$_POST['perms']."'
     WHERE `name` = '".$_POST['name']."'"
 );
+
 if ($sql) {
-    echo '<span class="text-success">Saved.</span>';
+    echo '{"status":"succ","message":"Saved."}';
 } else {
-    die('<span class="text-danger">An error has occurred</span>');
+    echo '{"status":"error","message":"An error has occurred"}';
 }
+exit();

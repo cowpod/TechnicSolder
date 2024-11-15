@@ -1,8 +1,7 @@
 <?php
 header('Content-Type: application/json');
 session_start();
-global $conn;
-require("dbconnect.php");
+
 if (empty($_GET['id'])) {
     die("Id not specified.");
 }
@@ -13,8 +12,13 @@ if (substr($_SESSION['perms'], 6, 1)!=="1") {
     echo 'Insufficient permission!';
     exit();
 }
-mysqli_query(
-    $conn,
-    "DELETE FROM `clients` WHERE `id` = '".mysqli_real_escape_string($conn, $_GET['id'])."'"
-);
+
+global $db;
+require_once("db.php");
+if (!isset($db)){
+    $db=new Db;
+    $db->connect();
+}
+
+$db->execute("DELETE FROM `clients` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
 exit();
