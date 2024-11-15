@@ -1,24 +1,36 @@
 function compareVersions(version1, version2) {
-  const v1 = version1.split('.').map(num => parseInt(num, 10));
-  const v2 = version2.split('.').map(num => parseInt(num, 10));
+    const v1 = version1.replace(/[\'\"\[\(\]\)]/, '').split('.').map(num => parseInt(num, 10));
+    const v2 = version2.replace(/[\'\"\[\(\]\)]/, '').split('.').map(num => parseInt(num, 10));
 
-  // Compare each part
-  const length = Math.max(v1.length, v2.length);
-  for (let i = 0; i < length; i++) {
-    const val1 = v1[i] || 0;  // If version 1 has fewer parts, treat as 0
-    const val2 = v2[i] || 0;  // If version 2 has fewer parts, treat as 0
+    // Compare each part
+    const length = Math.max(v1.length, v2.length);
+    for (let i = 0; i < length; i++) {
+        // if one has a trailing zero and the other doesn't have anything
+        if (!v1[i] && v2[i]==0 && i==v2.length) {
+            return 0;
+        }
+        if (!v2[i] && v1[i]==0 && i==v1.length) {
+            return 0;
+        }
+        const val1 = v1[i] || 0;  // If version 1 has fewer parts, treat as 0
+        const val2 = v2[i] || 0;  // If version 2 has fewer parts, treat as 0
 
-    if (val1 < val2) return -1;
-    if (val1 > val2) return 1;
-  }
+        if (val1 < val2) return -1;
+        if (val1 > val2) return 1;
+    }
 
-  return 0; // Versions are equal
+    return 0; // Versions are equal
 }
 
 function isVersionInInterval(version, interval) {
-    // console.log(version,interval)
     // Remove whitespace
     interval = interval.replace(/\s+/g, '');
+
+    if (!interval.includes(',')) {
+        // /^\[?[^,]+\]?$/
+        let comp=compareVersions(version, interval.replace(/[\[\]\(\)]/,''))
+        return comp
+    }
 
     // Check interval boundaries for inclusivity/exclusivity
     const startInclusive = interval[0] === '[';

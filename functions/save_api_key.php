@@ -24,7 +24,7 @@ if (isset($_SESSION['api_key']) && $_SESSION['api_key']==$api_key) {
 
 $config = require("config.php");
 
-if ($_SESSION['privileged'] && isset($_GET['serverwide']) && $_GET['serverwide']==1) {
+if ($_SESSION['privileged'] && isset($_POST['serverwide']) && $_POST['serverwide']==1) {
     $config['api_key'] = $api_key;
     file_put_contents('./config.php', '<?php return '.var_export($config, true).' ?>');
     die('{"status":"succ", "message":"successfuly set server-wide api_key"}');

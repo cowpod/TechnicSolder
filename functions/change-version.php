@@ -1,21 +1,20 @@
 <?php
 session_start();
 
-if (empty($_GET['id'])) {
-    die("New mod not specified.");
+if (empty($_GET['id_new'])) {
+    die('{"status":"error","message":"New mod not specified."}');
 }
-if (empty($_GET['mod'])) {
-    die("Old mod not specified.");
+if (empty($_GET['id_old'])) {
+    die('{"status":"error","message":"Old mod(s) not specified."}');
 }
 if (empty($_GET['bid'])) {
-    die("Build not specified.");
+    die('{"status":"error","message":"Build not specified."}');
 }
 if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("Unauthorized request or login session has expired!");
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 if (substr($_SESSION['perms'], 1, 1)!=="1") {
-    echo 'Insufficient permission!';
-    exit();
+    die('{"status":"error","message":"Insufficient permission!"}');
 }
 
 global $db;
@@ -25,17 +24,19 @@ if (!isset($db)){
     $db->connect();
 }
 
-$modsq = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$db->sanitize($_GET['bid'])
-);
-if ($modsq) {
-    assert(sizeof($modsq)==1);
-    $mods = $modsq[0];
+if (!is_numeric($_GET['bid'])||!is_numeric($_GET['id_new'])||!is_numeric($_GET['id_old'])) {
+    die('{"status":"error","Bad id"}');
 }
-$modslist = explode(',', $mods['mods']);
-$nmodlist = array_diff($modslist, [$_GET['mod']]);
-array_push($nmodlist, $_GET['id']);
-$modslist = implode(',', $nmodlist);
+
+$modsq = $db->query("SELECT mods FROM builds WHERE id = ".$db->sanitize($_GET['bid']));
+if ($modsq && sizeof($modsq)==1 && !empty($modsq[0]['mods'])) {
+    $modslist = explode(',', $modsq[0]['mods']);
+    unset($modslist[array_search($id_old, $modslist)]);
+    array_push($id_new);
+} else {
+    die('{"status":"error","message":"Build contains no mods. You need to set the version and loader."}');
+}
 
 $db->execute("UPDATE `builds` SET `mods` = '".$modslist."' WHERE `id` = ".$db->sanitize($_GET['bid']));
 
-exit();
+die('{"status":"succ","message":"Version changed sucessfully"')

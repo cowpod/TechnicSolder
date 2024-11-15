@@ -70,9 +70,23 @@ if (isset($_GET['k'])) {
         } 
     }
 }
-if (preg_match("/api\/mod$/", $url)) { 
+if (preg_match("/api\/mod$/", $url)) {
     $modslist=[];
-    $modq = $db->query("SELECT * FROM mods");
+    if (!empty($_GET['loadertype']) && ctype_alnum($_GET['loadertype'])) {
+        $loadertype=$_GET['loadertype'];
+    }
+    if (!empty($_GET['mcversion']) && preg_match('/^[a-zA-Z0-9\-\.]+$/', $_GET['mcversion'])) {
+        $mcversion=$_GET['mcversion'];
+    }
+    if (!empty($loadertype) && !empty($mcversion)) {
+        $modq = $db->query("SELECT * FROM mods WHERE loadertype='{$loadertype}' AND ('{$mcversion}' LIKE mcversion || '%' OR mcversion LIKE '{$mcversion}' || '%')");
+    } elseif (!empty($loadertype)) {
+        $modq = $db->query("SELECT * FROM mods WHERE loadertype='{$loadertype}'");
+    } elseif (!empty($mcversion)) {
+        $modq = $db->query("SELECT * FROM mods WHERE '{$mcversion}' LIKE mcversion || '%'");
+    } else {
+        $modq = $db->query("SELECT * FROM mods");
+    }
     if ($modq) {
         foreach ($modq as $mod) {
             if ($mod['type']!='mod') continue;

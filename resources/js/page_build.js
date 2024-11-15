@@ -2,7 +2,7 @@ $('#versions').change(function(){
     $('#editBuild').modal('show');
 });
 function fnone(){
-    $('#versions').val(modslist_0);
+    $('#versions').val(modslist_0[0]); // first item in list is modloader id
     $('#forgec').val('none');
 };
 function fchange(){
@@ -20,28 +20,39 @@ function remove_mod(id) {
         if (request.readyState == 4 && request.status == 200) {
             if (request.responseText=='Mod removed') {
                 $("#mod-"+id).remove();
+                var index = modslist_0.indexOf(id);
+                if (index!==-1) {
+                    modslist_0.splice(index, 1);
+                }
             }
         }
     }
     request.send();
 }
-function changeversion(id, mod, name, compatible) {
+function changeversion(id_new, id_old, name, compatible) {
     if (!compatible) {
         $("#mod-"+name).removeClass("table-warning");
         $("#warn-incompatible-"+name).hide();
         /*$("#bmversions-"+name).children().each(function(){
-            if (this.value == mod) {
+            if (this.value == id_old) {
                 this.remove();
             }
         });*/
     }
-    $("#bmversions-"+name).attr("onchange","changeversion(this.value,"+id+",'"+name+"',true)");
+    $("#bmversions-"+name).attr("onchange","changeversion(this.value,"+id_new+",'"+name+"',true)");
     $("#spinner-"+name).show();
     var request = new XMLHttpRequest();
-    request.open("GET", "./functions/change-version.php?bid="+build_id+"&id="+id+"&mod="+mod);
+    request.open("GET", "./functions/change-version.php?bid="+build_id+"&id_new="+id_new+"&id_old="+id_old);
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             $("#spinner-"+name).hide();
+
+            var index = modslist_0.indexOf(id_old);
+            if (index!==-1) {
+                modslist_0.splice(index, 1);
+            }
+
+            modslist_0.push(id_new);
         }
     }
     request.send();
@@ -90,6 +101,7 @@ function add(name, id, v, mcv) {
                         </td>
                     </tr>
                 `);
+                modslist_0.push(id);
             } else {
                 // $('#btn-add-mod-'+name).html('Add to build');
             }
@@ -138,7 +150,7 @@ function parsemods(obj) {
     let filter=$("#search").val();
     for (let mod of obj) {
         if (filter=='' || filter==undefined || mod['pretty_name'].toLowerCase().includes(filter)||mod['name'].toLowerCase().includes(filter)) {
-            if (mod['mcversion']=='' || mcv==mod['mcversion'] || isVersionInInterval(`'${mcv}'`, mod['mcversion']) || showall) {
+            if (mod['mcversion']=='' || mcv==mod['mcversion'] || isVersionInInterval(`'${mcv}'`, mod['mcversion']) || showall && !modslist_0.includes(mod['id'])) {
                 add_mod_row(mod['id'], mod['pretty_name'],mod['name'],vs[mod['name']],mcv);
                 added_num+=1;
             }
@@ -173,7 +185,7 @@ async function getmods() {
                 console.log('could not get mods from api');
                 reject(false)
             }
-            request.open("GET", 'api/mod');
+            request.open("GET", `api/mod?loadertype=${type}&mcversion=${mcv}`);
             request.send();
         }
     });
@@ -201,16 +213,21 @@ $("#search2").on('keyup',function(){
         }
     }
 });
-$('#showall').change(function() {
+function showall(){
     if ($('#showall').is(':checked')) {
+        $('#mods-for-version-string').text('');
+        $('#mods-for-version-string').hide();
+    } else {
         $('#mods-for-version-string').text(' for Minecraft '+mcv);
         $('#mods-for-version-string').show();
-    } else {
-        $('#mods-for-version-string').hide();
     }
 
     set_cached('showall', $('#showall').is(':checked'), -1);
     getmods(mcv, type);
+}
+
+$('#showall').change(function() {
+    showall()
 });
 
 $(document).on('change', '.form-control', function() {
@@ -231,6 +248,8 @@ $(document).on('change', '.form-control', function() {
 });
 
 $(document).ready(function() {
-    $('#showall').prop('checked', get_cached('showall'));
+    if (get_cached('showall') && $('#showall').prop('checked', get_cached('showall'))) {
+        showall()
+    }
     getmods();
 });

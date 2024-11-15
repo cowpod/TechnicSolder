@@ -310,6 +310,7 @@ $("#save_api_key").on("click", function() {
         let formData = new FormData();
         let request = new XMLHttpRequest();
         formData.set('api_key', $("#api_key").val());
+        formData.append('serverwide',1);
         request.open('POST', './functions/save_api_key.php');
         request.onreadystatechange = function() {
             if (request.readyState == 4) {

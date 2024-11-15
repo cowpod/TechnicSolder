@@ -1409,13 +1409,13 @@ if (isset($_SESSION['user'])) {
 
                     <?php if (substr($_SESSION['perms'],1,1)=="1") { ?>
                     <div class="card">
-                        <h2>Mods <font id='mods-for-version-string' style='display:none'></font></h2>
+                        <h2>Mods <font id='mods-for-version-string'></font></h2>
                         <hr>
                         <input id="search" type="text" placeholder="Search..." class="form-control">
                         <br />
                         <div class="custom-control custom-checkbox">
                             <input type="checkbox" name="showall" class="custom-control-input" id="showall">
-                            <label class="custom-control-label" for="showall">Show all</label>
+                            <label class="custom-control-label" for="showall">All versions</label>
                         </div>
                         <br />
                         <table id="modstable" class="table table-striped sortable">
@@ -1470,7 +1470,7 @@ if (isset($_SESSION['user'])) {
                 <?php }
                 } else echo "<div class='card'><h3 class='text-info'>Select minecraft version and save before editing mods.</h3></div>"; ?>
                 <script>
-                    var modslist_0 = '<?php echo sizeof($modslist)>0 ? $modslist[0] : "" ?>';
+                    var modslist_0 = JSON.parse('<?php echo json_encode($modslist, JSON_UNESCAPED_SLASHES) ?>');
                     var build_id = '<?php echo $user['id'] ?>';
                     var mcv="<?php echo $user['minecraft'] ?>";
                     var type="<?php echo $user['loadertype'] ?>";
