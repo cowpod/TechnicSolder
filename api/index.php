@@ -24,102 +24,6 @@ if (!isset($db)){
     $db=new Db;
     $db->connect();
 }
-<<<<<<< HEAD
-if (uri($url, "api/")) {
-    print '{"api":"Solder.cf","version":"v1.3.4","stream":"Dev"}';
-    exit();
-}
-if (uri($url, "api/verify")) {
-    print '{"error":"No API key provided."}';
-    exit();
-}
-if (uri($url, "api/verify/".substr($url, strrpos($url, '/') + 1))) {
-    if (substr($url, strrpos($url, '/') + 1)==$config['api_key']) {
-        print '{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}';
-        exit();
-    }
-    print '{"error":"Invalid key provided."}';
-    exit();
-}
-if (uri($url, "api/modpack")) {
-    if (isset($_GET['include'])) {
-        if ($_GET['include'] == "full") {
-            $result = mysqli_query($conn, "SELECT * FROM `modpacks`");
-            $modpacks = array();
-            while ($modpack=mysqli_fetch_array($result)) {
-                $buildsres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
-                $builds = [];
-                while ($build=mysqli_fetch_array($buildsres)) {
-                    $clients = [];
-                    $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$build['clients'].")");
-                    while ($client=mysqli_fetch_array($clientsq)) {
-                        array_push($clients, $client['UUID']);
-                    }
-                    if ($build['public']==1||in_array($_GET['cid'], $clients)||$_GET['k']==$config['api_key']) {
-                        array_push($builds, $build['name']);
-                    }
-                }
-                $clients = [];
-                $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
-                while ($client=mysqli_fetch_array($clientsq)) {
-                    array_push($clients, $client['UUID']);
-                }
-                if ($modpack['public']==1||in_array($_GET['cid'], $clients)||$_GET['k']==$config['api_key']) {
-                    $modpacks[$modpack['name']] = array(
-                        "name" => $modpack['name'],
-                        "display_name" => $modpack['display_name'],
-                        "url" => $modpack['url'],
-                        "icon" => $modpack['icon'],
-                        "icon_md5" => $modpack['icon_md5'],
-                        "logo" => $modpack['logo'],
-                        "logo_md5" => $modpack['logo_md5'],
-                        "background" => $modpack['background'],
-                        "background_md5" => $modpack['background_md5'],
-                        "recommended" => $modpack['recommended'],
-                        "latest" => $modpack['latest'],
-                        "builds" => $builds
-                    );
-                }
-                $response = array(
-                    "modpacks" => $modpacks,
-                    "mirror_url" => "http://".$config['host']."/mods"
-                );
-            }
-        } else {
-            $modpacks = array();
-            $result = mysqli_query($conn, "SELECT * FROM `modpacks`");
-            while ($modpack=mysqli_fetch_array($result)) {
-                $clients = [];
-                $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
-                while ($client=mysqli_fetch_array($clientsq)) {
-                    array_push($clients, $client['UUID']);
-                }
-                if ($modpack['public']==1||in_array($_GET['cid'], $clients)||$_GET['k']==$config['api_key']) {
-                    $mn = $modpack['name'];
-                    $mpn = $modpack['display_name'];
-                    $modpacks[$mn] = $mpn;
-                }
-            }
-            $response = array(
-                "modpacks" => $modpacks,
-                "mirror_url" => "http://".$config['host']."/mods"
-            );
-        }
-    } else {
-        $modpacks = array();
-        $result = mysqli_query($conn, "SELECT * FROM `modpacks`");
-        while ($modpack=mysqli_fetch_array($result)) {
-            $clients = [];
-            $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
-            while ($client=mysqli_fetch_array($clientsq)) {
-                array_push($clients, $client['UUID']);
-            }
-            if ($modpack['public']==1||in_array($_GET['cid'], $clients)||$_GET['k']==$config['api_key']) {
-                $mn = $modpack['name'];
-                $mpn = $modpack['display_name'];
-                $modpacks[$mn] = $mpn;
-            }
-=======
 
 if(str_ends_with($url, "api/")){
 	die('{"api":"Solder.cf","version":"v1.4.0","stream":"Release"}'); // todo: this is Dev not release, but may break things if changed...
@@ -145,35 +49,11 @@ if (preg_match("/api\/verify\/([a-zA-Z0-9]+)$/", $url, $matches)) {
         $apikeysq = $db->query("SELECT 1 FROM users WHERE api_key='{$client_api_key}'");
         if ($apikeysq) {
             die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
->>>>>>> master
         }
     }
     
     die('{"error":"Invalid key provided."}');
 }
-<<<<<<< HEAD
-if (uri($url, "api/modpack/".substr($url, strrpos($url, '/') + 1))) {
-    $result = mysqli_query($conn, "SELECT * FROM `modpacks`");
-    while ($modpack=mysqli_fetch_array($result)) {
-        if (uri($url, "api/modpack/".$modpack['name'])) {
-            $clients = [];
-            $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$modpack['clients'].")");
-            while ($client=mysqli_fetch_array($clientsq)) {
-                array_push($clients, $client['UUID']);
-            }
-            if ($modpack['public']==1||in_array($_GET['cid'], $clients)||$_GET['k']==$config['api_key']) {
-                $buildsres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
-                $builds = [];
-                while ($build=mysqli_fetch_array($buildsres)) {
-                    $clients = [];
-                    $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$build['clients'].")");
-                    while ($client=mysqli_fetch_array($clientsq)) {
-                        array_push($clients, $client['UUID']);
-                    }
-                    if ($build['public']==1||in_array($_GET['cid'], $clients)||$_GET['k']==$config['api_key']) {
-                        array_push($builds, $build['name']);
-                    }
-=======
 
 $client_uuid = isset($_GET['cid']) ? $_GET['cid'] : '';
 
@@ -308,7 +188,6 @@ else if (preg_match("/api\/modpack$/", $url)) { // modpacks
                 if ($build['public']==1 || $clientsq || $valid_client_key) {
                     $builds[$counter]=$build['name'];
                     $counter++;
->>>>>>> master
                 }
             }
             $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
@@ -359,112 +238,6 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
     if (!$modpackq) {
         die('{"error":"Modpack does not exist"}');
     }
-<<<<<<< HEAD
-    print '{"error":"Modpack does not exist"}';
-    exit();
-}
-$result = mysqli_query($conn, "SELECT * FROM `modpacks`");
-while ($modpack=mysqli_fetch_array($result)) {
-    if (uri($url, "api/modpack/".$modpack['name']."/".substr($url, strrpos($url, '/') + 1))) {
-        $buildsres = mysqli_query($conn, "SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
-        while ($build=mysqli_fetch_array($buildsres)) {
-            if (uri($url, "api/modpack/".$modpack['name']."/".$build['name'])) {
-                $clients = [];
-                $clientsq = mysqli_query($conn, "SELECT * FROM `clients` WHERE `id` IN (".$build['clients'].")");
-                while ($client=mysqli_fetch_array($clientsq)) {
-                    array_push($clients, $client['UUID']);
-                }
-                if ($build['public']==1||in_array($_GET['cid'], $clients)||$_GET['k']==$config['api_key']) {
-                    $mods = [];
-                    $modslist= explode(',', $build['mods']);
-                    $modnumber = 0;
-                    foreach ($modslist as $mod) {
-                        if ($mod !== "") {
-                            $modsres = mysqli_query($conn, "SELECT * FROM `mods` WHERE `id` = ".$mod);
-                            $modinfo=mysqli_fetch_array($modsres);
-                            if ($modinfo['name']!== null && $modinfo['type'] !== null) {
-                                if (isset($_GET['include'])) {
-                                    if ($_GET['include']=="mods") {
-                                        if (!$modinfo['url']) {
-                                            $mods[$modnumber] = array(
-                                                "name" => $modinfo['name'],
-                                                "version" => $modinfo['version'],
-                                                "md5" => $modinfo['md5'],
-                                                "url" => "http://".$config['host'].$config['dir']
-                                                    .$modinfo['type']."s/".$modinfo['filename'],
-                                                "pretty_name" => $modinfo['pretty_name'],
-                                                "author" => $modinfo['author'],
-                                                "description" => $modinfo['description'],
-                                                "link" => $modinfo['link'],
-                                                "donate" => $modinfo['donlink']
-                                            );
-                                        } else {
-                                            $mods[$modnumber] = array(
-                                                "name" => $modinfo['name'],
-                                                "version" => $modinfo['version'],
-                                                "md5" => $modinfo['md5'],
-                                                "url" => $modinfo['url'],
-                                                "pretty_name" => $modinfo['pretty_name'],
-                                                "author" => $modinfo['author'],
-                                                "description" => $modinfo['description'],
-                                                "link" => $modinfo['link'],
-                                                "donate" => $modinfo['donlink']
-                                            );
-                                        }
-                                    } else {
-                                        if (!$modinfo['url']) {
-                                            $mods[$modnumber] = array(
-                                                "name" => $modinfo['name'],
-                                                "version" => $modinfo['version'],
-                                                "md5" => $modinfo['md5'],
-                                                "url" => "http://".$config['host'].$config['dir'].$modinfo['type']
-                                                    ."s/".$modinfo['filename']
-                                            );
-                                        } else {
-                                            $mods[$modnumber] = array(
-                                                "name" => $modinfo['name'],
-                                                "version" => $modinfo['version'],
-                                                "md5" => $modinfo['md5'],
-                                                "url" => $modinfo['url']
-                                            );
-                                        }
-                                    }
-                                } else {
-                                    if (!$modinfo['url']) {
-                                        $mods[$modnumber] = array(
-                                            "name" => $modinfo['name'],
-                                            "version" => $modinfo['version'],
-                                            "md5" => $modinfo['md5'],
-                                            "url" => "http://".$config['host'].$config['dir'].$modinfo['type']."s/"
-                                                .$modinfo['filename']
-                                        );
-                                    } else {
-                                        $mods[$modnumber] = array(
-                                            "name" => $modinfo['name'],
-                                            "version" => $modinfo['version'],
-                                            "md5" => $modinfo['md5'],
-                                            "url" => $modinfo['url']
-                                        );
-                                    }
-                                }
-                                $modnumber++;
-                            }
-                        }
-                    }
-                    $response = array(
-                        "minecraft" => str_replace("f", "", $build['minecraft']),
-                        "java" => $build['java'],
-                        "memory" => $build['memory'],
-                        "forge" => null,
-                        "mods" => $mods,
-                    );
-                    print(json_encode($response));
-                    exit();
-                } else {
-                    print '{"error":"\n\r This build is private. Use Solder.cf to create private builds and modpacks :)
-                     www.solder.cf\n\r Please contact '.$config['author'].' for more information."}';
-                    exit();
-=======
 
     foreach($modpackq as $modpack) { // sql col `name` isn't guaranteed to be unique...
         $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
@@ -478,7 +251,6 @@ while ($modpack=mysqli_fetch_array($result)) {
                 if ($build['public']==1 || $clientsq || $valid_client_key) {
                     $builds[$counter]=$build['name'];
                     $counter++;
->>>>>>> master
                 }
             }
 

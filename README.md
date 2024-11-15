@@ -85,7 +85,6 @@ sudo su -
 This command installs what's known as a LAMP Stack, which includes Apache2, MariaDB, and PHP.\
 Note: the name of packages may vary depending on your Linux distribution.
 ```bash
-sudo add-apt-repository ppa:ondrej/php
 apt update
 ```
 Then install the packages

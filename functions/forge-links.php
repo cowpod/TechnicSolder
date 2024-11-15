@@ -37,8 +37,7 @@ foreach (json_decode($forge_data, true)['promos'] as $gameVersion => $forgeVersi
         } else {
             $suffixExt = 'universal.jar';
         }
-        $versions[$forgeVersion] = $forge_link.'/'.$gameVersion.'-'.$forgeVersion.'/forge-'.$gameVersion.'-'
-            .$forgeVersion.'-'.$suffixExt;
+        $versions[$forgeVersion] = $forge_link.'/'.$gameVersion.'-'.$forgeVersion.'/forge-'.$gameVersion.'-'.$forgeVersion.'-'.$suffixExt;
 
         if (!in_array($forgeVersion, $forges_installed)) {
             $forges[$gameVersion] = array(
