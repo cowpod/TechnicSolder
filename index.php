@@ -1799,6 +1799,8 @@ if (isset($_SESSION['user'])) {
                 <button id="fetch-neoforge" onclick="fetch_neoforge()" class="btn btn-primary mr-1">Show Neoforge Versions</button>
                 <button id="fetch-fabric" onclick="fetchfabric()" class="btn btn-primary mr-1">Show Fabric Versions</button>
             </div> -->
+            <?php 
+            if ($config['fabric_integration']=='on') { ?>
             <div class="card" id="fabrics">
                 <h2>Fabric</h2>
                 <form>
@@ -1810,7 +1812,8 @@ if (isset($_SESSION['user'])) {
                 </form>
                 <span id="installfabricinfo" style="display:none;"></span>
             </div>
-
+            <?php }
+            if ($config['neoforge_integration']=='on') { ?>
             <div class="card" id="neoforges">
                 <h2>Neoforge</h2>
                 <form>
@@ -1822,7 +1825,8 @@ if (isset($_SESSION['user'])) {
                 </form>
                 <span id="installneoforgeinfo" style="display:none;"></span>
             </div>
-
+            <?php }
+            if ($config['forge_integration']=='on') { ?>
             <div class="card" id="fetched-mods">
                 <h2>Forge</h2>
                 <form>
@@ -1843,7 +1847,7 @@ if (isset($_SESSION['user'])) {
                 </table>
                 <span id="installforgeinfo" class="text-danger" style="display:none;"></span>
             </div>
-
+            <?php } ?>
             <div class="card">
                 <h2>Custom</h2>
                 <hr>
@@ -2434,7 +2438,7 @@ if (isset($_SESSION['user'])) {
             </script>
             <script src="./resources/js/page_account.js"></script>
             <?php
-        } elseif (uri("/admin")) {
+        } elseif (uri("/admin") && $_SESSION['privileged']==TRUE) {
             if (isset($_POST['bug-submit'])) {
                 if (isset($_POST['dev_builds'])) {
                     $config['dev_builds'] = "on";
@@ -2450,6 +2454,21 @@ if (isset($_SESSION['user'])) {
                     $config['modrinth_integration'] = "on";
                 } else {
                     $config['modrinth_integration'] = "off";
+                }
+                if (isset($_POST['forge_integration'])) {
+                    $config['forge_integration'] = "on";
+                } else {
+                    $config['forge_integration'] = "off";
+                }
+                if (isset($_POST['neoforge_integration'])) {
+                    $config['neoforge_integration'] = "on";
+                } else {
+                    $config['neoforge_integration'] = "off";
+                }
+                if (isset($_POST['fabric_integration'])) {
+                    $config['fabric_integration'] = "on";
+                } else {
+                    $config['fabric_integration'] = "off";
                 }
                 file_put_contents('./functions/config.php', '<?php return '.var_export($config, true).'; ?>');
             } else {
@@ -2527,6 +2546,27 @@ if (isset($_SESSION['user'])) {
                             <input id="modrinth_integration" type="checkbox" class="custom-control-input" name="modrinth_integration" <?php if (isset($config['modrinth_integration']) && $config['modrinth_integration']=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="modrinth_integration">
                                 Enable Modrinth integration - uses cookies
+                            </label>
+                            <input type="hidden" name="bug-submit" value="bug-submit">
+                        </div>
+                        <div class="custom-control custom-switch">
+                            <input id="forge_integration" type="checkbox" class="custom-control-input" name="modrinth_integration" <?php if (isset($config['forge_integration']) && $config['forge_integration']=="on") {echo "checked";} ?> >
+                            <label class="custom-control-label" for="forge_integration">
+                                Enable Forge integration (installer) - uses cookies
+                            </label>
+                            <input type="hidden" name="bug-submit" value="bug-submit">
+                        </div>
+                        <div class="custom-control custom-switch">
+                            <input id="neoforge_integration" type="checkbox" class="custom-control-input" name="neoforge_integration" <?php if (isset($config['neoforge_integration']) && $config['neoforge_integration']=="on") {echo "checked";} ?> >
+                            <label class="custom-control-label" for="neoforge_integration">
+                                Enable Neoforge integration (installer) - uses cookies
+                            </label>
+                            <input type="hidden" name="bug-submit" value="bug-submit">
+                        </div>
+                        <div class="custom-control custom-switch">
+                            <input id="fabric_integration" type="checkbox" class="custom-control-input" name="fabric_integration" <?php if (isset($config['fabric_integration']) && $config['fabric_integration']=="on") {echo "checked";} ?> >
+                            <label class="custom-control-label" for="fabric_integration">
+                                Enable Fabric integration (installer) - uses cookies
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>

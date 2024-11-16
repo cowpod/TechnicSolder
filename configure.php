@@ -98,6 +98,9 @@ if (isset($_POST['host'])) {
         'dir'=>$dir,
         'configured'=>true,
         'config_version'=>CONFIG_VERSION,
+        'fabric_integration'=>'on',
+        'forge_integration'=>'on',
+        'neoforge_integration'=>'on',
         'modrinth_integration'=>'on',
         'use_verifier'=>'on'
     ];
