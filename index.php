@@ -3,6 +3,8 @@ session_start();
 
 define('SUPPORTED_JAVA_VERSIONS', [21,20,19,18,17,16,15,14,13,12,11,1.8,1.7,1.6]);
 define('SOLDER_BUILD', '999');
+define('UPDATE_JSON_DEV','https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/Dev/api/version.json');
+define('UPDATE_JSON', 'https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/master/api/version.json');
 
 require_once('./functions/config.php');
 // global $config;
@@ -394,7 +396,7 @@ if (isset($_SESSION['user'])) {
         <div id="sidenav" class="text-white sidenav">
             <ul class="nav nav-tabs" style="height:100%">
                 <li class="nav-item">
-                    <a class="nav-link " href="./dashboard"><em class="fas fa-tachometer-alt fa-lg"></em></a>
+                    <a class="nav-link" href="./dashboard"><em class="fas fa-tachometer-alt fa-lg"></em></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link active" href="#modpacks" data-toggle="tab" role="tab"><em class="fas fa-boxes fa-lg"></em></a>
@@ -542,15 +544,15 @@ if (isset($_SESSION['user'])) {
             <div class="main">
                 <?php
                 $version = json_decode(file_get_contents("./api/version.json"),true);
-                if ($version['stream']=="Dev"||($config->exists('dev_builds') && $config->get('dev_builds')=="on")) {
-                    if ($newversion = json_decode(file_get_contents("https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/Dev/api/version.json"),true)) {
+                if ($version['stream']=="Dev" || ($config->exists('dev_builds') && $config->get('dev_builds')=="on")) {
+                    if ($newversion = json_decode(file_get_contents(UPDATE_JSON_DEV),true)) {
                         $checked = true;
                     } else {
                         $checked = false;
                         $newversion = $version;
                     }
                 } else {
-                    if ($newversion = json_decode(file_get_contents("https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/master/api/version.json"),true)) {
+                    if ($newversion = json_decode(file_get_contents(UPDATE_JSON),true)) {
                         $checked = true;
                     } else {
                         $checked = false;
@@ -574,7 +576,7 @@ if (isset($_SESSION['user'])) {
             if (isset($notechnic) && $notechnic) {
             ?>
                 <div class="card alert-warning">
-                    <strong>Warning! </strong>Cannot connect to Technic! Verify you set your slug and API key in your <a href="/account">Account Settings</a>.
+                    <strong>Warning! </strong>Cannot connect to Technic! Verify you set your slug and API key in your <a href="/account">Account Settings</a>
                 </div>
                 <?php
             } else {
@@ -880,7 +882,7 @@ if (isset($_SESSION['user'])) {
                 
                 if (isset($notechnic) &&$notechnic) {
                     ?><div class="card alert-warning">
-                        <strong>Warning! </strong>Cannot connect to Technic! Verify you set your slug and API key in your <a href="/account">Account Settings</a>.
+                        <strong>Warning! </strong>Cannot connect to Technic! Verify you set your slug and API key in your <a href="/account">Account Settings</a>
                     </div><?php
                 }
                 
@@ -2268,15 +2270,15 @@ if (isset($_SESSION['user'])) {
         }
         elseif (uri("/update")) {
             $version = json_decode(file_get_contents("./api/version.json"), true);
-            if ($version['stream']=="Dev"||($config->exists('dev_builds') && $config->get('dev_builds')=="on")) {
-                if ($newversion = json_decode(file_get_contents("https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/Dev/api/version.json"), true)) {
+            if ($version['stream']=="Dev" || ($config->exists('dev_builds') && $config->get('dev_builds')=="on")) {
+                if ($newversion = json_decode(file_get_contents(UPDATE_JSON_DEV), true)) {
                     $checked = true;
                 } else {
                     $checked = false;
                     $newversion = $version;
                 }
             } else {
-                if ($newversion = json_decode(file_get_contents("https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/master/api/version.json"), true)) {
+                if ($newversion = json_decode(file_get_contents(UPDATE_JSON), true)) {
                         $checked = true;
                 } else {
                     $newversion = $version;
@@ -2292,24 +2294,22 @@ if (isset($_SESSION['user'])) {
                     <div class="alert <?php 
                         if (version_compare($version['version'], $newversion['version'], '>=') && $checked) { 
                             echo "alert-success";
-                        } else { 
-                            if ($checked) {
-                                echo "alert-info";
-                            } else {
-                                echo "alert-warning";
-                            } 
+                        } elseif ($checked) {
+                            echo "alert-info";
+                        } else {
+                            echo "alert-warning";
                         } 
                         ?>" role="alert">
                         <h4 class="alert-heading"><?php 
-                            if ($checked) {
-                                if (version_compare($version['version'], $newversion['version'], '>=')) {
-                                    echo "No updates. Currently on ".$version['version'];
-                                } else { 
-                                    echo "New update available - ".$newversion['version'].". Curently on ".$version['version']; 
-                                }
-                            } else {
-                                echo "Cannot check for updates!";
-                            } 
+                        if ($checked) {
+                            if (version_compare($version['version'], $newversion['version'], '>=')) {
+                                echo "No updates. Currently on ".$version['version'];
+                            } else { 
+                                echo "New update available - ".$newversion['version'].". Curently on ".$version['version']; 
+                            }
+                        } else {
+                            echo "Cannot check for updates!";
+                        } 
                         ?></h4>
                         <hr>
                         <p class="mb-0"><?php 
@@ -2532,7 +2532,7 @@ if (isset($_SESSION['user'])) {
                     <hr>
                     <form method="POST">
                         <div class="custom-control custom-switch">
-                            <input id="dev_builds" type="checkbox" class="custom-control-input" name="dev_builds" <?php if ($config->exists('dev_builds') && $config->get('dev_builds')=="on") {echo "checked";} if (json_decode($api_version_json, true)['stream']=="Dev") {echo "checked disabled";} ?> >
+                            <input id="dev_builds" type="checkbox" class="custom-control-input" name="dev_builds" <?php if (json_decode($api_version_json, true)['stream']=="Dev") { echo "checked disabled";} elseif ($config->exists('dev_builds') && $config->get('dev_builds')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="dev_builds">Subscribe to dev builds</label>
                         </div>
                         <div class="custom-control custom-switch">
