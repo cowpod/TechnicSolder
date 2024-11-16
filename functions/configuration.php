@@ -18,7 +18,13 @@ class Config {
     } elseif (is_dir('../config')) {
       $this->path='../config/config.json';
     } else {
-      die("configuration.php: could not find config folder");
+      if (is_dir('functions')) {
+        mkdir('config');
+      } elseif (is_dir('../functions')) {
+        mkdir('../config');
+      } else {
+        die("configuration.php: could not find config folder");
+      }
     }
     if (file_exists($this->path)) {
       $this->read();
