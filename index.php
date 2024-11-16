@@ -412,7 +412,7 @@ if (isset($_SESSION['user'])) {
             </ul>
             <div class="tab-content">
                 <div class="tab-pane active" id="modpacks" role="tabpanel">
-                    <div style="overflow:auto;height: calc( 100% - 62px )">
+                    <div class="overflow-auto" style="max-height: 88vh">
                         <p class="text-muted">MODPACKS</p>
                         <?php
                         $modpacksq = $db->query("SELECT * FROM `modpacks`");
@@ -500,7 +500,7 @@ if (isset($_SESSION['user'])) {
                     </div></a>
                 </div>
                 <div class="tab-pane" id="settings" role="tabpanel">
-                    <div style="overflow:auto;height: calc( 100% - 62px )">
+                    <div style="overflow:auto;max-height: 88vh">
                         <p class="text-muted">SETTINGS</p>
                     <?php if ($_SESSION['privileged']) { ?>
                         <a href="./admin"><div class="modpack">
