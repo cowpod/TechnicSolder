@@ -24,6 +24,8 @@ class Db {
 			} elseif (file_exists("../functions/configuration.php")) {
 				require_once("../functions/configuration.php");
 				$this->config = new Config();
+			} else {
+				die('could not get configuration.php');
 			}
 		} else {
 			$this->config=$config;
@@ -96,9 +98,9 @@ class Db {
 		try {
 			if ($this->config->get('db-type')=='sqlite') {
 				if (is_dir('./config')) {
-					$testconn = new PDO('sqlite:./config/db.sqlite');
+					$this->conn  = new PDO('sqlite:./config/db.sqlite');
 				} elseif (is_dir('../config')) {
-					$testconn = new PDO('sqlite:../config/db.sqlite');
+					$this->conn  = new PDO('sqlite:../config/db.sqlite');
 				} else {
 					die('could not find config folder');
 				}
@@ -120,9 +122,9 @@ class Db {
 		try {
 			if ($dbtype=='sqlite') {
 				if (is_dir('./config')) {
-					$testconn = new PDO('sqlite:./config/db.sqlite');
+					$this->conn = new PDO('sqlite:./config/db.sqlite');
 				} elseif (is_dir('../config')) {
-					$testconn = new PDO('sqlite:../config/db.sqlite');
+					$this->conn = new PDO('sqlite:../config/db.sqlite');
 				} else {
 					die('could not find config folder');
 				}
