@@ -10,10 +10,5 @@ functions/._*
 mods/
 forges/
 others/
-config/
-test.toml
-functions/config.php
-functions/cache.json
-db.sqlite
-db.sqlite-journal
-functions/settings.php
+config/db.sqlite
+config/config.json
