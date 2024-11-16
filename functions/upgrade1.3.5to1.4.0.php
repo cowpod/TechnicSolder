@@ -1,23 +1,22 @@
 <?php
 define('CONFIG_VERSION', 1);
 session_start();
-require_once('./configuration.php');
-global $config;
-if (empty($config)) {
-    $config=new Config();
+
+if (file_exists("./config.php")) {
+    $config = require("./config.php");
+} else {
+    die('We are not configured, so no need to run this!');
 }
 
-if ($config->exists('config_version') && $config->get('config_version')==CONFIG_VERSION) {
-    $index = $config->exists('dir') ? $config->get('dir') : '.';
+if (!empty($config['config_version']) && $config['config_version']==CONFIG_VERSION) {
+    $index = isset($config['dir']) ? $config['dir'] : '.';
     die("<h2>This script is only meant to be run when upgrading a 1.3.5 install to 1.4.0.</h2><a href='{$index}'>return to index</a>");
 }
 
 echo "<hr/>Adding db-type to config<br/>";
-$config_old = $config;
 
 // write db-type to config immediately
-$config->set('db-type','mysql');
-file_put_contents("./configuration.php", '<?php return ('.var_export($config,true).') ?>');
+$config['db-type']='mysql';
 
 // test db
 require_once("./db.php");
@@ -26,8 +25,7 @@ $dbres = $db->connect();
 
 // write back old config since it didn't work.
 if (!$dbres) {
-    $config->setall($config_old);
-    die('DB configuration error. Please check that configuration.php has all the necessary database values: db-type,db-host,db-name,db-user,db-pass');
+    die('DB configuration error. Please check that config.php has all the necessary database values: db-type,db-host,db-name,db-user,db-pass');
 }
 
 echo "<hr/>Adding table row<br/>";
@@ -67,14 +65,14 @@ if (!$addtype) {
 echo "<hr/>Migrating admin user<br/>";
 
 $icon = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB9ElEQVR4Xu2bSytEcRiHZyJRaDYWRhJilFlYKjakNOWS7OxEGCRGpAg1KykRSlHSKLkO0YyFhSiRIQmbIcVEsnCXW/EJPB/g9Jvt0/8s3t73+b3nnDnmpZWaXxP8dssRm6yL+XTc9OO1Ib+9GWCe60BuyUpEvvDYiNysAqgDNAJygCSoFPi/AoaPwbCvXnRAKKoZc/T7rA/5kasEeV1wEvlJnBf5lM+KfD16mPcAFUAdoBGQA8gSkqBSwOAxmBZ8QQdsOTIwRzsPOae7Iy/w/Op3DvLwZd4zgrYnPJ83Xcp7gAqgDtAIyAFkCUlQKWDwGKzdPeUH//ftmKPz9ePIQ6m1yANufq+QPteK58s6tpHvRZTxHqACqAM0AnIAWkISVAoYOwaf13bQAZn2WSzAQ1EB38/3FyP/9R0jz/K/I/cMxSM3VSTzHqACqAM0AnIAWUISVAoYPAbfe6/RAV07b5ijH/uFyD8Dd8jnejy8R+TwnuG8GsTzpXdJvAeoAOoAjYAcQJaQBJUCBo9B+6sDHfDSUoM5Wm1uQ34Z60YeMzOB3DJygNy5yU+sHGNNvAeoAOoAjYAcQJaQBJUCBo/B7Cr+aMrvnMEctVbx9wCVXbxINboS8Pqu0DnyFDf//2B0o4H3ABVAHaARwD1ADpAElQKGjsE/aSRgFj7BEuwAAAAASUVORK5CYII=";
-$name = $config->get('author');
-$email= $config->get('mail');
-$pass = $config->get('pass');
+$name = $config['author'];
+$email= $config['mail'];
+$pass = $config['pass'];
 $perms = "1111111";
-$api_key = $config->get('api_key');
+$api_key = $config['api_key'];
 
 // hash password
-if (empty($config->get('encrypted')||!$config->get('encrypted'))){
+if (empty($config['encrypted']||!$config['encrypted'])){
     $pass = password_hash($pass, PASSWORD_DEFAULT);
 }
 
@@ -88,10 +86,10 @@ $db->execute("INSERT INTO users (name,display_name,pass,perms,privileged,icon,ap
     '".$api_key."'
 );");
 
-unset($config->get('author'));
-unset($config->get('mail'));
-unset($config->get('pass'));
-unset($config->get('encrypted'));
+unset($config['author']);
+unset($config['mail']);
+unset($config['pass']);
+unset($config['encrypted']);
 
 echo "<hr/>Updating mod entries<br/>";
 
@@ -234,7 +232,14 @@ rmdir('../upgrade_work');
 
 $db->disconnect();
 
+$config['config_version']=CONFIG_VERSION;
 
-$config->get('config_version',CONFIG_VERSION);
+// save to new config
+require_once('./configuration.php');
+$config_new=new Config();
+if ($config_new->setall($config)) {
+    unlink('config.php');
+}
+
 exit();
 
