@@ -229,8 +229,8 @@ function showdetails(id) {
     $('#description').modal('show');
     $('#description-title').text('Desciption: '+details[id]['title']);
     const md =marked.parse(details[id]['body']);
-    const htmlWithTargetBlank = md.replace(/<a /g, '<a target="_blank" ');
-    $('#description-body').html(htmlWithTargetBlank);
+    const parsed_md = md.replace(/<a /g, '<a target="_blank" ').replace(/<img /g,'<img style="max-width:766px" ');
+    $('#description-body').html(parsed_md);
 }
 function showcategories(id) {
     $('#description').modal('show');
