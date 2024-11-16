@@ -31,7 +31,7 @@ class Config {
     } else {
       $this->data=[];
       $this->write();
-      console.log("configuration.php: could not find config file, creating new blank one");
+      error_log("configuration.php: could not find config file, creating new blank one");
     }
   }
   private function write(){
