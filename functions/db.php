@@ -44,10 +44,12 @@ class Db {
 		}
 		try {
 			if ($_POST['db-type']=='sqlite') {
-				if (is_dir('./functions')) {
-					$testconn = new PDO('sqlite:db.sqlite');
+				if (is_dir('./config')) {
+					$testconn = new PDO('sqlite:./config/db.sqlite');
+				} elseif (is_dir('../config')) {
+					$testconn = new PDO('sqlite:../config/db.sqlite');
 				} else {
-					$testconn = new PDO('sqlite:../db.sqlite');
+					die('could not find config folder');
 				}
 			} else {
 			    $testconn = new PDO($_POST['db-type'].":host=".$_POST['db-host'].";dbname=".$_POST['db-name'].";charset=utf8", $_POST['db-user'], $_POST['db-pass']);
@@ -64,10 +66,12 @@ class Db {
 	public function test2($dbtype, $host, $user, $pass, $name) { // Arg
 		try {
 			if ($dbtype=='sqlite') {
-				if (is_dir('./functions')) {
-					$testconn = new PDO('sqlite:db.sqlite');
+				if (is_dir('./config')) {
+					$testconn = new PDO('sqlite:./config/db.sqlite');
+				} elseif (is_dir('../config')) {
+					$testconn = new PDO('sqlite:../config/db.sqlite');
 				} else {
-					$testconn = new PDO('sqlite:../db.sqlite');
+					die('could not find config folder');
 				}
 			} else {
 		    	$testconn = new PDO("$dbtype:host=$host;dbname=$name;charset=utf8", $user, $pass);
@@ -91,10 +95,12 @@ class Db {
 		}
 		try {
 			if ($this->config->get('db-type')=='sqlite') {
-				if (is_dir('./functions')) {
-					$this->conn = new PDO('sqlite:db.sqlite');
+				if (is_dir('./config')) {
+					$testconn = new PDO('sqlite:./config/db.sqlite');
+				} elseif (is_dir('../config')) {
+					$testconn = new PDO('sqlite:../config/db.sqlite');
 				} else {
-					$this->conn = new PDO('sqlite:../db.sqlite');
+					die('could not find config folder');
 				}
 			} else {
 		    	$this->conn = new PDO($this->config->get('db-type').":host=".$this->config->get('db-host').";dbname=".$this->config->get('db-name').";charset=utf8", $this->config->get('db-user'), $this->config->get('db-pass'));
@@ -113,10 +119,12 @@ class Db {
 		}
 		try {
 			if ($dbtype=='sqlite') {
-				if (is_dir('./functions')) {
-					$this->conn = new PDO('sqlite:db.sqlite');
+				if (is_dir('./config')) {
+					$testconn = new PDO('sqlite:./config/db.sqlite');
+				} elseif (is_dir('../config')) {
+					$testconn = new PDO('sqlite:../config/db.sqlite');
 				} else {
-					$this->conn = new PDO('sqlite:../db.sqlite');
+					die('could not find config folder');
 				}
 			} else {
 		    	$this->conn = new PDO("$dbtype:host=$host;dbname=$name;charset=utf8", $user, $pass);
