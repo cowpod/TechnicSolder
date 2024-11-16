@@ -22,7 +22,7 @@ if (isset($_SESSION['api_key']) && $_SESSION['api_key']==$api_key) {
     die('{"status":"succ", "message":"api_key is the same"}');
 }
 
-require_once('./config.php');
+require_once('./configuration.php');
 global $config;
 if (empty($config)) {
     $config=new Config();

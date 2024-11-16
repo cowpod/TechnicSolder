@@ -66,7 +66,7 @@ if (file_exists("../others/".$fileName)) {
 
 require('slugify.php');
 
-require_once('./config.php');
+require_once('./configuration.php');
 global $config;
 if (empty($config)) {
     $config=new Config();

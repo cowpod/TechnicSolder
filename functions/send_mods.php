@@ -9,7 +9,7 @@ if (substr($_SESSION['perms'],3,1)!=="1") {
     echo '{"status":"error","message":"Insufficient permission!"}';
     exit();
 }
-require_once('./config.php');
+require_once('./configuration.php');
 global $config;
 if (empty($config)) {
     $config=new Config();

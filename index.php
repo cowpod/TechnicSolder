@@ -6,13 +6,13 @@ define('SOLDER_BUILD', '999');
 define('UPDATE_JSON_DEV','https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/Dev/api/version.json');
 define('UPDATE_JSON', 'https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/master/api/version.json');
 
-require_once('./functions/config.php');
+require_once('./functions/configuration.php');
 // global $config;
 // if (empty($config)) {
     $config=new Config();
 // }
 
-// regardless of config.php existing, configured=>false forces a re-configure.
+// regardless of configuration.php existing, configured=>false forces a re-configure.
 if (!$config->exists('configured') || $config->get('configured')!==true) {
     header("Location: ".($config->exists('dir')?$config->get('dir'):'/')."configure.php");
     exit();

@@ -15,21 +15,21 @@ class Db {
 	function __construct() {
 		global $config;
 		if (empty($config)) {
-			if (file_exists("./config.php")) {
-				require_once("./config.php");
+			if (file_exists("./configuration.php")) {
+				require_once("./configuration.php");
 				$this->config = new Config();
-			} elseif (file_exists("./functions/config.php")) {
-				require_once("./functions/config.php");
+			} elseif (file_exists("./functions/configuration.php")) {
+				require_once("./functions/configuration.php");
 				$this->config = new Config();
-			} elseif (file_exists("../functions/config.php")) {
-				require_once("../functions/config.php");
+			} elseif (file_exists("../functions/configuration.php")) {
+				require_once("../functions/configuration.php");
 				$this->config = new Config();
 			}
 		} else {
 			$this->config=$config;
 		}
 		if ($this->config===NULL) {
-		    error_log("db.php: __construct(): Missing config.php?!");
+		    error_log("db.php: __construct(): Missing configuration.php?!");
 		} elseif ($this->config->exists('db-type') && $this->config->get('db-type')=='sqlite') {
 			// 
 		} elseif($this->config->exists('db-host') && $this->config->exists('db-user') && $this->config->exists('db-pass') && $this->config->exists('db-name')) {
@@ -39,7 +39,7 @@ class Db {
 	}
 
 	public function test() { // POST
-		if ($this->config===null) {  // __construct again, maybe we have config.php now
+		if ($this->config===null) {  // __construct again, maybe we have configuration.php now
 			$this->__construct();
 		}
 		try {
@@ -82,7 +82,7 @@ class Db {
 	}
 
 	public function connect() { // config
-		if ($this->config===null) { // __construct again, maybe we have config.php now
+		if ($this->config===null) { // __construct again, maybe we have configuration.php now
 			$this->__construct();
 		}
 		if (!empty($this->conn)) {

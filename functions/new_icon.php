@@ -4,7 +4,7 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
     die('{"status":"error","Unauthorized request or login session has expired."}');
 }
 
-require_once('./config.php');
+require_once('./configuration.php');
 global $config;
 if (empty($config)) {
     $config=new Config();

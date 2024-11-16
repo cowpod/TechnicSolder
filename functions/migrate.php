@@ -1,7 +1,7 @@
 <?php
 // TODO: this is horribly outdated
 session_start();
-require_once('./config.php');
+require_once('./configuration.php');
 global $config;
 if (empty($config)) {
     $config=new Config();
@@ -32,7 +32,7 @@ $PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://'
 
 require_once("db.php");
 $db=new Db;
-$db->connect(); // connect from config.php
+$db->connect(); // connect from configuration.php
 
 $db2=new Db;
 $db2->connect2($_POST['db-type'], $_POST['db-host'],$_POST['db-user'],$_POST['db-pass'],$_POST['db-name']); // connect from user-provided POST

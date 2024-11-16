@@ -28,7 +28,7 @@ if (substr($_SESSION['perms'], 1, 1)!=="1") {
     die('Insufficient permission!');
 }
 
-require_once('./config.php');
+require_once('./configuration.php');
 global $config;
 if (empty($config)) {
     $config=new Config();

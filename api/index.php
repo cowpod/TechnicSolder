@@ -17,7 +17,7 @@ if (substr($url, -1)=="/" && substr($url, -4)!=="api/") {
     }
 }
 
-require_once('../functions/config.php');
+require_once('../functions/configuration.php');
 global $config;
 if (empty($config)) {
     $config=new Config();

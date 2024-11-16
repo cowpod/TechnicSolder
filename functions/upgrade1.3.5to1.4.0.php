@@ -1,7 +1,7 @@
 <?php
 define('CONFIG_VERSION', 1);
 session_start();
-require_once('./config.php');
+require_once('./configuration.php');
 global $config;
 if (empty($config)) {
     $config=new Config();
@@ -17,7 +17,7 @@ $config_old = $config;
 
 // write db-type to config immediately
 $config->set('db-type','mysql');
-file_put_contents("./config.php", '<?php return ('.var_export($config,true).') ?>');
+file_put_contents("./configuration.php", '<?php return ('.var_export($config,true).') ?>');
 
 // test db
 require_once("./db.php");
@@ -27,7 +27,7 @@ $dbres = $db->connect();
 // write back old config since it didn't work.
 if (!$dbres) {
     $config->setall($config_old);
-    die('DB configuration error. Please check that config.php has all the necessary database values: db-type,db-host,db-name,db-user,db-pass');
+    die('DB configuration error. Please check that configuration.php has all the necessary database values: db-type,db-host,db-name,db-user,db-pass');
 }
 
 echo "<hr/>Adding table row<br/>";

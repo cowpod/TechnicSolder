@@ -6,7 +6,7 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
 if (!$_GET['id']) {
     die('ID not provided');
 }
-require_once('./config.php');
+require_once('./configuration.php');
 global $config;
 if (empty($config)) {
     $config=new Config();

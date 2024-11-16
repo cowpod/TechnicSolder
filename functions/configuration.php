@@ -18,12 +18,14 @@ class Config {
     } elseif (is_dir('../config')) {
       $this->path='../config/config.json';
     } else {
-      die("config.php: could not find config folder");
+      die("configuration.php: could not find config folder");
     }
     if (file_exists($this->path)) {
       $this->read();
     } else {
-      die("config.php: could not find config file");
+      $this->data=[];
+      $this->write();
+      console.log("configuration.php: could not find config file, creating new blank one");
     }
   }
   private function write(){
@@ -31,7 +33,7 @@ class Config {
     if ($status) {
       return true;
     } else {
-      die("config.php: could not write config file");
+      die("configuration.php: could not write config file");
     }
   }
   private function read() {
@@ -41,10 +43,10 @@ class Config {
       if ($decode !== null && json_last_error() === JSON_ERROR_NONE) {
         $this->data=$decode;
       } else {
-        die("config.php: could not parse config file"); 
+        die("configuration.php: could not parse config file"); 
       }
     } else {
-      die("config.php: could not read config file");
+      die("configuration.php: could not read config file");
     }
   }
   public function exists($key) {
@@ -52,7 +54,7 @@ class Config {
   }
   public function get($key) {
     if (!$this->exists($key)) {
-      trigger_error("config.php: '{$key}'does not exist, called from '{$this->get_including_file()}'", E_USER_WARNING);
+      trigger_error("configuration.php: '{$key}'does not exist, called from '{$this->get_including_file()}'", E_USER_WARNING);
       return null;
     }
     return $this->data[$key];

@@ -9,7 +9,7 @@ if (substr($_SESSION['perms'],0,1)!=="1") {
     exit();
 }
 
-require_once('./config.php');
+require_once('./configuration.php');
 global $config;
 if (empty($config)) {
     $config=new Config();

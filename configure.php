@@ -5,7 +5,7 @@ define('DEFAULT_PERMS', '1111111'); // and 'privileged'=>'1' makes you an admin.
 define('OVERWRITE_USER', TRUE);
 session_start();
 
-require_once('./functions/config.php');
+require_once('./functions/configuration.php');
 // global $config;
 // if (empty($config)) {
     $config=new Config();
