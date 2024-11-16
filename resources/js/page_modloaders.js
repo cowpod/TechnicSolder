@@ -406,3 +406,19 @@ $(document).ready(function(){
     fetch_fabric()
     fetch_neoforge()
 });
+
+$('#forge').on('change', function () {
+    const fileInput = $(this);
+    const label = fileInput.next('.custom-file-label');
+    const fileIcon = $('#file-icon');
+
+    if (fileInput[0].files.length > 0) {
+        // Add a check icon and update the file name
+        fileIcon.attr('class', 'fas fa-check text-success');
+        label.html(`<i id="file-icon" class="fas fa-check text-success"></i> ${fileInput[0].files[0].name}`);
+    } else {
+        // Reset icon and text when no file is selected
+        fileIcon.attr('class', 'fas fa-upload');
+        label.html('<i id="file-icon" class="fas fa-upload"></i> Choose modpack.jar file...');
+    }
+});

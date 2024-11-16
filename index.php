@@ -1624,7 +1624,6 @@ if (isset($_SESSION['user'])) {
 
             <div class="card">
                 <h2>Installed</h2>
-                <hr>
                 <input placeholder="Search..." type="text" id="search" class="form-control"><br />
                 <table id="modstable" class="table table-striped sortable">
                     <thead>
@@ -1748,7 +1747,7 @@ if (isset($_SESSION['user'])) {
                     <br />
                     <input required class="form-control" type="text" name="md5" placeholder="File md5 Hash"><br />
                     <input required class="form-control" required type="text" name="mcversion" placeholder="Minecraft Version"><br/>
-                    <select name="loadertype">
+                    <select class="form-control" name="loadertype">
                         <option value="forge">Forge</option>
                         <option value="neoforge">Neoforge</option>
                         <option value="fabric">Fabric</option>
@@ -1852,7 +1851,6 @@ if (isset($_SESSION['user'])) {
             <?php } ?>
             <div class="card">
                 <h2>Custom</h2>
-                <hr>
                 <form action="./functions/custom_modloader.php" method="POST" enctype="multipart/form-data">
                     <div class="form-group">
                         <input class="form-control" type="text" name="version" placeholder="Loader version" required="">
@@ -1860,8 +1858,10 @@ if (isset($_SESSION['user'])) {
                         <input class="form-control" type="text" name="mcversion" placeholder="Minecraft Version" required="">
                         <br />
                         <div class="custom-file">
-                            <input id="forge" type="file" class="form-control-file" name="file" accept=".jar" required>
-                            <label class="custom-file-label" for="forge">Choose modpack.jar file...</label>
+                            <input id="forge" type="file" class="form-control-file custom-file-input" name="file" accept=".jar" required>
+                            <label class="custom-file-label" for="forge">
+                                <i id="file-icon" class="fas fa-upload"></i> Choose modpack.jar file...
+                            </label>
                         </div>
                         <br /><br>
                         <select class="form-control" name="type">
@@ -1869,7 +1869,6 @@ if (isset($_SESSION['user'])) {
                             <option value="neoforge">Neoforge</option>
                             <option value="fabric">Fabric</option>
                         </select>
-                        <br/>
                         <br/>
                         <button type="submit" class="btn btn-primary">Upload</button>
                 </div>
@@ -2354,11 +2353,10 @@ if (isset($_SESSION['user'])) {
             ?>
             <div class="main">
                 <div class="card">
-                    <h1>My Account</h1>
+                    <h2>My Account</h2>
                     <hr />
-                    <h2>Your Permissions</h2>
-                    <input type="text" class="form-control" id="perms" value="<?php echo $_SESSION['perms'] ?>" readonly>
-                    <br />
+                    <h3>Your permissions</h3>
+                    <input type="text" style="display:none" class="form-control" id="perms" value="<?php echo $_SESSION['perms'] ?>" readonly>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm1" disabled>
                         <label class="custom-control-label" for="perm1">Create, delete and edit modpacks</label>
@@ -2388,8 +2386,8 @@ if (isset($_SESSION['user'])) {
                         <label class="custom-control-label" for="perm7">Manage Clients</label>
                     </div>
                     <hr />
-                    <h2>User Picture</h2>
-                    <img class="img-thumbnail" style="width: 64px;height: 64px" src="data:image/png;base64,<?php
+                    <h3>User Picture</h3>
+                    <img class="img-thumbnail" style="width:128px; height: 128px" src="data:image/png;base64,<?php
                     $iconq = $db->query("SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
                     if ($iconq && sizeof($iconq)>=1 && isset($iconq[0]['icon'])) {
                         echo $iconq[0]['icon'];
@@ -2398,7 +2396,6 @@ if (isset($_SESSION['user'])) {
                     }
                      ?>">
                      <br/>
-                     <h3>Change Icon</h3>
                      <form enctype="multipart/form-data">
                         <div class="custom-file">
                             <input type="file" class="custom-file-input" id="newIcon" required>
@@ -2406,9 +2403,9 @@ if (isset($_SESSION['user'])) {
                         </div>
                      </form>
                      <hr />
-                     <h2>Change Password</h2>
+                     <h3>Change Password</h3>
                      <form method="POST" action="./functions/chpw.php">
-                        <input id="pass1" placeholder="Password" class="form-control" type="password" name="pass"><br />
+                        <input id="pass1" placeholder="New Password" class="form-control" type="password" name="pass"><br />
                         <input id="pass2" placeholder="Confirm Password" class="form-control" type="password"><br />
                         <input class="btn btn-success" type="submit" name="save" id="save-button" value="Save" disabled>
                      </form>
@@ -2478,13 +2475,12 @@ if (isset($_SESSION['user'])) {
             ?>
             <div class="main">
                 <div class="card">
-                    <h1>Administration</h1>
+                    <h2>Administration</h2>
                     <hr />
-                    <button class="btn btn-success" data-toggle="modal" data-target="#newUser">New User</button><br />
-                    <h2>Users</h2>
+                    <h3>Users</h3>
                     <div id="info">
-
                     </div>
+                    <button class="btn btn-success" data-toggle="modal" data-target="#newUser">New User</button><br />
                     <table class="table table-striped">
                         <thead>
                         <tr>
@@ -2525,48 +2521,52 @@ if (isset($_SESSION['user'])) {
                         ?>
                     </tbody>
                     </table>
-                </div>
-
-                <div class="card">
-                    <h1>Server Settings</h1>
-                    <hr>
+                    <br/><hr/>
+                    <h3>Server Settings</h3>
                     <form method="POST">
                         <div class="custom-control custom-switch">
                             <input id="dev_builds" type="checkbox" class="custom-control-input" name="dev_builds" <?php if (json_decode($api_version_json, true)['stream']=="Dev") { echo "checked disabled";} elseif ($config->exists('dev_builds') && $config->get('dev_builds')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="dev_builds">Subscribe to dev builds</label>
                         </div>
+                        <?php if (json_decode($api_version_json, true)['stream']=="Dev") { ?>
+                        You are on the Dev release channel.
+                        <?php } else { ?>
+                        Once subscribed to the Dev release channel, you cannot go back without wiping your installation.
+                        <?php } ?>
+                        <br/><br/>
+                        <b>The following features require cookies</b>
                         <div class="custom-control custom-switch">
                             <input id="use_verifier" type="checkbox" class="custom-control-input" name="use_verifier" <?php if ($config->exists('use_verifier') && $config->get('use_verifier')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="use_verifier">
-                                Enable Solder Verifier - uses cookies
+                                Enable Solder Verifier
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="modrinth_integration" type="checkbox" class="custom-control-input" name="modrinth_integration" <?php if ($config->exists('modrinth_integration') && $config->get('modrinth_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="modrinth_integration">
-                                Enable Modrinth integration - uses cookies
+                                Enable Modrinth integration
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="forge_integration" type="checkbox" class="custom-control-input" name="forge_integration" <?php if ($config->exists('forge_integration') && $config->get('forge_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="forge_integration">
-                                Enable Forge integration (installer) - uses cookies
+                                Enable Forge integration (installer)
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="neoforge_integration" type="checkbox" class="custom-control-input" name="neoforge_integration" <?php if ($config->exists('neoforge_integration') && $config->get('neoforge_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="neoforge_integration">
-                                Enable Neoforge integration (installer) - uses cookies
+                                Enable Neoforge integration (installer)
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="fabric_integration" type="checkbox" class="custom-control-input" name="fabric_integration" <?php if ($config->exists('fabric_integration') && $config->get('fabric_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="fabric_integration">
-                                Enable Fabric integration (installer) - uses cookies
+                                Enable Fabric integration (installer)
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
@@ -2709,7 +2709,7 @@ if (isset($_SESSION['user'])) {
         <script>document.title = 'Clients - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
             <div class="card">
-                <h1>Clients</h1>
+                <h2>Clients</h2>
                 <hr>
                 <h3>Add Client</h3>
                 <form class="needs-validation" novalidate action="./functions/new-client.php">
