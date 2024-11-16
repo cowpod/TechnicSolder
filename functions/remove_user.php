@@ -1,6 +1,10 @@
 <?php
 session_start();
-$config = require("./config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if (empty($_POST['id'])) {
     die("id not specified.");

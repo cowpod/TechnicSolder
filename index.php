@@ -4,15 +4,15 @@ session_start();
 define('SUPPORTED_JAVA_VERSIONS', [21,20,19,18,17,16,15,14,13,12,11,1.8,1.7,1.6]);
 define('SOLDER_BUILD', '999');
 
-if (file_exists('./functions/config.php')) {
-    $config = include("./functions/config.php");
-} else {
-    $config = ['configured'=>false, 'dir'=>''];
-}
+require_once('./functions/config.php');
+// global $config;
+// if (empty($config)) {
+    $config=new Config();
+// }
 
 // regardless of config.php existing, configured=>false forces a re-configure.
-if ($config['configured']!==true) {
-    header("Location: ".$config['dir']."configure.php");
+if (!$config->exists('configured') || $config->get('configured')!==true) {
+    header("Location: ".($config->exists('dir')?$config->get('dir'):'/')."configure.php");
     exit();
 }
 
@@ -52,7 +52,7 @@ if (substr($url,-1)=="/") {
 }
 if (isset($_GET['logout']) && $_GET['logout']) {
     session_destroy();
-    header("Location: ".$config['dir']."login");
+    header("Location: ".$config->get('dir')."login");
     exit();
 }
 
@@ -71,22 +71,22 @@ if (!empty($_POST['email']) && !empty($_POST['password'])) {
             $_SESSION['perms'] = $user['perms'];
             $_SESSION['privileged'] = ($user['privileged']=='1') ? TRUE : FALSE;
         } else {
-            header("Location: ".$config['dir']."login?ic");
+            header("Location: ".$config->get('dir')."login?ic");
             exit();
         }
     } else {
-        header("Location: ".$config['dir']."login?ic");
+        header("Location: ".$config->get('dir')."login?ic");
         exit();
     }
         
 }
 
 if (isset($_SESSION['user']) && (uri("/login")||uri("/"))) {
-    header("Location: ".$config['dir']."dashboard");
+    header("Location: ".$config->get('dir')."dashboard");
     exit();
 }
 if (!isset($_SESSION['user'])&&!uri("/login")) {
-    header("Location: ".$config['dir']."login");
+    header("Location: ".$config->get('dir')."login");
     exit();
 }
 
@@ -342,7 +342,7 @@ if (isset($_SESSION['user'])) {
         <?php
         // prompt to upgrade
         // you'll want to check config_version value to determine what to do.
-        if (empty($config['config_version'])) { ?>
+        if (!$config->exists('config_version')) { ?>
         <div class="container">
             <div class="alert alert-danger text-center">
                 <h2>Upgrade required.</h2>
@@ -442,7 +442,7 @@ if (isset($_SESSION['user'])) {
                                     $time = time()+1800;
                                     $info_data = base64_encode(json_encode($info));
 
-                                    if (!empty($config['db-type']) && $config['db-type']=='sqlite') {
+                                    if ($config->exists('db-type') && $config->get('db-type')=='sqlite') {
                                         $db->execute("
                                             INSERT OR REPLACE INTO metrics (name,time_stamp,info)
                                             VALUES (
@@ -542,7 +542,7 @@ if (isset($_SESSION['user'])) {
             <div class="main">
                 <?php
                 $version = json_decode(file_get_contents("./api/version.json"),true);
-                if ($version['stream']=="Dev"||(isset($config['dev_builds']) && $config['dev_builds']=="on")) {
+                if ($version['stream']=="Dev"||($config->exists('dev_builds') && $config->get('dev_builds')=="on")) {
                     if ($newversion = json_decode(file_get_contents("https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/Dev/api/version.json"),true)) {
                         $checked = true;
                     } else {
@@ -754,7 +754,7 @@ if (isset($_SESSION['user'])) {
                         ?>
                     </div>
                     <br />
-                    <?php if (isset($config['use_verifier']) && $config['use_verifier']=="on") { ?>
+                    <?php if ($config->exists('use_verifier') && $config->get('use_verifier')=="on") { ?>
                     <button class="btn btn-secondary" data-toggle="collapse" href="#collapseVerify" role="button" aria-expanded="false" aria-controls="collapseVerify">Solder Verifier</button>
                     <div class="collapse" id="collapseVerify">
                         <br />
@@ -857,7 +857,7 @@ if (isset($_SESSION['user'])) {
                     elseif (@$info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
                         $time = time()+1800;
                         $info_data = base64_encode(json_encode($info));
-                        if (!empty($config['db-type']) && $config['db-type']=='sqlite') {
+                        if ($config->exists('db-type') && $config->get('db-type')=='sqlite') {
                             $db->execute("
                                 INSERT OR REPLACE INTO metrics (name,time_stamp,info)
                                 VALUES (
@@ -1215,7 +1215,7 @@ if (isset($_SESSION['user'])) {
                                 echo "</select>";
                             } else { ?>
                                 </select>
-                                "<div style='display:block' class='invalid-feedback'>There are no versions available. Please fetch versions in the <a href='./modloaders'>Forge Library</a></div>
+                                <div style='display:block' class='invalid-feedback'>There are no versions available. Please fetch versions in the <a href='./modloaders'>Forge Library</a></div>
                             <?php }
                             // error_log($loadertype);
                             ?>
@@ -1498,7 +1498,7 @@ if (isset($_SESSION['user'])) {
             </div>
             <?php if (substr($_SESSION['perms'],3,1)=="1") { ?>
 
-            <?php if ($config['modrinth_integration']=='on') { ?>
+            <?php if ($config->get('modrinth_integration')=='on') { ?>
             <div class="card">
                 <h2>Modrinth</h2>
                 <form class="row" action="javascript:void(0)">
@@ -1800,7 +1800,7 @@ if (isset($_SESSION['user'])) {
                 <button id="fetch-fabric" onclick="fetchfabric()" class="btn btn-primary mr-1">Show Fabric Versions</button>
             </div> -->
             <?php 
-            if ($config['fabric_integration']=='on') { ?>
+            if ($config->get('fabric_integration')=='on') { ?>
             <div class="card" id="fabrics">
                 <h2>Fabric</h2>
                 <form>
@@ -1813,7 +1813,7 @@ if (isset($_SESSION['user'])) {
                 <span id="installfabricinfo" style="display:none;"></span>
             </div>
             <?php }
-            if ($config['neoforge_integration']=='on') { ?>
+            if ($config->get('neoforge_integration')=='on') { ?>
             <div class="card" id="neoforges">
                 <h2>Neoforge</h2>
                 <form>
@@ -1826,7 +1826,7 @@ if (isset($_SESSION['user'])) {
                 <span id="installneoforgeinfo" style="display:none;"></span>
             </div>
             <?php }
-            if ($config['forge_integration']=='on') { ?>
+            if ($config->get('forge_integration')=='on') { ?>
             <div class="card" id="fetched-mods">
                 <h2>Forge</h2>
                 <form>
@@ -1902,9 +1902,10 @@ if (isset($_SESSION['user'])) {
                         $installed_loader_ids=[];
                         if ($buildsq){
                             foreach ($buildsq as $build){
-                                $mods=explode(',', $build['mods'],2);
-                                // echo $mods[0];
-                                array_push($installed_loader_ids, $mods[0]);
+                                if (!empty($build['mods'])) {
+                                    $mods=explode(',', $build['mods'],2);
+                                    array_push($installed_loader_ids, $mods[0]);
+                                }
                             }
                         }
 
@@ -2124,7 +2125,7 @@ if (isset($_SESSION['user'])) {
                                             class="btn btn-primary">Edit</button>
                                     <button onclick="remove_box(<?php echo $mod['id'].",'".$mod['version']."','".$mod['filename']."'" ?>)" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
                                     <!-- url from api/index.php -->
-                                    <button onclick="window.location = '<?php echo !empty($mod['url']) ? $mod['url'] : $SERVER_PROTOCOL.$config['host'].$config['dir'].$mod['type']."s/".$mod['filename'] ?>'" class="btn btn-secondary"><em class="fas fa-file-download"></em> .zip</button>
+                                    <button onclick="window.location = '<?php echo !empty($mod['url']) ? $mod['url'] : $SERVER_PROTOCOL.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'] ?>'" class="btn btn-secondary"><em class="fas fa-file-download"></em> .zip</button>
                                     <?php if (!empty($mod['filename'])) { ?><button onclick="window.location = './functions/mod_extract.php?id=<?php echo $mod['id']; ?>'" class="btn btn-secondary"><em class="fas fa-file-download"></em> .jar</button><?php } ?>
                                 </div>
                             </td>
@@ -2267,7 +2268,7 @@ if (isset($_SESSION['user'])) {
         }
         elseif (uri("/update")) {
             $version = json_decode(file_get_contents("./api/version.json"), true);
-            if ($version['stream']=="Dev"||(isset($config['dev_builds']) && $config['dev_builds']=="on")) {
+            if ($version['stream']=="Dev"||($config->exists('dev_builds') && $config->get('dev_builds')=="on")) {
                 if ($newversion = json_decode(file_get_contents("https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/Dev/api/version.json"), true)) {
                     $checked = true;
                 } else {
@@ -2330,7 +2331,7 @@ if (isset($_SESSION['user'])) {
                                     3. write: <br />
                                     <em>cd <?php echo dirname(dirname(get_included_files()[0])); ?> </em><br />
                                     <em>git clone
-                                        <?php if ($newversion['stream']=="Dev"||(isset($config['dev_builds']) && ['dev_builds']=="on")) {
+                                        <?php if ($newversion['stream']=="Dev"||($config->exists('dev_builds') && ['dev_builds']=="on")) {
                                             echo "--single-branch --branch Dev";
                                         } ?>
                                         https://github.com/TheGameSpider/TechnicSolder.git SolderUpdate </em> <br />
@@ -2414,7 +2415,7 @@ if (isset($_SESSION['user'])) {
                 </div>
                 <div class="card">
                     <h2>Technic Solder integration</h2>
-                <?php if (!empty($config['api_key'])) { ?>
+                <?php if ($config->exists('api_key')) { ?>
                     <font class="text-danger">A server-wide API key has been set.</font>
                     <?php if ($_SESSION['privileged']) { ?>
                     <span>You, an administrator, can update the server-wide API key in <a href="admin#solder">Server Settings</a></span>
@@ -2424,12 +2425,12 @@ if (isset($_SESSION['user'])) {
                     } else { ?>
                     <p>To integrate with the Technic API, you will need your API key from <a href="https://technicpack.net/" target="_blank">technicpack.net</a>; Sign in (or register), "Edit [My] Profile" in the top right account menu, "Solder Configuration", and copy the API key and paste it in the text box below.</p>
                     <form>
-                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if (get_setting('api_key')) echo 'value="'.get_setting('api_key').'"' ?> <?php if (!empty($config['api_key'])) echo "disabled" ?>/>
+                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if (get_setting('api_key')) echo 'value="'.get_setting('api_key').'"' ?> <?php if ($config->exists('api_key')) echo "disabled" ?>/>
                         <br/>
                         <input class="btn btn-success" type="button" id="save_api_key" value="Save" disabled />
                     </form>
                     <br/>
-                    <p>Then, copy <?php echo $SERVER_PROTOCOL.$config['host'].$config['dir'].'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
+                    <p>Then, copy <?php echo $SERVER_PROTOCOL.$config->get('host').$config->get('dir').'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
                 <?php } ?>
                 </div>
             </div>
@@ -2441,36 +2442,35 @@ if (isset($_SESSION['user'])) {
         } elseif (uri("/admin") && $_SESSION['privileged']==TRUE) {
             if (isset($_POST['bug-submit'])) {
                 if (isset($_POST['dev_builds'])) {
-                    $config['dev_builds'] = "on";
+                    $config->set('dev_builds','on');
                 } else {
-                    $config['dev_builds'] = "off";
+                    $config->set('dev_builds','off');
                 }
                 if (isset($_POST['use_verifier'])) {
-                    $config['use_verifier'] = "on";
+                    $config->set('use_verifier','on');
                 } else {
-                    $config['use_verifier'] = "off";
+                    $config->set('use_verifier','off');
                 }
                 if (isset($_POST['modrinth_integration'])) {
-                    $config['modrinth_integration'] = "on";
+                    $config->set('modrinth_integration','on');
                 } else {
-                    $config['modrinth_integration'] = "off";
+                    $config->set('modrinth_integration','off');
                 }
                 if (isset($_POST['forge_integration'])) {
-                    $config['forge_integration'] = "on";
+                    $config->set('forge_integration','on');
                 } else {
-                    $config['forge_integration'] = "off";
+                    $config->set('forge_integration','off');
                 }
                 if (isset($_POST['neoforge_integration'])) {
-                    $config['neoforge_integration'] = "on";
+                    $config->set('neoforge_integration','on');
                 } else {
-                    $config['neoforge_integration'] = "off";
+                    $config->set('neoforge_integration','off');
                 }
                 if (isset($_POST['fabric_integration'])) {
-                    $config['fabric_integration'] = "on";
+                    $config->set('fabric_integration','on');
                 } else {
-                    $config['fabric_integration'] = "off";
+                    $config->set('fabric_integration','off');
                 }
-                file_put_contents('./functions/config.php', '<?php return '.var_export($config, true).'; ?>');
             } else {
                 error_log('no post data');
             }
@@ -2532,39 +2532,39 @@ if (isset($_SESSION['user'])) {
                     <hr>
                     <form method="POST">
                         <div class="custom-control custom-switch">
-                            <input id="dev_builds" type="checkbox" class="custom-control-input" name="dev_builds" <?php if (isset($config['dev_builds']) && $config['dev_builds']=="on") {echo "checked";} if (json_decode($api_version_json, true)['stream']=="Dev") {echo "checked disabled";} ?> >
+                            <input id="dev_builds" type="checkbox" class="custom-control-input" name="dev_builds" <?php if ($config->exists('dev_builds') && $config->get('dev_builds')=="on") {echo "checked";} if (json_decode($api_version_json, true)['stream']=="Dev") {echo "checked disabled";} ?> >
                             <label class="custom-control-label" for="dev_builds">Subscribe to dev builds</label>
                         </div>
                         <div class="custom-control custom-switch">
-                            <input id="use_verifier" type="checkbox" class="custom-control-input" name="use_verifier" <?php if (isset($config['use_verifier']) && $config['use_verifier']=="on") {echo "checked";} ?> >
+                            <input id="use_verifier" type="checkbox" class="custom-control-input" name="use_verifier" <?php if ($config->exists('use_verifier') && $config->get('use_verifier')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="use_verifier">
                                 Enable Solder Verifier - uses cookies
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
-                            <input id="modrinth_integration" type="checkbox" class="custom-control-input" name="modrinth_integration" <?php if (isset($config['modrinth_integration']) && $config['modrinth_integration']=="on") {echo "checked";} ?> >
+                            <input id="modrinth_integration" type="checkbox" class="custom-control-input" name="modrinth_integration" <?php if ($config->exists('modrinth_integration') && $config->get('modrinth_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="modrinth_integration">
                                 Enable Modrinth integration - uses cookies
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
-                            <input id="forge_integration" type="checkbox" class="custom-control-input" name="modrinth_integration" <?php if (isset($config['forge_integration']) && $config['forge_integration']=="on") {echo "checked";} ?> >
+                            <input id="forge_integration" type="checkbox" class="custom-control-input" name="forge_integration" <?php if ($config->exists('forge_integration') && $config->get('forge_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="forge_integration">
                                 Enable Forge integration (installer) - uses cookies
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
-                            <input id="neoforge_integration" type="checkbox" class="custom-control-input" name="neoforge_integration" <?php if (isset($config['neoforge_integration']) && $config['neoforge_integration']=="on") {echo "checked";} ?> >
+                            <input id="neoforge_integration" type="checkbox" class="custom-control-input" name="neoforge_integration" <?php if ($config->exists('neoforge_integration') && $config->get('neoforge_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="neoforge_integration">
                                 Enable Neoforge integration (installer) - uses cookies
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
-                            <input id="fabric_integration" type="checkbox" class="custom-control-input" name="fabric_integration" <?php if (isset($config['fabric_integration']) && $config['fabric_integration']=="on") {echo "checked";} ?> >
+                            <input id="fabric_integration" type="checkbox" class="custom-control-input" name="fabric_integration" <?php if ($config->exists('fabric_integration') && $config->get('fabric_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="fabric_integration">
                                 Enable Fabric integration (installer) - uses cookies
                             </label>
@@ -2579,12 +2579,12 @@ if (isset($_SESSION['user'])) {
                     <h2>Server-wide Technic Solder integration</h2>
                     <p>To integrate with the Technic API, you will need your API key from <a href="https://technicpack.net/" target="_blank">technicpack.net</a>; Sign in (or register), "Edit [My] Profile" in the top right account menu, "Solder Configuration", and copy the API key and paste it in the text box below.</p>
                     <form>
-                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if (!empty($config['api_key'])) echo 'value="'.$config['api_key'].'"' ?>/>
+                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if ($config->exists('api_key')) echo 'value="'.$config->get('api_key').'"' ?>/>
                         <br/>
                         <input class="btn btn-success" type="button" id="save_api_key" value="Save" disabled />
                     </form>
                     <br/>
-                    <p>Then, copy <?php echo $SERVER_PROTOCOL.$config['host'].$config['dir'].'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
+                    <p>Then, copy <?php echo $SERVER_PROTOCOL.$config->get('host').$config->get('dir').'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
                     <hr/>
                     <b>Setting an API key here will make it available to all other users, and will prevent them from using their own key.</b>
                 </div>

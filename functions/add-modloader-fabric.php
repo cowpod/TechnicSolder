@@ -1,7 +1,11 @@
 <?php
 header('Content-Type: application/json');
 session_start();
-$config = require("config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if (substr($_SESSION['perms'], 5, 1)!=="1") {
     echo '{"status":"error","message":"Insufficient permission!"}';
@@ -41,7 +45,7 @@ if (file_put_contents("../forges/modpack-".$version."/version.json", file_get_co
     rmdir("../forges/modpack-".$version);
     $md5 = md5_file("../forges/fabric-".$version.".zip");
     $file_size=filesize("../forges/fabric-".$version.".zip");
-    $url = "http://".$config['host'].$config['dir']."forges/fabric-".urlencode($version).".zip";
+    $url = "http://".$config->get('host').$config->get('dir')."forges/fabric-".urlencode($version).".zip";
     $res = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`filesize`,`type`,`loadertype`) VALUES (
         'fabric',
         'Fabric (alpha)',

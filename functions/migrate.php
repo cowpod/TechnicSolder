@@ -1,7 +1,11 @@
 <?php
 // TODO: this is horribly outdated
 session_start();
-$config = require("./config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
@@ -51,7 +55,7 @@ foreach ($res as $row) {
     } else {
         $public = 0;
     }
-    $db->execute("INSERT INTO `modpacks` (`display_name`,`name`,`public`,`latest`,`recommended`,`icon`) VALUES ('".$row['name']."','".$row['slug']."',".$public.",'".$latest."','".$recommended."','".$PROTO_STR.$config['host']."/resources/default/icon.png')");
+    $db->execute("INSERT INTO `modpacks` (`display_name`,`name`,`public`,`latest`,`recommended`,`icon`) VALUES ('".$row['name']."','".$row['slug']."',".$public.",'".$latest."','".$recommended."','".$PROTO_STR.$config->get('host')."/resources/default/icon.png')");
 }
 // ----- BUILDS ----- \\
 $res = $db2->query("SELECT `modpack_id`,`version`,`minecraft_version`,`status`,`java_version`,`required_memory` FROM `builds`");
@@ -71,7 +75,7 @@ foreach ($res as $row) {
 // ----- MODS ----- \\
 $res = $db2->query("SELECT * FROM `releases`");
 foreach ($res as $row) {
-    $url = "http://".$config['host'].$config['dir']."mods/".end(explode("/",$row['path']));
+    $url = "http://".$config->get('host').$config->get('dir')."mods/".end(explode("/",$row['path']));
     $packageres = $db2->query("SELECT * FROM `packages` WHERE `id` = ".$row['package_id']);
     if ($packageres) {
         assert(sizeof($packageres)==1);

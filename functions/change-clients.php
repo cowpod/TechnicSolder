@@ -1,6 +1,10 @@
 <?php
 session_start();
-$config = require("./config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if (empty($_GET['id'])) {
     die("Modpack not specified.");
@@ -20,5 +24,5 @@ $db->connect();
 $clients = implode(",", $_GET['client']);
 $db->execute("UPDATE `modpacks` SET `clients` = '".$db->sanitize($clients)."' WHERE `id`=".$_GET['id']);
 
-header("Location: ".$config['dir']."modpack?id=".$_GET['id']);
+header("Location: ".$config->get('dir')."modpack?id=".$_GET['id']);
 exit();

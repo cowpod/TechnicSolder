@@ -22,15 +22,18 @@ if (isset($_SESSION['api_key']) && $_SESSION['api_key']==$api_key) {
     die('{"status":"succ", "message":"api_key is the same"}');
 }
 
-$config = require("config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if ($_SESSION['privileged'] && isset($_POST['serverwide']) && $_POST['serverwide']==1) {
-    $config['api_key'] = $api_key;
-    file_put_contents('./config.php', '<?php return '.var_export($config, true).' ?>');
+    $config->set('api_key', $api_key);
     die('{"status":"succ", "message":"successfuly set server-wide api_key"}');
 }
 
-if (!empty($config['api_key'])) {
+if ($config->exists('api_key')) {
     die('{"status":"error", "message":"Cannot set a user API key as a server-wide API key is already set."}');
 }
 

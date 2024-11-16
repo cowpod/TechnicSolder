@@ -1,6 +1,10 @@
 <?php
 session_start();
-$config = require("./config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
@@ -32,8 +36,8 @@ $db->execute("UPDATE `mods`
     WHERE `name` = '".$db->sanitize($_GET['id'])."'");
 
 if ($_POST['submit']=="Save and close") {
-    header("Location: ".$config['dir']."lib-mods");
+    header("Location: ".$config->get('dir')."lib-mods");
 } else {
-    header("Location: ".$config['dir']."mod?id=".$_POST['name']);
+    header("Location: ".$config->get('dir')."mod?id=".$_POST['name']);
 }
 exit();

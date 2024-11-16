@@ -28,8 +28,11 @@ if (substr($_SESSION['perms'], 1, 1)!=="1") {
     die('Insufficient permission!');
 }
 
-
-$config = require('config.php');
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 global $db;
 require_once("db.php");
@@ -86,4 +89,4 @@ if ($ispublic) {
     $db->execute("UPDATE modpacks SET latest = {$db->sanitize($_POST['id'])} WHERE id = {$user['modpack']}");
 }
 
-header('Location: '.$config['dir'].'build?id='.$_POST['id']);
+header('Location: '.$config->get('dir').'build?id='.$_POST['id']);

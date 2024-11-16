@@ -9,7 +9,11 @@ if (substr($_SESSION['perms'],3,1)!=="1") {
     echo '{"status":"error","message":"Insufficient permission!"}';
     exit();
 }
-$config = require("config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 global $db;
 require_once("db.php");
@@ -23,7 +27,7 @@ if (isset($_FILES['fiels']) && isset($_FILES["fiels"]["name"]) && isset($_FILES[
     $file_tmp = $_FILES["fiels"]["tmp_name"];
 } else {
     // accept urls via POST (for modrinth)
-    if (isset($config['modrinth_integration']) && $config['modrinth_integration'] == 'on' && isset($_POST['url'])) {
+    if ($config->exists('modrinth_integration') && $config->get('modrinth_integration') == 'on' && isset($_POST['url'])) {
         if (preg_match('/^(https?:\/\/)([a-zA-Z0-9-.]+)([a-zA-Z0-9\-\_\.\~\/\:\@\&\=\+\$\,\;\?\#\%]+)$/', $_POST['url'])) {
             $apiversiondata = json_decode(file_get_contents('../api/version.json'),true);
             if (!$apiversiondata) {

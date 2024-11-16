@@ -1,6 +1,10 @@
 <?php
 session_start();
-$config = require("./config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 require_once("db.php");
 $db=new Db;
@@ -24,5 +28,5 @@ $db->execute("INSERT INTO clients(`name`,`UUID`) VALUES ('".$db->sanitize($_GET[
 
 $db->disconnect();
 
-header("Location: ".$config['dir']."clients");
+header("Location: ".$config->get('dir')."clients");
 exit();

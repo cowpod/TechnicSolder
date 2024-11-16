@@ -1,6 +1,10 @@
 <?php
 session_start();
-$config = require("./config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
@@ -40,8 +44,8 @@ $db->execute("UPDATE `mods`
 );
 
 if ($_POST['submit']=="Save and close") {
-    header("Location: ".$config['dir']."mod?id=".$mod['name']);
+    header("Location: ".$config->get('dir')."mod?id=".$mod['name']);
     exit();
 }
-header("Location: ".$config['dir']."modv?id=".$_GET['id']);
+header("Location: ".$config->get('dir')."modv?id=".$_GET['id']);
 exit();

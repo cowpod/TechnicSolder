@@ -33,14 +33,18 @@ if (!$fileTmpLoc) {
     // exit();
 }
 
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
+
 global $db;
 require_once("db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
 }
-
-$config = require("config.php");
 
 require('slugify.php');
 
@@ -73,7 +77,7 @@ if (move_uploaded_file($fileTmpLoc, "../forges/modpack-".$version."/modpack.jar"
     rmdir("../forges/modpack-".$version);
     
     $md5 = md5_file("../forges/forge-".$version.".zip");
-    $url = "http://".$config['host'].$config['dir']."forges/forge-".$version.".zip";
+    $url = "http://".$config->get('host').$config->get('dir')."forges/forge-".$version.".zip";
     $insertq = $db->execute("INSERT INTO `mods`
         (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`)
         VALUES (

@@ -1,6 +1,10 @@
 <?php
 session_start();
-$config = require("./config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired.");
@@ -40,5 +44,5 @@ $sql = $db->execute("UPDATE `users` SET `pass` = '".$pass."' WHERE `name` = '".$
 );
 echo $db->error();
 
-header("Location: ".$config['dir']."user");
+header("Location: ".$config->get('dir')."user");
 exit();

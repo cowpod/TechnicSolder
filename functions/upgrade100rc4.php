@@ -1,6 +1,10 @@
 <?php
 session_start();
-$config = require("./config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
@@ -19,5 +23,5 @@ $db->execute("UPDATE `builds` SET `public` = 1;");
 $db->execute("CREATE TABLE clients (id int(8) AUTO_INCREMENT PRIMARY KEY, name VARCHAR(128), UUID VARCHAR(128), UNIQUE (UUID));";
 
 $db->disconnect();
-header("Location: ".$config['dir']."clients");
+header("Location: ".$config->get('dir')."clients");
 exit();

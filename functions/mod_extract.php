@@ -6,12 +6,18 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
 if (!$_GET['id']) {
     die('ID not provided');
 }
-$config = require("config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 require_once("db.php");
-$db=new Db;
-$db->connect();
-
+global $db;
+if (empty($db)) {
+    $db=new Db;
+    $db->connect();
+}
 define('STREAM_CHUNK_SIZE', 1024*64); // 64KB
 define('MAX_DOWNLOAD_TIME', 60*20); // 20 minutes
 // define('ASSUMED_USER_TRANSFER_SPEED', 1024*1024); // 1MB/s

@@ -1,6 +1,10 @@
 <?php
 session_start();
-$config = require("config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
@@ -31,11 +35,11 @@ $bforge = $db->sanitize($_POST['versions']);
 $db->execute("INSERT INTO modpacks(`name`, `display_name`, `icon`, `icon_md5`, `logo`, `logo_md5`, `background`, `background_md5`, `public`, `recommended`, `latest`) 
     VALUES ('".$mpname."',
     '".$mpdname."',
-    'http://".$config['host'].$config['dir']."resources/default/icon.png',
+    'http://".$config->get('host').$config->get('dir')."resources/default/icon.png',
     'A5EA4C8FA53984C911A1B52CA31BC008',
-    'http://".$config['host'].$config['dir']."resources/default/logo.png',
+    'http://".$config->get('host').$config->get('dir')."resources/default/logo.png',
     '70A114D55FF1FA4C5EEF7F2FDEEB7D03',
-    'http://".$config['host'].$config['dir']."resources/default/background.png',
+    'http://".$config->get('host').$config->get('dir')."resources/default/background.png',
     '88F838780B89D7C7CD10FE6C3DBCDD39',
     1,
     '',
@@ -66,5 +70,5 @@ $new_build_id = $db->insert_id();
 
 $db->execute("UPDATE modpacks SET latest=".$new_build_id.", recommended=".$new_build_id." WHERE id=".$mpi);
 
-header("Location: ".$config['dir']."modpack?id=".$mpi);
+header("Location: ".$config->get('dir')."modpack?id=".$mpi);
 exit();

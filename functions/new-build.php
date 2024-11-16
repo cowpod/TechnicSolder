@@ -1,6 +1,10 @@
 <?php
 session_start();
-$config = require("./config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if (empty($_GET['id'])) {
     die("Modpack ID not specified.");
@@ -32,5 +36,5 @@ if (!$addbuild) {
 }
 
 $db->disconnect();
-header("Location: ".$config['dir']."modpack?id=".$_GET['id']);
+header("Location: ".$config->get('dir')."modpack?id=".$_GET['id']);
 exit();

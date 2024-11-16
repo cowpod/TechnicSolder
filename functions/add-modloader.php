@@ -1,7 +1,11 @@
 <?php
 header('Content-Type: application/json');
 session_start();
-$config = require("config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if (substr($_SESSION['perms'], 5, 1)!=="1") {
     echo '{"status":"error","message":"Insufficient permission!"}';
@@ -62,7 +66,7 @@ if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_con
     rmdir("../forges/modpack-".$version);
     $md5 = md5_file("../forges/".$type."-".$version.".zip");
     $file_size = filesize("../forges/".$type."-".$version.".zip");
-    $url = "http://".$config['host'].$config['dir']."forges/".$type."-".$version.".zip";
+    $url = "http://".$config->get('host').$config->get('dir')."forges/".$type."-".$version.".zip";
     $res = $db->execute("
         INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`filesize`,`type`,`loadertype`) 
         VALUES (

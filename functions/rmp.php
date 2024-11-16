@@ -1,6 +1,10 @@
 <?php
 session_start();
-$config = require("./config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 if (empty($_GET['id'])) {
     die("Modpack not specified.");
@@ -21,5 +25,5 @@ $db->execute("DELETE FROM `builds` WHERE `modpack` = '".$db->sanitize($_GET['id'
 $db->execute("DELETE FROM `modpacks` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
 
 $db->disconnect();
-header("Location: ".$config['dir']."dashboard");
+header("Location: ".$config->get('dir')."dashboard");
 exit();

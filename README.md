@@ -230,6 +230,11 @@ Here is an incomplete example for nginx configuration. For a complete (but unrel
         fastcgi_max_temp_file_size 0;
     }
 
+
+    location /config/ {
+        deny all;
+    }
+
     location ~ /\.ht {
         deny all;
     }

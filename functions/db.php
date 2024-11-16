@@ -1,6 +1,6 @@
 <?php
 class Db {
-	private $conf=null;
+	private $config=null;
 	private $conn=null;
 
 	private function get_including_file() {
@@ -13,25 +13,33 @@ class Db {
 	}
 
 	function __construct() {
-		if (file_exists("./config.php")) {
-			$this->conf = include("./config.php");
-		} elseif (file_exists("./functions/config.php")) {
-			$this->conf = include("./functions/config.php");
-		} elseif (file_exists("../functions/config.php")) {
-			$this->conf = include("../functions/config.php");
+		global $config;
+		if (empty($config)) {
+			if (file_exists("./config.php")) {
+				require_once("./config.php");
+				$this->config = new Config();
+			} elseif (file_exists("./functions/config.php")) {
+				require_once("./functions/config.php");
+				$this->config = new Config();
+			} elseif (file_exists("../functions/config.php")) {
+				require_once("../functions/config.php");
+				$this->config = new Config();
+			}
+		} else {
+			$this->config=$config;
 		}
-		if ($this->conf===NULL) {
+		if ($this->config===NULL) {
 		    error_log("db.php: __construct(): Missing config.php?!");
-		} elseif (!empty($this->conf['db-type']) && $this->conf['db-type']=='sqlite') {
+		} elseif ($this->config->exists('db-type') && $this->config->get('db-type')=='sqlite') {
 			// 
-		} elseif(empty($this->conf['db-host']) && empty($this->conf['db-user']) && empty($this->conf['db-pass']) && empty($this->conf['db-name'])) {
+		} elseif($this->config->exists('db-host') && $this->config->exists('db-user') && $this->config->exists('db-pass') && $this->config->exists('db-name')) {
 		    error_log("db.php: __construct(): Configuration is missing some database information!");
 		}
 		return true; // can provide arguments later, bypassing config!
 	}
 
 	public function test() { // POST
-		if ($this->conf===null) {  // __construct again, maybe we have config.php now
+		if ($this->config===null) {  // __construct again, maybe we have config.php now
 			$this->__construct();
 		}
 		try {
@@ -74,7 +82,7 @@ class Db {
 	}
 
 	public function connect() { // config
-		if ($this->conf===null) { // __construct again, maybe we have config.php now
+		if ($this->config===null) { // __construct again, maybe we have config.php now
 			$this->__construct();
 		}
 		if (!empty($this->conn)) {
@@ -82,14 +90,14 @@ class Db {
 			return TRUE;
 		}
 		try {
-			if ($this->conf['db-type']=='sqlite') {
+			if ($this->config->get('db-type')=='sqlite') {
 				if (is_dir('./functions')) {
 					$this->conn = new PDO('sqlite:db.sqlite');
 				} else {
 					$this->conn = new PDO('sqlite:../db.sqlite');
 				}
 			} else {
-		    	$this->conn = new PDO($this->conf['db-type'].":host=".$this->conf['db-host'].";dbname=".$this->conf['db-name'].";charset=utf8", $this->conf['db-user'], $this->conf['db-pass']);
+		    	$this->conn = new PDO($this->config->get('db-type').":host=".$this->config->get('db-host').";dbname=".$this->config->get('db-name').";charset=utf8", $this->config->get('db-user'), $this->config->get('db-pass'));
 		    }
 		} catch (PDOException $e) {
 		    error_log("Connection failed : " . $e->getMessage());

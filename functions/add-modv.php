@@ -32,7 +32,11 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
 if (substr($_SESSION['perms'], 3, 1)!=="1") {
     die('{"status":"error","message":"Insufficient permission!"}');
 }
-$config = require("./config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 global $db;
 require_once("db.php");

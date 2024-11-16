@@ -5,10 +5,16 @@ define('DEFAULT_PERMS', '1111111'); // and 'privileged'=>'1' makes you an admin.
 define('OVERWRITE_USER', TRUE);
 session_start();
 
-$config=['configured'=>false];
-if (file_exists('./functions/config.php')) {
-    $config = include("./functions/config.php");
+require_once('./functions/config.php');
+// global $config;
+// if (empty($config)) {
+    $config=new Config();
+// }
+
+if (!$config->exists('configured')) {
+    $config->set('configured',false);
 }
+
 $settings=[];
 if (file_exists('./functions/settings.php')) {
     $settings = include("./functions/settings.php");
@@ -21,14 +27,17 @@ if (isset($_GET['reconfig'])) {
     if (!$_SESSION['privileged']) {
         die("Insufficient permission!");
     }
-} elseif (isset($config['configured']) && $config['configured']) {
+} elseif ($config->exists('configured') && $config->get('configured')) {
     error_log("configure.php: already configured, redirecting to login");
-    header("Location: ".$config['dir']."login");
+    header("Location: ".$config->get('dir')."login");
     exit();
 }
 
 require_once("./functions/db.php");
-$db=new Db;
+// global $db;
+// if (empty($db)) {
+    $db=new Db;
+// }
 
 $connection_failed=FALSE;
 
@@ -107,8 +116,7 @@ if (isset($_POST['host'])) {
     if ($api_key_serverwide) {
         $config_contents['api_key'] = $api_key;
     }
-
-    file_put_contents('./functions/config.php', '<?php return '.var_export($config_contents, true).' ?>');
+    $config->setall($config_contents);
 
     $conn = $db->connect();
     if ($conn) {

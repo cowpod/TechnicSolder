@@ -17,7 +17,11 @@ if (substr($url, -1)=="/" && substr($url, -4)!=="api/") {
     }
 }
 
-$config = require("../functions/config.php");
+require_once('../functions/config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 require_once("../functions/db.php");
 if (!isset($db)){
@@ -33,8 +37,8 @@ if (str_ends_with($url, "api/verify")) {
 }
 
 $server_wide_api_key='';
-if (!empty($config['api_key'])) {
-    $server_wide_api_key=$config['api_key'];
+if (!empty($config->get('api_key'))) {
+    $server_wide_api_key=$config->get('api_key');
 }
 
 if (preg_match("/api\/verify\/([a-zA-Z0-9]+)$/", $url, $matches)) {
@@ -218,7 +222,7 @@ else if (preg_match("/api\/modpack$/", $url)) { // modpacks
             }
         }
     }
-    die(json_encode(["modpacks"=>$modpacks, "mirror_url"=>"http://".$config['host']."/mods"], JSON_UNESCAPED_SLASHES));
+    die(json_encode(["modpacks"=>$modpacks, "mirror_url"=>"http://".$config->get('host')."/mods"], JSON_UNESCAPED_SLASHES));
 } 
 elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modpack details
     $uri_modpack = $matches[1];
@@ -327,7 +331,7 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
                             "name" => $mod['name'],
                             "version" => $mod['version'],
                             "md5" => $mod['md5'],
-                            "url" => !empty($mod['url']) ? $mod['url'] : $PROTO_STR.$config['host'].$config['dir'].$mod['type']."s/".$mod['filename'],
+                            "url" => !empty($mod['url']) ? $mod['url'] : $PROTO_STR.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'],
                             "pretty_name" => $mod['pretty_name'],
                             "author" => $mod['author'],
                             "description" => $mod['description'],
@@ -339,7 +343,7 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
                             "name" => $mod['name'],
                             "version" => $mod['version'],
                             "md5" => $mod['md5'],
-                            "url" => !empty($mod['url']) ? $mod['url'] : $PROTO_STR.$config['host'].$config['dir'].$mod['type']."s/".$mod['filename'],
+                            "url" => !empty($mod['url']) ? $mod['url'] : $PROTO_STR.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'],
                             "filesize"=>0
                         ];
                     }

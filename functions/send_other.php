@@ -66,9 +66,16 @@ if (file_exists("../others/".$fileName)) {
 
 require('slugify.php');
 
-$config = require("config.php");
+require_once('./config.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 require_once("db.php");
-$db=new Db;
+global $db;
+if (empty($db)) {
+    $db=new Db;
+}
 
 if (move_uploaded_file($fileTmpLoc, "../others/".$fileName)) {
     $db->connect();
@@ -76,7 +83,7 @@ if (move_uploaded_file($fileTmpLoc, "../others/".$fileName)) {
     $pretty_name = $db->sanitize($fileName);
     $name = slugify($pretty_name);
     $author = $_SESSION['name'];
-    $url = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL'])))."://".$config['host'].$config['dir']."others/".$fileName;
+    $url = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL'])))."://".$config->get('host').$config->get('dir')."others/".$fileName;
     $md5 = md5_file("../others/".$fileName);
 
     $res = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`author`,`description`,`filename`,`type`) VALUES ('".$name."','".$pretty_name."','".$md5."','".$url."','".$author."','Custom file by ".$author."','".$fileName."','other')");
