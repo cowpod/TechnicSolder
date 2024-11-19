@@ -14,6 +14,7 @@ services:
       - MYSQL_USER=solder
     networks:
       - default
+    container_name: solder-db
   app:
     build:
       context: ./app
@@ -25,3 +26,4 @@ services:
       - ../:/var/www/html
     depends_on:
       - db
+    container_name: solder-app

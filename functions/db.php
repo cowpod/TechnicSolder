@@ -34,7 +34,7 @@ class Db {
 		    error_log("db.php: __construct(): Missing configuration.php?!");
 		} elseif ($this->config->exists('db-type') && $this->config->get('db-type')=='sqlite') {
 			// 
-		} elseif($this->config->exists('db-host') && $this->config->exists('db-user') && $this->config->exists('db-pass') && $this->config->exists('db-name')) {
+		} elseif(!$this->config->exists('db-host') || !$this->config->exists('db-user') || !$this->config->exists('db-name')) {
 		    error_log("db.php: __construct(): Configuration is missing some database information!");
 		}
 		return true; // can provide arguments later, bypassing config!

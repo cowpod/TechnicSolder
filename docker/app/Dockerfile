@@ -8,4 +8,4 @@ run docker-php-ext-install pdo
 run docker-php-ext-install pdo_mysql
 
 # chown on add, and even RUN chown doesn't work
-cmd sh -c 'chown -R www-data:www-data /var/www/html/config; apache2-foreground'
+cmd sh -c 'chown -R www-data:www-data /var/www/html/config /var/www/html/mods /var/www/html/others /var/www/html/forges; apache2-foreground'
