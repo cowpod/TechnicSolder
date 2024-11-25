@@ -2,7 +2,17 @@
 
 function fabric_to_interval_range($str) {
 	// convert fabric's ">=X <=X" to interval notation
-	$matches=[];
+	if (is_array($str)) { // can also be an array...
+		if (sizeof($str)>=2) {
+			$min = $str[0];
+			$max = $str[sizeof($str)-1];
+			return '['.$min.','.$max.']';
+		} elseif (sizeof($str)==1) {
+			return $str[0];
+		} else {
+			return '*';
+		}
+    }
 	if (preg_match("/^(>=|>)([0-9\.]*)\s(<=|<)([0-9\.]*)$/", $str, $matches)) { // >=|>... <=|<...
 		[$full,$op1,$num1,$op2,$num2] = $matches;
 		$op1 = ($op1=='>=') ? '[' : '(';
@@ -49,13 +59,14 @@ function fabric_to_interval_range($str) {
 		return '*';
 	}
 
+	// just a version string?
 	return $str;
 }
 
 // used to trim trailing .0 as php (as of 8.3) believes that 1.2.0 is greater than 1.2
 function removeEnding($string, $remove) {
     if (substr($string, -strlen($remove)) === $remove) {
-        return substr($string, 0, -strlen($remove));
+	return substr($string, 0, -strlen($remove));
     }
     return $string;
 }
@@ -127,12 +138,12 @@ function parse_interval_range($mcversion) {
 	    $mcvrange=explode(",", trim($mcversion,"[]()"));
 
 	    if (sizeof($mcvrange)==2) {
-	        $min=$mcvrange[0];
-	        $max=$mcvrange[1];
+		$min=$mcvrange[0];
+		$max=$mcvrange[1];
 	    }
 	    elseif (sizeof($mcvrange)==1) {
-	        $min=$mcvrange[0];
-	        // don't specify a max
+		$min=$mcvrange[0];
+		// don't specify a max
 	    }
     	return ["min"=>$min, "max"=>$max, "min_inclusivity"=>$mcversion[0]=='[' ? '>=' : '>', "max_inclusivity"=>$mcversion[-1]==']' ? '<=' : '<'];
 	} 
