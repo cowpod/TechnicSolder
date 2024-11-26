@@ -545,14 +545,14 @@ if (isset($_SESSION['user'])) {
                 <?php
                 $version = json_decode(file_get_contents("./api/version.json"),true);
                 if ($version['stream']=="Dev" || ($config->exists('dev_builds') && $config->get('dev_builds')=="on")) {
-                    if ($newversion = json_decode(file_get_contents(UPDATE_JSON_DEV),true)) {
+                    if (@$newversion = json_decode(file_get_contents(UPDATE_JSON_DEV),true)) {
                         $checked = true;
                     } else {
                         $checked = false;
                         $newversion = $version;
                     }
                 } else {
-                    if ($newversion = json_decode(file_get_contents(UPDATE_JSON),true)) {
+                    if (@$newversion = json_decode(file_get_contents(UPDATE_JSON),true)) {
                         $checked = true;
                     } else {
                         $checked = false;
