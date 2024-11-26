@@ -130,7 +130,7 @@ class Toml {
                     $key=trim(trim($keyval[0]),'"');
                     $value=trim(trim($keyval[1]),'"');
                         
-                    if (($value[0]=="'" && $value[1]=="'" && $value[2]=="'") || ($value[0]=='"' && $value[1]=='"' && $value[2]=='"')) {
+                    if ($this->fast_str_len_compare($value,3)>=0 && (($value[0]=="'" && $value[1]=="'" && $value[2]=="'") || ($value[0]=='"' && $value[1]=='"' && $value[2]=='"'))) {
                         // START OF MULTILINE STRING
                         $value=ltrim($value,"'''");
                         $value=ltrim($value,'"""');
@@ -145,11 +145,11 @@ class Toml {
                             $table[$key]=$value; // unecessary write, with a refactor?
                             unset($multiline_string); // unecessary set+unset, with a refactor?
                         }
-                    } else if ($value=='[') { // EXPECT JSON
+                    } else if ($this->fast_str_len_compare($value,1)>=0 && $value=='[') { // EXPECT JSON
                         // error_log('start json data');
                         $json_key=$key;
                         $json_str='[';
-                    } else if ($value==']') { // DONE WITH JSON
+                    } else if ($this->fast_str_len_compare($value,1)>=0 && $value==']') { // DONE WITH JSON
                         $json_str=trim($json_str, ',');
                         $json_str.=']';
                         // technically not json. so needs some work.
