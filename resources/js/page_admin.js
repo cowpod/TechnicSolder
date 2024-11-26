@@ -134,7 +134,7 @@ function new_user(email,name,pass) {
                     <td>
                         <font style="display:hidden" id="user-perms-${json['id']}" perms="0000000"></font>
                         <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                        <button id="user-edit-${json['id']}" onclick="edit(${json['id']},'${email}','${email}')" class="btn btn-primary" data-toggle="modal" data-target="#editUser" >Edit</button>
+                        <button id="user-edit-${json['id']}" onclick="edit(${json['id']},'${email}','${name}')" class="btn btn-primary" data-toggle="modal" data-target="#editUser" >Edit</button>
                         <button onclick="remove_box(${json['id']},'${email}')" data-toggle="modal" data-target="#removeUser" class="btn btn-danger">Remove</button>
                         </div>
                     </td>
