@@ -128,6 +128,7 @@ function add_mod_row(id,pretty_name,name,vs,mcv) {
         <tr id="mod-add-row-${name}">
             <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
             <td data-value="${vs}"><select id="versionselect-${name}" class="form-control">${vs_str}</select></td>
+            <td data-value="${mcv}">${mcv}</td>
             <td data-value="Add to build">
                 ${addbutton}
             </td>
@@ -150,8 +151,8 @@ function parsemods(obj) {
     let filter=$("#search").val();
     for (let mod of obj) {
         if (filter=='' || filter==undefined || mod['pretty_name'].toLowerCase().includes(filter)||mod['name'].toLowerCase().includes(filter)) {
-            if (mod['mcversion']=='' || mcv==mod['mcversion'] || isVersionInInterval(`'${mcv}'`, mod['mcversion']) || showall && !modslist_0.includes(mod['id'])) {
-                add_mod_row(mod['id'], mod['pretty_name'],mod['name'],vs[mod['name']],mcv);
+            if ((mod['mcversion']=='' || mcv==mod['mcversion'] || isVersionInInterval(`'${mcv}'`, mod['mcversion']) || showall) && !modslist_0.includes(mod['id'])) {
+                add_mod_row(mod['id'], mod['pretty_name'],mod['name'],vs[mod['name']],mod['mcversion']);
                 added_num+=1;
             }
         }
@@ -185,7 +186,7 @@ async function getmods() {
                 console.log('could not get mods from api');
                 reject(false)
             }
-            request.open("GET", `api/mod?loadertype=${type}&mcversion=${mcv}`);
+            request.open("GET", `api/mod?loadertype=${type}`);
             request.send();
         }
     });

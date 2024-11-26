@@ -1,4 +1,36 @@
 function compareVersions(version1, version2) {
+    // convert to strings
+    version1=''+version1;
+    version2=''+version2;
+    // handle versions not containing a dot...
+    if (!version1.includes('.')&&!version2.includes('.')) {
+        if (version1>version2) {
+            return 1;
+        }
+        if (version1<version2) {
+            return -1;
+        }
+        return 0;
+    }
+    if (!version1.includes('.')) {
+        if (version1>version2.split('.')[0]) {
+            return 1;
+        }
+        if (version1<version2.split('.')[0]) {
+            return -1;
+        }
+        return 0;
+    }
+    if (!version2.includes('.')) {
+        if (version1.split('.')[0]>version2) {
+            return 1;
+        }
+        if (version1.split('.')[0]<version2) {
+            return -1;
+        }
+        return 0;
+    }
+
     const v1 = version1.replace(/[\'\"\[\(\]\)]/, '').split('.').map(num => parseInt(num, 10));
     const v2 = version2.replace(/[\'\"\[\(\]\)]/, '').split('.').map(num => parseInt(num, 10));
 
@@ -37,7 +69,15 @@ function isVersionInInterval(version, interval) {
     const endInclusive = interval[interval.length - 1] === ']';
 
     // Extract version bounds
-    const [startVersion, endVersion] = interval.slice(1, -1).split(',');
+    var [startVersion, endVersion] = interval.slice(1, -1).split(',');
+    console.log(startVersion,endVersion);
+    if (startVersion=='' || startVersion==undefined) {
+        startVersion=-Number.MAX_SAFE_INTEGER;
+    }
+    if (endVersion=='' || endVersion==undefined) {
+        endVersion=Number.MAX_SAFE_INTEGER;
+    }
+    console.log(startVersion+','+endVersion);
 
     // Use compareVersions to check if version is within the range
     const compareStart = compareVersions(version, startVersion);
@@ -45,6 +85,8 @@ function isVersionInInterval(version, interval) {
 
     const inLowerBound = startInclusive ? compareStart >= 0 : compareStart > 0;
     const inUpperBound = endInclusive ? compareEnd <= 0 : compareEnd < 0;
+
+    console.log(inLowerBound && inUpperBound)
 
     return inLowerBound && inUpperBound;
 }

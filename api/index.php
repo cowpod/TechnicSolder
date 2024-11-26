@@ -101,7 +101,7 @@ if (preg_match("/api\/mod$/", $url)) {
                 'version'=>$mod['version'], 
                 'mcversion'=>$mod['mcversion'],
                 'md5'=>$mod['md5'], 
-                'url'=>$mod['url'], 
+                'url'=> !empty($mod['url']) ? $mod['url'] : $PROTO_STR.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'],
                 'filesize'=>$filesize
             ];
 

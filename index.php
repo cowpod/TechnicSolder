@@ -1427,9 +1427,10 @@ if (isset($_SESSION['user'])) {
                         <table id="modstable" class="table table-striped sortable">
                             <thead>
                                 <tr>
-                                    <th scope="col" style="width: 50%" data-defaultsign="AZ">Mod Name</th>
-                                    <th scope="col" style="width: 25%" data-defaultsign="_19">Version</th>
-                                    <th scope="col" style="width: 25%" data-defaultsort="disabled"></th>
+                                    <th scope="col" style="width: 40%" data-defaultsign="AZ">Mod Name</th>
+                                    <th scope="col" style="width: 20%" data-defaultsign="_19">Version</th>
+                                    <th scope="col" style="width: 20%" data-defaultsign="_19">Minecraft</th>
+                                    <th scope="col" style="width: 20%" data-defaultsort="disabled"></th>
                                 </tr>
                             </thead>
                             <tbody id="build-available-mods">
