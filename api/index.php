@@ -326,6 +326,8 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
                         error_log("API: missing critical data for mod id='".$modid."', skipping");
                         continue;
                     }
+
+                    $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
                     if (isset($_GET['include']) && $_GET['include']=="mods") {
                         $mods[$modnumber] = [
                             "name" => $mod['name'],
@@ -336,7 +338,8 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
                             "author" => $mod['author'],
                             "description" => $mod['description'],
                             "link" => $mod['link'],
-                            "donate" => $mod['donlink']
+                            "donate" => $mod['donlink'],
+                            "filesize" => $filesize
                         ];
                     } else {
                         $mods[$modnumber] = [
@@ -344,7 +347,7 @@ elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modp
                             "version" => $mod['version'],
                             "md5" => $mod['md5'],
                             "url" => !empty($mod['url']) ? $mod['url'] : $PROTO_STR.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'],
-                            "filesize"=>0
+                            "filesize" => $filesize
                         ];
                     }
                     $modnumber++;
