@@ -151,7 +151,7 @@ function parsemods(obj) {
     let filter=$("#search").val();
     for (let mod of obj) {
         if (filter=='' || filter==undefined || mod['pretty_name'].toLowerCase().includes(filter)||mod['name'].toLowerCase().includes(filter)) {
-            if ((mod['mcversion']=='' || mcv==mod['mcversion'] || isVersionInInterval(`'${mcv}'`, mod['mcversion']) || showall) && !modslist_0.includes(mod['id'])) {
+            if (!modslist_0.includes(''+mod['id']) && (mod['mcversion']=='' || mcv==mod['mcversion'] || isVersionInInterval(`'${mcv}'`, mod['mcversion']) || showall)) {
                 add_mod_row(mod['id'], mod['pretty_name'],mod['name'],vs[mod['name']],mod['mcversion']);
                 added_num+=1;
             }
