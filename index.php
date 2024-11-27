@@ -1036,7 +1036,7 @@ if (isset($_SESSION['user'])) {
                     <h2>Copy Build</h2>
                     <hr>
                     <form action="./functions/copy-build.php" method="">
-                        <input hidden type="text" name="id" value="<?php echo $_GET['id'] ?>">
+                        <input hidden type="text" name="modpackid" value="<?php echo $_GET['id'] ?>">
                         <?php
                             $sbn = array();
                             $allbuildnames = $db->query("SELECT `name` FROM `builds` WHERE `modpack` = ".$modpack['id']);
@@ -1078,13 +1078,13 @@ if (isset($_SESSION['user'])) {
                             ?>
                         </select>
                         <br />
-                        <select id="buildlist" required="" name='build' class="form-control">
+                        <select id="buildlist" required="" name='buildid' class="form-control">
                         </select>
                         <br />
                         <input pattern="^[a-zA-Z0-9.-]+$" type="text" name="newname" id="newname" required class="form-control" placeholder="New Build Name">
                         <span id="warn_newname" style="display: none" class="text-danger">Build with this name already exists.</span>
                         <br />
-                        <button type="submit" id="copybutton" name="submit" value="copy" class="btn btn-primary">Copy</button> 
+                        <button type="submit" id="copybutton" value="copy" class="btn btn-primary">Copy</button> 
                         <button id="copylatestbutton" class="btn btn-secondary" onclick="copylatest()">Latest</button>
                     </form>
                 </div>

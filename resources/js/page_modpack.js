@@ -111,9 +111,8 @@ function remove(id) {
             }
 
         }
-    };
-    // request.open("GET", "./functions/delete-build.php?id="+id+"&pack=<?php echo $_GET['id'] ?>");
-    request.open("GET", "./functions/delete-build.php?id="+id+"&pack="+getQueryVariable('id'));
+    }
+    request.open("GET", "./functions/delete-build.php?buildid="+id+"&modpackid="+getQueryVariable('id'));
     request.send();
 }
 function set_recommended(id) {
@@ -121,6 +120,7 @@ function set_recommended(id) {
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
+            console.log(this.response)
             response = JSON.parse(this.response);
 
             $("[id^='recd-']").each(function() {
@@ -150,7 +150,7 @@ function set_recommended(id) {
             $("#b-"+id).attr('rec','true');
         }
     };
-    request.open("GET", "./functions/set-recommended.php?id="+id);
+    request.open("GET", `./functions/set-recommended.php?buildid=${id}&modpackid=${getQueryVariable('id')}`);
     request.send();
 }
 
