@@ -1,4 +1,7 @@
 const SEARCH_LIMIT=20;
+const SEARCH_CACHE_TTL=60*60*12; // 12 hr
+const DESC_CACHE_TTL=60*60*12;
+const VERSION_CACHE_TTL=60*30*6; // 6 hr
 
 function remove_box(name) {
     $("#mod-name-title").text(name);
@@ -98,28 +101,34 @@ function sendFile(file, i) {
                         if (response['status']!="error") {
                             let num_versions = response['modid'].length;
                             let author = response['author'];
+                            if (author instanceof Array && author.length>=1) {
+                                author=author[0];
+                            }
                             let name = response['name'];
+                            if (name instanceof Array && name.length>=1) {
+                                name=name[0];
+                            }
                             let pretty_name = response['pretty_name'];
+                            if (pretty_name instanceof Array && pretty_name.length>=1) {
+                                pretty_name=pretty_name[0];
+                            }
                             let mcversion = response['mcversion'];
                             let version = response['version'];
                             // console.log('add new row');
-                            let i=0;
-                            // for (let id of response['modid']) {
+
                                 $('#table-available-mods').append(`
                                     <tr id="mod-row-${name[i]}">
-                                        <td scope="row" data-value="${pretty_name[i]}">${pretty_name[i]}</td>
-                                        <td data-value="${author[i]}" class="d-none d-sm-table-cell">${author[i]}</td>
+                                        <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
+                                        <td data-value="${author}" class="d-none d-sm-table-cell">${author}</td>
                                         <td data-value="${num_versions}">${num_versions}</td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                                <button onclick="window.location='./mod?id=${name[i]}'" class="btn btn-primary">Edit</button>
-                                                <button onclick="remove_box('${name[i]}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
+                                                <button onclick="window.location='./mod?id=${name}'" class="btn btn-primary">Edit</button>
+                                                <button onclick="remove_box('${name}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
                                             </div>
                                         </td>
                                     </tr>
                                 `);
-                                // i==1;
-                            // }
                         }
                     } else {
                         $("#cog-" + i).hide();
@@ -216,7 +225,7 @@ function getdescription(id) {
         request.onreadystatechange = function() {
             if (request.readyState == 4 && request.status == 200) {
                 let obj = JSON.parse(request.responseText);
-                set_cached('details_'+id, request.responseText,1800);
+                set_cached('details_'+id, request.responseText,DESC_CACHE_TTL);
                 details[id]=obj;
                 console.log('got new description');
                 showdetails(id);
@@ -278,7 +287,7 @@ async function getversions(id) {
             request.onreadystatechange = function() {
                 if (request.readyState == 4 && request.status == 200) {
                     let obj = JSON.parse(request.responseText);
-                    set_cached('versions_'+id, request.responseText, 1800);
+                    set_cached('versions_'+id, request.responseText, VERSION_CACHE_TTL);
                     console.log('got new versions for id='+id);
                     versions[id] = obj;
 
@@ -343,8 +352,6 @@ function installmod() {
     $('#installations-cancel').attr('disabled',true);
     $('#installation-message').text('Installing '+title+'...');
     $('#installation-message').show();
-
-    console.log(url);
 
     let mcv = $('#mcv option:selected').attr('mc');
     let type = $('#mcv option:selected').attr('type');
@@ -485,10 +492,66 @@ $('#mcv').on('change', function() {
     }
 });
 
+$('#pageRangeInput').on('keyup', function() {
+    if (!(new RegExp($('#pageRangeInput').attr('pattern')).test($('#pageRangeInput').val()))) {
+        $('#pageRangeInput').addClass('is-invalid');
+    } else {
+        let search_start = parseInt($('#pageRangeInput').val().split('-')[0]);
+        let search_end = parseInt($('#pageRangeInput').val().split('-')[1]);
+        let diff=search_end-search_start+1;
+        if (diff>SEARCH_LIMIT) {
+            $('#pageRangeInput').addClass('is-invalid');
+            $('#pageRangeInput').attr('title','max 20 search results!');
+        } else {
+            $('#pageRangeInput').removeClass('is-invalid');
+            $('#pageRangeInput').removeAttr('title');
+        }
+    }
+});
+
+$('#leftButton').on('click', function() {
+    let search_start = parseInt($('#pageRangeInput').val().split('-')[0]);
+    let search_end = parseInt($('#pageRangeInput').val().split('-')[1]);
+    let diff=search_end-search_start+1;
+    $('#pageRangeInput').val(`${search_start-diff}-${search_end-diff}`);
+    if (diff>0 && diff<SEARCH_LIMIT) {
+        $('#searchbutton').click();
+    }
+});
+
+$('#rightButton').on('click', function() {
+    let search_start = parseInt($('#pageRangeInput').val().split('-')[0]);
+    let search_end = parseInt($('#pageRangeInput').val().split('-')[1]);
+    let diff=search_end-search_start+1;
+    $('#pageRangeInput').val(`${search_start+diff}-${search_end+diff}`);
+    if (diff>0 && diff<SEARCH_LIMIT) {
+        $('#searchbutton').click();
+    }
+});
+
 $('#searchbutton').on('click', async function() {
     let installed = await fetch_installed();
     $('#searchbutton').attr('disabled',true);
     $('#noresults').hide();
+
+    if (!(new RegExp($('#pageRangeInput').attr('pattern')).test($('#pageRangeInput').val()))) {
+        $('#pageRangeInput').addClass('is-invalid');
+        return;
+    } else {
+        $('#pageRangeInput').removeClass('is-invalid');
+    }
+    let search_start = $('#pageRangeInput').val().split('-')[0];
+    let search_end = $('#pageRangeInput').val().split('-')[1];
+
+    let search_len = search_end-search_start+1
+    let search_offset = search_start-1;
+
+    if (search_offset<0) {
+        search_offset=0;
+    }
+    if (search_len<0 || search_len>SEARCH_LIMIT) {
+        search_len=SEARCH_LIMIT;
+    }
 
     let searchquery = $('#searchquery').val();
     let mc = $('#mcv option:selected').attr('mc');
@@ -497,29 +560,25 @@ $('#searchbutton').on('click', async function() {
         $('#mcv').addClass('is-invalid');
         $('#searchquery').addClass('is-invalid');
         return;
-    }
-    else {
+    } else {
         $('#mcv').removeClass('is-invalid');
         $('#searchquery').removeClass('is-invalid');
-        if (searchquery in results) { // tmp
+        if (get_cached('search_'+searchquery+'_'+$('#pageRangeInput').val())) {
+            console.log('cached')
             $('#searchresults').empty();
-            results[searchquery].forEach(function(hit) {
-                addrow(hit);
-            });
-        } else if (get_cached('search_'+searchquery)) {
-            $('#searchresults').empty();
-            results[searchquery]=get_cached('search_'+searchquery);
+            results[searchquery]=get_cached('search_'+searchquery+'_'+$('#pageRangeInput').val());
             results[searchquery].forEach(function(hit) {
                 addrow(hit);
             });
         } else {
             console.log('searching...');
             $('#searchresults').empty();
-            results[searchquery]=[];
+            results[searchquery] = [];
 
             var request = new XMLHttpRequest();
-            let facets=JSON.stringify([[`categories:${type}`],[`versions:${mc}`],["project_type:mod"]]);
-            let url = `https://api.modrinth.com/v2/search?query=${searchquery}&facets=${encodeURIComponent(facets)}&limit=${SEARCH_LIMIT}`;
+            let facets = JSON.stringify([[`categories:${type}`],[`versions:${mc}`],["project_type:mod"]]);
+            let url = `https://api.modrinth.com/v2/search?query=${searchquery}&facets=${encodeURIComponent(facets)}&limit=${search_len}&offset=${search_offset}`;
+
             request.open('GET', url, true);
             request.setRequestHeader('User-Agent','TheGameSpider/TechnicSolder/1.4.0');
             request.onreadystatechange = function() {
@@ -535,7 +594,7 @@ $('#searchbutton').on('click', async function() {
 
                         results[searchquery]=hits;
                     
-                        set_cached('search_'+searchquery, hits, 1800);
+                        set_cached('search_'+searchquery+'_'+$('#pageRangeInput').val(), hits, SEARCH_CACHE_TTL);
                         
                     } else {
                         console.log('no hits');

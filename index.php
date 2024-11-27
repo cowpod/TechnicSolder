@@ -1539,6 +1539,23 @@ if (isset($_SESSION['user'])) {
                     <tbody id="searchresults">
                     </tbody>
                 </table>
+
+                    <div class="row justify-content-center align-items-center">
+                        <div class="col-auto">
+                            <button class="btn btn-primary" id="leftButton">
+                                <i class="bi bi-arrow-left"></i> Previous
+                            </button>
+                        </div>
+                        <div class="col-auto">
+                            <input type="text" class="form-control text-center" id="pageRangeInput" value="1-10" aria-label="Page Range" pattern="^\d+\-\d+$">
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-primary" id="rightButton">
+                                Next <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
                 <div id='noresults' class='text-center' style='display:none'>No results</div>
             </div>
 
