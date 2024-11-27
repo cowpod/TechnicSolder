@@ -29,22 +29,6 @@ class Toml {
         return $ret;
     }
 
-    private function fast_str_len_compare($str, $len) {
-        // O(1) assuming that $len is hardcoded.
-        for ($i=0; $i<$len; $i++) {
-            if (!isset($str[$i])) {
-                assert($i-$len != 0); // obviously if we return 0 then we're fine, WHICH WE'RE NOT!
-                return $i-$len; // we are $i-$len short (negative)!
-            }
-        }
-        if (!isset($str[$len])) {
-            // if all chars up to $len are set, but $len itself isn't, we are $len in length!
-            return 0;
-        } else {
-            return 1; // FUQ U i'm not counting the whole string length. we're 1+ over $len!
-        } 
-    }
-
     private function actual_parse($arr) {
         // O(nm)
         $ret=[];
@@ -56,7 +40,7 @@ class Toml {
         $multiline_string=null; // different from ''. later points to a value for a key.
         
         foreach ($arr as $element) {
-            if ($this->fast_str_len_compare($element, 4)>0 && $element[0]=='[' && $element[1]=='[' && $element[-1]==']' && $element[-2]==']') {
+            if (strlen($element)>4 && $element[0]=='[' && $element[1]=='[' && $element[-1]==']' && $element[-2]==']') {
                 // [[ TABLE ]]
                 $table_name=ltrim($element,'[[');
                 $table_name=rtrim($table_name,']]');
@@ -68,16 +52,12 @@ class Toml {
                 foreach($nested_table_array as $t) { 
                     if (!array_key_exists($t, $temp_nested_table_ref)) {
                         $temp_nested_table_ref[$t]=[]; 
-                    }
-                    
+                    }   
                     $temp_nested_table_ref = &$temp_nested_table_ref[$t]; 
                 }
-                
                 $table=&$temp_nested_table_ref[sizeof($temp_nested_table_ref)];
-                
                 unset($temp_nested_table_ref);
-
-            } else if ($this->fast_str_len_compare($element, 2)>0 && $element[0]=='[' && $element[-1]==']') {
+            } else if (strlen($element)>2 && $element[0]=='[' && $element[-1]==']') {
                 // [ TABLE ]
                 $table_name=ltrim($element,'[[');
                 $table_name=rtrim($table_name,']]');
@@ -90,16 +70,24 @@ class Toml {
                     if (!array_key_exists($t, $temp_nested_table_ref)) {
                         $temp_nested_table_ref[$t]=[]; // create it if necessary. 
                     }
-                        
                     // update pointer to nested table
                     $temp_nested_table_ref = &$temp_nested_table_ref[$t];
                 }
-                    
                 $table=&$temp_nested_table_ref;
                 unset($temp_nested_table_ref);
-            } else if ($json_key && trim($element)==']') { 
+            } 
+
+            else if ($json_key && trim($element)==']') { 
                 $json_str=trim($json_str, ',');
                 $json_str.=']';
+                $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
+                $parsedjson = preg_replace('/\'([^\']*)\'/', '"$1"', $parsedjson);
+                // error_log('got complete json: '.$json_key.'='.$parsedjson);
+                $ret[$json_key] = json_decode($parsedjson,true);
+                $json_key=NULL;
+                $json_str=NULL;
+            } else if ($json_key && trim($element)[strlen($element)-1]==']') { // also non-danging ]
+                $json_str .= trim($element);
                 $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
                 $parsedjson = preg_replace('/\'([^\']*)\'/', '"$1"', $parsedjson);
                 // error_log('got complete json: '.$json_key.'='.$parsedjson);
@@ -109,14 +97,16 @@ class Toml {
             } else if ($json_key) { 
                 // error_log('got json data row: '.$element);
                 $json_str.=$element;
-            } else {
+            } 
+
+            else {
                 // KEY=VALUE
                 $keyval = explode("=", $element, 2);
                 if (sizeof($keyval)==1) {
                     // got a string?
                     $value=$keyval[0];
                     
-                    if ($this->fast_str_len_compare($value,3)>=0 && (($value[-1]=="'" && $value[-2]=="'" && $value[-3]=="'") || ($value[-1]=='"' && $value[-2]=='"' && $value[-3]=='"'))) {
+                    if (strlen($value)>=3 && (($value[-1]=="'" && $value[-2]=="'" && $value[-3]=="'") || ($value[-1]=='"' && $value[-2]=='"' && $value[-3]=='"'))) {
                         // END OF MULTI-LINE STRING
                         $value=rtrim($value, "'''");
                         $value=rtrim($value, '"""');
@@ -127,10 +117,12 @@ class Toml {
                     }
                     
                 } else {
-                    $key=trim(trim($keyval[0]),'"');
-                    $value=trim(trim($keyval[1]),'"');
+                    $key_r=trim($keyval[0]);
+                    $value_r=trim($keyval[1]);
+                    $key=trim($key_r,'"');
+                    $value=trim($value_r,'"');
                         
-                    if ($this->fast_str_len_compare($value,3)>=0 && (($value[0]=="'" && $value[1]=="'" && $value[2]=="'") || ($value[0]=='"' && $value[1]=='"' && $value[2]=='"'))) {
+                    if (strlen($value)>=3 && (($value[0]=="'" && $value[1]=="'" && $value[2]=="'") || ($value[0]=='"' && $value[1]=='"' && $value[2]=='"'))) {
                         // START OF MULTILINE STRING
                         $value=ltrim($value,"'''");
                         $value=ltrim($value,'"""');
@@ -138,18 +130,25 @@ class Toml {
                         $multiline_string=&$table[$key];
                         
                         // sometimes, a multi-line string can actually be a single-line string...
-                        if ($this->fast_str_len_compare($value,6)>=0 && (($value[-1]=="'" && $value[-2]=="'" && $value[-3]=="'") || ($value[-1]=='"' && $value[-2]=='"' && $value[-3]=='"'))) {
+                        if (strlen($value)>=6 && (($value[-1]=="'" && $value[-2]=="'" && $value[-3]=="'") || ($value[-1]=='"' && $value[-2]=='"' && $value[-3]=='"'))) {
                             // END OF MULTI-LINE STRING
                             $value=rtrim($value, "'''");
                             $value=rtrim($value, '"""');
                             $table[$key]=$value; // unecessary write, with a refactor?
                             unset($multiline_string); // unecessary set+unset, with a refactor?
                         }
-                    } else if ($this->fast_str_len_compare($value,1)>=0 && $value=='[') { // EXPECT JSON
+                    } 
+
+                    // this is a bit weird, treat 'js' array object as json!
+                    else if (strlen($value_r)>=1 && $value_r=='[') { // EXPECT JSON
                         // error_log('start json data');
                         $json_key=$key;
                         $json_str='[';
-                    } else if ($this->fast_str_len_compare($value,1)>=0 && $value==']') { // DONE WITH JSON
+                    } else if (strlen($value_r)>=2 && $value_r[0]=='[') { // EXPECT JSON
+                        // error_log('start json data');
+                        $json_key=$key;
+                        $json_str=$value_r;
+                    } else if (strlen($value_r)>=1 && $value_r==']') { // DONE WITH JSON
                         $json_str=trim($json_str, ',');
                         $json_str.=']';
                         // technically not json. so needs some work.
@@ -159,7 +158,18 @@ class Toml {
                         $ret[$json_key] = json_decode($parsedjson,true);
                         $json_key=NULL;
                         $json_str=NULL;
-                    } else {
+                    } else if (strlen($value_r)>=2 && $value_r[strlen($value_r)-1]==']') { // DONE WITH JSON
+                        $json_str.=$value_r;
+                        // technically not json. so needs some work.
+                        $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
+                        $parsedjson = preg_replace('/\'([^\']+)\'/', '"$1"', $parsedjson);
+                        // error_log('got complete json: '.$json_key.'='.$parsedjson);
+                        $ret[$json_key] = json_decode($parsedjson,true);
+                        $json_key=NULL;
+                        $json_str=NULL;
+                    } 
+
+                    else {
                         $table[$key]=$value;
                     }
                 }
