@@ -1306,6 +1306,7 @@ if (isset($_SESSION['user'])) {
                                 <?php
                                 $modsluglist = Array();
                                 $build_mod_ids = $modslist;
+                                $installed_loader="";
 
                                 foreach ($build_mod_ids as $build_mod_id) {
 
@@ -1315,6 +1316,11 @@ if (isset($_SESSION['user'])) {
                                         $mod=[];
                                     } else {
                                         $mod = $modq[0];
+
+                                        // first mod is the loader
+                                        if ($installed_loader=="") {
+                                            $installed_loader=$mod['loadertype'];
+                                        }
                                     
                                         array_push($modsluglist, $mod['name']);
 
@@ -1376,14 +1382,16 @@ if (isset($_SESSION['user'])) {
                                             echo $mod['name'] ?>"><?php
 
                                             // get versions for mod
-                                            $modv = $db->query("SELECT id,version FROM mods WHERE name='".$mod['name']."'");
+                                            $modv = $db->query("SELECT id,version,loadertype FROM mods WHERE name='".$mod['name']."'");
                                             if($modv && sizeof($modv)>0) {
                                                 foreach ($modv as $mv) {
-                                                    if ($mv['id'] == $mod['id']) {
-                                                        echo "<option selected value='".$mv['id']."'>".$mv['version']."</option>";
-                                                    } else {
-                                                        echo "<option value='".$mv['id']."'>".$mv['version']."</option>";
-                                                    }
+                                                    if ($mv['loadertype']==$installed_loader) {
+                                                        if ($mv['id'] == $mod['id']) {
+                                                            echo "<option selected value='".$mv['id']."'>".$mv['version']."</option>";
+                                                        } else {
+                                                            echo "<option value='".$mv['id']."'>".$mv['version']."</option>";
+                                                        }
+                                                }
                                                 }
                                             }
                                         }
