@@ -61,7 +61,7 @@ function isVersionInInterval(version, interval) {
     if (!interval.includes(',')) {
         // /^\[?[^,]+\]?$/
         let comp=compareVersions(version, interval.replace(/[\[\]\(\)]/,''))
-        return comp
+        return comp==0
     }
 
     // Check interval boundaries for inclusivity/exclusivity
