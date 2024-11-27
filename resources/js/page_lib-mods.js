@@ -174,7 +174,7 @@ var details={};
 var versions={};
 var installed=null;
 
-function addrow(hit) {
+async function addrow(hit) {
     let description = hit['description'];
     if (description.length>80) {
        description = description.substring(0,200)+"...";
@@ -185,14 +185,16 @@ function addrow(hit) {
     }
 
     let author = hit['author'];
-    let instv=is_installed(hit['title']);
+    let instv = await is_installed(hit['slug'], hit['title'], hit['author']);
     if (instv) {
+        // console.log(hit['slug'], 'is installed')
         if (instv['mcversion']==''||instv['version']=='') {
             var btn=`<a id="install-${hit['slug']}" class="btn btn-secondary btn-warning" href="mod?id=${instv['name']}" pid="${hit['slug']}" target="_blank">Issue(s)</a>`;
         } else {
             var btn = `<a id="install-${hit['slug']}" class="btn btn-secondary btn-success" href="javascript:void(0)" pid="${hit['slug']}" disabled>Installed</a>`;
         }
     } else {
+        // console.log(hit['slug'], 'is not installed')
         var btn = `<a id="install-${hit['slug']}" class="btn btn-secondary" href="javascript:void(0)" pid="${hit['slug']}" onclick="getversions('${hit['slug']}').then(result => {showinstallation(result)});">Install</a>`;
     }
     var row = `
@@ -379,7 +381,7 @@ function installmod() {
                 $('#install-'+slug).attr('disabled',true);
                 $('#install-'+slug).text('Installed');
                 $('#install-'+slug).addClass('btn-success');
-                fetch_installed();
+                // fetch_installed();
             } else if (json['status']=='warn') {
                 $('#installation-versions option:selected').attr("disabled",true);
                 $('#installations-button').attr('disabled',false);
@@ -391,7 +393,7 @@ function installmod() {
                 $('#install-'+slug).text('Issue(s)');
                 $('#install-'+slug).attr('onclick',`window.location.replace("mod?id=${json['name'][0]}")`)
                 $('#install-'+slug).addClass('btn-warning');
-                fetch_installed();
+                // fetch_installed();
             } else {
                 $('#installation-versions option:selected').attr("disabled",true);
                 // $('#installations-button').attr('disabled',false);
@@ -430,44 +432,44 @@ function installmod() {
     request.send(postdata);
 }
 
-function fetch_installed_from_api() {
-    return new Promise((resolve, reject) => {
-        var request = new XMLHttpRequest();
-        request.open("GET", "api/mod", true);
-        request.onreadystatechange = function() {
-            if (request.readyState == 4 && request.status == 200) {
-                // console.log(request.response);
-                resolve(JSON.parse(request.response));
-            }
-        }
-        request.onerror = function () {
-          reject(new Error('Network error'));
-        };
-        request.send();
-    });
-}
 async function fetch_installed() {
     if (get_cached('installed_mods')) {
-        installed=get_cached('installed_mods');
+        installed = get_cached('installed_mods');
     } else {
-        installed = await fetch_installed_from_api();
-        set_cached('installed_mods', installed, 5);
-    }
-    return installed;
-
-}
-function is_installed(pretty_name) {
-    let result_names=[];
-    for (let res of results[$('#searchquery').val()]) {
-        result_names.push(res['title'].toLowerCase());
-    }
-    for (let inst of installed) {
-        if (inst['pretty_name'].toLowerCase()==pretty_name.toLowerCase()) {
-            if (result_names.includes(inst['pretty_name'].toLowerCase())) {
-                return inst;
+        try {
+            const response = await fetch("api/mod");
+            if (!response.ok) {
+                throw new Error('Network response error');
             }
+            installed = await response.json();
+            set_cached('installed_mods', installed, 5);
+        } catch (error) {
+            console.log('error in fetch_installed_from_api');
         }
     }
+    return installed;
+}
+
+async function is_installed(name, pretty_name, author) {
+    // since mod slug (name) does not always match modrinth slug, check either
+    // also, authors are often mismatched.
+    for (let inst of installed) {
+        if (name==inst['name']) {
+            // console.log('match name=', name)
+            return inst;
+        } else if (inst['pretty_name'].toLowerCase()===pretty_name.toLowerCase()) {
+            // console.log('mismatch name',inst['name'],name)
+            // console.log('match pretty_name:', name);
+            if (inst['author'].toLowerCase().startsWith(author.toLowerCase())) {
+                // console.log('also match author:',author)
+                return inst;  // Return the installed object if it matches
+            } else {
+                // console.log('mismatch author', inst['author'],author)
+            }
+        }
+        
+    }
+
     return false;
 }
 
@@ -530,7 +532,8 @@ $('#rightButton').on('click', function() {
 });
 
 $('#searchbutton').on('click', async function() {
-    let installed = await fetch_installed();
+    await fetch_installed();
+    console.log(installed)
     $('#searchbutton').attr('disabled',true);
     $('#noresults').hide();
 
@@ -567,9 +570,9 @@ $('#searchbutton').on('click', async function() {
             console.log('cached')
             $('#searchresults').empty();
             results[searchquery]=get_cached('search_'+searchquery+'_'+$('#pageRangeInput').val());
-            results[searchquery].forEach(function(hit) {
-                addrow(hit);
-            });
+            for (let hit of results[searchquery]) {
+                await addrow(hit);
+            }
         } else {
             console.log('searching...');
             $('#searchresults').empty();
@@ -581,7 +584,7 @@ $('#searchbutton').on('click', async function() {
 
             request.open('GET', url, true);
             request.setRequestHeader('User-Agent','TheGameSpider/TechnicSolder/1.4.0');
-            request.onreadystatechange = function() {
+            request.onreadystatechange = async function() {
                 if (request.readyState == 4 && request.status == 200) {
                     // console.log(request.responseText);
                     let json = JSON.parse(request.responseText);
@@ -589,7 +592,7 @@ $('#searchbutton').on('click', async function() {
                         let hits=json['hits'];
 
                         for (let hit of hits) {
-                            addrow(hit);
+                            await addrow(hit);
                         };
 
                         results[searchquery]=hits;
@@ -626,7 +629,7 @@ $(document).ready(function() {
 
     let loop_count=0;
     while (installed==null && loop_count < 3) {
-        installed=fetch_installed()
+        fetch_installed()
         loop_count+=1
     }
 });

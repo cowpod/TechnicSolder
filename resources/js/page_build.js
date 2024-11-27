@@ -101,7 +101,14 @@ function add(name, id, v, mcv) {
                         </td>
                     </tr>
                 `);
+
                 modslist_0.push(id);
+
+                // remove from list of available mods
+                const index = rows_mods_available.indexOf(name);
+                if (index > -1) { 
+                  rows_mods_available.splice(index, 1);
+                }
             } else {
                 // $('#btn-add-mod-'+name).html('Add to build');
             }
@@ -113,6 +120,7 @@ function add(name, id, v, mcv) {
 }
 
 function add_mod_row(id,pretty_name,name,vs,mcv) {
+    console.log('adding row',name);
     if (pretty_name=='' || name=='' || versions=='' || mcv=='') {
         var addbutton=`<a id="btn-add-mod-${name}" href="mod?id=${name}" class="btn btn-warning">Issue(s)</a>`;
     } else {
@@ -134,10 +142,12 @@ function add_mod_row(id,pretty_name,name,vs,mcv) {
             </td>
         </tr>
     `);
+    console.log('added')
 }
 
+var rows_mods_available=[];
+
 function parsemods(obj) {
-    let showall = $('#showall').is(':checked');
     let added_num=0;
 
     let vs={};
@@ -151,8 +161,12 @@ function parsemods(obj) {
     let filter=$("#search").val();
     for (let mod of obj) {
         if (filter=='' || filter==undefined || mod['pretty_name'].toLowerCase().includes(filter)||mod['name'].toLowerCase().includes(filter)) {
-            if (!modslist_0.includes(''+mod['id']) && (mod['mcversion']=='' || mcv==mod['mcversion'] || isVersionInInterval(`'${mcv}'`, mod['mcversion']) || showall)) {
-                add_mod_row(mod['id'], mod['pretty_name'],mod['name'],vs[mod['name']],mod['mcversion']);
+
+            if (   !modslist_0.includes(''+mod['id']) 
+                && !rows_mods_available.includes(mod['name'])
+                && ($('#showall').is(':checked') || mod['mcversion']=='' || mcv==mod['mcversion'] || isVersionInInterval(`'${mcv}'`, mod['mcversion']))) {
+                rows_mods_available.push(mod['name']);
+                add_mod_row(mod['id'], mod['pretty_name'], mod['name'], vs[mod['name']], mod['mcversion']);
                 added_num+=1;
             }
         }
@@ -166,36 +180,34 @@ function parsemods(obj) {
     }
 }
 
-async function getmods() {
-    return new Promise((resolve, reject) => {
-        $('#build-available-mods').empty();
-        $('#no-mods-available').hide();
-        $('#no-mods-available-search-results').hide();
-        if  (get_cached('available_mods')) {
-            parsemods(JSON.parse(get_cached('available_mods')));
-        } else {
-            var request = new XMLHttpRequest();
-            request.onreadystatechange = function() {
-                if (request.readyState == 4 && request.status == 200) {
-                    set_cached('available_mods',request.responseText,30);
-                    parsemods(JSON.parse(request.responseText));
-                    resolve(true)
-                }
+function getmods() {
+    $('#build-available-mods').empty();
+    $('#no-mods-available').hide();
+    $('#no-mods-available-search-results').hide();
+    if  (get_cached('available_mods')) {
+        parsemods(JSON.parse(get_cached('available_mods')));
+    } else {
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (request.readyState == 4 && request.status == 200) {
+                set_cached('available_mods',request.responseText,30);
+                parsemods(JSON.parse(request.responseText));
             }
-            request.onerror = function() {
-                console.log('could not get mods from api');
-                reject(false)
-            }
-            request.open("GET", `api/mod?loadertype=${type}`);
-            request.send();
         }
-    });
+        request.onerror = function() {
+            console.log('could not get mods from api');
+
+        }
+        request.open("GET", `api/mod?loadertype=${type}`);
+        request.send();
+    }
 }
 
-$("#search").on('keyup', async function(){
-    await getmods(); // get mods on type
-
+$("#search").on('keyup', function(){
+    rows_mods_available=[];
+    getmods(); // get mods on type
 });
+
 $("#search2").on('keyup',function(){
     tr = document.getElementById("filestable").getElementsByTagName("tr");
 
@@ -203,9 +215,6 @@ $("#search2").on('keyup',function(){
 
         td = tr[i].getElementsByTagName("td")[0];
         if (td) {
-
-            console.log(td);
-            console.log(td.innerHTML.toUpperCase())
             if (td.innerHTML.toUpperCase().indexOf($("#search").val().toUpperCase()) > -1) {
                 tr[i].style.display = "";
             } else {
@@ -214,7 +223,8 @@ $("#search2").on('keyup',function(){
         }
     }
 });
-function showall(){
+function toggled_showall(){
+    rows_mods_available=[];
     if ($('#showall').is(':checked')) {
         $('#mods-for-version-string').text('');
         $('#mods-for-version-string').hide();
@@ -222,13 +232,12 @@ function showall(){
         $('#mods-for-version-string').text(' for Minecraft '+mcv);
         $('#mods-for-version-string').show();
     }
-
     set_cached('showall', $('#showall').is(':checked'), -1);
-    getmods(mcv, type);
+    getmods();
 }
 
 $('#showall').change(function() {
-    showall()
+    toggled_showall()
 });
 
 $(document).on('change', '.form-control', function() {
@@ -250,7 +259,9 @@ $(document).on('change', '.form-control', function() {
 
 $(document).ready(function() {
     if (get_cached('showall') && $('#showall').prop('checked', get_cached('showall'))) {
-        showall()
+        toggled_showall()
+    } else {
+        //rows_mods_available=[];
+        getmods();
     }
-    getmods();
 });
