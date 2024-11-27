@@ -55,23 +55,26 @@ function set_public(id) {
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
+            console.log(this.response);
             response = JSON.parse(this.response);
             $("#cog-"+id).hide();
             if (response['status']=="succ") {
-                // if (response['latest']==id) {
-                // }
                 $("#pub-"+id).hide();
                 if (response['recommended']==id) {
                     $("#recd-"+id).show();
                 } else {
                     $("#rec-"+id).show();
                 }
+                // $("#rec-name").text(response['name']);
+                // $("#rec-mc").text(response['mc']);
+                $("#latest-name").text(response['latestname']);
+                $("#latest-mc").text(response['latestmc']);
             } else {
                 console.log(response);
             }
         }
     };
-    request.open("GET", "./functions/set-public-build.php?id="+id+"&ispublic=1");
+    request.open("GET", `./functions/set-public-build.php?buildid=${id}&modpackid=${getQueryVariable('id')}&ispublic=1`);
     request.send();
 
 }
@@ -112,7 +115,7 @@ function remove(id) {
 
         }
     }
-    request.open("GET", "./functions/delete-build.php?buildid="+id+"&modpackid="+getQueryVariable('id'));
+    request.open("GET", `./functions/delete-build.php?buildid=${id}&modpackid=${getQueryVariable('id')}`);
     request.send();
 }
 function set_recommended(id) {
