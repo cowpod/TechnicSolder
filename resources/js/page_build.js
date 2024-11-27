@@ -70,7 +70,7 @@ function add_o(id) {
     request.open("GET", "./functions/add-mod.php?bid="+build_id+"&id="+id);
     request.send();
 }
-function add(name, id, v, mcv) {
+function add(name, pretty_name, id, v, mcv) {
     if ($("#versionselect-"+name+' option:selected').attr('missing')=='true') {
         return;
     }
@@ -91,7 +91,7 @@ function add(name, id, v, mcv) {
                 // remember to modify index.php/build too
                 $("#mods-in-build").append(`
                     <tr id="mod-${id}">
-                        <td scope="row" data-value="${name}">${name}</td>
+                        <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
                         <td data-value="${v}">${v}</td>
                         <td data-value="${mcv}" class="d-none d-sm-table-cell">${mcv}</td>
                         <td>
@@ -124,7 +124,7 @@ function add_mod_row(id,pretty_name,name,vs,mcv) {
     if (pretty_name=='' || name=='' || versions=='' || mcv=='') {
         var addbutton=`<a id="btn-add-mod-${name}" href="mod?id=${name}" class="btn btn-warning">Issue(s)</a>`;
     } else {
-        var addbutton=`<a id="btn-add-mod-${name}" onclick="add('${name}', '${id}', '${vs}','${mcv}')" class="btn btn-primary">Add to build</a>`;
+        var addbutton=`<a id="btn-add-mod-${name}" onclick="add('${name}', '${pretty_name}', '${id}', '${vs}','${mcv}')" class="btn btn-primary">Add to build</a>`;
     }
     
     var vs_str = ``;

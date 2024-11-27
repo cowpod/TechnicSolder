@@ -96,14 +96,14 @@ if (preg_match("/api\/mod$/", $url)) {
             $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
             $modentry = [
                 'id'=>$mod['id'],
-                'pretty_name'=>$mod['pretty_name'],
+                'pretty_name'=>htmlspecialchars($mod['pretty_name']),
                 'name'=>$mod['name'], 
                 'version'=>$mod['version'], 
                 'mcversion'=>$mod['mcversion'],
                 'md5'=>$mod['md5'], 
                 'url'=> !empty($mod['url']) ? $mod['url'] : $PROTO_STR.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'],
                 'filesize'=>$filesize,
-                'author'=>$mod['author']
+                'author'=>htmlspecialchars($mod['author'])
             ];
 
             array_push($modslist, $modentry);
