@@ -1485,10 +1485,10 @@ if (isset($_SESSION['user'])) {
                 <?php }
                 } else echo "<div class='card'><h3 class='text-info'>Select minecraft version and save before editing mods.</h3></div>"; ?>
                 <script>
-                    var modslist_0 = JSON.parse('<?php echo json_encode($modslist, JSON_UNESCAPED_SLASHES) ?>');
-                    var build_id = '<?php echo $user['id'] ?>';
-                    var mcv="<?php echo $user['minecraft'] ?>";
-                    var type="<?php echo $user['loadertype'] ?>";
+                    const INSTALLED_MODS = JSON.parse('<?php echo json_encode($modslist, JSON_UNESCAPED_SLASHES) ?>');
+                    const BUILD_ID = '<?php echo $user['id'] ?>';
+                    const MCV = '<?php echo $user['minecraft'] ?>';
+                    const TYPE = '<?php echo $user['loadertype'] ?>';
                 </script>
                 <script src="./resources/js/page_build.js"></script>
             </div>

@@ -103,7 +103,8 @@ if (preg_match("/api\/mod$/", $url)) {
                 'md5'=>$mod['md5'], 
                 'url'=> !empty($mod['url']) ? $mod['url'] : $PROTO_STR.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'],
                 'filesize'=>$filesize,
-                'author'=>htmlspecialchars($mod['author'])
+                'author'=>htmlspecialchars($mod['author']),
+                'loader'=>$mod['loadertype']
             ];
 
             array_push($modslist, $modentry);

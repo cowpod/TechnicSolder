@@ -70,14 +70,14 @@ function isVersionInInterval(version, interval) {
 
     // Extract version bounds
     var [startVersion, endVersion] = interval.slice(1, -1).split(',');
-    console.log(startVersion,endVersion);
+    // console.log(startVersion,endVersion);
     if (startVersion=='' || startVersion==undefined) {
         startVersion=-Number.MAX_SAFE_INTEGER;
     }
     if (endVersion=='' || endVersion==undefined) {
         endVersion=Number.MAX_SAFE_INTEGER;
     }
-    console.log(startVersion+','+endVersion);
+    // console.log(startVersion+','+endVersion);
 
     // Use compareVersions to check if version is within the range
     const compareStart = compareVersions(version, startVersion);
@@ -86,7 +86,7 @@ function isVersionInInterval(version, interval) {
     const inLowerBound = startInclusive ? compareStart >= 0 : compareStart > 0;
     const inUpperBound = endInclusive ? compareEnd <= 0 : compareEnd < 0;
 
-    console.log(inLowerBound && inUpperBound)
+    // console.log(inLowerBound && inUpperBound)
 
     return inLowerBound && inUpperBound;
 }

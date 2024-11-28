@@ -2,7 +2,7 @@ $('#versions').change(function(){
     $('#editBuild').modal('show');
 });
 function fnone(){
-    $('#versions').val(modslist_0[0]); // first item in list is modloader id
+    $('#versions').val(INSTALLED_MODS[0]); // first item in list is modloader id
     $('#forgec').val('none');
 };
 function fchange(){
@@ -15,14 +15,14 @@ function fwipe(){
 };
 function remove_mod(id) {
     var request = new XMLHttpRequest();
-    request.open("GET", "./functions/remove-mod.php?bid="+build_id+"&id="+id);
+    request.open("GET", "./functions/remove-mod.php?bid="+BUILD_ID+"&id="+id);
     request.onreadystatechange = function() {
         if (request.readyState == 4 && request.status == 200) {
             if (request.responseText=='Mod removed') {
                 $("#mod-"+id).remove();
-                var index = modslist_0.indexOf(id);
+                var index = INSTALLED_MODS.indexOf(id);
                 if (index!==-1) {
-                    modslist_0.splice(index, 1);
+                    INSTALLED_MODS.splice(index, 1);
                 }
             }
         }
@@ -42,17 +42,17 @@ function changeversion(id_new, id_old, name, compatible) {
     $("#bmversions-"+name).attr("onchange","changeversion(this.value,"+id_new+",'"+name+"',true)");
     $("#spinner-"+name).show();
     var request = new XMLHttpRequest();
-    request.open("GET", "./functions/change-version.php?bid="+build_id+"&id_new="+id_new+"&id_old="+id_old);
+    request.open("GET", "./functions/change-version.php?bid="+BUILD_ID+"&id_new="+id_new+"&id_old="+id_old);
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             $("#spinner-"+name).hide();
 
-            var index = modslist_0.indexOf(id_old);
+            var index = INSTALLED_MODS.indexOf(id_old);
             if (index!==-1) {
-                modslist_0.splice(index, 1);
+                INSTALLED_MODS.splice(index, 1);
             }
 
-            modslist_0.push(id_new);
+            INSTALLED_MODS.push(id_new);
         }
     }
     request.send();
@@ -67,7 +67,7 @@ function add_o(id) {
             $("#check-o-"+id).show();
         }
     };
-    request.open("GET", "./functions/add-mod.php?bid="+build_id+"&id="+id);
+    request.open("GET", "./functions/add-mod.php?bid="+BUILD_ID+"&id="+id);
     request.send();
 }
 function add(name, pretty_name, id, v, mcv) {
@@ -102,7 +102,7 @@ function add(name, pretty_name, id, v, mcv) {
                     </tr>
                 `);
 
-                modslist_0.push(id);
+                INSTALLED_MODS.push(id);
 
                 // remove from list of available mods
                 const index = rows_mods_available.indexOf(name);
@@ -114,35 +114,35 @@ function add(name, pretty_name, id, v, mcv) {
             }
         }
     };
-    console.log("./functions/add-mod.php?bid="+build_id+"&id="+id)
-    request.open("GET", "./functions/add-mod.php?bid="+build_id+"&id="+id);
+    console.log("./functions/add-mod.php?bid="+BUILD_ID+"&id="+id)
+    request.open("GET", "./functions/add-mod.php?bid="+BUILD_ID+"&id="+id);
     request.send();
 }
 
-function add_mod_row(id,pretty_name,name,vs,mcv) {
-    console.log('adding row',name);
+function add_mod_row(id,pretty_name,name,versions,mcv) {
+    // console.log('adding row',name);
     if (pretty_name=='' || name=='' || versions=='' || mcv=='') {
         var addbutton=`<a id="btn-add-mod-${name}" href="mod?id=${name}" class="btn btn-warning">Issue(s)</a>`;
     } else {
-        var addbutton=`<a id="btn-add-mod-${name}" onclick="add('${name}', '${pretty_name}', '${id}', '${vs}','${mcv}')" class="btn btn-primary">Add to build</a>`;
+        var addbutton=`<a id="btn-add-mod-${name}" onclick="add('${name}', '${pretty_name}', '${id}', '${versions}','${mcv}')" class="btn btn-primary">Add to build</a>`;
     }
     
-    var vs_str = ``;
-    for (let v of vs) {
-        vs_str += `<option>${v}</option>`;
+    var versions_str = ``;
+    for (let v of versions) {
+        versions_str += `<option>${v}</option>`;
     }
 
     $('#build-available-mods').append(`
         <tr id="mod-add-row-${name}">
             <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
-            <td data-value="${vs}"><select id="versionselect-${name}" class="form-control">${vs_str}</select></td>
+            <td data-value="${versions}"><select id="versionselect-${name}" class="form-control">${versions_str}</select></td>
             <td data-value="${mcv}">${mcv}</td>
             <td data-value="Add to build">
                 ${addbutton}
             </td>
         </tr>
     `);
-    console.log('added')
+    // console.log('added')
 }
 
 var rows_mods_available=[];
@@ -150,23 +150,25 @@ var rows_mods_available=[];
 function parsemods(obj) {
     let added_num=0;
 
-    let vs={};
+    let versions={};
     for (let mod of obj) {
-        if (mod['name'] in vs) {
-            vs[mod['name']].push(mod['version']);
-        } else {
-            vs[mod['name']]=[mod['version']];
+        if (!INSTALLED_MODS.includes(''+mod['id']) && mod['loader']==TYPE) {
+            if (mod['name'] in versions) {
+                versions[mod['name']].push(mod['version']);
+            } else {
+                versions[mod['name']]=[mod['version']];
+            }
         }
     }
     let filter=$("#search").val();
     for (let mod of obj) {
         if (filter=='' || filter==undefined || mod['pretty_name'].toLowerCase().includes(filter)||mod['name'].toLowerCase().includes(filter)) {
 
-            if (   !modslist_0.includes(''+mod['id']) 
+            if (   !INSTALLED_MODS.includes(''+mod['id']) 
                 && !rows_mods_available.includes(mod['name'])
-                && ($('#showall').is(':checked') || mod['mcversion']=='' || mcv==mod['mcversion'] || isVersionInInterval(`'${mcv}'`, mod['mcversion']))) {
+                && ($('#showall').is(':checked') || mod['mcversion']=='' || MCV==mod['mcversion'] || isVersionInInterval(`'${MCV}'`, mod['mcversion']))) {
                 rows_mods_available.push(mod['name']);
-                add_mod_row(mod['id'], mod['pretty_name'], mod['name'], vs[mod['name']], mod['mcversion']);
+                add_mod_row(mod['id'], mod['pretty_name'], mod['name'], versions[mod['name']], mod['mcversion']);
                 added_num+=1;
             }
         }
@@ -198,7 +200,7 @@ function getmods() {
             console.log('could not get mods from api');
 
         }
-        request.open("GET", `api/mod?loadertype=${type}`);
+        request.open("GET", `api/mod?loadertype=${TYPE}`);
         request.send();
     }
 }
@@ -229,7 +231,7 @@ function toggled_showall(){
         $('#mods-for-version-string').text('');
         $('#mods-for-version-string').hide();
     } else {
-        $('#mods-for-version-string').text(' for Minecraft '+mcv);
+        $('#mods-for-version-string').text(' for Minecraft '+MCV);
         $('#mods-for-version-string').show();
     }
     set_cached('showall', $('#showall').is(':checked'), -1);
