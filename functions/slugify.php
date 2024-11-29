@@ -21,6 +21,11 @@ function slugify2(string $str): string {
   $ret=trim($ret,'-.');
   if (empty($ret))
     return 'n-a';
-  return $ret;
+  return strtolower($ret);
+}
+
+function slugify3(string $str): string {
+  // meant for full filenames
+  return strtolower(preg_replace('/[^\w\-\.]/', '-', $str));
 }
 ?>

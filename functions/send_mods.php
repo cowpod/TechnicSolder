@@ -1,4 +1,5 @@
 <?php
+define('MAX_TMP_ROLLS',10);
 header('Content-Type: application/json');
 
 session_start();
@@ -17,6 +18,8 @@ if (empty($config)) {
 
 global $db;
 require_once("db.php");
+
+require_once('slugify.php');
 
 // fiels = name of input in index.php
 
@@ -44,14 +47,36 @@ if (isset($_FILES['fiels']) && isset($_FILES["fiels"]["name"]) && isset($_FILES[
             $context = stream_context_create($options);
             @$getfile = file_get_contents($_POST['url'], false, $context);
             if ($getfile && strlen($getfile)>0) {
-                if (!empty($_POST['filename']) && preg_match('/^[a-zA-Z0-9_\-\.\(\)\[\]\s\!\?\#\@\&\*\=\+\~\s]+.jar$/', $_POST['filename'])) {
-                    $file_name = $_POST['filename'];
-                    error_log('using given name: '.$file_name);
+                if (empty($_POST['filename'])) {
+                    $file_name = bin2hex(random_bytes(16)).'.jar';
+                    error_log("filename empty! using random name: {$file_name}");
                 } else {
-                    $file_name = bin2hex(random_bytes(32)).'.jar';
-                    error_log("using random name: {$file_name}, invalid name given: {$_POST['filename']}");
+                    $file_name = slugify3($_POST['filename']);
                 }
-                $file_tmp = sys_get_temp_dir().'/'.bin2hex(random_bytes(32)).'.jar';
+
+                $file_tmp_dir = sys_get_temp_dir().'/send_mods/'.bin2hex(random_bytes(16));
+                if (!is_dir($file_tmp_dir)) {
+                    mkdir($file_tmp_dir, recursive:true);
+                }
+                $file_tmp = $file_tmp_dir.'/'.$file_name;
+
+                $num_rolls=0;
+                while (file_exists($file_tmp)) {
+                    if ($num_rolls>=MAX_TMP_ROLLS) {
+                        error_log('Could not upload file to temporary directory after '.MAX_TMP_ROLLS.' attempts. Temporary dir: '.$file_tmp_dir);
+                        die('Could not upload file to temporary directory after '.MAX_TMP_ROLLS.' attempts.');
+                    }
+                    $num_rolls+=1;
+                    error_log("send_mods.php: temp file exists, re-rolling ".$file_tmp);
+                    $file_tmp_dir = sys_get_temp_dir().'/send_mods/'.bin2hex(random_bytes(16));
+                    if (!is_dir($file_tmp_dir)) {
+                        mkdir($file_tmp_dir, recursive:false);
+                    }
+                    $file_tmp = $file_tmp_dir.'/'.$file_name;
+                }
+
+                error_log('got temp file: '.$file_tmp);
+
                 @$putfile = file_put_contents($file_tmp, $getfile);
                 if ($putfile) {
                     error_log('file downloaded to '.$file_tmp);
@@ -87,7 +112,6 @@ if (str_ends_with($file_name, '.jar')) {
     die ('{"status":"error","message":"Not a JAR file."}');
 }
 
-require('slugify.php');
 require('compareZipContents.php');
 require('modInfo.php');
 
@@ -206,8 +230,8 @@ $num_process_failed=0;
 
 foreach ($modinfos as $modinfo) {
     if (empty($modinfo)) {
-        $num_mods_to_add = $num_mods_to_add-1;
-        // error_log('{"status":"error","message":"Unable to add mod to database (empty).", "name": "'.$file_name.'"}');
+        $num_mods_to_add-=1;
+        error_log('{"status":"error","message":"Unable to add mod to database (empty)."}');
         // die('{"status":"error","message":"Unable to add mod to database (empty).", "name": "'.$file_name.'"}');
         continue;
     }
@@ -257,8 +281,8 @@ $db->disconnect();
 // error_log(json_encode($added_ids));
 
 if (sizeof($added_ids)+$num_already_added+$num_process_failed==0) {
-    error_log('{"status":"error","message":"Unable to add mod to database."}');
-    die('{"status":"error","message":"Unable to add mod to database."}');
+    error_log('{"status":"error","message":"Unable to add mod to database (parsed 0 mods)."}');
+    die('{"status":"error","message":"Unable to add mod to database (parsed 0 mods)."}');
 }
 
 $moredata='"modid":'.json_encode($added_ids,JSON_UNESCAPED_SLASHES).',"name":'.json_encode($added_modids,JSON_UNESCAPED_SLASHES).', "pretty_name": '.json_encode($added_pretty_names,JSON_UNESCAPED_SLASHES).', "author": '.json_encode($added_authors,JSON_UNESCAPED_SLASHES).',"mcversion":'.json_encode($added_mcversions,JSON_UNESCAPED_SLASHES).',"version": '.json_encode($added_versions,JSON_UNESCAPED_SLASHES);
