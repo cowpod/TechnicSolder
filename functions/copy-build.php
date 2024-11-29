@@ -43,7 +43,7 @@ if (!isset($db)){
 }
 
 $addbuildq = $db->execute("
-    INSERT INTO builds (`name`,`minecraft`,`java`,`mods`,`modpack`) 
+    INSERT INTO builds (`name`,`minecraft`,`java`,`mods`,`modpack`,loadertype,memory,clients) 
     SELECT '{$_GET['newname']}',`minecraft`,`java`,`mods`,`modpack`,loadertype,memory,clients
     FROM `builds` 
     WHERE `id` = {$_GET['buildid']}
