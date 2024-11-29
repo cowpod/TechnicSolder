@@ -2102,7 +2102,7 @@ if (isset($_SESSION['user'])) {
         } elseif (uri("/file")) {
             $mres = $db->query("SELECT * FROM `mods` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
             if ($mres) {
-                assert(sizeof($mres)==0);
+                assert(sizeof($mres)==1);
                 $file = $mres[0];
             }
             ?>

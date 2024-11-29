@@ -85,8 +85,21 @@ if (move_uploaded_file($fileTmpLoc, "../others/".$fileName)) {
     $author = $_SESSION['name'];
     $url = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL'])))."://".$config->get('host').$config->get('dir')."others/".$fileName;
     $md5 = md5_file("../others/".$fileName);
+    $file_size=filesize("../others/".$fileName);
 
-    $res = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`author`,`description`,`filename`,`type`) VALUES ('".$name."','".$pretty_name."','".$md5."','".$url."','".$author."','Custom file by ".$author."','".$fileName."','other')");
+    $res = $db->execute("INSERT INTO mods (name,pretty_name,md5,url,author,description,filename,filesize,type,version,mcversion) VALUES (
+        '{$name}',
+        '{$pretty_name}',
+        '{$md5}',
+        '{$url}',
+        '{$author}',
+        'Custom file by {$author}',
+        '{$fileName}',
+        {$file_size},
+        'other',
+        '1.0',
+        '*'
+    )");
 
     $db->disconnect();
 

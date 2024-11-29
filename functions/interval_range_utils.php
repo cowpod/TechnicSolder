@@ -75,6 +75,10 @@ function in_range($range, $num) {
 	// returns true if $num is in interval range $range.
 	// returns false otherwise.
 
+	if ($range=='*' || $num=='*') {
+		return TRUE;
+	}
+
 	// if range is just a simple '[1.20.2]' or '1.20.2'...
 	if (!str_contains($range, ',')) {
 		return trim($range,'[]()')==$num;
