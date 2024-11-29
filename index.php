@@ -2115,7 +2115,7 @@ if (isset($_SESSION['user'])) {
                     <h2><?php echo $file['filename'] ?></h2>
                     <hr>
                     <p>MD5: <?php echo $file['md5'] ?><br >
-                    Size: <?php echo formatSizeUnits(filesize('./others/'.$file['filename'])) ?></p>
+                    Size: <?php echo formatSizeUnits($file['filesize']) ?></p>
                     <h3>Files:</h3>
                     <pre id="files_ul">
                     </pre>
