@@ -80,7 +80,7 @@ if (!empty($_POST['email']) && !empty($_POST['password'])) {
     if (!preg_match('/^[\w\-\+\.@]+$/', $_POST['email'])) {
         die("Malformed email");
     }
-    $userq = $db->query("SELECT * FROM users WHERE name = '{$_POST['email']}' LIMIT 1");
+    $userq = $db->query("SELECT * FROM users WHERE name = '{$db->sanitize($_POST['email'])}' LIMIT 1");
     if ($userq && sizeof($userq)==1) {
         $user = $userq[0];
         if (password_verify($_POST['password'], $user['pass'])) { // should be sanitized
@@ -2159,9 +2159,17 @@ if (isset($_SESSION['user'])) {
                     </thead>
                     <tbody id="table-mods">
                     <?php
+                    $mod_slug="";
                     foreach ($mres as $mod) {
-                        $modpn = $mod['pretty_name'];
-                        $modd = $mod['description'];
+                        if (empty($mod_slug)) { // get first one
+                            $mod_slug = $mod['name'];
+                            if($mod_slug!=$_GET['id']) {
+                                error_log("WARNING: mod slug {$mod_slug} does NOT match page ID {$_GET['id']}!");
+                            }
+                            $mod_name = $mod['pretty_name'];
+                            $mod_description = $mod['description'];
+                            $mod_author = $mod['author'];
+                        }
                         ?>
                         <tr id="mod-row-<?php echo $mod['id'] ?>">
                             <td <?php if (empty($mod['version'])) echo 'class="table-danger"'; ?> scope="row"><?php echo empty($mod['version'])? '<span class="text-danger">Unknown</span>' : $mod['version'] ?></td>
@@ -2205,11 +2213,13 @@ if (isset($_SESSION['user'])) {
                   </div>
                 </div>
                 <h2>Details</h2><hr>
-                <form method="POST" action="./functions/edit-mod.php?id=<?php echo $_GET['id'] ?>">
-                    <input id="pn" required class="form-control" type="text" name="pretty_name" placeholder="Mod name" value="<?php echo $modpn ?>" />
+                <form method="POST" action="./functions/edit-mod.php">
+                    <input id="pn" required class="form-control" type="text" name="pretty_name" placeholder="Mod name" value="<?php echo $mod_name ?>" />
                     <br />
-                    <input id="slug" required pattern="^[a-z0-9\-\_]+$" class="form-control" type="text" name="name" placeholder="Mod slug" value="<?php echo $_GET['id'] ?>" /><br />
-                    <textarea class="form-control" type="text" name="description" placeholder="Mod description"><?php echo $modd ?></textarea><br />
+                    <input type="hidden" name="name" value="<?php echo $mod_slug ?>"/>
+                    <input id="slug" disabled class="form-control" type="text" placeholder="Mod slug" value="<?php echo $mod_slug ?>" /><br />
+                    <input id="author"required class="form-control" type="text" name="author" placeholder="Author" value="<?php echo $mod_author ?>"/><br/>
+                    <textarea class="form-control" type="text" name="description" placeholder="Mod description"><?php echo $mod_description ?></textarea><br />
                     <input type="submit" name="submit" value="Save" class="btn btn-success">
                     <input type="submit" name="submit" value="Save and close" class="btn btn-success">
                 </form>
