@@ -18,8 +18,11 @@ $db=new Db;
 $db->connect();
 
 if (!empty($_GET['name'])) {
-    // delete all ids associated with name, if not in a build
+    // for all mod versions (ids) associated with name
     $modq = $db->query("SELECT id,type,filename FROM `mods` WHERE `name` = '{$db->sanitize($_GET['name'])}'");
+    $num_mods=sizeof($modq);
+    $num_deleted=0;
+
     foreach ($modq as $mod) {
         if (!empty($_GET['force'])&&$_GET['force']=='true') {
             error_log('force deleting mod name='.$_GET['name'].', id='.$mod['id']);
@@ -27,13 +30,14 @@ if (!empty($_GET['name'])) {
             // check if a build has this id
             $buildq = $db->query("SELECT id,name FROM builds WHERE ',' || mods || ',' LIKE '%,' || ".$mod['id']." || ',%';");
             if ($buildq && sizeof($buildq)>0) {
-                // mod is in a build; only get first build
-                die('{"status":"warn","message":"Cannot delete mod as it is in use!","bid":"'.$buildq[0]['id'].'","bname":"'.$buildq[0]['name'].'"}');
+                // mod is in a build. we won't delete this one!
+                continue;
             }
         } 
 
-        // mod not in any build
+        // mod version not in any build
         $db->execute("DELETE FROM `mods` WHERE `id` = '".$mod['id']."'");
+        $num_deleted+=1;
 
         // check if theres any other mod entries with the same file
         if ($mod['type']=='mod' && !(isset($_GET['force']) && $_GET['force']=='true')) {
@@ -49,7 +53,13 @@ if (!empty($_GET['name'])) {
         } else {
             error_log("delete-mod.php: couldn't find file!");
         }
+
+    }
+
+    if ($num_deleted==$num_mods) {
         die('{"status":"succ","message":"Mod versions deleted."}');
+    } else {
+        die('{"status":"succ","message":"Some versions were not deleted, as they are in use.", "remaining":'.($num_mods-$num_deleted).'}');
     }
 } 
 elseif(!empty($_GET['id'])) {

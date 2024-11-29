@@ -1720,7 +1720,7 @@ if (isset($_SESSION['user'])) {
                                 <tr id="mod-row-<?php echo $mod['name'] ?>">
                                     <td scope="row" <?php if (empty($mod['pretty_name'])) echo 'class="table-danger"' ?>><?php echo empty($mod['pretty_name']) ? "<span class='text-danger'>Unknown</span>" : $mod['pretty_name'] ?></td>
                                     <td <?php if (implode(", ", $mod['author'])=="") echo 'class="table-danger"' ?> class="d-none d-md-table-cell"><?php if (implode(", ", $mod['author'])!=="") { echo implode(", ", $mod['author']); } else { echo "<span class='text-danger'>Unknown</span>"; } ?></td>
-                                    <td><?php echo count($mod['versions']); ?></td>
+                                    <td id="mod-row-<?php echo $mod['name'] ?>-num"><?php echo count($mod['versions']); ?></td>
                                     <td>
                                         <?php if (substr($_SESSION['perms'], 4, 1)=="1") { ?>
                                         <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
@@ -1752,6 +1752,7 @@ if (isset($_SESSION['user'])) {
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
+                    <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
                     <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                   </div>
                 </div>

@@ -14,11 +14,16 @@ function remove(name,force) {
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
+            console.log(this.response)
             response = JSON.parse(this.response);
-            console.log(response);
             if (response['status']=='succ') {
-                console.log('success!');
-                $("#mod-row-"+name).remove();
+                if ('remaining' in response && response['remaining']>0) {
+                    $('#mod-row-'+name+'-num').text(response['remaining']);
+                    console.log(response['remaining']);
+                } else {
+                    console.log('success!');
+                    $("#mod-row-"+name).remove();
+                }
             } else {
                 // todo: use styled alert instead of this
                 console.log('error!?');
@@ -120,7 +125,7 @@ function sendFile(file, i) {
                                     <tr id="mod-row-${name[i]}">
                                         <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
                                         <td data-value="${author}" class="d-none d-sm-table-cell">${author}</td>
-                                        <td data-value="${num_versions}">${num_versions}</td>
+                                        <td id="mod-row-${name[i]}-num" data-value="${num_versions}">${num_versions}</td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                                 <button onclick="window.location='./mod?id=${name}'" class="btn btn-primary">Edit</button>
@@ -417,7 +422,7 @@ function installmod() {
                     <tr id="mod-row-${name[i]}">
                         <td scope="row" data-value="${pretty_name[i]}">${pretty_name[i]}</td>
                         <td data-value="${author[i]}" class="d-none d-md-table-cell">${author[i]}</td>
-                        <td data-value="${num_versions}">${num_versions}</td>
+                        <td id="num-row-${name}-version" data-value="${num_versions}">${num_versions}</td>
                         <td>
                             <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                 <button onclick="window.location='./mod?id=${name[i]}'" class="btn btn-primary">Edit</button>
