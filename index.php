@@ -40,6 +40,18 @@ function uri($uri) {
     }
     return (substr($url, -$length) === $uri);
 }
+function is_https() {
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        return true;
+    }
+    if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
+        return true;
+    }
+    if (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') {
+        return true;
+    }
+    return false;
+}
 
 if (strpos($url, '?') !== false) {
     $url = substr($url, 0, strpos($url, "?"));
@@ -364,7 +376,7 @@ if (isset($_SESSION['user'])) {
                 <legend style="text-align:center;margin:1em 0px">Technic Solder</legend>
                 <form method="POST" action="dashboard">
                     <?php
-                    if (!isset($_SERVER['HTTPS'])||$_SERVER['HTTPS']!=='on') { ?>
+                    if (!is_https()) { ?>
                         <div class="alert alert-danger">
                             This page is served over HTTP, which is insecure! Your password may be visble others.
                         </div>
