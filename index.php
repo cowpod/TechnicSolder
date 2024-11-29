@@ -61,14 +61,18 @@ if (isset($_GET['logout']) && $_GET['logout']) {
 $user=[];
 $modslist=[];
 
+// todo: send hash, not plaintext!
+// currently, we're sending a plaintext password, and have no guarantee of https!
 if (!empty($_POST['email']) && !empty($_POST['password'])) {
-    $userq = $db->query("SELECT * FROM users WHERE name = '". addslashes($_POST['email']) ."' LIMIT 1");
+    // loose regex email check
+    if (!preg_match('/^[\w\-\+\.@]+$/', $_POST['email'])) {
+        die("Malformed email");
+    }
+    $userq = $db->query("SELECT * FROM users WHERE name = '{$_POST['email']}' LIMIT 1");
     if ($userq && sizeof($userq)==1) {
         $user = $userq[0];
-        if (password_verify($_POST['password'], $user['pass'])) {
-        // OLD PASSWORD AUTH METHOD (INSECURE):
-        //if ($user['pass']==hash("sha256",$_POST['password']."Solder.cf")) {
-            $_SESSION['user'] = $_POST['email'];
+        if (password_verify($_POST['password'], $user['pass'])) { // should be sanitized
+            $_SESSION['user'] = $_POST['email']; // same as $user['name']
             $_SESSION['name'] = $user['display_name'];
             $_SESSION['perms'] = $user['perms'];
             $_SESSION['privileged'] = ($user['privileged']=='1') ? TRUE : FALSE;
@@ -359,6 +363,12 @@ if (isset($_SESSION['user'])) {
                 <img style="margin:auto;display:block" alt="Technic logo" height="80" src="./resources/wrenchIcon.svg">
                 <legend style="text-align:center;margin:1em 0px">Technic Solder</legend>
                 <form method="POST" action="dashboard">
+                    <?php
+                    if (!isset($_SERVER['HTTPS'])||$_SERVER['HTTPS']!=='on') { ?>
+                        <div class="alert alert-danger">
+                            This page is served over HTTP, which is insecure! Your password may be visble others.
+                        </div>
+                    <?php } ?>
                     <?php if (isset($_GET['ic'])) { ?>
                         <div class="alert alert-danger">
                             Invalid Username/Password
