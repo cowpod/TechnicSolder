@@ -459,13 +459,13 @@ async function is_installed(name, pretty_name, author) {
     // since mod slug (name) does not always match modrinth slug, check either
     // also, authors are often mismatched.
     for (let inst of installed) {
-        if (name==inst['name']) {
+        if (name===inst['name']) { // match slug
             // console.log('match name=', name)
             return inst;
-        } else if (inst['pretty_name'].toLowerCase()===pretty_name.toLowerCase()) {
+        } else if (inst['pretty_name'].toLowerCase()===pretty_name.toLowerCase()) { // match projec name
             // console.log('mismatch name',inst['name'],name)
             // console.log('match pretty_name:', name);
-            if (inst['author'].toLowerCase().startsWith(author.toLowerCase())) {
+            if (inst['author'].toLowerCase().includes(author.toLowerCase())) { // AND contains author
                 // console.log('also match author:',author)
                 return inst;  // Return the installed object if it matches
             } else {
