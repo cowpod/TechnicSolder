@@ -315,7 +315,7 @@ async function fetch_forges() {
                         <td scope="row" data-value="${minecraft}">${minecraft}</td>
                         <td data-value="${version}">${version}</td>
                         <td data-value="${link}" class="d-none d-md-table-cell" style="overflow-wrap: break-word;"><a href="${link}" style="word-break: break-all;">${link}</a></td>
-                        <td><button id="button-add-${id}" onclick="download_forge(${id}, '${minecraft}', '${version}', '${link}')" class="btn btn-primary btn-sm">Add to Database</button></td>
+                        <td><button id="button-add-${id}" onclick="download_forge('${minecraft}', ${id}, '${version}', '${link}')" class="btn btn-primary btn-sm">Add to Database</button></td>
                         <td><em id="cog-${id}" style="display:none" class="fas fa-spin fa-cog fa-2x"></em><em id="check-${id}" style="display:none" class="text-success fas fa-check fa-2x"></em><em id="times-${id}" style="display:none" class="text-danger fas fa-times fa-2x"></em></td>
                     </tr>`);
                     resolve(true);

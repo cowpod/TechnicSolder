@@ -606,12 +606,22 @@ $('#searchquery').on('keyup', function() {
     }
 });
 $('#mcv').on('change', function() {
+    console.log(`"${$('#mcv option:selected').val()}"`)
+    set_cached('selected_loader', btoa($('#mcv option:selected').val()), -1)
+
     $('#mcv').removeClass('is-invalid');
     if ($('#searchquery').val()=="") {
         $('#searchbutton').attr('disabled',true);
     }
     else if (!$('#searchquery').hasClass('is-invalid')) {
         $('#searchbutton').attr('disabled',false);
+    }
+    // clear previous cached search results
+    // todo: on a version change, figure out how to invalidate search results without invalidating all of them
+    for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key) && key.startsWith('search_')) {
+            localStorage.removeItem(key);
+        }
     }
 });
 
@@ -752,5 +762,9 @@ $(document).ready(function() {
     while (installed==null && loop_count < 3) {
         fetch_installed()
         loop_count+=1
+    }
+
+    if (get_cached('selected_loader')) {
+        $('#mcv').val(atob(get_cached('selected_loader')))
     }
 });
