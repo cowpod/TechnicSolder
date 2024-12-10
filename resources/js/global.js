@@ -153,7 +153,7 @@ function get_cached(key) {
         }
     }
 }
-function set_cached(key,value,ttl) {
+function set_cached(key,value,ttl=-1) {
     if (havelocalstorage==null) {
         havelocalstorage=isLocalStorageAvailable()
     }
