@@ -1621,6 +1621,11 @@ if (isset($_SESSION['user'])) {
                     </select>
                     <div id="installation-message" style="display:none; text-align: right;">
                     </div>
+                    <br/>
+                    <div id="installation-deps" style="display:none">
+                    <label for="installation-deps">Dependencies (will be installed)</label>
+                    <div id="dependencies"></div>
+                    </div>
                   </div>
                   <div class="modal-footer">
                     <button id="installations-cancel" type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
