@@ -575,6 +575,7 @@ async function fetch_installed() {
 }
 
 async function is_installed(name, pretty_name, author) {
+    return false; 
     // since mod slug (name) does not always match modrinth slug, check either
     // also, authors are often mismatched.
     for (let inst of installed) {
