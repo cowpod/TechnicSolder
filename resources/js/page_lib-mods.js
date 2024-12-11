@@ -40,9 +40,11 @@ function remove(name,force) {
 
 mn = 1;
 function sendFile(file, i) {
+    let mcv = $('#mcv option:selected').attr('mc');
     var formData = new FormData();
     var request = new XMLHttpRequest();
     formData.set('fiels', file);
+    formData.set('fallback_mcversion', mcv)
     request.open('POST', './functions/send_mods.php');
     request.upload.addEventListener("progress", function(evt) {
         if (evt.lengthComputable) {
@@ -362,18 +364,24 @@ async function getversions(id, versionId='', updateUi=true) {
                         console.log('got new versions2 for id='+id);
                     }else{
                         set_cached('versions_'+id, request.responseText, VERSION_CACHE_TTL);
-                        let project_id = obj[0]['project_id']
+                        if (obj.length==0) {
+                            console.log('project version does not exist! is a dependency incorrectly labeled as required, or did the author not update the entry on modrinth!?')
+                            reject(new Error('No result'))
+                            return id
+                        } else {
+                            let project_id = obj[0]['project_id']
 
-                        if (versions2[project_id]===undefined) {
-                            versions2[project_id]={}
-                        }
-                        for (let version of obj) {
-                            let versionId = version['id']
-                            versions2[project_id][versionId] = version
-                        }
+                            if (versions2[project_id]===undefined) {
+                                versions2[project_id]={}
+                            }
+                            for (let version of obj) {
+                                let versionId = version['id']
+                                versions2[project_id][versionId] = version
+                            }
 
-                        versions[id]=obj
-                        console.log('got new versions for id='+id);
+                            versions[id]=obj
+                            console.log('got new versions for id='+id);
+                        }
                     }
 
                     resolve(id) // resolve(project_id)
@@ -403,7 +411,12 @@ async function process_deps(vs) {
 
                 if (dep['version_id']==null || dep['version_id']==undefined || dep['version_id']=='') { 
                     console.log('no version id specified')
-                    await getversions(dep['project_id'],'',false)
+                    try {
+                        await getversions(dep['project_id'],'',false)
+                    } catch (error) {
+                        continue;
+                    }
+
                     console.log('got dep version1:', versions[dep['project_id']])
 
                     let dep_vs = versions[dep['project_id']] // list of vs
@@ -417,7 +430,11 @@ async function process_deps(vs) {
                     }
                 } else {
                     console.log('getting by project+version id')
-                    await getversions(dep['project_id'], dep['version_id'],false)
+                    try {
+                        await getversions(dep['project_id'], dep['version_id'],false)
+                    } catch(error) {
+                        continue;
+                    }
                     console.log('dep version2:', versions2[dep['project_id']][dep['version_id']])
                     dep_v = versions2[dep['project_id']][dep['version_id']]
                 }
