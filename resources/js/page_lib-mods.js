@@ -273,13 +273,13 @@ function showcategories(id) {
     })
 }
 
-async function getversions(id, versionId='') {
+async function getversions(id, versionId='', updateUi=true) {
     // get versions for an id
 
     // note that versions2 is preferred, and we will eventually
     // completely replace versions with versions2 (and drop the 2)
     return new Promise((resolve, reject) => {
-        if (versionId==='') {
+        if (updateUi) {
             $('#installations-cancel').attr('disabled',true);
             $('#installations-button').attr('disabled',true);
             $('#installation-message').hide();
@@ -293,16 +293,18 @@ async function getversions(id, versionId='') {
 
         if (id in versions) {
             console.log('got cached version');
+ 
+            let project_id = versions[id][0]['project_id']
 
-            if (versions2[id]===undefined) {
-                versions2[id]={}
+            if (versions2[project_id]===undefined) {
+                versions2[project_id]={}
             }
             for (let version of versions[id]) {
                 let versionId = version['id']
-                versions2[id][versionId] = version
+                versions2[project_id][versionId] = version
             }
 
-            resolve(id)
+            resolve(id) // resolve(project_id)
             return id
         } else if (id in versions2 && versionId!==undefined && versionId in versions2[id]) {
             console.log('got cached version2');
@@ -322,16 +324,17 @@ async function getversions(id, versionId='') {
             console.log('got cached version from localstorage');
             let obj = JSON.parse(get_cached('versions_'+id));
             versions[id] = obj
+            let project_id = obj[0]['project_id']
 
-            if (versions2[id]===undefined) {
-                versions2[id]={}
+            if (versions2[project_id]===undefined) {
+                versions2[project_id]={}
             }
             for (let version of obj) {
                 let versionId = version['id']
-                versions2[id][versionId] = version
+                versions2[project_id][versionId] = version
             }
             
-            resolve(id)
+            resolve(id) // resolve(project_id)
             return id
         } else {
             var request = new XMLHttpRequest();
@@ -355,23 +358,24 @@ async function getversions(id, versionId='') {
                         if (versions2[id]===undefined) {
                             versions2[id]={}
                         }
-                        versions2[id][versionId]=obj;
+                        versions2[id][versionId] = obj;
                         console.log('got new versions2 for id='+id);
                     }else{
                         set_cached('versions_'+id, request.responseText, VERSION_CACHE_TTL);
+                        let project_id = obj[0]['project_id']
 
-                        if (versions2[id]===undefined) {
-                            versions2[id]={}
+                        if (versions2[project_id]===undefined) {
+                            versions2[project_id]={}
                         }
                         for (let version of obj) {
                             let versionId = version['id']
-                            versions2[id][versionId] = version
+                            versions2[project_id][versionId] = version
                         }
 
                         console.log('got new versions for id='+id);
                     }
 
-                    resolve(id)
+                    resolve(id) // resolve(project_id)
                     return id
                 }
             };
@@ -379,6 +383,7 @@ async function getversions(id, versionId='') {
         }
     });
 }
+
 var proj_version_deps={}
 async function process_deps(vs) {  
     let deps = vs['dependencies']
@@ -387,10 +392,7 @@ async function process_deps(vs) {
     let mcv = $('#mcv option:selected').attr('mc');
     let loader = $('#mcv option:selected').attr('type');
 
-    // only process dep for first version (shown by default)
-    // todo: do this on version change
     if (deps!==undefined && deps.length>0) {
-        $('#installation-deps').show()
 
         console.log('processing dependencies for', requiredByProject)
         for (let dep of deps) {
@@ -400,22 +402,21 @@ async function process_deps(vs) {
 
                 if (dep['version_id']==null || dep['version_id']==undefined || dep['version_id']=='') { 
                     console.log('no version id specified')
-                    let id = await getversions(dep['project_id'])
+                    await getversions(dep['project_id'],'',false)
                     console.log('got dep version1:', versions[dep['project_id']])
 
-                    console.log('searching for', mcv, loader)
                     let dep_vs = versions[dep['project_id']] // list of vs
 
                     for (let v of dep_vs) {
                         if (v['game_versions'].includes(mcv) && v['loaders'].includes(loader)) {
                             dep_v = v
+                            console.log('got v', dep_v)
                             break
                         }
                     }
-
                 } else {
                     console.log('getting by project+version id')
-                    await getversions(dep['project_id'], dep['version_id'])
+                    await getversions(dep['project_id'], dep['version_id'],false)
                     console.log('dep version2:', versions2[dep['project_id']][dep['version_id']])
                     dep_v = versions2[dep['project_id']][dep['version_id']]
                 }
@@ -430,13 +431,12 @@ async function process_deps(vs) {
                     if (proj_version_deps[requiredByProject][requiredByProjectVersion]==undefined) {
                         proj_version_deps[requiredByProject][requiredByProjectVersion]=[]
                     }
-                    proj_version_deps[requiredByProject][requiredByProjectVersion].push(dep_v)
+                    if (!proj_version_deps[requiredByProject][requiredByProjectVersion].includes(dep_v)) {
+                        proj_version_deps[requiredByProject][requiredByProjectVersion].push(dep_v)
+                    }
 
                     $('#dependencies').append(`<div project_id="${name}" version="${version}">${name} - ${version}</div>`)
-                } else {
-                    console.log(`ignoring dependency of different loader type (not ${loader})`)
                 }
-                
             }
         }
     }
@@ -444,7 +444,6 @@ async function process_deps(vs) {
 
 async function showinstallation(id) {
     // show version ui for id 
-    $('#dependencies').empty()
     let firstVersion=true
     for (let vs of versions[id]) {
         let mc = '';
@@ -460,8 +459,12 @@ async function showinstallation(id) {
 
         if (firstVersion) {
             firstVersion=false;
-            // console.log('showinstalltion()',vs)
-            await process_deps(vs) // we process deps here instead of on install as we want to show the info to the user before installing
+            if (vs['dependencies']!==undefined && vs['dependencies'].length>0) {
+                $('#dependencies').empty()
+                $('#installation-deps').show()
+                // console.log('showinstalltion()',vs)
+                await process_deps(vs) // we process deps here instead of on install as we want to show the info to the user before installing
+            }
         }
 
         $('#installation-versions').append(`
@@ -653,8 +656,17 @@ async function is_installed(name, pretty_name, author) {
 }
 
 $('#installation-versions').on('change', async function() {
-    console.log('processing deps for', requiredByProject, requiredByProjectVersion)
-    await process_deps(deps, requiredByProject, requiredByProjectVersion)
+    let project_id = $('#installation-versions option:selected').attr('project_id');
+    let version_id = $('#installation-versions option:selected').attr('version_id');
+    let vs = versions2[project_id][version_id]
+    $('#dependencies').empty()
+    if (vs['dependencies']!==undefined && vs['dependencies'].length>0) {
+        $('#installation-deps').show()
+        await process_deps(vs)
+    } else {
+        console.log('no deps')
+        $('#installation-deps').hide()
+    }
 })
 
 $('#searchquery').on('keyup', function() {
