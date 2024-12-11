@@ -275,6 +275,9 @@ function showcategories(id) {
 
 async function getversions(id, versionId='') {
     // get versions for an id
+
+    // note that versions2 is preferred, and we will eventually
+    // completely replace versions with versions2 (and drop the 2)
     return new Promise((resolve, reject) => {
         if (versionId==='') {
             $('#installations-cancel').attr('disabled',true);
@@ -290,25 +293,53 @@ async function getversions(id, versionId='') {
 
         if (id in versions) {
             console.log('got cached version');
-            resolve(id)
-        } else if (versionId!=='' && get_cached('version_'+id+'_'+versionId)) {
-            console.log('got cached versionId from localstorage');
+
             if (versions2[id]===undefined) {
                 versions2[id]={}
             }
-            versions2[id][versionId]=JSON.parse(get_cached('version_'+id+'_'+versionId));
+            for (let version of versions[id]) {
+                let versionId = version['id']
+                versions2[id][versionId] = version
+            }
+
             resolve(id)
+            return id
+        } else if (id in versions2 && versionId!==undefined && versionId in versions2[id]) {
+            console.log('got cached version2');
+            resolve(id)
+            return id
+        } else if (versionId!=='' && get_cached('version_'+id+'_'+versionId)) {
+            console.log('got cached versionId from localstorage');
+
+            if (versions2[id]===undefined) {
+                versions2[id]={}
+            }
+            versions2[id][versionId] = JSON.parse(get_cached('version_'+id+'_'+versionId));
+
+            resolve(id)
+            return id
         } else if (get_cached('versions_'+id)) {
             console.log('got cached version from localstorage');
-            versions[id]=JSON.parse(get_cached('versions_'+id));
+            let obj = JSON.parse(get_cached('versions_'+id));
+            versions[id] = obj
+
+            if (versions2[id]===undefined) {
+                versions2[id]={}
+            }
+            for (let version of obj) {
+                let versionId = version['id']
+                versions2[id][versionId] = version
+            }
+            
             resolve(id)
+            return id
         } else {
             var request = new XMLHttpRequest();
-            let mcv = JSON.stringify([$('#mcv option:selected').attr('mc')]);
-            let loader = JSON.stringify([$('#mcv option:selected').attr('type')]);
             if (versionId!=='') {
                 var url = `https://api.modrinth.com/v2/project/${id}/version/${versionId}`;
             } else {
+                let mcv = JSON.stringify([$('#mcv option:selected').attr('mc')]);
+                let loader = JSON.stringify([$('#mcv option:selected').attr('type')]);
                 var url = `https://api.modrinth.com/v2/project/${id}/version?game_versions=${encodeURIComponent(mcv)}&loaders=${encodeURIComponent(loader)}`;
             }
             request.open('GET', url, true);
@@ -328,11 +359,20 @@ async function getversions(id, versionId='') {
                         console.log('got new versions2 for id='+id);
                     }else{
                         set_cached('versions_'+id, request.responseText, VERSION_CACHE_TTL);
-                        versions[id] = obj;
+
+                        if (versions2[id]===undefined) {
+                            versions2[id]={}
+                        }
+                        for (let version of obj) {
+                            let versionId = version['id']
+                            versions2[id][versionId] = version
+                        }
+
                         console.log('got new versions for id='+id);
                     }
 
                     resolve(id)
+                    return id
                 }
             };
             request.send();
@@ -344,6 +384,8 @@ async function process_deps(vs) {
     let deps = vs['dependencies']
     let requiredByProject = vs['project_id']
     let requiredByProjectVersion = vs['id']
+    let mcv = $('#mcv option:selected').attr('mc');
+    let loader = $('#mcv option:selected').attr('type');
 
     // only process dep for first version (shown by default)
     // todo: do this on version change
@@ -354,13 +396,32 @@ async function process_deps(vs) {
         for (let dep of deps) {
             if (dep['dependency_type']==='required'){
                 console.log('processing', dep)
-                await getversions(dep['project_id'], dep['version_id'])
-                console.log('got dep version info:', versions2[dep['project_id']][dep['version_id']])
+                let dep_v = null;
 
-                let dep_v=versions2[dep['project_id']][dep['version_id']]
+                if (dep['version_id']==null || dep['version_id']==undefined || dep['version_id']=='') { 
+                    console.log('no version id specified')
+                    let id = await getversions(dep['project_id'])
+                    console.log('got dep version1:', versions[dep['project_id']])
+
+                    console.log('searching for', mcv, loader)
+                    let dep_vs = versions[dep['project_id']] // list of vs
+
+                    for (let v of dep_vs) {
+                        if (v['game_versions'].includes(mcv) && v['loaders'].includes(loader)) {
+                            dep_v = v
+                            break
+                        }
+                    }
+
+                } else {
+                    console.log('getting by project+version id')
+                    await getversions(dep['project_id'], dep['version_id'])
+                    console.log('dep version2:', versions2[dep['project_id']][dep['version_id']])
+                    dep_v = versions2[dep['project_id']][dep['version_id']]
+                }
+
                 let name = dep_v['project_id'] // todo: get descriptive name
                 let version = dep_v['name']
-                let loader = $('#mcv option:selected').attr('type');
 
                 if (dep_v['loaders'].includes(loader)) {
                     if (proj_version_deps[requiredByProject]==undefined) {
@@ -375,13 +436,13 @@ async function process_deps(vs) {
                 } else {
                     console.log(`ignoring dependency of different loader type (not ${loader})`)
                 }
+                
             }
         }
     }
 }
 
 async function showinstallation(id) {
-
     // show version ui for id 
     $('#dependencies').empty()
     let firstVersion=true
@@ -399,6 +460,7 @@ async function showinstallation(id) {
 
         if (firstVersion) {
             firstVersion=false;
+            // console.log('showinstalltion()',vs)
             await process_deps(vs) // we process deps here instead of on install as we want to show the info to the user before installing
         }
 
