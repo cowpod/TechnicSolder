@@ -354,14 +354,15 @@ async function getversions(id, versionId='', updateUi=true) {
                 if (request.readyState == 4 && request.status == 200) {
                     let obj = JSON.parse(request.responseText);
                     if (versionId!=='') {
-                        set_cached('version_'+id+'_'+versionId, request.responseText, VERSION_CACHE_TTL);
+                        set_cached('version_'+id+'_'+versionId, JSON.stringify(request.responseText), VERSION_CACHE_TTL);
                         if (versions2[id]===undefined) {
                             versions2[id]={}
                         }
                         versions2[id][versionId] = obj;
                         console.log('got new versions2 for id='+id);
                     }else{
-                        set_cached('versions_'+id, request.responseText, VERSION_CACHE_TTL);
+                        versions[id]=JSON.stringify(request.responseText)
+                        set_cached('versions_'+id, JSON.stringify(request.responseText), VERSION_CACHE_TTL);
                         let project_id = obj[0]['project_id']
 
                         if (versions2[project_id]===undefined) {
@@ -664,7 +665,7 @@ $('#installation-versions').on('change', async function() {
         $('#installation-deps').show()
         await process_deps(vs)
     } else {
-        console.log('no deps')
+        // console.log('no deps')
         $('#installation-deps').hide()
     }
 })
