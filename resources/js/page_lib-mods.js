@@ -312,11 +312,11 @@ async function getversions(id, versionId='', updateUi=true) {
             return id
         } else if (versionId!=='' && get_cached('version_'+id+'_'+versionId)) {
             console.log('got cached versionId from localstorage');
-
+            let obj = JSON.parse(get_cached('version_'+id+'_'+versionId));
             if (versions2[id]===undefined) {
                 versions2[id]={}
             }
-            versions2[id][versionId] = JSON.parse(get_cached('version_'+id+'_'+versionId));
+            versions2[id][versionId] = obj
 
             resolve(id)
             return id
@@ -354,14 +354,14 @@ async function getversions(id, versionId='', updateUi=true) {
                 if (request.readyState == 4 && request.status == 200) {
                     let obj = JSON.parse(request.responseText);
                     if (versionId!=='') {
-                        set_cached('version_'+id+'_'+versionId, JSON.stringify(request.responseText), VERSION_CACHE_TTL);
+                        set_cached('version_'+id+'_'+versionId, request.responseText, VERSION_CACHE_TTL);
                         if (versions2[id]===undefined) {
                             versions2[id]={}
                         }
                         versions2[id][versionId] = obj;
                         console.log('got new versions2 for id='+id);
                     }else{
-                        set_cached('versions_'+id, JSON.stringify(request.responseText), VERSION_CACHE_TTL);
+                        set_cached('versions_'+id, request.responseText, VERSION_CACHE_TTL);
                         let project_id = obj[0]['project_id']
 
                         if (versions2[project_id]===undefined) {
