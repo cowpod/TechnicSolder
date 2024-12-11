@@ -361,7 +361,6 @@ async function getversions(id, versionId='', updateUi=true) {
                         versions2[id][versionId] = obj;
                         console.log('got new versions2 for id='+id);
                     }else{
-                        versions[id]=JSON.stringify(request.responseText)
                         set_cached('versions_'+id, JSON.stringify(request.responseText), VERSION_CACHE_TTL);
                         let project_id = obj[0]['project_id']
 
@@ -373,6 +372,7 @@ async function getversions(id, versionId='', updateUi=true) {
                             versions2[project_id][versionId] = version
                         }
 
+                        versions[id]=obj
                         console.log('got new versions for id='+id);
                     }
 
