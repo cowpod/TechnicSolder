@@ -1,20 +1,21 @@
 // var builds = "<?php echo addslashes(json_encode($mpab)) ?>";
 // var sbn = "<?php echo addslashes(json_encode($sbn)) ?>";
-var bd = (builds && builds.length>=0) ? JSON.parse(builds) : '{}';
+var bd = (builds && builds.length>=0) ? JSON.parse(builds).reverse() : '{}';
 var sbna =(sbn && sbn.length>=0) ? JSON.parse(sbn) : '{}';
-console.log(sbna);
 
-function fillBuildlist() {
-    $("#buildlist").children().each(function(){this.remove();});
-    Object.keys(bd).forEach(function(element){
+async function fillBuildlist() {
+    $("#buildlist").children().each(function(){ 
+        this.remove()
+    })
 
-        if ($("#mplist").val() == bd[element]['mpid']) {
-            $("#buildlist").append("<option value='"+bd[element]['id']+"'>"+bd[element]['mpname']+" - "+bd[element]['name']+"</option>")
+    for (let element of bd) {
+        if ($("#mplist").val() == element['mpid']) {
+            $("#buildlist").append("<option value='"+element['id']+"'>"+element['mpname']+" - "+element['name']+"</option>")
         }
-    });
+    }
 }
-$("#mplist").change(function() {
-    fillBuildlist();
+$("#mplist").change(async function() {
+    await fillBuildlist();
 });
 
 $("#newbname").on("keyup",function(){
@@ -157,9 +158,9 @@ function set_recommended(id) {
     request.send();
 }
 
-function copylatest() {
+async function copylatest() {
     if ($('#mplist').prop('selectedIndex', 1)) {
-        if (fillBuildlist()) {
+        if (await fillBuildlist()) {
             $('#buildlist').prop('selectedIndex', 0);
         }
     }
