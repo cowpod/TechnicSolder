@@ -39,4 +39,4 @@ if ($modsq && sizeof($modsq)==1 && !empty($modsq[0]['mods'])) {
 
 $db->execute("UPDATE `builds` SET `mods` = '".$modslist."' WHERE `id` = ".$db->sanitize($_GET['bid']));
 
-die('{"status":"succ","message":"Version changed sucessfully"')
+die('{"status":"succ","message":"Version changed sucessfully"');
