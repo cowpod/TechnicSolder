@@ -192,7 +192,7 @@ function getmods() {
         var request = new XMLHttpRequest();
         request.onreadystatechange = function() {
             if (request.readyState == 4 && request.status == 200) {
-                set_cached('available_mods',request.responseText,30);
+                set_cached('available_mods',request.responseText,5);
                 parsemods(JSON.parse(request.responseText));
             }
         }
