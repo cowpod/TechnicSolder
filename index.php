@@ -2613,42 +2613,42 @@ if (isset($_SESSION['user'])) {
                         <?php if (json_decode($api_version_json, true)['stream']=="Dev") { ?>
                         You are on the Dev release channel.
                         <?php } else { ?>
-                        Once subscribed to the Dev release channel, you cannot go back without wiping your installation.
+                        Switching to the Dev release channel is permanent!
                         <?php } ?>
                         <br/><br/>
                         <b>The following features require cookies</b>
                         <div class="custom-control custom-switch">
                             <input id="use_verifier" type="checkbox" class="custom-control-input" name="use_verifier" <?php if ($config->exists('use_verifier') && $config->get('use_verifier')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="use_verifier">
-                                Enable Solder Verifier
+                                Enable Solder Verifier (check status of modpack on <a href="https://technicpack.net" target="_blank">technicpack.net</a>)
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="modrinth_integration" type="checkbox" class="custom-control-input" name="modrinth_integration" <?php if ($config->exists('modrinth_integration') && $config->get('modrinth_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="modrinth_integration">
-                                Enable Modrinth integration
+                                Enable Modrinth.com installer (mods)
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="forge_integration" type="checkbox" class="custom-control-input" name="forge_integration" <?php if ($config->exists('forge_integration') && $config->get('forge_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="forge_integration">
-                                Enable Forge integration (installer)
+                                Enable MinecraftForge.net installer (modloaders)
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="neoforge_integration" type="checkbox" class="custom-control-input" name="neoforge_integration" <?php if ($config->exists('neoforge_integration') && $config->get('neoforge_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="neoforge_integration">
-                                Enable Neoforge integration (installer)
+                                Enable Neoforged.net installer (modloaders)
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="fabric_integration" type="checkbox" class="custom-control-input" name="fabric_integration" <?php if ($config->exists('fabric_integration') && $config->get('fabric_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="fabric_integration">
-                                Enable Fabric integration (installer)
+                                Enable FabricMC.net installer (modloaders)
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
