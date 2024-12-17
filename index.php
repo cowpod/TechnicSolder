@@ -1057,18 +1057,18 @@ if (isset($_SESSION['user'])) {
                 <div class="card">
                     <h2>Copy Build</h2>
                     <hr>
-                    <form action="./functions/copy-build.php" method="">
-                        <input hidden type="text" name="modpackid" value="<?php echo $_GET['id'] ?>">
+                    <form id="copybuild" method="POST">
+                        <input hidden type="text" name="dest_modpack_id" value="<?php echo $_GET['id'] ?>">
                         <?php
                             $sbn = array();
-                            $allbuildnames = $db->query("SELECT `name` FROM `builds` WHERE `modpack` = ".$modpack['id']);
+                            $allbuildnames = $db->query("SELECT `name` FROM `builds` WHERE `modpack` = {$modpack['id']}");
                             foreach($allbuildnames as $bn) {
                                 array_push($sbn, $bn['name']);
                             }
                             $mpab = array();
                             $allbuilds = $db->query("SELECT `id`,`name`,`modpack` FROM `builds`");
                             foreach($allbuilds as $b) {
-                                $display_nameq=$db->query("SELECT `display_name` FROM `modpacks` WHERE `id` = ".$b['modpack']);
+                                $display_nameq=$db->query("SELECT `display_name` FROM `modpacks` WHERE `id` = {$b['modpack']}");
                                 if($display_nameq) {
                                     assert(sizeof($display_nameq)==1);
                                     $display_name=$display_nameq[0]['display_name'];
@@ -1091,23 +1091,23 @@ if (isset($_SESSION['user'])) {
                                 array_push($mps, $mpa);
                             }
                             ?>
-                        <select required="" id="mplist" class="form-control">
+                        <select id="mplist" class="form-control" required> <!-- Not passed to API -->
                             <option value=null>Please select a modpack..</option>
                             <?php
                             foreach ($mps as $pack) {
-                                echo "<option value='".$pack['id']."'>".$pack['name']."</option>";
+                                echo "<option value='{$pack['id']}'>{$pack['name']}</option>";
                             }
                             ?>
                         </select>
                         <br />
-                        <select id="buildlist" required="" name='buildid' class="form-control">
+                        <select id="buildlist" class="form-control" name='src_build_id' required> <!-- This is passed to API -->
                         </select>
                         <br />
-                        <input pattern="^[a-zA-Z0-9.-]+$" type="text" name="newname" id="newname" required class="form-control" placeholder="New Build Name">
-                        <span id="warn_newname" style="display: none" class="text-danger">Build with this name already exists.</span>
+                        <input id="newname" class="form-control" type="text" name="new_build_name" pattern="^[a-zA-Z0-9.-]+$" placeholder="New Build Name" required>
+                        <span id="warn_newname" class="text-danger" hidden>Build with this name already exists.</span>
                         <br />
-                        <button type="submit" id="copybutton" value="copy" class="btn btn-primary">Copy</button> 
-                        <button id="copylatestbutton" class="btn btn-secondary" onclick="copylatest()">Latest</button>
+                        <button id="copybutton" type="submit" class="btn btn-primary">Copy</button> 
+                        <button id="copylatestbutton" type="submit" class="btn btn-secondary">Latest</button>
                     </form>
                 </div>
             <?php } ?>
@@ -1151,7 +1151,7 @@ if (isset($_SESSION['user'])) {
                                     </div>
                                 </td>
                                 <td>
-                                    <em id="cog-<?php echo $user['id'] ?>" style="display:none;margin-top: 0.5rem" class="fas fa-cog fa-lg fa-spin"></em>
+                                    <em id="cog-<?php echo $user['id'] ?>" class="fas fa-cog fa-lg fa-spin" style="margin-top: 0.5rem" hidden></em>
                                 </td>
                             </tr>
                         <?php } ?>
@@ -1172,6 +1172,24 @@ if (isset($_SESSION['user'])) {
                           <div class="modal-footer">
                             <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
                             <button id="remove-button" onclick="" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="modal fade" id="responseModal" tabindex="-1" role="dialog" aria-labelledby="responseModalLabel" aria-hidden="true">
+                      <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="responseModalLabel"></h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                            </button>
+                          </div>
+                          <div class="modal-body" id="responseModalMessage">
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">Dismiss</button>
+                            <!-- <button id="remove-button" onclick="" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button> -->
                           </div>
                         </div>
                       </div>

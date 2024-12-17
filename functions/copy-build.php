@@ -2,31 +2,30 @@
 session_start();
 
 if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("Unauthorized request or login session has expired!");
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 if (substr($_SESSION['perms'], 1, 1)!=="1") {
-    echo '"{"status":"error","message":"Insufficient permission!"}';
-    exit();
+    die('{"status":"error","message":"Insufficient permission!"}');
 }
 
-if (empty($_GET['modpackid'])) {
-    die("Modpack ID not specified.");
+if (empty($_POST['dest_modpack_id'])) {
+    die('{"status":"error","message":"Modpack ID not specified."}');
 }
-if (empty($_GET['buildid'])) {
-    die("Build ID not specified.");
+if (empty($_POST['src_build_id'])) {
+    die('{"status":"error","message":"Build ID not specified."}');
 }
-if (empty($_GET['newname'])) {
-    die("New name not specified.");
+if (empty($_POST['new_build_name'])) {
+    die('{"status":"error","message":"New name not specified."}');
 }
 
-if (!is_numeric($_GET['modpackid'])) {
-    die("Malformed id");
+if (!is_numeric($_POST['dest_modpack_id'])) {
+    die('{"status":"error","message":"Malformed id"}');
 }
-if (!is_numeric($_GET['buildid'])) {
-    die("Malformed build");
+if (!is_numeric($_POST['src_build_id'])) {
+    die('{"status":"error","message":"Malformed build"}');
 }
-if (!preg_match('/^[a-zA-Z0-9.-]+$/', $_GET['newname'])) {
-    die("Malformed newname");
+if (!preg_match('/^[a-zA-Z0-9.-]+$/', $_POST['new_build_name'])) {
+    die('{"status":"error","message":"Malformed new_build_name"}');
 }
 
 require_once('./configuration.php');
@@ -43,13 +42,15 @@ if (!isset($db)){
 }
 
 $addbuildq = $db->execute("
-    INSERT INTO builds (`name`,`minecraft`,`java`,`mods`,`modpack`,loadertype,memory,clients) 
-    SELECT '{$_GET['newname']}',`minecraft`,`java`,`mods`,`modpack`,loadertype,memory,clients
-    FROM `builds` 
-    WHERE `id` = {$_GET['buildid']}
+    INSERT INTO builds (name,minecraft,java,mods,modpack,loadertype,memory,clients) 
+        SELECT '{$_POST['new_build_name']}',minecraft,java,mods,{$_POST['dest_modpack_id']},loadertype,memory,clients
+        FROM builds
+        WHERE id = {$_POST['src_build_id']}
 ");
+$id = $db->insert_id();
+
 if (!$addbuildq) {
-    die("Could not insert build with new name {$_GET['newname']}");
+    die('{"status":"error","message":"Could not insert build with new name '.$_POST['new_build_name'].'"}');
 }
 
 // instead of getting insert_id(), we just let the db do it.
@@ -59,16 +60,27 @@ $latestq = $db->execute("
         SELECT id 
         FROM builds 
         WHERE public=1
-        AND modpack = {$db->sanitize($_GET['modpackid'])}
+        AND modpack = {$_POST['dest_modpack_id']}
         ORDER BY id DESC
         LIMIT 1
     )
-    WHERE id = {$_GET['modpackid']}
+    WHERE id = {$_POST['dest_modpack_id']}
 ");
 
 if (!$latestq) {
-    die("Could not set latest build");
+    die('{"status":"error","message":"Could not set latest build"}');
 }
 
-header("Location: ".$config->get('dir')."modpack?id=".$_GET['modpackid']);
-exit();
+$stats = $db->query("
+    SELECT id,name,modpack,minecraft,java,mods
+    FROM builds
+    WHERE id={$id}
+");
+if ($stats && sizeof($stats)==1){
+    $stats = $stats[0];
+} else {
+    die('{"status":"error","message":"Could not get info for new build"}');
+}
+
+// header("Location: ".$config->get('dir')."modpack?id=".$_POST['dest_modpack_id']);
+die('{"status":"succ","message":"Successfully copied build!","details":'.json_encode($stats).'}');
