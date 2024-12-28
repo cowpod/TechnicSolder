@@ -1747,7 +1747,7 @@ if (isset($_SESSION['user'])) {
                                     <td>
                                         <?php if (substr($_SESSION['perms'], 4, 1)=="1") { ?>
                                         <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                            <button onclick="window.location='./mod?id=<?php echo $mod['name'] ?>'" class="btn btn-primary">Edit</button>
+                                            <a href="mod?id=<?php echo $mod['name'] ?>" class="btn btn-primary">Edit</a>
                                             <button onclick="remove_box('<?php echo $mod['name'] ?>')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
                                         </div>
                                     <?php } ?>
