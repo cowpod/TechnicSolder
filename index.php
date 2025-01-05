@@ -1213,6 +1213,20 @@ if (isset($_SESSION['user'])) {
             if (empty($modslist[0])){
                 unset($modslist[0]);
             }
+            // for ($i=0;$i<sizeof($modslist);$i++) {
+            //     $modslist[$i]=intval($modslist[$i]);
+            // }
+
+            // this is terrible, and should be done in SQL, or even better rewritten so that it's NOT a string-list of mod ids...
+            $modslist_names = [];
+
+            foreach ($modslist as $modid) {
+                $nameq = $db->query("SELECT name FROM mods WHERE id = ".$modid);
+                if ($nameq && !empty($nameq[0]['name'])) {
+                    // $modslist_names[$modid]=$nameq[0]['name'];
+                    array_push($modslist_names, $nameq[0]['name']);
+                }
+            }
 
             $mpack = $db->query("SELECT * FROM `modpacks` WHERE `id` = ".$user['modpack']);
             if ($mpack) {
@@ -1348,7 +1362,12 @@ if (isset($_SESSION['user'])) {
                                 $build_mod_ids = $modslist;
                                 $installed_loader="";
 
+                                $i=0;
+
                                 foreach ($build_mod_ids as $build_mod_id) {
+
+                                    $build_mod_name = $modslist_names[$i];
+                                    $i++;
 
                                     // now get the mod details (before we got ALL the mods...)
                                     $modq = $db->query("SELECT * FROM mods WHERE id = '".$build_mod_id."'");
@@ -1447,7 +1466,7 @@ if (isset($_SESSION['user'])) {
                                         // todo: we should switch type to be 'loader' instead of 'forge' for loaders.
                                         if (substr($_SESSION['perms'], 1, 1)=="1" && (empty($mod) || $mod['type'] == "mod" || $mod['type'] == "other")) {
                                             ?>
-                                            <button onclick="remove_mod(<?php echo $build_mod_id ?>)" class="btn btn-danger">
+                                            <button onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo $build_mod_name ?>')" class="btn btn-danger">
                                                 <em class="fas fa-times"></em>
                                             </button>
                                             <?php
@@ -1526,6 +1545,7 @@ if (isset($_SESSION['user'])) {
                 } else echo "<div class='card'><h3 class='text-info'>Select minecraft version and save before editing mods.</h3></div>"; ?>
                 <script>
                     const INSTALLED_MODS = JSON.parse('<?php echo json_encode($modslist, JSON_UNESCAPED_SLASHES) ?>');
+                    const INSTALLED_MOD_NAMES = JSON.parse('<?php echo json_encode($modslist_names, JSON_UNESCAPED_SLASHES) ?>');
                     const BUILD_ID = '<?php echo $user['id'] ?>';
                     const MCV = '<?php echo $user['minecraft'] ?>';
                     const TYPE = '<?php echo $user['loadertype'] ?>';

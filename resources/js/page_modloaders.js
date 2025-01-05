@@ -301,23 +301,30 @@ const forge_link = "https://maven.minecraftforge.net/net/minecraftforge/forge";
 
 // Fetch forge versions
 async function fetch_forges() {
-    async function verify_link_then_add(id,minecraft,version,link) {
+
+    async function add_from_response(response) {
+        for (var key in response) {
+            console.log('adding row', response[key])
+            $("#forge-table").append(`
+            <tr id="forge-${response[key]["id"]}">
+                <td scope="row" data-value="${response[key]["mc"]}">${response[key]["mc"]}</td>
+                <td data-value="${response[key]['name']}">${response[key]['name']}</td>
+                <td data-value="${response[key]["link"]}" class="d-none d-md-table-cell" style="overflow-wrap: break-word;"><a href="${response[key]["link"]}" style="word-break: break-all;">${response[key]["link"]}</a></td>
+                <td><button id="button-add-${response[key]["id"]}" onclick="download_forge(${response[key]["id"]}, '${response[key]["mc"]}', '${response[key]['name']}', '${response[key]["link"]}')" class="btn btn-primary btn-sm">Add to Database</button></td>
+                <td><em id="cog-${response[key]["id"]}" style="display:none" class="fas fa-spin fa-cog fa-2x"></em><em id="check-${response[key]["id"]}" style="display:none" class="text-success fas fa-check fa-2x"></em><em id="times-${response[key]["id"]}" style="display:none" class="text-danger fas fa-times fa-2x"></em></td>
+            </tr>`);
+        }
+    }
+
+    async function verify_link(id,minecraft,version,link) {
         console.log('verifying '+link)
         // check each version and then add it to list
         return new Promise((resolve, reject) => {
             fetch(link, { method:'HEAD' })
             .then(response=> {
                 if (response.status == 404) {
-                    reject(id);
+                    reject(false);
                 } else if (response.status == 200) {
-                    $("#forge-table").append(`
-                    <tr id="forge-${id}">
-                        <td scope="row" data-value="${minecraft}">${minecraft}</td>
-                        <td data-value="${version}">${version}</td>
-                        <td data-value="${link}" class="d-none d-md-table-cell" style="overflow-wrap: break-word;"><a href="${link}" style="word-break: break-all;">${link}</a></td>
-                        <td><button id="button-add-${id}" onclick="download_forge(${id}, '${minecraft}', '${version}', '${link}')" class="btn btn-primary btn-sm">Add to Database</button></td>
-                        <td><em id="cog-${id}" style="display:none" class="fas fa-spin fa-cog fa-2x"></em><em id="check-${id}" style="display:none" class="text-success fas fa-check fa-2x"></em><em id="times-${id}" style="display:none" class="text-danger fas fa-times fa-2x"></em></td>
-                    </tr>`);
                     resolve(true);
                 }
             })
@@ -328,25 +335,19 @@ async function fetch_forges() {
             reject(false);
         });
     }
-    async function parse_versions(response){
-        if (get_cached('installer_forge_versions')) {
-            let response=JSON.parse(get_cached('installer_forge_versions'));
-            for (var key in response) {
-                console.log(response[key])
-                await verify_link_then_add(response[key]["id"], response[key]["mc"], response[key]['name'], response[key]["link"]);
-            }
-        } else {
-            let valid=[];
-            console.log("ignore 404s, they're supposed to be suppressed/catched with onerror")
+
+    async function validate_versions(response){
+        return new Promise(async (resolve, reject) => {
+            let valid={};
             let onesix_worked=false;
             for (var key in response) {
                 if (!installed_loaders.includes('forge-'+response[key]['minecraft']+'-'+response[key]['name'])) {
                     if (onesix_worked || compareVersions(key,'1.6.0')>0) {
                         // if 1.6.0 worked, or we are above 1.6.0
                         try {
-                            let isvalid = await verify_link_then_add(response[key]['id'], response[key]['name'], response[key]['mc'], response[key]['link']);
+                            let isvalid = await verify_link(response[key]['id'], response[key]['name'], response[key]['mc'], response[key]['link']);
                             if (isvalid) {
-                                valid.push(response[key]);
+                                valid[key]=response[key];
                             if (compareVersions(key,'1.6.0')<0) {
                                 onesix_worked=false;
                             }
@@ -359,18 +360,21 @@ async function fetch_forges() {
                     }
                 }
             }
-            set_cached('installer_forge_versions', JSON.stringify(valid), CACHE_INSTALLER_TTL);
-        }
-        $("#fetch-forge").hide();
+            console.log(valid)
+            resolve(valid)
+            return valid
+        })
     }
 
     $("#fetch-forge").attr("disabled", true);
     $("#fetch-forge").html("Loading...<i class='fas fa-cog fa-spin fa-sm'></i>");
-    $("#table-fetched-mods").show();
 
     if (get_cached('installer_forge_versions')) {
-        let response=JSON.parse(get_cached('installer_forge_versions'));
-        parse_versions(response);
+        let response = JSON.parse(get_cached('installer_forge_versions'));
+        add_from_response(response);
+
+        $("#table-fetched-mods").show();
+        $("#fetch-forge").hide();
     } else {
         var request = new XMLHttpRequest();
         request.open('GET', './functions/forge-links.php');
@@ -378,11 +382,15 @@ async function fetch_forges() {
             if (request.readyState == 4 && request.status == 200) {
                 response = JSON.parse(this.response);
                 response = Object.fromEntries(Object.entries(response).reverse());
-                // cached in parse_versions
-                parse_versions(response);
+                let valid = await validate_versions(response);
+                console.log(valid)
+                add_from_response(valid)
+                set_cached('installer_forge_versions', JSON.stringify(valid), CACHE_INSTALLER_TTL);
+
+                $("#table-fetched-mods").show();
+                $("#fetch-forge").hide();
             }
         }
-        
         request.send();
     }
 }

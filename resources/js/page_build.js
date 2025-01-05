@@ -13,17 +13,22 @@ function fwipe(){
     $('#forgec').val('wipe');
     $('#submit-button').trigger('click');
 };
-function remove_mod(id) {
+function remove_mod(id,name) {
     var request = new XMLHttpRequest();
     request.open("GET", "./functions/remove-mod.php?bid="+BUILD_ID+"&id="+id);
     request.onreadystatechange = function() {
         if (request.readyState == 4 && request.status == 200) {
             if (request.responseText=='Mod removed') {
                 $("#mod-"+id).remove();
-                var index = INSTALLED_MODS.indexOf(id);
+                let index = INSTALLED_MODS.indexOf(id);
                 if (index!==-1) {
                     INSTALLED_MODS.splice(index, 1);
                 }
+                // let index = INSTALLED_MOD_NAMES.indexOf(name);
+                if (index!==-1) {
+                    INSTALLED_MOD_NAMES.splice(index, 1);
+                }
+                
             }
         }
     }
@@ -51,8 +56,13 @@ function changeversion(id_new, id_old, name, compatible) {
             if (index!==-1) {
                 INSTALLED_MODS.splice(index, 1);
             }
-
             INSTALLED_MODS.push(id_new);
+
+            // var index = INSTALLED_MOD_NAMES.indexOf(name);
+            if (index!==-1) {
+                INSTALLED_MOD_NAMES.splice(index, 1);
+            }
+            INSTALLED_MOD_NAMES.push(name);
         }
     }
     request.send();
@@ -70,8 +80,11 @@ function add_o(id) {
     request.open("GET", "./functions/add-mod.php?bid="+BUILD_ID+"&id="+id);
     request.send();
 }
-function add(name, pretty_name, id, v, mcv) {
+function add(name, pretty_name, id, mcv) {
     if ($("#versionselect-"+name+' option:selected').attr('missing')=='true') {
+        return;
+    }
+    if ($("#versionselect-"+name+' option:selected').val()==null) {
         return;
     }
     if ($("#versionselect-"+name).val()==null) {
@@ -80,6 +93,7 @@ function add(name, pretty_name, id, v, mcv) {
     $("#versionselect-"+name).attr("disabled", true);
     $("#btn-add-mod-"+name).attr("disabled", true);
     // $('#btn-add-mod-'+name).html('<em class="fas fa-cog fa-spin">');
+    let v = $("#versionselect-"+name+' option:selected').val(); // todo: this is valid, but id is not!
 
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
@@ -95,7 +109,7 @@ function add(name, pretty_name, id, v, mcv) {
                         <td data-value="${v}">${v}</td>
                         <td data-value="${mcv}" class="d-none d-sm-table-cell">${mcv}</td>
                         <td>
-                            <button onclick="remove_mod(${id})" class="btn btn-danger">
+                            <button onclick="remove_mod(${id},${name})" class="btn btn-danger">
                                 <em class="fas fa-times"></em>
                             </button>
                         </td>
@@ -103,6 +117,7 @@ function add(name, pretty_name, id, v, mcv) {
                 `);
 
                 INSTALLED_MODS.push(id);
+                INSTALLED_MOD_NAMES.push(name)
 
                 // remove from list of available mods
                 const index = rows_mods_available.indexOf(name);
@@ -124,7 +139,7 @@ function add_mod_row(id,pretty_name,name,versions,mcv) {
     if (pretty_name=='' || name=='' || versions=='' || mcv=='') {
         var addbutton=`<a id="btn-add-mod-${name}" href="mod?id=${name}" class="btn btn-warning">Issue(s)</a>`;
     } else {
-        var addbutton=`<a id="btn-add-mod-${name}" onclick="add('${name}', '${pretty_name}', '${id}', '${versions}','${mcv}')" class="btn btn-primary">Add to build</a>`;
+        var addbutton=`<a id="btn-add-mod-${name}" onclick="add('${name}', '${pretty_name}', '${id}', '${mcv}')" class="btn btn-primary">Add to build</a>`;
     }
     
     var versions_str = ``;
@@ -164,14 +179,14 @@ function parsemods(obj) {
     for (let mod of obj) {
         if (filter=='' || filter==undefined || mod['pretty_name'].toLowerCase().includes(filter)||mod['name'].toLowerCase().includes(filter)) {
 
-            if (   !INSTALLED_MODS.includes(''+mod['id']) 
-                && !rows_mods_available.includes(mod['name'])
-                && ($('#showall').is(':checked') || mod['mcversion']=='' || MCV==mod['mcversion'] || isVersionInInterval(`'${MCV}'`, mod['mcversion']))) {
+            if (INSTALLED_MOD_NAMES.includes(mod['name']) || INSTALLED_MODS.includes(''+mod['id']) || rows_mods_available.includes(mod['name'])) {
+            } else if ($('#showall').is(':checked') || mod['mcversion']=='' || MCV==mod['mcversion'] || isVersionInInterval(`'${MCV}'`, mod['mcversion'])) {
                 rows_mods_available.push(mod['name']);
                 add_mod_row(mod['id'], mod['pretty_name'], mod['name'], versions[mod['name']], mod['mcversion']);
                 added_num+=1;
             }
         }
+    
     }
     if (added_num==0) {
         if (filter!='') {
@@ -255,7 +270,7 @@ $(document).on('change', '.form-control', function() {
         } else {
             addButton.removeAttr('disabled');
         }
-        console.log('#btn-add-mod-'+modid);
+        console.log('#btn-add-mod-'+id);
     }
 });
 
