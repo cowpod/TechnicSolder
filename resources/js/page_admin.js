@@ -19,11 +19,12 @@ function remove(id) {
     request.open('POST', './functions/remove_user.php');
     request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     request.onreadystatechange = function() {
-        if (request.readyState == 4) {
-            console.log(request.responseText);
-            // $("#info").html(request.responseText + "<br />");
-            // setTimeout(function(){ window.location.reload(); }, 500);
-            $("#user-"+id).remove();
+        if (request.readyState==4 && request.status==200) {
+            console.log(request.responseText)
+            let json = JSON.parse(request.responseText)
+            if (json['status']==='succ'){
+                $("#user-"+id).remove()
+            }
         }
 
     }
