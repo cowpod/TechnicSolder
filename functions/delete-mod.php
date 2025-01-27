@@ -74,7 +74,7 @@ function removeMod($id) {
 
 if(!empty($_GET['id'])) {
     $status = removeMod($_GET['id']);
-    die($status);
+    die(json_encode($status)); // bruh
 }
 elseif (!empty($_GET['name'])) {
     // for all mod versions (ids) associated with name

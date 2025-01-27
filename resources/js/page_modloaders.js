@@ -17,7 +17,8 @@ function remove(id,name,minecraft,version,force) {
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            response = JSON.parse(this.response);
+            console.log(this.responseText)
+            response = JSON.parse(this.responseText);
             if (response['status']=='succ') {
                 console.log('success!');
                 $("#mod-row-"+id).remove();
