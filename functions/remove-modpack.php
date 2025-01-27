@@ -9,6 +9,9 @@ if (empty($config)) {
 if (empty($_GET['id'])) {
     die("Modpack not specified.");
 }
+if (!is_numeric($_GET['id'])) {
+    die("Malformed id.");
+}
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
 }

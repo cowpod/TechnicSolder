@@ -1002,7 +1002,7 @@ if (isset($_SESSION['user'])) {
                           </div>
                           <div class="modal-footer">
                             <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
-                            <button onclick="window.location='./functions/rmp.php?id=<?php echo $modpack['id'] ?>'" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
+                            <button onclick="window.location='./functions/remove-modpack.php?id=<?php echo $modpack['id'] ?>'" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                           </div>
                         </div>
                       </div>
