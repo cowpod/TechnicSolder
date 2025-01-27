@@ -1,10 +1,5 @@
 <?php
 session_start();
-require_once('./configuration.php');
-global $config;
-if (empty($config)) {
-    $config=new Config();
-}
 
 if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("Unauthorized request or login session has expired!");
@@ -16,6 +11,21 @@ if (substr($_SESSION['perms'], 4, 1)!=="1") {
 if (empty($_POST['id'])) {
     die("Mod not specified.");
 }
+if (empty($_POST['value'])) {
+    die('Value (donation link) not specified.');
+}
+if (!is_numeric($_POST['id'])) {
+    die('Malformed id');
+}
+if (!filter_var($_POST['value'], FILTER_VALIDATE_URL)){
+    die("Malformed value (donation link)");
+}
+
+require_once('./configuration.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 global $db;
 require_once("db.php");
@@ -24,9 +34,6 @@ if (!isset($db)){
     $db->connect();
 }
 
-$db->execute("UPDATE `mods`
-    SET `author` = '".$db->sanitize($_POST['value'])."'
-    WHERE `name` = '".$db->sanitize($_POST['id'])."'"
-);
+$db->execute("UPDATE `mods` SET `author` = '{$_POST['value']}' WHERE `name` = '{$_POST['id']}'");
 
 exit();
