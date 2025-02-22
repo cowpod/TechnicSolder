@@ -49,7 +49,7 @@ $name = $_POST['display_name'];
 // $pass = hash("sha256", $_POST['pass']."Solder.cf");
 $pass = password_hash($_POST['pass'], PASSWORD_DEFAULT);
 
-if (!preg_match('/^[\w\.\-\+]+@[a-zA-Z0-9\d\.-]+\.[a-zA-Z]{2,}$/', $email)) {
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     die('{"status":"error","message":"Malformed email"}');
 }
 if (!preg_match("/^[a-zA-Z0-9\s\-\.\s]+$/", $name)) {

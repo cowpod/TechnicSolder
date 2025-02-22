@@ -77,7 +77,7 @@ $modslist=[];
 // currently, we're sending a plaintext password, and have no guarantee of https!
 if (!empty($_POST['email']) && !empty($_POST['password'])) {
     // loose regex email check
-    if (!preg_match('/^[\w\-\+\.@]+$/', $_POST['email'])) {
+    if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
         die("Malformed email");
     }
     $userq = $db->query("SELECT * FROM users WHERE name = '{$db->sanitize($_POST['email'])}' LIMIT 1");

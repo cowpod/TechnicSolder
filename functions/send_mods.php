@@ -31,7 +31,7 @@ if (isset($_FILES['fiels']) && isset($_FILES["fiels"]["name"]) && isset($_FILES[
 } else {
     // accept urls via POST (for modrinth)
     if ($config->exists('modrinth_integration') && $config->get('modrinth_integration') == 'on' && isset($_POST['url'])) {
-        if (preg_match('/^(https?:\/\/)([a-zA-Z0-9-.]+)([a-zA-Z0-9\-\_\.\~\/\:\@\&\=\+\$\,\;\?\#\%]+)$/', $_POST['url'])) {
+        if (filter_var($_POST['url'], FILTER_VALIDATE_URL)) {
             $apiversiondata = json_decode(file_get_contents('../api/version.json'),true);
             if (!$apiversiondata) {
                 die('{"status":"error","message": "could not get solder version"}');

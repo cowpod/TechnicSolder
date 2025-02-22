@@ -54,7 +54,7 @@ if (isset($_POST['host'])) {
     $api_key = $_POST['api_key'];
     $api_key_serverwide = isset($_POST['api_key_serverwide']) ? TRUE : FALSE;
 
-    if (!preg_match('/^[\w\.\-\+]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$/', $email)) {
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         die('Bad input data; email');
     }
     if (!preg_match("/^[a-zA-Z\s\-\.\s]+$/", $name)) {
@@ -93,8 +93,8 @@ if (isset($_POST['host'])) {
     if (!preg_match("/^[a-z0-9\.\-]+$/", $host)) {
         die("Bad input data; host");
     }
-    if (!preg_match("/^[a-zA–Z0–9\-\._~!\$&'\(\)\*\+;=:@%\/]+$/", $dir)) {
-        die("Bad input data; dir (path)");
+    if (!is_dir($dir)) {
+        die("Bad input data; dir (path) does not exist. This should be the directory containing the TechnicSolder repository.");
     }
 
     $config_contents = [
