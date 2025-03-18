@@ -57,7 +57,7 @@ if (!empty($_FILES["newIcon"]["tmp_name"])) {
 
     $contents = @file_get_contents($icon);
     if ($contents === FALSE) {
-        die('{"status":"error","message":"Could not read image."}');
+        die('{"status":"error","message":"Could not read image"}');
     }
     
     $icon_base64 = base64_encode($contents);
@@ -74,41 +74,52 @@ if (!empty($_FILES["newIcon"]["tmp_name"])) {
     die('{"status":"succ","message":"Succesfully set user icon","type":"'.$type.'","data":"'.$icon_base64.'"}');
     
 } else {
+    $displayname_changed = false;
+    $password_changed = false;
 
     if (!empty($_POST['oldpass']) && !empty($_POST['pass'])) {
         if (!isStrongPassword($_POST['pass'])) {
-            die("Bad password.");
+            die('{"status":"error","message":"Bad password"}');
         }
 
         $verifypwdq = $db->query("SELECT pass FROM users WHERE name = '{$_SESSION['user']}'");
         if (!$verifypwdq) {
-            die("Could not verify current password");
+            die('{"status":"error","message":"Could not verify old password"}');
         }
         $oldpasswordhash=$verifypwdq[0]['pass'];
         if (!password_verify($_POST['oldpass'], $oldpasswordhash)) {
-            error_log("stored password does not match current password");
-            die("Could not verify current password");
+            error_log("stored password does not match old password");
+            die('{"status":"error","message":"Could not verify old password"}');
         }
 
         $newpass = password_hash($_POST['pass'], PASSWORD_DEFAULT);
         $db->execute("UPDATE users SET pass = '{$newpass}' WHERE name = '{$_SESSION['user']}'");
+        $password_changed = true;
     }
 
     if (!empty($_POST['display_name'])) {
         if (!isValidName($_POST['display_name'])) {
-            die("Bad name. Only letters, numbers, spaces, hyphens, periods, and underscores allowed.");
+            die('{"status":"error","message":"Bad name"}');
         }
         $updatedisplayname = $db->execute("UPDATE users SET display_name = '{$_POST['display_name']}' WHERE name = '{$_SESSION['user']}'");
         if (!$updatedisplayname) {
-            die("Could not update name");
+            die('{"status":"error","message":"Could not update name"}');
         }
 
         // update session vars. otherwise user will need to relog.
         $_SESSION['name'] = $_POST['display_name'];
+        $displayname_changed = true;
     }
+
+    $db->disconnect();
+
+    if ($displayname_changed && $password_changed) {
+        die('{"status":"succ","message":"name and password changed", "name":"'.$_SESSION['name'].'"}');
+    } else if ($displayname_changed) {
+        die('{"status":"succ","message":"name changed", "name":"'.$_SESSION['name'].'"}');
+    } else if ($password_changed) {
+        die('{"status":"succ","message":"password changed"}');
+    }
+echo "done";
 }
 
-$db->disconnect();
-
-header("Location: ".$config->get('dir')."account");
-exit();

@@ -16,27 +16,37 @@ function validatePassword(password) {
 $("#newname").on("keyup", function() {
     if ($("#newname").val()!=="") {
         if ($("#newname").val()!==$("#newname").attr("oldvalue")) {
-            $("#newname").addClass("is-valid");
+            // $("#newname").addClass("is-valid");
             $("#newname").removeClass("is-invalid");
             $("#newnamesubbmit").attr("disabled", false);
         } else {
-            $("#newname").removeClass("is-valid");
+            // $("#newname").removeClass("is-valid");
             $("#newname").removeClass("is-invalid");
             $("#newnamesubbmit").attr("disabled", true);
         }
     } else {
         $("#newname").addClass("is-invalid");
-        $("#newname").removeClass("is-valid");
+        // $("#newname").removeClass("is-valid");
         $("#newnamesubbmit").attr("disabled", true);
     }
 });
 
 $("#pass1").on("keyup", function() {
+    $("#oldpass").removeClass("is-invalid");
     if ($("#pass1").val()!=="" && validatePassword($("#pass1").val())) {
         $("#pass1").addClass("is-valid");
         $("#pass1").removeClass("is-invalid");
         if ($("#pass1").val()!==""&&$("#pass2").val()!==""&&$("#pass1").val()==$("#pass2").val()) {
             $("#save-button").attr("disabled", false);
+        }
+        if ($("#pass2").val()!="") {
+            if ($("#pass1").val()==$("#pass2").val()) {
+                $("#pass2").addClass("is-valid");
+                $("#pass2").removeClass("is-invalid");
+            } else {
+                $("#pass2").removeClass("is-valid");
+                $("#pass2").addClass("is-invalid");
+            }
         }
     } else {
         $("#pass1").addClass("is-invalid");
@@ -45,7 +55,9 @@ $("#pass1").on("keyup", function() {
     }
 });
 $("#pass2").on("keyup", function() {
-    if ($("#pass2").val()!==""&$("#pass2").val()==$("#pass1").val() && validatePassword($("#pass2").val())) {
+    $("#oldpass").removeClass("is-invalid");
+    $('#pass1').keyup();
+    if ($("#pass2").val()!=="" && $("#pass2").val()==$("#pass1").val() && validatePassword($("#pass2").val())) {
         $("#pass2").addClass("is-valid");
         $("#pass2").removeClass("is-invalid");
         if ($("#pass1").val()!==""&&$("#pass2").val()!==""&&$("#pass1").val()==$("#pass2").val()) {
@@ -57,6 +69,12 @@ $("#pass2").on("keyup", function() {
         $("#save-button").attr("disabled", true);
     }
 });
+$("#oldpass").on("keyup", function() {
+    if ($("#oldpass").hasClass("is-invalid")) { // if we got marked as bad
+        $("#oldpass").removeClass("is-invalid"); // we don't verify its actually changed
+        $("#save-button").attr("disabled", false);
+    }
+})
 $("#newIcon").change(function(){
     var formData = new FormData();
     var request = new XMLHttpRequest();
@@ -139,7 +157,7 @@ $("#save_api_key").on("click", function() {
         formData.set('api_key', $("#api_key").val());
         request.open('POST', './functions/save_api_key.php');
         request.onreadystatechange = function() {
-            if (request.readyState == 4) {
+            if (request.readyState == 4 && request.status == 200) {
                 console.log(request.responseText);
                 let jsondata=JSON.parse(request.responseText);
                 if (jsondata['status']=='succ') {
@@ -157,6 +175,75 @@ $("#save_api_key").on("click", function() {
         $("#save_api_key").attr("disabled",true);
         $("#api_key").addClass("is-invalid");
         $("#api_key").removeClass("is-valid");
+    }
+});
+
+$("#change-name").on("submit", function(event) {
+    event.preventDefault();
+    if ($("#newname").val()!=="" && $("#newname").val()!==$("#newname").attr("oldvalue")) {
+        let formData = new FormData();
+        let request = new XMLHttpRequest();
+        formData.set('display_name', $("#newname").val());
+        request.open('POST', './functions/update-user.php');
+        request.onreadystatechange = function() {
+            if (request.readyState == 4 && request.status == 200) {
+                console.log(request.responseText);
+                let jsondata=JSON.parse(request.responseText);
+                if (jsondata['status']=='succ') {
+                    $("#newname").addClass("is-valid");
+                    $("#newname").removeClass("is-invalid");
+                    $("#newname").attr("oldvalue", jsondata["name"]) // otherwise #newname->onkeyup will mark it as changed
+                    $("#user-name").text(jsondata["name"])
+                } else {
+                    $("#newname").addClass("is-invalid");
+                    $("#newname").removeClass("is-valid");
+                }
+                $("#newnamesubbmit").attr("disabled",true);
+            }
+        }
+        request.send(formData);
+    }
+});
+
+
+$("#change-password").on("submit", function(event) {
+    event.preventDefault();
+    if ($("#pass1").val()!=="" && $("#pass1").val()===$("#pass2").val() && validatePassword($("#pass1").val())) {
+        let formData = new FormData();
+        let request = new XMLHttpRequest();
+        formData.set('oldpass', $("#oldpass").val());
+        formData.set('pass', $("#pass1").val());
+        request.open('POST', './functions/update-user.php');
+        request.onreadystatechange = function() {
+            if (request.readyState == 4 && request.status == 200) {
+                console.log(request.responseText);
+                let jsondata=JSON.parse(request.responseText);
+                if (jsondata['status']=='succ') {
+                    $("#oldpass").removeClass("is-invalid");
+                    $("#pass1").removeClass("is-valid");
+                    $("#pass1").removeClass("is-invalid");
+                    $("#pass2").removeClass("is-valid");
+                    $("#pass2").removeClass("is-invalid");
+                    $("#oldpass").val("")
+                    $("#pass1").val("")
+                    $("#pass2").val("")
+                } else {
+                    if (jsondata["message"] == "Could not verify old password") {
+                        $("#oldpass").addClass("is-invalid")
+                    } else {
+                        $("#oldpass").removeClass("is-invalid");
+                        $("#pass1").addClass("is-invalid");
+                        $("#pass1").removeClass("is-valid");
+                        $("#pass2").addClass("is-invalid");
+                        $("#pass2").removeClass("is-valid");
+                    }
+                }
+                $("#change-password-message").html(jsondata['message'])
+                $("#change-password-message").show()
+                $("#save-button").attr("disabled",true);
+            }
+        }
+        request.send(formData);
     }
 });
 

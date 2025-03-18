@@ -405,8 +405,7 @@ if (isset($_SESSION['user'])) {
             <span class="navbar-brand"  href="#"><img id="techniclogo" alt="Technic logo" class="d-inline-block align-top" height="46px" src="./resources/wrenchIcon<?php if (get_setting('dark')=="on") {echo "W";}?>.svg"><em id="menuopen" class="fas fa-bars menu-bars"></em> Technic Solder <span id="solderinfo"><?php echo(json_decode($api_version_json,true))['version']; ?></span></span></span>
             <span style="cursor: pointer;" class="dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <img id="user-photo" class="img-thumbnail" style="width: 40px;height: 40px" src="functions/get-user-icon.php">
-
-                <span class="navbar-text"><?php echo $_SESSION['name'] ?> </span>
+                <span id="user-name" class="navbar-text"><?php echo $_SESSION['name'] ?> </span>
                 <div style="left: unset;right: 2px;" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <a class="dropdown-item" href="?logout=true&logout=true" onclick="window.location = window.location+'?logout=true&logout=true'">Log Out</a>
                     <a class="dropdown-item" href="./account" onclick="window.location = './account'">My account</a>
@@ -2494,21 +2493,23 @@ if (isset($_SESSION['user'])) {
                             <input type="file" class="custom-file-input" id="newIcon" required>
                             <label class="custom-file-label" for="newIcon">Choose file... (max 15MB)</label>
                         </div>
+                     <font id="user-photo-message" style="display: none;"></font>
                      </form>
-                     <font id="user-photo-message" style="display: none; color: darkred; font-weight: bold;"></font>
                      <hr />
                      <h3>Change Name</h3>
-                     <form method="POST" action="./functions/update-user.php">
+                     <form id="change-name">
                         <input id="newname" placeholder="Name" class="form-control" type="text" name="display_name" value="<?php echo $_SESSION['name'] ?>" oldvalue="<?php echo $_SESSION['name'] ?>"><br />
                         <input id="newnamesubbmit" class="btn btn-success" type="submit" name="save" value="Save" disabled>
+                     <font id="change-name-message" style="display: none;"></font>
                      </form>
                      <hr />
                      <h3>Change Password</h3>
-                     <form method="POST" action="./functions/update-user.php">
+                     <form id="change-password">
                         <input id="oldpass" placeholder="Current Password" class="form-control" type="password" name="oldpass"><br />
                         <input id="pass1" placeholder="New Password" class="form-control" type="password" name="pass"><br />
                         <input id="pass2" placeholder="Confirm Password" class="form-control" type="password"><br />
                         <input class="btn btn-success" type="submit" name="save" id="save-button" value="Save" disabled>
+                     <font id="change-password-message" style="display: none;"></font>
                      </form>
                 </div>
                 <div class="card">
