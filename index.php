@@ -399,14 +399,7 @@ if (isset($_SESSION['user'])) {
         <nav class="navbar <?php if (get_setting('dark')=="on") { echo "navbar-dark bg-dark sticky-top";}else { echo "navbar-light bg-white sticky-top";}?>">
             <span class="navbar-brand"  href="#"><img id="techniclogo" alt="Technic logo" class="d-inline-block align-top" height="46px" src="./resources/wrenchIcon<?php if (get_setting('dark')=="on") {echo "W";}?>.svg"><em id="menuopen" class="fas fa-bars menu-bars"></em> Technic Solder <span id="solderinfo"><?php echo(json_decode($api_version_json,true))['version']; ?></span></span></span>
             <span style="cursor: pointer;" class="dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <img class="img-thumbnail" style="width: 40px;height: 40px" src="data:image/png;base64,<?php
-                    $iconq = $db->query("SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
-                    if ($iconq && sizeof($iconq)>=1 && isset($iconq[0]['icon'])) {
-                        echo $iconq[0]['icon'];
-                    } else {
-                        error_log("failed to get icon for name='".$_SESSION['user']."'");
-                    }
-                ?>">
+                <img id="user-photo" class="img-thumbnail" style="width: 40px;height: 40px" src="functions/get-user-icon.php">
 
                 <span class="navbar-text"><?php echo $_SESSION['name'] ?> </span>
                 <div style="left: unset;right: 2px;" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -2489,14 +2482,7 @@ if (isset($_SESSION['user'])) {
                     </div>
                     <hr />
                     <h3>User Picture</h3>
-                    <img class="img-thumbnail" style="width:128px; height: 128px" src="data:image/png;base64,<?php
-                    $iconq = $db->query("SELECT `icon` FROM `users` WHERE `name` = '".$_SESSION['user']."'");
-                    if ($iconq && sizeof($iconq)>=1 && isset($iconq[0]['icon'])) {
-                        echo $iconq[0]['icon'];
-                    } else {
-                        error_log("failed to get icon for name='".$_SESSION['user']."'");
-                    }
-                     ?>">
+                    <img id="user-photo-preview" class="img-thumbnail" style="width:128px; height: 128px" src="functions/get-user-icon.php">
                      <br/>
                      <form enctype="multipart/form-data">
                         <div class="custom-file">
