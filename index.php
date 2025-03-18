@@ -14,7 +14,7 @@ require_once('./functions/configuration.php');
 
 // regardless of configuration.php existing, configured=>false forces a re-configure.
 if (!$config->exists('configured') || $config->get('configured')!==true) {
-    header("Location: ".($config->exists('dir')?$config->get('dir'):'/')."configure.php");
+    header("Location: ".($config->exists('dir') ? $config->get('dir'):'/')."configure.php");
     exit();
 }
 
@@ -37,7 +37,7 @@ require('functions/format_number.php');
 
 require('functions/mp_latest_recommended.php');
 
-function uri($uri) {
+function uri($uri) : bool {
     global $url;
     $length = strlen($uri);
     if ($length == 0) {
@@ -45,7 +45,7 @@ function uri($uri) {
     }
     return (substr($url, -$length) === $uri);
 }
-function is_https() {
+function is_https() : bool {
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
         return true;
     }

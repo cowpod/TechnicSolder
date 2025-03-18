@@ -1,7 +1,7 @@
 <?php
 // purely a function file.
 // requires $db
-function write_settings($settings, $user) {
+function write_settings($settings, $user): bool {
     // write to db/disk settings for a user
     global $db;
     assert(!empty($user));
@@ -22,7 +22,7 @@ function write_settings($settings, $user) {
     error_log("set_settings(): Failed to write settings");
     return FALSE;
 }
-function read_settings($user) {
+function read_settings($user): void {
     // read settings for a user
     global $db;
     assert(!empty($user));
@@ -40,10 +40,10 @@ function read_settings($user) {
         error_log("got api key from database");
     }
 }
-function got_settings() {
+function got_settings(): bool {
     return isset($_SESSION['user-settings']);
 }
-function set_setting($key,$value) {
+function set_setting($key,$value): bool {
     assert(!empty($key));
     $new_settings = isset($_SESSION['user-settings']) ? $_SESSION['user-settings'] : [];
     $new_settings[$key] = $value;
@@ -53,7 +53,7 @@ function set_setting($key,$value) {
     }
     return FALSE;
 }
-function set_settings($multiple_settings) {
+function set_settings($multiple_settings): bool {
     assert(!empty($multiple_settings));
     $new_settings = isset($_SESSION['user-settings']) ? $_SESSION['user-settings'] : [];
     foreach ($multiple_settings as $key=>$value) {

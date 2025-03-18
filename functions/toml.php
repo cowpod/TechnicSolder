@@ -5,8 +5,17 @@ O(n(m+t)), where n = number of lines in file, m = chars in line, t = number of n
 todo: make static?
 */
 
-class Toml {
-    private function clean_lines($arr) {
+final class Toml {
+    /**
+     * @param string[] $arr
+     *
+     * @psalm-param non-empty-list<string> $arr
+     *
+     * @return string[]
+     *
+     * @psalm-return list<string>
+     */
+    private function clean_lines(array $arr): array {
         $ret=[];
         for ($i=0; $i<sizeof($arr); $i++) {
             $line=ltrim($arr[$i]); // deal with indented lines, todo: handles tabs?

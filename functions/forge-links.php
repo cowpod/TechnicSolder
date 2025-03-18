@@ -10,7 +10,6 @@ if (empty($forge_data)) {
 
 $forge_link = "https://maven.minecraftforge.net/net/minecraftforge/forge";
 $versions = [];
-$forges = [];
 $id = 0;
 
 require_once("db.php");

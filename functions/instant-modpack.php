@@ -55,10 +55,11 @@ $db->execute("INSERT INTO modpacks(`name`, `display_name`, `icon`, `icon_md5`, `
 $mpi = $db->insert_id();
 
 $fq = $db->query("SELECT `loadertype`,`mcversion` FROM `mods` WHERE `id` = ". $bforge);
-if ($fq) {
-    assert(sizeof($fq)==1);
-    $f = $fq[0];
+if (!$fq) {
+    die("Mod id does not eixst");
 }
+
+$f = $fq[0];
 $minecraft = $f['mcversion'];
 $loadertype= $f['loadertype'];
 $forgeandmods = !empty($bmods) ? $bforge.','.$bmods : $bforge;

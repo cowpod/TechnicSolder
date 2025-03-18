@@ -6,7 +6,7 @@ define('FORGE_OLD_INFO_PATH', 'mcmod.info');
 require('toml.php');
 require('interval_range_utils.php');
 
-class modInfo {
+final class modInfo {
     private $warn=[];
 
     private function getModTypes(string $filePath): array {
@@ -119,7 +119,6 @@ class modInfo {
                         }
                         if (empty($mod['version']) || $mod['version']=='${file.jarVersion}') {
                             $matches=[];
-                            $patchedversion='';
                             if (!empty($fileName) && preg_match("/-([0-9a-z\-\.]+)$/", str_replace('.jar','',$fileName), $matches)) {
                                 if (!empty($matches[1])) {
                                     $mod_info['neoforge']['version'] = $matches[1];
@@ -214,7 +213,6 @@ class modInfo {
                         }
                         if (empty($mod['version']) || $mod['version']=='${file.jarVersion}') {
                             $matches=[];
-                            $patchedversion='';
                             if (!empty($fileName) && preg_match("/-([0-9a-z\-\.]+)$/", str_replace('.jar','',$fileName), $matches)) {
                                 if (!empty($matches[1])) {
                                     $mod_info['forge']['version'] = $matches[1];
@@ -302,7 +300,6 @@ class modInfo {
                 if (empty($parsed['version']) || $parsed['version']=='${file.jarVersion}') {
                     // array_push($this->warn, 'Missing version!');
                     $matches=[];
-                    $patchedversion='';
                     if (preg_match("/-([0-9a-z\-\.]+)$/", str_replace('.jar','',$fileName), $matches)) {
                         if (!empty($matches[1])) {
                             $mod_info['old_forge']['version'] = $matches[1];
@@ -428,7 +425,7 @@ class modInfo {
         return $this->warn;
     }
 
-    public function getModInfo(string $filePath, $fileName) {
+    public function getModInfo(string $filePath, string $fileName): array {
         // return first mod detected
         $mod_types = $this->getModTypes($filePath);
         $mod_infos = $this->getModInfos($mod_types, $filePath, $fileName);

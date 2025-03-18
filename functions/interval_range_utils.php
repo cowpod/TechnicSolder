@@ -71,7 +71,7 @@ function removeEnding($string, $remove) {
     return $string;
 }
 
-function in_range($range, $num) {
+function in_range($range, $num): bool {
 	// returns true if $num is in interval range $range.
 	// returns false otherwise.
 
@@ -134,7 +134,12 @@ function in_range($range, $num) {
 	return version_compare($range,$num,'=');
 }
 
-function parse_interval_range($mcversion) {
+/**
+ * @return (int|null|string)[]
+ *
+ * @psalm-return array{min: int|null|string, max: int<1, max>|null|string, min_inclusivity: '>'|'>=', max_inclusivity: '<'|'<='}
+ */
+function parse_interval_range($mcversion): array {
     $min=null;
     $max=null;
 

@@ -8,7 +8,6 @@ function compareZipContents(string $filepath1, string $filepath2): bool {
     }
 
     $contents1 = [];
-    $filecount1 = 0;
     $zip = new ZipArchive();
     if ($zip->open($filepath1) === TRUE) {
         $filecount1=$zip->numFiles;
@@ -23,7 +22,6 @@ function compareZipContents(string $filepath1, string $filepath2): bool {
     }
 
     $contents2 = [];
-    $filecount2 = 0;
     $zip = new ZipArchive();
     if ($zip->open($filepath2) === TRUE) {
         $filecount2=$zip->numFiles;

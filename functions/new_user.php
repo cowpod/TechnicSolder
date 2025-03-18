@@ -1,7 +1,7 @@
 <?php
 define('DEFAULT_PERMS', '0000000');
 
-function isStrongPassword($password) {
+function isStrongPassword($password): bool {
     if (strlen($password) < 8) {
         return false;
     }
