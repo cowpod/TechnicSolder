@@ -2495,9 +2495,17 @@ if (isset($_SESSION['user'])) {
                             <label class="custom-file-label" for="newIcon">Choose file... (max 15MB)</label>
                         </div>
                      </form>
+                     <font id="user-photo-message" style="display: none; color: darkred; font-weight: bold;"></font>
+                     <hr />
+                     <h3>Change Name</h3>
+                     <form method="POST" action="./functions/update-user.php">
+                        <input id="newname" placeholder="Name" class="form-control" type="text" name="display_name" value="<?php echo $_SESSION['name'] ?>" oldvalue="<?php echo $_SESSION['name'] ?>"><br />
+                        <input id="newnamesubbmit" class="btn btn-success" type="submit" name="save" value="Save" disabled>
+                     </form>
                      <hr />
                      <h3>Change Password</h3>
-                     <form method="POST" action="./functions/chpw.php">
+                     <form method="POST" action="./functions/update-user.php">
+                        <input id="oldpass" placeholder="Current Password" class="form-control" type="password" name="oldpass"><br />
                         <input id="pass1" placeholder="New Password" class="form-control" type="password" name="pass"><br />
                         <input id="pass2" placeholder="Confirm Password" class="form-control" type="password"><br />
                         <input class="btn btn-success" type="submit" name="save" id="save-button" value="Save" disabled>

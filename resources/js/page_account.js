@@ -13,6 +13,24 @@ function validatePassword(password) {
     return true;
 }
 
+$("#newname").on("keyup", function() {
+    if ($("#newname").val()!=="") {
+        if ($("#newname").val()!==$("#newname").attr("oldvalue")) {
+            $("#newname").addClass("is-valid");
+            $("#newname").removeClass("is-invalid");
+            $("#newnamesubbmit").attr("disabled", false);
+        } else {
+            $("#newname").removeClass("is-valid");
+            $("#newname").removeClass("is-invalid");
+            $("#newnamesubbmit").attr("disabled", true);
+        }
+    } else {
+        $("#newname").addClass("is-invalid");
+        $("#newname").removeClass("is-valid");
+        $("#newnamesubbmit").attr("disabled", true);
+    }
+});
+
 $("#pass1").on("keyup", function() {
     if ($("#pass1").val()!=="" && validatePassword($("#pass1").val())) {
         $("#pass1").addClass("is-valid");
@@ -44,11 +62,18 @@ $("#newIcon").change(function(){
     var request = new XMLHttpRequest();
     icon = document.getElementById('newIcon');
     formData.set('newIcon', icon.files[0]);
-    request.open('POST', './functions/new_icon.php');
+    request.open('POST', './functions/update-user.php');
     request.onreadystatechange = function() {
-        if (request.readyState == 4) {
-            console.log(this.responseText);
-            setTimeout(function(){ window.location.reload(); }, 500);
+        if (request.readyState == 4 && request.status == 200) {
+            console.log(request.responseText);
+            obj = JSON.parse(request.responseText)
+
+            if (obj["status"]=="succ") {
+                $("#user-photo-preview").attr('src', `data:${obj['type']};base64,${obj["data"]}`)
+                $("#user-photo").attr('src', `data:${obj['type']};base64,${obj["data"]}`)
+                // $("#user-photo-message").text('You may need to clear your cache to see your new photo.')
+                // $("#user-photo-message").show();
+            }
         }
     }
     request.send(formData);
