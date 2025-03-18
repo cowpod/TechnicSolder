@@ -25,10 +25,11 @@ if (!isset($db)){
 }
 
 $result = $db->query("SELECT * FROM `mods` WHERE `id` = ".$_GET['id']);
-if ($result) {
-    assert(sizeof($result)==1);
-    $mod = $result[0];
+if (!$result) {
+    die("Mod id does not exist");
 }
+
+$mod = $result[0];
 $url = isset($_POST['url']) ? $_POST['url'] : '';
 
 $db->execute("UPDATE `mods`

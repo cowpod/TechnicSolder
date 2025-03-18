@@ -34,10 +34,11 @@ if (!$setrecq) {
 }
 
 $bq = $db->query("SELECT * FROM `builds` WHERE `id` = {$_GET['buildid']}");
-if ($bq) {
-    assert(sizeof($bq)==1);
-    $build = $bq[0];
+if (!$bq) {
+    die("Build id does not exist");
 }
+
+$build = $bq[0];
 $response = array(
     "name" => $build['name'],
     "mc" => $build['minecraft']

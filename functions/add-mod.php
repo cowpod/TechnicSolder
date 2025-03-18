@@ -19,10 +19,11 @@ $db=new Db;
 $db->connect();
 
 $modsq = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$_GET['bid']);
-if ($modsq) {
-    assert(sizeof($modsq)==1);
-    $mods = $modsq[0];
+if (!$modsq) {
+    die("Build id does not exist");
 }
+
+$mods = $modsq[0];
 $db->execute("UPDATE `builds` SET `mods` = '".$mods['mods'].",".$_GET['id']."' WHERE `id` = ".$_GET['bid']);
 
 echo 'Mod added';

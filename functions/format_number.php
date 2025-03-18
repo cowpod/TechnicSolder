@@ -1,5 +1,10 @@
 <?php
-function number_suffix_string($number) {
+/**
+ * @return (mixed|string)[]
+ *
+ * @psalm-return array{big: mixed|string, small: mixed|string}
+ */
+function number_suffix_string($number): array {
     $number_big = $number;
     $number_small = $number;
 
@@ -29,7 +34,7 @@ function number_suffix_string($number) {
     return ['big'=>$number_big,'small'=>$number_small];
 }
 
-function formatSizeUnits($bytes)
+function formatSizeUnits($bytes): string
 {
     if ($bytes >= 1073741824) {
         $bytes = number_format($bytes / 1073741824, 2) . ' GB';

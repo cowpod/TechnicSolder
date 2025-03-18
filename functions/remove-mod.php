@@ -20,10 +20,11 @@ $db=new Db;
 $db->connect();
 
 $modsq = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$db->sanitize($_GET['bid']));
-if ($modsq) {
-    assert(sizeof($modsq)==1);
-    $mods = $modsq[0];
+if (!$modsq) {
+    die("Build id does not exist");
 }
+
+$mods = $modsq[0];
 $modslist = explode(',', $mods['mods']);
 $nmodlist = array_diff($modslist, [$_GET['id']]);
 $modslist = implode(',', $nmodlist);

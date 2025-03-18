@@ -23,7 +23,6 @@ if (!isset($_POST['type'])) {
     die('type is invalid! only accepted are fabric,forge,neoforge');
 }
 
-$fileName = $_FILES["file"]["name"];
 $fileTmpLoc = $_FILES["file"]["tmp_name"];
 if (!$fileTmpLoc) {
     header("Location: ../modloaders?errfilesize");

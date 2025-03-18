@@ -77,22 +77,25 @@ $res = $db2->query("SELECT * FROM `releases`");
 foreach ($res as $row) {
     $url = "http://".$config->get('host').$config->get('dir')."mods/".end(explode("/",$row['path']));
     $packageres = $db2->query("SELECT * FROM `packages` WHERE `id` = ".$row['package_id']);
-    if ($packageres) {
-        assert(sizeof($packageres)==1);
-        $package = $packageres[0];
+    if (!$packageres) {
+        die("Package id does not exist");
     }
+
+    $package = $packageres[0];
     $db->execute("INSERT INTO `mods` (`type`,`url`,`version`,`md5`,`filename`,`name`,`pretty_name`,`author`,`link`,`donlink`,`description`) VALUES ('mod','".$url."','".$row['version']."','".$row['md5']."','".end(explode("/",$row['path']))."','".$package['slug']."','".$package['name']."','".$package['author']."','".$package['website_url']."','".$package['donation_url']."','".$package['description']."')");
     copy($_POST['solder-orig']."/storage/app/public/".$row['path'], dirname(dirname(__FILE__))."/mods/".end(explode("/",$row['path'])));
+    
 }
 // ----- BUILD_RELEASE ----- \\
 $res = $db2->query("SELECT * FROM `build_release`");
 foreach ($res as $row) {
     $mods = [];
     $mres = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$row['build_id']);
-    if ($mres) {
-        assert(sizeof($mres)==1);
-        $ma = $mres[0];
+    if (!$mres) {
+        die("Build id does not exist");
     }
+    
+    $ma = $mres[0];
     $ml = explode(',', $ma['mods']);
     if (count($ml)>0) {
         array_push($mods, implode(',',$ml));

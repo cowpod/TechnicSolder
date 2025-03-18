@@ -6,7 +6,10 @@
 //     $db->connect();
 // }
 
-function mp_latest_recommended($db) {
+/**
+ * @return false|string
+ */
+function mp_latest_recommended($db): string|false {
 	$mp_modpack = $db->query("SELECT latest,recommended FROM modpacks WHERE name = '".$db->sanitize($_GET['name'])."'");
 
 	if ($mp_modpack && sizeof($mp_modpack)==1) {

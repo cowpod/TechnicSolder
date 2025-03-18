@@ -15,9 +15,8 @@ if (!$config->exists('configured')) {
     $config->set('configured',false);
 }
 
-$settings=[];
 if (file_exists('./functions/settings.php')) {
-    $settings = include("./functions/settings.php");
+    include("./functions/settings.php");
 }
 if (isset($_GET['reconfig'])) {
     error_log("configure.php: reconfiguring");
@@ -289,7 +288,7 @@ if (isset($_POST['host'])) {
             }
         }
 
-        $adduserq = $db->execute("INSERT INTO users (name,display_name,perms,privileged,pass,icon,api_key) VALUES(
+        $db->execute("INSERT INTO users (name,display_name,perms,privileged,pass,icon,api_key) VALUES(
             '".$db->sanitize($email)."',
             '".$db->sanitize($name)."',
             '".DEFAULT_PERMS."',

@@ -1,9 +1,9 @@
 <?php
-class Config {
+final class Config {
   private $data;
   private $path;
 
-  private function get_including_file() {
+  private function get_including_file(): string|null {
       $backtrace = debug_backtrace();
       if (isset($backtrace[0]) && isset($backtrace[1])) {
           return $backtrace[1]['file']."@".$backtrace[1]['line'];
@@ -34,7 +34,10 @@ class Config {
       error_log("configuration.php: could not find config file, creating new blank one");
     }
   }
-  private function write(){
+  /**
+   * @return true
+   */
+  private function write(): bool{
     $status=file_put_contents($this->path, json_encode($this->data, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT));
     if ($status) {
       return true;
@@ -42,6 +45,9 @@ class Config {
       die("configuration.php: could not write config file");
     }
   }
+  /**
+   * @return void
+   */
   private function read() {
     $read = file_get_contents($this->path);
     if ($read) {
@@ -55,21 +61,21 @@ class Config {
       die("configuration.php: could not read config file");
     }
   }
-  public function exists($key) {
+  public function exists(string $key): bool {
     return array_key_exists($key, $this->data);
   }
-  public function get($key) {
+  public function get(string $key) {
     if (!$this->exists($key)) {
       trigger_error("configuration.php: '{$key}'does not exist, called from '{$this->get_including_file()}'", E_USER_WARNING);
       return null;
     }
     return $this->data[$key];
   }
-  public function set($key,$value) {
+  public function set(string $key,array|string|false $value): void {
     $this->data[$key]=$value;
     $this->write();
   }
-  public function setall($vals) {
+  public function setall(array $vals): void {
     $this->data=array_replace($this->data, $vals);
     $this->write();
   }

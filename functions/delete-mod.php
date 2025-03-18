@@ -79,8 +79,6 @@ if(!empty($_GET['id'])) {
 elseif (!empty($_GET['name'])) {
     // for all mod versions (ids) associated with name
     $modq = $db->query("SELECT * FROM `mods` WHERE `name` = '{$_GET['name']}'");
-    $num_mods = sizeof($modq);
-    $num_deleted = 0;
 
     $remove_failed=[];
     foreach ($modq as $mod) {
