@@ -182,7 +182,7 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
                 '{$db->sanitize($modinfo['authors'])}',
                 '{$db->sanitize($modinfo['description'])}',
                 '{$db->sanitize($modinfo['version'])}',
-                '{$db->sanitize($modinfo['mcversion'])}',
+                '{$db->sanitize($mcvrange)}',
                 '{$db->sanitize(basename($mod_zip_path))}',
                 'mod',
                 '{$db->sanitize($modinfo['loadertype'])}',
