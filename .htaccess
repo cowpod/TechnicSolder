@@ -9,3 +9,14 @@ php_value upload_max_filesize 1G
 php_value post_max_size 1G
 php_value output_buffering 0
 
+
+<Files ".git*">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files ".user.ini">
+    Order allow,deny
+    Deny from all
+</Files>
+
