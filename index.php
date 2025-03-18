@@ -24,6 +24,11 @@ if ($db->connect()===FALSE) {
     die("Couldn't connect to database!");
 }
 
+$query_num_users = $db->query("SELECT 1 FROM users LIMIT 1");
+if (!$query_num_users) {
+    die("No users! Please set <font style='font-family:\"Courier New\"'>\"configured\"=>false</font> in <font style='font-family:\"Courier New\"'>config/config.json</font>, and then visit <a href=/configure>/configure</a> to set up a new user.");
+}
+
 $url = $_SERVER['REQUEST_URI'];
 $SERVER_PROTOCOL=strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
 
