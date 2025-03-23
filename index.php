@@ -2402,7 +2402,7 @@ if (uri('/update')) {
                                 $logs = $updater->logs();
                                 if (!empty($logs)) { // if we don't get to executing git then we get empty logs
                                     $logs_str_raw = implode("\n",$updater->logs());
-                                    $logs_str = preg_replace("/[^\w\s\-\+\:]/", '', $logs_str_raw);
+                                    $logs_str = preg_replace('/[^\w\s\-\+\:\/\.\;\'\"]/', '', $logs_str_raw);
                                     ?><br/><pre class="code"><?php
                                     echo $logs_str;
                                     ?></pre><?php
