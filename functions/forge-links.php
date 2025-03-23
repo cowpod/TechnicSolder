@@ -1,4 +1,7 @@
 <?php
+/*
+TODO: This is insecure.
+*/
 // this is patchwork in order to make up for missing links in the offical json file.
 // should the links become available, or the format of their files change, this needs to be rewritten.
 

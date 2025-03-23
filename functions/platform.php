@@ -1,4 +1,7 @@
 <?php
+/*
+TODO: This is insecure.
+*/
 header('Content-Type: application/json');
 if (!isset($_GET['slug'])||!isset($_GET['build'])) {
 	die("{}");

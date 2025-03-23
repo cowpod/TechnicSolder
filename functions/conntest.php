@@ -1,4 +1,7 @@
 <?php
+/*
+TODO: This is insecure.
+*/
 require_once("db.php");
 $db=new Db;
 

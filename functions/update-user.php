@@ -1,5 +1,5 @@
 <?php
-header('content-type: text/javascript');
+header('content-type: text/json');
 session_start();
 
 if (empty($_SESSION['user'])) {

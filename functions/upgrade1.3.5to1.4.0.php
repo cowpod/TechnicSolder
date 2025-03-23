@@ -1,4 +1,7 @@
 <?php
+/*
+TODO: This is insecure.
+*/
 define('CONFIG_VERSION', 1);
 session_start();
 
