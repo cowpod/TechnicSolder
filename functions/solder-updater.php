@@ -134,7 +134,7 @@ final class Updater {
     }
 
     public function update() {
-        if ($this->config->get('enable_self_updater')!=='on') { // if updates are disabled
+        if ($this->config->exists('enable_self_updater') && $this->config->get('enable_self_updater')!=='on') { // if updates are disabled
             return UPDATES_DISABLED;
         }
         if ($this->check_git() !== OUTDATED) { // if we can't first check for updates
@@ -156,7 +156,7 @@ final class Updater {
     
 
     public function check() {        
-        if ($this->config->get('enable_self_updater')!=='on') { // if updates are disabled
+        if ($this->config->exists('enable_self_updater') && $this->config->get('enable_self_updater')!=='on') { // if updates are disabled
             return UPDATES_DISABLED;
         }
         // wipe previous logs
