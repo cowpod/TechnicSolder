@@ -1,6 +1,5 @@
 <?php
 define('DEFAULT_PERMS', '0000000');
-
 function isStrongPassword($password): bool {
     if (strlen($password) < 8) {
         return false;
@@ -18,6 +17,13 @@ function isStrongPassword($password): bool {
 }
 
 session_start();
+if (empty($_SESSION['user'])) {
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
+}
+if (!$_SESSION['privileged']) {
+    die('{"status":"error","message":"Insufficient permission!"}');
+}
+
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
@@ -35,12 +41,6 @@ if (empty($_POST['pass'])) {
 }
 if (!isStrongPassword($_POST['pass'])) {
     die('{"status":"error","message":"Bad password."}');
-}
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die('{"status":"error","message":"Unauthorized request or login session has expired."}');
-}
-if (!$_SESSION['privileged']) {
-    die('{"status":"error","message":"Insufficient permission!"}');
 }
 
 $email = strtolower($_POST['name']);

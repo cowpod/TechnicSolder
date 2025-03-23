@@ -1,12 +1,6 @@
 <?php
 session_start();
-require_once('./configuration.php');
-global $config;
-if (empty($config)) {
-    $config=new Config();
-}
-
-if (!$_SESSION['user']||$_SESSION['user']=="") {
+if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
 if (substr($_SESSION['perms'], 0, 1)!=="1") {
@@ -18,6 +12,11 @@ if (substr($_SESSION['perms'], 1, 1)!=="1") {
     exit();
 }
 
+require_once('./configuration.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 global $db;
 require_once("db.php");
 if (!isset($db)){

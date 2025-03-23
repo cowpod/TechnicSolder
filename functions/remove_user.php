@@ -1,13 +1,7 @@
 <?php
 session_start();
-require_once('./configuration.php');
-global $config;
-if (empty($config)) {
-    $config=new Config();
-}
-
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die('{"status":"error","message":"Unauthorized request or login session has expired."}');
+if (empty($_SESSION['user'])) {
+    die("Unauthorized request or login session has expired!");
 }
 if (!$_SESSION['privileged']) {
     die('{"status":"error","message":"Insufficient permission!"}');
@@ -19,6 +13,13 @@ if (empty($_POST['id'])) {
 if (!is_numeric($_POST['id'])) {
     die('{"status":"error","message":"Malformed id"}');
 }
+
+require_once('./configuration.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
+
 require_once("db.php");
 $db=new Db;
 $db->connect();

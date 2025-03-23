@@ -1,15 +1,10 @@
 <?php
+header('content-type: text/javascript');
 session_start();
 
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("Unauthorized request or login session has expired.");
+if (empty($_SESSION['user'])) {
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
-// if ((empty($_POST['oldpass'])) {
-//     die("Password not specified.");
-// }
-// if (empty($_POST['display_name'])) {
-//     die("Name not specified.");
-// }
 
 function isStrongPassword($password): bool {
     if (strlen($password) < 8) {

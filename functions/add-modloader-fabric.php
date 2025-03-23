@@ -1,12 +1,9 @@
 <?php
 header('Content-Type: application/json');
 session_start();
-require_once('./configuration.php');
-global $config;
-if (empty($config)) {
-    $config=new Config();
+if (empty($_SESSION['user'])) {
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
-
 if (substr($_SESSION['perms'], 5, 1)!=="1") {
     echo '{"status":"error","message":"Insufficient permission!"}';
     exit();
@@ -22,6 +19,11 @@ if (!file_exists("../forges/modpack-".$version)) {
     exit();
 }
 
+require_once('./configuration.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 global $db;
 require_once("db.php");
 if (!isset($db)){

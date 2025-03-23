@@ -1,7 +1,6 @@
 <?php
 session_start();
-
-if (!$_SESSION['user']||$_SESSION['user']=="") {
+if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
 if (substr($_SESSION['perms'],6,1)!=="1") {

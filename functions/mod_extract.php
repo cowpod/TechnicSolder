@@ -1,7 +1,7 @@
 <?php
 session_start();
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die('Unathorized request or login session has expired!');
+if (empty($_SESSION['user'])) {
+    die("Unauthorized request or login session has expired!");
 }
 if (!$_GET['id']) {
     die('ID not provided');

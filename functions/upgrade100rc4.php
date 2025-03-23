@@ -1,13 +1,13 @@
 <?php
 session_start();
+if (empty($_SESSION['user'])) {
+    die("Unauthorized request or login session has expired!");
+}
+
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
     $config=new Config();
-}
-
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("Unauthorized request or login session has expired!");
 }
 
 require_once("db.php");

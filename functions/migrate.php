@@ -1,13 +1,8 @@
 <?php
 // TODO: this is horribly outdated
 session_start();
-require_once('./configuration.php');
-global $config;
-if (empty($config)) {
-    $config=new Config();
-}
 
-if (!$_SESSION['user']||$_SESSION['user']=="") {
+if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
 if (empty($_POST['db-pass'])) {
@@ -29,6 +24,12 @@ if (!$_SESSION['user']||$_SESSION['user']=="") {
     die("error");
 }
 $PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+
+require_once('./configuration.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
+}
 
 require_once("db.php");
 $db=new Db;

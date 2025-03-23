@@ -1,18 +1,18 @@
 <?php
 session_start();
+if (empty($_SESSION['user'])) {
+    die("Unauthorized request or login session has expired!");
+}
+if (substr($_SESSION['perms'],1,1)!=="1") {
+    echo 'Insufficient permission!';
+    exit();
+}
 
 if (empty($_GET['id'])) {
     die("Mod not specified.");
 }
 if (empty($_GET['bid'])) {
     die("Build not specified.");
-}
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("Unauthorized request or login session has expired!");
-}
-if (substr($_SESSION['perms'],1,1)!=="1") {
-    echo 'Insufficient permission!';
-    exit();
 }
 
 require_once("db.php");

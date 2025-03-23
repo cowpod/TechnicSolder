@@ -1,6 +1,12 @@
 <?php
+header('Content-Type: application/json');
 session_start();
-
+if (empty($_SESSION['user'])) {
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
+}
+if (substr($_SESSION['perms'], 1, 1)!=="1") {
+    die('{"status":"error","message":"Insufficient permission!"}');
+}
 if (empty($_GET['id_new'])) {
     die('{"status":"error","message":"New mod not specified."}');
 }
@@ -9,12 +15,6 @@ if (empty($_GET['id_old'])) {
 }
 if (empty($_GET['bid'])) {
     die('{"status":"error","message":"Build not specified."}');
-}
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
-}
-if (substr($_SESSION['perms'], 1, 1)!=="1") {
-    die('{"status":"error","message":"Insufficient permission!"}');
 }
 
 global $db;

@@ -1,5 +1,11 @@
 <?php
 session_start();
+if (empty($_SESSION['user'])) {
+    die("Unauthorized request or login session has expired!");
+}
+if (substr($_SESSION['perms'], 1, 1)!=="1") {
+    die('Insufficient permission!');
+}
 
 if (empty($_POST['id'])) {
     die("id (build id) not specified");
@@ -20,12 +26,6 @@ if (empty($_POST['memory'])) {
 if (empty($_POST['ispublic'])) {
     // die("ispublic not specified");
     $_POST['ispublic']='off';
-}
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("Unauthorized request or login session has expired!");
-}
-if (substr($_SESSION['perms'], 1, 1)!=="1") {
-    die('Insufficient permission!');
 }
 
 require_once('./configuration.php');

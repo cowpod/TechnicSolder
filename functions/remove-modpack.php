@@ -1,23 +1,23 @@
 <?php
 session_start();
-require_once('./configuration.php');
-global $config;
-if (empty($config)) {
-    $config=new Config();
+if (empty($_SESSION['user'])) {
+    die("Unauthorized request or login session has expired!");
 }
-
+if (substr($_SESSION['perms'],0,1)!=="1") {
+    echo 'Insufficient permission!';
+    exit();
+}
 if (empty($_GET['id'])) {
     die("Modpack not specified.");
 }
 if (!is_numeric($_GET['id'])) {
     die("Malformed id.");
 }
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("Unauthorized request or login session has expired!");
-}
-if (substr($_SESSION['perms'],0,1)!=="1") {
-    echo 'Insufficient permission!';
-    exit();
+
+require_once('./configuration.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
 }
 
 require_once("db.php");

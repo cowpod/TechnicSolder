@@ -1,12 +1,9 @@
 <?php
 header('Content-Type: application/json');
 session_start();
-require_once('./configuration.php');
-global $config;
-if (empty($config)) {
-    $config=new Config();
+if (empty($_SESSION['user'])) {
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
-
 if (substr($_SESSION['perms'], 5, 1)!=="1") {
     echo '{"status":"error","message":"Insufficient permission!"}';
     exit();
@@ -24,6 +21,12 @@ if (!isset($_GET['type'])) {
     die('{"status":"error","message":"type missing"}');
 } elseif (!in_array($_GET['type'],['fabric','forge','neoforge'])) {
     die('{"status":"error","message":"type is not valid"}');
+}
+
+require_once('./configuration.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
 }
 
 $download_link = $_GET['dl'];

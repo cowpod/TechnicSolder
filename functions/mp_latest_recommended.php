@@ -1,11 +1,4 @@
 <?php
-// global $db;
-// require_once("db.php");
-// if (!isset($db)){
-//     $db=new Db;
-//     $db->connect();
-// }
-
 /**
  * @return false|string
  */

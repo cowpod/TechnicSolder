@@ -1,5 +1,11 @@
 <?php
 session_start();
+if (empty($_SESSION['user'])) {
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
+}
+if (substr($_SESSION['perms'], 3, 1)!=="1") {
+    die('{"status":"error","message":"Insufficient permission!"}');
+}
 
 if (empty($_POST['pretty_name'])) {
     die('{"status":"error","message":"Pretty name not specified."}');
@@ -26,12 +32,6 @@ if (empty($_POST['loadertype'])) {
     die('{"status":"error","message":"Loader type not specified."}');
 }
 
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
-}
-if (substr($_SESSION['perms'], 3, 1)!=="1") {
-    die('{"status":"error","message":"Insufficient permission!"}');
-}
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {

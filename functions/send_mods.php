@@ -3,8 +3,8 @@ define('MAX_TMP_ROLLS',10);
 header('Content-Type: application/json');
 
 session_start();
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die('{"status":"error","message":"Login session has expired"}');
+if (empty($_SESSION['user'])) {
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 if (substr($_SESSION['perms'],3,1)!=="1") {
     echo '{"status":"error","message":"Insufficient permission!"}';

@@ -1,22 +1,21 @@
 <?php
 header('Content-Type: application/json');
 session_start();
-
-if (empty($_GET['id']) && empty($_GET['name'])) {
-    die("Id/name not specified.");
-}
-if (!empty($_GET['id']) && !is_numeric($_GET['id'])) {
-    die("Malformed id");
-}
-if (!empty($_GET['name']) && !preg_match('/[\w\-_]+/', $_GET['name'])) {
-    die("Malformed name");
-}
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("Unauthorized request or login session has expired!");
+if (empty($_SESSION['user'])) {
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 if (substr($_SESSION['perms'], 4, 1)!=="1" && substr($_SESSION['perms'], 5, 1)!=="1") {
-    echo 'Insufficient permission!';
-    exit();
+    die('{"status":"error","message":"Insufficient permission!"}');
+}
+
+if (empty($_GET['id']) && empty($_GET['name'])) {
+    die('{"status":error","message":"Id/name not specified."}');
+}
+if (!empty($_GET['id']) && !is_numeric($_GET['id'])) {
+    die('{"status":error","message":"Malformed id"}');
+}
+if (!empty($_GET['name']) && !preg_match('/[\w\-_]+/', $_GET['name'])) {
+    die('{"status":error","message":"Malformed name"}');
 }
 
 require_once("db.php");
@@ -74,7 +73,7 @@ function removeMod($id) {
 
 if(!empty($_GET['id'])) {
     $status = removeMod($_GET['id']);
-    die(json_encode($status)); // bruh
+    die(json_encode($status)); 
 }
 elseif (!empty($_GET['name'])) {
     // for all mod versions (ids) associated with name

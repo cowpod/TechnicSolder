@@ -1,9 +1,10 @@
 <?php
 session_start();
-require_once('./configuration.php');
-global $config;
-if (empty($config)) {
-    $config=new Config();
+if (empty($_SESSION['user'])) {
+    die("Unauthorized request or login session has expired!");
+}
+if (substr($_SESSION['perms'],1,1)!=="1") {
+    die('Insufficient permission!');
 }
 
 if (empty($_GET['id'])) {
@@ -19,13 +20,11 @@ if (!preg_match('/[\w\-\.]+/',$_GET['name'])) {
     die("Malformed name");
 }
 
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("Unauthorized request or login session has expired!");
+require_once('./configuration.php');
+global $config;
+if (empty($config)) {
+    $config=new Config();
 }
-if (substr($_SESSION['perms'],1,1)!=="1") {
-    die('Insufficient permission!');
-}
-
 require_once("db.php");
 $db=new Db;
 $db->connect();
