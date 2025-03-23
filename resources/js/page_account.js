@@ -86,7 +86,7 @@ $("#newIcon").change(function(){
             console.log(request.responseText);
             obj = JSON.parse(request.responseText)
 
-            if (obj["status"]=="succ") {
+            if (obj['status']=='succ') {
                 $("#user-photo-preview").attr('src', `data:${obj['type']};base64,${obj["data"]}`)
                 $("#user-photo").attr('src', `data:${obj['type']};base64,${obj["data"]}`)
                 // $("#user-photo-message").text('You may need to clear your cache to see your new photo.')
@@ -199,6 +199,8 @@ $("#change-name").on("submit", function(event) {
                     $("#newname").removeClass("is-valid");
                 }
                 $("#newnamesubbmit").attr("disabled",true);
+                $("#change-name-message").text(jsondata['message'])
+                $("#change-name-message").show()
             }
         }
         request.send(formData);

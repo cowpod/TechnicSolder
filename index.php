@@ -2607,7 +2607,7 @@ if (isset($_SESSION['user'])) {
                             } else {
                                 ?>
                                 <tr id="user-<?php echo $user['id'] ?>">
-                                    <td scope="row"><?php echo $user['display_name'] ?></td>
+                                    <td scope="row" id="displayname-<?php echo $user['id'] ?>"><?php echo $user['display_name'] ?></td>
                                     <td><?php echo $user['name'] ?></td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group" aria-label="Actions">

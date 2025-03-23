@@ -90,20 +90,22 @@ function edit(id,mail,name) {
     }
 }
 function edit_user(mail,name,perms) {
+    // email is unique in db, but an email can't be used as an html id.
+    // so we use the user id here.
     var request = new XMLHttpRequest();
-    request.open('POST', './functions/edit_user.php');
+    request.open('POST', './functions/update-user.php');
     request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     request.onreadystatechange = function() {
-        if (request.readyState == 4) {
+        if (request.readyState == 4 && request.status == 200) {
             console.log(request.responseText);
 
             json = JSON.parse(request.responseText);
             if (json['status']=='succ') {
                 // $("#editUser-message").hide();
                 // $("#editUser-message").html('<span class="text-success"'+json['message'] + "</span><br />");
-                let id=$("#edit-user-id").val()
-                $('#user-perms-'+id).attr('perms',perms);
+                $('#user-perms-'+json['id']).attr('perms',perms);
                 $('#editUser').modal('hide');
+                $('#displayname-'+json['id']).text(json['display_name'])
             } else {
                 $("#editUser-message").show();
                 $("#editUser-message").html('<span class="text-danger"'+json['message'] + "</span><br />");
@@ -111,7 +113,7 @@ function edit_user(mail,name,perms) {
         }
 
     }
-    request.send("name="+mail+"&display_name="+name+"&perms="+perms);
+    request.send("user="+mail+"&display_name="+name+"&perms="+perms);
 }
 
 function new_user(email,name,pass) {
@@ -130,7 +132,7 @@ function new_user(email,name,pass) {
                 // if editing remember to change in index.php
                 let newuserrow = $("<tr>", {
                     id: "user-"+json['id'], 
-                    html: `<td scope="row">${name}</td>
+                    html: `<td scope="row" id="displayname-${json['id']}">${name}</td>
                     <td>${email}</td>
                     <td>
                         <font style="display:hidden" id="user-perms-${json['id']}" perms="0000000"></font>

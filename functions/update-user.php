@@ -25,10 +25,116 @@ function isValidName($name) {
     return preg_match("/^[\w\-\s\.]{2,255}$/", $name);
 }
 
-require_once('./configuration.php');
-global $config;
-if (empty($config)) {
-    $config=new Config();
+function update_icon($db, $target_user, $iconfile) {
+    if (empty($iconfile) ) {
+        return ["status"=>"error","message"=>"File missing"];
+    }
+    $icon = $iconfile;
+    if (!file_exists($icon)) {
+        return ["status"=>"error","message"=>"File doesn't exist"];
+    }
+    if (!getimagesize($icon)) {
+        return ["status"=>"error","message"=>"Bad image"];
+    }
+    if (filesize($icon)>15728640) {
+        return ["status"=>"error","message"=>"File size too large (max 15MB)"];
+    }
+
+    $contents = @file_get_contents($icon);
+    if ($contents === FALSE) {
+        return ["status"=>"error","message"=>"Could not get image"];
+    }
+    
+    $icon_base64 = base64_encode($contents);
+
+    $updateicon = $db->execute("UPDATE users SET icon = '{$icon_base64}' WHERE name = '{$target_user}'");
+    if (!$updateicon) {
+        return ["status"=>"error","message"=>"Could not set user icon"];
+    }
+
+    $db->disconnect();
+
+    $f = finfo_open();
+    $type = finfo_buffer($f, $contents, FILEINFO_MIME_TYPE);
+
+    return ["status"=>"succ","message"=>"Icon updated.","data"=>["type"=>$type,"data"=>$icon_base64]];
+}
+
+function update_perms($db,$target_user,$perms) {
+    if (empty($perms)) {
+        return ["status"=>"error","message"=>"Perms missing"];
+    }
+    if (empty($target_user)) {
+        return ["status"=>"error","message"=>"User missing"];
+    }
+    if (empty($_SESSION['privileged']) || !$_SESSION['privileged']) {
+        return ["status"=>"error","message"=>"Insufficient permission!"];
+    }
+    if (strspn($perms, '01') != strlen($perms)) {
+        return ["status"=>"error","message"=>"Malformed permission data"];
+    }
+    if (!filter_var($target_user, FILTER_VALIDATE_EMAIL)) {
+        return ["status"=>"error","message"=>"Bad input data; name"];
+    }
+
+    $setpermsx = $db->execute("UPDATE users SET perms = '{$perms}' WHERE name = '{$target_user}'");
+    if (!$setpermsx) {
+        return ["status"=>"error","message"=>"Could not update permissions"];
+    }
+    return ["status"=>"succ","message"=>"Permissions updated."];
+    
+}
+
+function update_password($db,$target_user,$oldpass,$pass) {
+    if (empty($oldpass) || empty($pass)) {
+        return ["status"=>"error","message"=>"oldpass / pass missing"];
+    }
+    if (!isStrongPassword($pass)) {
+        return ["status"=>"error","message"=>"Weak password"];
+    }
+
+    $verifypwdq = $db->query("SELECT pass FROM users WHERE name = '{$target_user}'");
+    if (!$verifypwdq) {
+        return ["status"=>"error","message"=>"Could not verify old password"];
+    }
+    $oldpasswordhash = $verifypwdq[0]['pass'];
+    if (!password_verify($oldpass, $oldpasswordhash)) {
+        error_log("stored password does not match old password");
+        return ["status"=>"error","message"=>"Could not verify old password"];
+    }
+
+    $newpass = password_hash($pass, PASSWORD_DEFAULT);
+    $setpasswordx = $db->execute("UPDATE users SET pass = '{$newpass}' WHERE name = '{$target_user}'");
+    if (!$setpasswordx) {
+        return ["status"=>"error","message"=>"Could not update password"];
+    }
+
+    return ["status"=>"succ","message"=>"Password updated."];
+}
+
+function update_display_name($db,$target_user,$display_name) {
+    if (empty($display_name)) {
+        return ["status"=>"error","message"=>"display_name missing"];
+    }
+    if (!isValidName($display_name)) {
+        return ["status"=>"error","message"=>"Bad name"];
+    }
+    $updatedisplayname = $db->execute("UPDATE users SET display_name = '{$display_name}' WHERE name = '{$target_user}'");
+    if (!$updatedisplayname) {
+        return ["status"=>"error","message"=>"Could not update name"];
+    }
+
+    // update session vars. otherwise user will need to relog.
+    $_SESSION['name'] = $display_name;
+
+    $idq = $db->query("SELECT id FROM users WHERE name = '{$target_user}'");
+    if (empty($idq[0]['id'])) {
+        error_log(json_encode($idq));
+        return ["status"=>"error","message"=>"Couldn't get user id (database issue?)"];
+    }
+    $id = $idq[0]['id'];
+
+    return ["status"=>"succ","message"=>"Display name updated.","data"=>["display_name"=>$display_name,"id"=>$id]];
 }
 
 global $db;
@@ -38,83 +144,64 @@ if (!isset($db)){
     $db->connect();
 }
 
-if (!empty($_FILES["newIcon"]["tmp_name"])) {
-    $icon = $_FILES["newIcon"]["tmp_name"];
-    if (!file_exists($icon)) {
-        die('{"status":"error","message":"Uploaded file does not exist"}');
+$return_arr=["status"=>"succ","message"=>""];
+
+// prefer specific-user from _POST over self-user from _SESSION
+$target_user = isset($_POST['user']) ? $_POST['user'] : $_SESSION['user'];
+
+// if _SESSION is targetting _POST, validate user is actually admin
+if (isset($_POST['user']) && $_POST['user'] != $_SESSION['user']) {
+    if (!$_SESSION['privileged']) {
+        die("Insuffient permission!");
     }
-    if (!getimagesize($icon)) {
-        die('{"status":"error","message":"Bad image"}');
-    }
-    if (filesize($icon)>15728640) {
-        die('{"status":"error","message":"File size too large (max 15MB)"}');
-    }
-
-    $contents = @file_get_contents($icon);
-    if ($contents === FALSE) {
-        die('{"status":"error","message":"Could not read image"}');
-    }
-    
-    $icon_base64 = base64_encode($contents);
-
-    $updateicon = $db->execute("UPDATE users SET icon = '{$icon_base64}' WHERE name = '{$_SESSION['user']}'");
-    if (!$updateicon) {
-        die('{"status":"error","Could not set user icon"}');
-    }
-
-    $db->disconnect();
-
-    $f = finfo_open();
-    $type = finfo_buffer($f, $contents, FILEINFO_MIME_TYPE);
-    die('{"status":"succ","message":"Succesfully set user icon","type":"'.$type.'","data":"'.$icon_base64.'"}');
-    
-} else {
-    $displayname_changed = false;
-    $password_changed = false;
-
-    if (!empty($_POST['oldpass']) && !empty($_POST['pass'])) {
-        if (!isStrongPassword($_POST['pass'])) {
-            die('{"status":"error","message":"Bad password"}');
-        }
-
-        $verifypwdq = $db->query("SELECT pass FROM users WHERE name = '{$_SESSION['user']}'");
-        if (!$verifypwdq) {
-            die('{"status":"error","message":"Could not verify old password"}');
-        }
-        $oldpasswordhash=$verifypwdq[0]['pass'];
-        if (!password_verify($_POST['oldpass'], $oldpasswordhash)) {
-            error_log("stored password does not match old password");
-            die('{"status":"error","message":"Could not verify old password"}');
-        }
-
-        $newpass = password_hash($_POST['pass'], PASSWORD_DEFAULT);
-        $db->execute("UPDATE users SET pass = '{$newpass}' WHERE name = '{$_SESSION['user']}'");
-        $password_changed = true;
-    }
-
-    if (!empty($_POST['display_name'])) {
-        if (!isValidName($_POST['display_name'])) {
-            die('{"status":"error","message":"Bad name"}');
-        }
-        $updatedisplayname = $db->execute("UPDATE users SET display_name = '{$_POST['display_name']}' WHERE name = '{$_SESSION['user']}'");
-        if (!$updatedisplayname) {
-            die('{"status":"error","message":"Could not update name"}');
-        }
-
-        // update session vars. otherwise user will need to relog.
-        $_SESSION['name'] = $_POST['display_name'];
-        $displayname_changed = true;
-    }
-
-    $db->disconnect();
-
-    if ($displayname_changed && $password_changed) {
-        die('{"status":"succ","message":"name and password changed", "name":"'.$_SESSION['name'].'"}');
-    } else if ($displayname_changed) {
-        die('{"status":"succ","message":"name changed", "name":"'.$_SESSION['name'].'"}');
-    } else if ($password_changed) {
-        die('{"status":"succ","message":"password changed"}');
-    }
-echo "done";
 }
+
+if (!empty($_FILES["newIcon"]["tmp_name"]) 
+    && ($ret=update_icon($db, $target_user, $_FILES["newIcon"]["tmp_name"]))) {
+    // only overwrite a 'succ' => so an 'error' sticks!
+    if ($return_arr['status']=='succ') {
+        $return_arr['status'] = $ret['status'];
+    }
+    $return_arr['message'] .= $ret['message'];
+    if (!empty($ret['data'])) {
+        $return_arr = array_merge($return_arr, $ret['data']); // append contents of data to return array
+    }
+}
+if (!empty($_SESSION['privileged']) && $_SESSION['privileged'] && !empty($_POST['perms']) && !empty($_POST['user']) 
+    && ($ret=update_perms($db, $target_user, $_POST['perms']))) {
+    if ($return_arr['status']=='succ') {
+        $return_arr['status'] = $ret['status'];
+    }
+    $return_arr['message'] .= $ret['message'];
+    if (!empty($ret['data'])) {
+        $return_arr = array_merge($return_arr, $ret['data']); // append contents of data to return array
+    }
+}
+if (!empty($_POST['oldpass']) && !empty($_POST['pass']) 
+    && ($ret=update_password($db, $target_user, $_POST['oldpass'], $_POST['pass']))) {
+    if ($return_arr['status']=='succ') {
+        $return_arr['status'] = $ret['status'];
+    }
+    $return_arr['message'] .= $ret['message'];
+    if (!empty($ret['data'])) {
+        $return_arr = array_merge($return_arr, $ret['data']); // append contents of data to return array
+    }
+}
+if (!empty($_POST['display_name']) 
+    && ($ret=update_display_name($db, $target_user, $_POST['display_name']))) {
+    if ($return_arr['status']=='succ') {
+        $return_arr['status'] = $ret['status'];
+    }
+    $return_arr['message'] .= $ret['message'];
+    if (!empty($ret['data'])) {
+        $return_arr = array_merge($return_arr, $ret['data']); // append contents of data to return array
+    }
+}
+
+$db->disconnect();
+
+die(json_encode($return_arr, JSON_UNESCAPED_SLASHES));
+
+
+
 
