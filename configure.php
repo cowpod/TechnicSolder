@@ -96,6 +96,8 @@ if (isset($_POST['host'])) {
         die("Bad input data; dir (path) does not exist. This should be the directory containing the TechnicSolder repository.");
     }
 
+    $version = json_decode(file_get_contents("./api/version.json"),true);
+
     $config_contents = [
         'db-type'=>$dbtype,
         'db-host'=>$dbhost,
@@ -110,11 +112,16 @@ if (isset($_POST['host'])) {
         'forge_integration'=>'on',
         'neoforge_integration'=>'on',
         'modrinth_integration'=>'on',
-        'use_verifier'=>'on'
+        'use_verifier'=>'on',
+        'enable-self-updater'=>'on'
     ];
     if ($api_key_serverwide) {
         $config_contents['api_key'] = $api_key;
     }
+    if (strtolower($version['stream'])==='dev') {
+        $config_contents['dev_builds'] = 'on';
+    }
+    
     $config->setall($config_contents);
 
     $conn = $db->connect();

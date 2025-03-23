@@ -172,3 +172,28 @@ function set_cached(key,value,ttl=-1) {
         return value;
     }
 }
+
+async function getData(url, cacheoptions=null) {
+  try {
+    console.log("getData(): fetching "+url);
+    let response = null;
+    if (cacheoptions !== null) {
+        response = await fetch(url, cacheoptions);
+    } else {
+        response = await fetch(url);
+    }
+    if (response===null || !response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+    }
+
+    const json = await response.json();
+    console.log("data fetched!");
+    return json;
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
+function insertAfter(referenceNode, newNode) {
+    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+}

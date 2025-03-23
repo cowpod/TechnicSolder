@@ -3,8 +3,6 @@ session_start();
 
 define('SUPPORTED_JAVA_VERSIONS', [21,20,19,18,17,16,15,14,13,12,11,1.8,1.7,1.6]);
 define('SOLDER_BUILD', '999');
-define('UPDATE_JSON_DEV','https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/Dev/api/version.json');
-define('UPDATE_JSON', 'https://raw.githubusercontent.com/TheGameSpider/TechnicSolder/master/api/version.json');
 
 require_once('./functions/configuration.php');
 // global $config;
@@ -129,6 +127,12 @@ if (isset($_SESSION['user'])) {
     elseif (isset($_GET['light']) || !get_setting('dark')) {
         set_setting('dark','off');
     }
+}
+
+require('functions/solder-updater.php');
+
+if (uri('/update')) {
+    header("Access-Control-Allow-Origin: raw.githubusercontent.com");
 }
 
 ?>
@@ -408,7 +412,7 @@ if (isset($_SESSION['user'])) {
                 <span id="user-name" class="navbar-text"><?php echo $_SESSION['name'] ?> </span>
                 <div style="left: unset;right: 2px;" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <a class="dropdown-item" href="?logout=true&logout=true" onclick="window.location = window.location+'?logout=true&logout=true'">Log Out</a>
-                    <a class="dropdown-item" href="./account" onclick="window.location = './account'">My account</a>
+                    <a class="dropdown-item" href="./account" onclick="window.location = './account'">Account</a>
                 </div>
             </span>
         </nav>
@@ -525,11 +529,11 @@ if (isset($_SESSION['user'])) {
                         <p class="text-muted">SETTINGS</p>
                     <?php if ($_SESSION['privileged']) { ?>
                         <a href="./admin"><div class="modpack">
-                            <p><em class="fas fa-user-tie fa-lg"></em> <span style="margin-left:inherit;">Admin & Server Settings</span></p>
+                            <p><em class="fas fa-user-tie fa-lg"></em> <span style="margin-left:inherit;">Admin</span></p>
                         </div></a>
                     <?php } ?>
                         <a href="./account"><div class="modpack">
-                            <p><em class="fas fa-cog fa-lg"></em> <span style="margin-left:inherit;">My Account</span></p>
+                            <p><em class="fas fa-cog fa-lg"></em> <span style="margin-left:inherit;">Account</span></p>
                         </div></a>
                     <?php if (substr($_SESSION['perms'],6,1)=="1") { ?>
                         <a href="./clients"><div class="modpack">
@@ -537,7 +541,7 @@ if (isset($_SESSION['user'])) {
                         </div></a>
                         <?php } ?>
                         <a href="./about"><div class="modpack">
-                            <p><em class="fas fa-info-circle fa-lg"></em> <span style="margin-left:inherit;">About Solder.cf</span></p>
+                            <p><em class="fas fa-info-circle fa-lg"></em> <span style="margin-left:inherit;">About</span></p>
                         </div></a>
                         <a href="./update"><div class="modpack">
                             <p><em class="fas fa-arrow-alt-circle-up fa-lg"></em> <span style="margin-left:inherit;">Update</span></p>
@@ -561,37 +565,9 @@ if (isset($_SESSION['user'])) {
             ?>
             <script>document.title = 'Solder.cf - Dashboard - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <div class="main">
-                <?php
-                $version = json_decode(file_get_contents("./api/version.json"),true);
-                if ($version['stream']=="Dev" || ($config->exists('dev_builds') && $config->get('dev_builds')=="on")) {
-                    if (@$newversion = json_decode(file_get_contents(UPDATE_JSON_DEV),true)) {
-                        $checked = true;
-                    } else {
-                        $checked = false;
-                        $newversion = $version;
-                    }
-                } else {
-                    if (@$newversion = json_decode(file_get_contents(UPDATE_JSON),true)) {
-                        $checked = true;
-                    } else {
-                        $checked = false;
-                        $newversion = $version;
-                    }
-                }
-                if (version_compare($newversion['version'], $version['version'], '>')) {
-                ?>
-                <div class="card alert-info <?php if (get_setting('dark')=="on"){echo "text-white";} ?>">
-                    <p>Version <strong><?php echo $newversion['version'] ?></strong> is now available!</p>
-                    <p><?php echo $newversion['ltcl']; ?></p>
-                </div>
-            <?php }
-            if (!$checked) {
-                ?>
-                <div class="card alert-warning">
-                    <strong>Warning! </strong>Cannot check for updates!
-                </div>
-                <?php
-            }
+            <?php
+            // TODO: check for updates here? adds load time...
+
             if (isset($notechnic) && $notechnic) {
             ?>
                 <div class="card alert-warning">
@@ -2367,81 +2343,102 @@ if (isset($_SESSION['user'])) {
             <?php
         }
         elseif (uri("/update")) {
-            $version = json_decode(file_get_contents("./api/version.json"), true);
-            if ($version['stream']=="Dev" || ($config->exists('dev_builds') && $config->get('dev_builds')=="on")) {
-                if ($newversion = json_decode(file_get_contents(UPDATE_JSON_DEV), true)) {
-                    $checked = true;
-                } else {
-                    $checked = false;
-                    $newversion = $version;
-                }
-            } else {
-                if ($newversion = json_decode(file_get_contents(UPDATE_JSON), true)) {
-                        $checked = true;
-                } else {
-                    $newversion = $version;
-                    $checked = false;
-                }
-            }
-        ?>
-        <script>document.title = 'Update Checker - <?php echo $version['version'] ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
+
+            $updater = new Updater(__DIR__,$config);
+            $update_status = $updater->check();
+
+            // we set cors at the top of this document if uri is /update
+            ?>
+            <script src="resources/js/page_update.js"></script>
+            <script>
+                document.title = `Update Checker - ${local_version()} - <?php echo addslashes($_SESSION['name']) ?>`;
+            </script>
             <div class="main">
                 <div class="card">
                     <h2>Solder Updater</h2>
                     <br />
-                    <div class="alert <?php 
-                        if (version_compare($version['version'], $newversion['version'], '>=') && $checked) { 
+                    <div id="updater-container" class="alert <?php 
+                        if ($update_status === UP_TO_DATE) { 
                             echo "alert-success";
-                        } elseif ($checked) {
+                        } elseif ($update_status === OUTDATED) {
                             echo "alert-info";
+                        } elseif ($update_status === NO_GIT || $update_status === UPDATES_DISABLED) {
+                            // echo "alert-success";
+                            // we set it later in js
                         } else {
                             echo "alert-warning";
                         } 
                         ?>" role="alert">
                         <h4 class="alert-heading"><?php 
-                        if ($checked) {
-                            if (version_compare($version['version'], $newversion['version'], '>=')) {
-                                echo "No updates. Currently on ".$version['version'];
-                            } else { 
-                                echo "New update available - ".$newversion['version'].". Curently on ".$version['version']; 
-                            }
+                        if ($update_status === UP_TO_DATE) {
+                            ?>No updates. Currently on <script>local_version()</script><?php
+                        } elseif ($update_status === OUTDATED) {
+                            ?>New update available - <script>remote_version()</script> Curently on <script>local_version()</script><?php
+                        } elseif ($update_status === NO_GIT || $update_status === UPDATES_DISABLED) {
+                            ?>
+                            <div id="updater-loading" style="display:none"><em class="fas fa-cog fa-lg fa-spin" style="margin-top: 0.5rem"></em> Checking for updates...</div>
+                            <script>check_for_json_updates()</script><?php
                         } else {
                             echo "Cannot check for updates!";
                         } 
                         ?></h4>
                         <hr>
                         <p class="mb-0"><?php 
-                            if (version_compare($version['version'], $newversion['version'], '>=')) { 
-                                echo $version['changelog']; 
-                            } else { 
-                                echo $newversion['changelog']; 
-                            } 
+                            if ($update_status === UP_TO_DATE) { 
+                                ?><script>local_changelog()</script><?php
+                            } elseif ($update_status === OUTDATED) { 
+                                ?>
+                                <div id="install-updates-box">
+                                    <button id="install-updates" class="btn btn-success">Install update</button>
+                                    <p>May cause loss of data! If you have made any changes to project files, please back them up before updating.</p>
+                                </div>
+                                <div id="install-updates-in-progress" style="display:none"><em class="fas fa-cog fa-lg fa-spin" style="margin-top: 0.5rem"></em> Updating...</div>
+                                <br/>
+                                <script>remote_changelog()</script><?php 
+                            } elseif ($update_status == NO_GIT || $update_status === UPDATES_DISABLED) {
+                                ?><script>check_for_json_updates_changelog()</script><?php
+                            } else {
+                                echo $update_status;
+                                $logs = $updater->logs();
+                                if (!empty($logs)) { // if we don't get to executing git then we get empty logs
+                                    $logs_str_raw = implode("\n",$updater->logs());
+                                    $logs_str = preg_replace("/[^\w\s\-\+\:]/", '', $logs_str_raw);
+                                    ?><br/><pre class="code"><?php
+                                    echo $logs_str;
+                                    ?></pre><?php
+                                }
+                            }
                         ?></p>
                     </div>
 
-                    <?php if (version_compare($version['version'], $newversion['version'], '<>')) { ?>
+                    <?php if ($update_status===OUTDATED) { ?>
                         <div class="card text-white bg-info mb3" style="padding: 0px">
                             <div class="card-header">How to update?</div>
                             <div class="card-body">
                                 <p class="card-text">
-                                    1. Open SSH client and connect to <?php echo $_SERVER['HTTP_HOST'] ?>. <br />
-                                    2. login with your credentials <br />
-                                    3. write: <br />
-                                    <em>cd <?php echo dirname(dirname(get_included_files()[0])); ?> </em><br />
-                                    <em>git clone
-                                        <?php if ($newversion['stream']=="Dev"||($config->exists('dev_builds') && ['dev_builds']=="on")) {
-                                            echo "--single-branch --branch Dev";
-                                        } ?>
-                                        https://github.com/TheGameSpider/TechnicSolder.git SolderUpdate </em> <br />
-                                    <em>cp -a SolderUpdate/. TechnicSolder/</em> <br>
-                                    <em>rm -rf SolderUpdate</em> <br>
-                                    <em>chown -R www-data TechnicSolder</em>
+                                    1. Open SSH client and connect to <?php echo $_SERVER['HTTP_HOST'] ?> (or your SSH host). <br/>
+                                    2. Login with your SSH/account credentials <br/>
+                                    3a. If using 1.4.0 or newer:<br />
+                                    <div class=code>
+                                        cd <?php echo dirname(get_included_files()[0]) ?><br/>
+                                        git pull
+                                    </div>
+                                    3b. If using an older version before 1.4.0: <br />
+                                    <div class=code>
+                                        cd <?php echo dirname(dirname(get_included_files()[0])) ?><br/>
+                                        git clone <?php if ($newversion['stream']=="Dev"||($config->exists('dev_builds') && ['dev_builds']=="on")) echo "--single-branch --branch Dev" ?>
+                                            https://github.com/TheGameSpider/TechnicSolder.git SolderUpdate<br/>
+                                        cp -a SolderUpdate/. TechnicSolder/<br/>
+                                        rm -rf SolderUpdate<br/>
+                                        chown -R www-data TechnicSolder
+                                    </div>
                                 </p>
                             </div>
                         </div>
                     <?php } ?>
                 </div>
             </div>
+            <script src="resources/js/page_update.js"></script>
             <script>
                 $(document).ready(function(){
                     $("#nav-settings").trigger('click');
@@ -2540,6 +2537,11 @@ if (isset($_SESSION['user'])) {
             <?php
         } elseif (uri("/admin") && $_SESSION['privileged']==TRUE) {
             if (isset($_POST['bug-submit'])) {
+                if (isset($_POST['enable_self_updater'])) {
+                    $config->set('enable_self_updater','on');
+                } else {
+                    $config->set('enable_self_updater','off');
+                }
                 if (isset($_POST['dev_builds'])) {
                     $config->set('dev_builds','on');
                 } else {
@@ -2636,6 +2638,14 @@ if (isset($_SESSION['user'])) {
                         Switching to the Dev release channel is permanent!
                         <?php } ?>
                         <br/><br/>
+                        <div class="custom-control custom-switch">
+                            <input id="enable_self_updater" type="checkbox" class="custom-control-input" name="enable_self_updater" <?php if ($config->exists('enable_self_updater') && $config->get('enable_self_updater')=="on") {echo "checked";} ?> >
+                            <label class="custom-control-label" for="enable_self_updater">
+                                Enable Git Self-Updater
+                            </label>
+                            <input type="hidden" name="bug-submit" value="bug-submit">
+                        </div>
+                        <br/>
                         <b>The following features require cookies</b>
                         <div class="custom-control custom-switch">
                             <input id="use_verifier" type="checkbox" class="custom-control-input" name="use_verifier" <?php if ($config->exists('use_verifier') && $config->get('use_verifier')=="on") {echo "checked";} ?> >
