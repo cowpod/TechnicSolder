@@ -235,6 +235,14 @@ Here is an incomplete example for nginx configuration. For a complete (but unrel
         deny all;
     }
 
+    location /Dockerfile {
+        deny all;
+    }
+
+    location /compose.yaml {
+        deny all;
+    }
+    
     location ~ /\.ht {
         deny all;
     }

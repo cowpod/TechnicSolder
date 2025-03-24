@@ -20,3 +20,12 @@ php_value output_buffering 0
     Deny from all
 </Files>
 
+<Files "compose.yaml">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "Dockerfile">
+    Order allow,deny
+    Deny from all
+</Files>

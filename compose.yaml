@@ -1,5 +1,9 @@
 volumes:
   db:
+  config:
+  mods:
+  forges:
+  others:
 
 services:
   db:
@@ -17,13 +21,15 @@ services:
     container_name: solder-db
   app:
     build:
-      context: ./app
       dockerfile: Dockerfile
     restart: always
     ports:
       - 80:80
     volumes:
-      - ../:/var/www/html
+      - config:/var/www/html/config
+      - mods:/var/www/html/mods
+      - forges:/var/www/html/forges
+      - others:/var/www/html/others
     depends_on:
       - db
     container_name: solder-app
