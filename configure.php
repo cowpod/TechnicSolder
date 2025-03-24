@@ -113,7 +113,7 @@ if (isset($_POST['host'])) {
         'neoforge_integration'=>'on',
         'modrinth_integration'=>'on',
         'use_verifier'=>'on',
-        'enable-self-updater'=>'on'
+        'enable_self_updater'=>'on'
     ];
     if ($api_key_serverwide) {
         $config_contents['api_key'] = $api_key;
