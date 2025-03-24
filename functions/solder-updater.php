@@ -102,11 +102,13 @@ final class Updater {
             if ($this->git_return !== 0) {
                 return UPDATE_ERROR_GET_BRANCH;
             }
+
+            $branch = trim(strtolower(implode(' ', $this->git_result)));
+            $this->git_result=[]; // clear result from checking branch
+
             // ensure git branch matches release channel from api/version.json
-            if (trim(strtolower($this->version['stream'])) !== trim(strtolower(implode(' ', $this->git_result)))) {
+            if (trim(strtolower($this->version['stream'])) != $branch) {
                 return UPDATE_ERROR_MISMATCHED_CHANNEL;
-            } else {
-                $this->git_result=[]; // clear result from checking branch
             }
 
             // Fetch the latest changes from remote
@@ -116,14 +118,12 @@ final class Updater {
             }
 
             // Check if local is behind remote
-            exec("cd $this->repo_path && git rev-list --left-right --count origin/master...HEAD | awk '{if ($1 > 0) print \"true\"; else print \"false\"}' 2>&1", $this->git_result, $this->git_return);
+            exec("cd {$this->repo_path} && git rev-list --left-right --count origin/{$branch}...HEAD | awk '{if ($1 > 0) print \"true\"; else print \"false\"}' 2>&1", $this->git_result, $this->git_return);
             if ($this->git_return !== 0) {
                 return UPDATE_ERROR;
             }
 
-            $commitsBehind = (int)trim($this->git_result[0]);
-
-            if ($commitsBehind > 0) {
+            if (trim($this->git_result[0])=="true") {
                 return OUTDATED;
             } else {
                 return UP_TO_DATE;
@@ -140,15 +140,10 @@ final class Updater {
         if ($this->check_git() !== OUTDATED) { // if we can't first check for updates
             return UPDATE_ERROR;
         }
-        exec("cd $this->repo_path && git pull 2>&1", $this->git_result, $this->git_return);
+        exec("cd {$this->repo_path} && git reset --hard HEAD && git pull --rebase 2>&1", $this->git_result, $this->git_return);
         if ($this->git_return !== 0) {
-            // attempt recovery
-            // return UPDATE_ERROR_PULL;
-            error_log("solder-updater.php: update(): hard resetting and pulling again");
-            exec("cd $this->repo_path && git reset --hard HEAD 2>&1 && git pull 2>&1", $this->git_result, $this->git_return);
-            if ($this->git_return !== 0) {
-                return UPDATE_ERROR_MERGE;
-            }
+            error_log("solder-updater.php: update(): Couldn't pull");
+            return UPDATE_ERROR_MERGE;
         }
         
         return UPDATE_SUCCESS;
