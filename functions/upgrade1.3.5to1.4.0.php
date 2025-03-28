@@ -8,12 +8,12 @@ session_start();
 if (file_exists("./config.php")) {
     $config = require("./config.php");
 } else {
-    die('We are not configured, so no need to run this!');
+    die("<h2>We're not configured, or we're not on 1.3.5. Aborting.</h2><a href='{$index}'>return to index</a>");
 }
 
 if (!empty($config['config_version']) && $config['config_version']==CONFIG_VERSION) {
     $index = isset($config['dir']) ? $config['dir'] : '.';
-    die("<h2>This script is only meant to be run when upgrading a 1.3.5 install to 1.4.0.</h2><a href='{$index}'>return to index</a>");
+    die("<h2>We appear to not be on 1.3.5. Aborting.</h2><a href='{$index}'>return to index</a>");
 }
 
 echo "<hr/>Adding db-type to config<br/>";
