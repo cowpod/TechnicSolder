@@ -66,7 +66,7 @@ final class Config {
   }
   public function get(string $key) {
     if (!$this->exists($key)) {
-      trigger_error("configuration.php: '{$key}'does not exist, called from '{$this->get_including_file()}'", E_USER_WARNING);
+      trigger_error("configuration.php: get(): '{$key}'does not exist, called from '{$this->get_including_file()}'", E_USER_WARNING);
       return null;
     }
     return $this->data[$key];
@@ -78,6 +78,15 @@ final class Config {
   public function setall(array $vals): void {
     $this->data=array_replace($this->data, $vals);
     $this->write();
+  }
+  public function delete(string $key) : bool {
+    if (!$this->exists($key)) {
+      return false;
+    } else {
+      unset($this->data[$key]);
+      $this->write();
+      return true;
+    }
   }
 
 }
