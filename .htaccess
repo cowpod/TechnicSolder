@@ -29,3 +29,8 @@ php_value output_buffering 0
     Order allow,deny
     Deny from all
 </Files>
+
+<Files "entrypoint.sh">
+    Order allow,deny
+    Deny from all
+</Files>

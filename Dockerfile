@@ -11,4 +11,6 @@ RUN apt install git -y
 ADD . /var/www/html
 RUN chown -R www-data:www-data /var/www/html
 
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/bin/sh", "entrypoint.sh"]
 CMD 'apache2-foreground'
