@@ -14,6 +14,7 @@ define('UPDATE_SUCCESS', "GIT UPDATE SUCCESS");
 define('UPDATE_ERROR_DECODE',"GIT DECODE ERROR");
 define('UPDATE_ERROR', "GIT UPDATE ERROR");
 define('UPDATES_DISABLED', "GIT UPDATES ARE DISABLED");
+define('UPDATE_IN_PROGRESS', "UPDATE IN PROGRESS");
 
 final class Updater {
     private $config = null;
@@ -53,8 +54,6 @@ final class Updater {
                 error_log("solder-updater.php: couldn't locate base directory");
                 die("Couldn't locate base directory");
             }
-            error_log($repopath);
-            error_log(__DIR__ );
             $this->repo_path = $repopath;
         } else {
             $this->repo_path = $repoPathArg;
@@ -137,15 +136,27 @@ final class Updater {
         if ($this->config->exists('enable_self_updater') && $this->config->get('enable_self_updater')!=='on') { // if updates are disabled
             return UPDATES_DISABLED;
         }
+
+        if ($this->config->exists("update_in_progress")) {
+            return UPDATE_IN_PROGRESS;
+        }
+
+        $this->config->set("update_in_progress", true);
+        
         if ($this->check_git() !== OUTDATED) { // if we can't first check for updates
+            $this->config->delete("update_in_progress");
             return UPDATE_ERROR;
         }
+
         exec("cd {$this->repo_path} && git reset --hard HEAD && git pull --rebase 2>&1", $this->git_result, $this->git_return);
+
         if ($this->git_return !== 0) {
             error_log("solder-updater.php: update(): Couldn't pull");
+            $this->config->delete("update_in_progress");
             return UPDATE_ERROR_MERGE;
         }
         
+        $this->config->delete("update_in_progress");
         return UPDATE_SUCCESS;
     }
     
