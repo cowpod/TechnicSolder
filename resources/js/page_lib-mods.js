@@ -43,6 +43,7 @@ function sendFile(file, i) {
     let mcv = $('#mcv option:selected').attr('mc');
     var formData = new FormData();
     var request = new XMLHttpRequest();
+    request.setRequestHeader("X-Custom-User-Agent", "cowpod/TechnicSolder/2.0.0 self-hosted-please-contact-via-requesting-address");
     formData.set('fiels', file);
     formData.set('fallback_mcversion', mcv)
     request.open('POST', './functions/send_mods.php');
