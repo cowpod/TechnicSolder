@@ -1,4 +1,5 @@
 <?php
+define('ALLOWED_TYPES', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 header('content-type: text/json');
 session_start();
 
@@ -25,24 +26,39 @@ function isValidName($name) {
     return preg_match("/^[\w\-\s\.]{2,255}$/", $name);
 }
 
+function validateImage($filePath, &$type) {
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($finfo, $filePath);
+    finfo_close($finfo);
+
+    $is_valid = in_array($mimeType, ALLOWED_TYPES);
+    if ($is_valid) {
+        $type = $mimeType; // set referenceVar
+        return true;
+    } else {
+        return false;
+    }
+}
+
 function update_icon($db, $target_user, $iconfile) {
     if (empty($iconfile) ) {
         return ["status"=>"error","message"=>"File missing"];
     }
-    $icon = $iconfile;
-    if (!file_exists($icon)) {
+    if (!file_exists($iconfile)) {
         return ["status"=>"error","message"=>"File doesn't exist"];
     }
-    if (!getimagesize($icon)) {
-        return ["status"=>"error","message"=>"Bad image"];
-    }
-    if (filesize($icon)>15728640) {
-        return ["status"=>"error","message"=>"File size too large (max 15MB)"];
+    if (filesize($iconfile)>4194304) {
+        return ["status"=>"error","message"=>"File size too large (max 4MB)"];
     }
 
-    $contents = @file_get_contents($icon);
-    if ($contents === FALSE) {
-        return ["status"=>"error","message"=>"Could not get image"];
+    $type = "";
+    if (!validateImage($iconfile, $type)) {
+        return ["status"=>"error","message"=>"Bad image"];
+    }
+
+    $contents = file_get_contents($iconfile);
+    if ($contents===false) {
+        return ["status"=>"error","message"=>"Bad image"];
     }
     
     $icon_base64 = base64_encode($contents);
@@ -51,12 +67,7 @@ function update_icon($db, $target_user, $iconfile) {
     if (!$updateicon) {
         return ["status"=>"error","message"=>"Could not set user icon"];
     }
-
-    $db->disconnect();
-
-    $f = finfo_open();
-    $type = finfo_buffer($f, $contents, FILEINFO_MIME_TYPE);
-
+    
     return ["status"=>"succ","message"=>"Icon updated.","data"=>["type"=>$type,"data"=>$icon_base64]];
 }
 

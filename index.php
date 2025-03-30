@@ -2488,7 +2488,7 @@ if (uri('/update')) {
                      <form enctype="multipart/form-data">
                         <div class="custom-file">
                             <input type="file" class="custom-file-input" id="newIcon" required>
-                            <label class="custom-file-label" for="newIcon">Choose file... (max 15MB)</label>
+                            <label class="custom-file-label" for="newIcon">Choose file... (max 4MB)</label>
                         </div>
                      <font id="user-photo-message" style="display: none;"></font>
                      </form>
