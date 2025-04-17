@@ -43,7 +43,6 @@ function sendFile(file, i) {
     let mcv = $('#mcv option:selected').attr('mc');
     var formData = new FormData();
     var request = new XMLHttpRequest();
-    request.setRequestHeader("X-Custom-User-Agent", "cowpod/TechnicSolder/2.0.0 self-hosted-please-contact-via-requesting-address");
     formData.set('fiels', file);
     formData.set('fallback_mcversion', mcv)
     request.open('POST', './functions/send_mods.php');
@@ -234,8 +233,8 @@ async function getproject(id,show) {
             let mcv = JSON.stringify([$('#mcv option:selected').attr('mc')]);
             let loader = JSON.stringify([$('#mcv option:selected').attr('type')]);
             let url = `https://api.modrinth.com/v2/project/${id}`;
-            request.open('GET', url, true);
-            request.setRequestHeader('User-Agent','TheGameSpider/TechnicSolder/1.4.0');
+            request.open('GET', url, true);    
+            request.setRequestHeader("X-Custom-User-Agent", "cowpod/TechnicSolder/2.0.0 self-hosted-please-contact-via-requesting-address");
             request.onreadystatechange = function() {
                 if (request.readyState == 4 && request.status == 200) {
                     let obj = JSON.parse(request.responseText);
