@@ -153,7 +153,7 @@ final class Db {
 	 *
 	 * @psalm-param array<int|string, array<int|string, mixed>|string>|false|string $str
 	 */
-	public function sanitize(array|string|false $str) {
+	public function sanitize(string|null $str) {
 		if (empty($str)) {
 			return $str; // allow either NULL or "" values
 		} else {

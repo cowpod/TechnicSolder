@@ -176,4 +176,13 @@ function parse_interval_range($mcversion): array {
 
 }
 
+
+function parsed_range_to_string(array $parsed_range): string {
+	if (empty($parsed_range['min']) || empty($parsed_range['max']) || empty($parsed_range['min_inclusivity']) || empty($parsed_range['max_inclusivity'])) {
+		error_log("parsed_range_to_string(): Bad dictionary, expected keys min,max,min_inclusivity,max_inclusivity: ".json_encode($parsed_range));
+		die("Bad range");
+	}
+
+	return $parsed_range['min_inclusivity'].$parsed_range['min'].','.$parsed_range['max'].$parsed_range['max_inclusivity'];
+}
 ?>

@@ -171,7 +171,6 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
             $mod_zip_md5 = md5_file($mod_zip_path);
             $zip_size= filesize($mod_zip_path);
 
-            $mcvrange = parse_interval_range($modinfo['mcversion']);
             // error_log('adding mod of loadertype='.$modinfo['loadertype']);
             $addq = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`,`filesize`) VALUES (
                 '{$db->sanitize($modinfo['modid'])}',
@@ -182,7 +181,7 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
                 '{$db->sanitize($modinfo['authors'])}',
                 '{$db->sanitize($modinfo['description'])}',
                 '{$db->sanitize($modinfo['version'])}',
-                '{$db->sanitize($mcvrange)}',
+                '{$db->sanitize($modinfo['mcversion'])}',
                 '{$db->sanitize(basename($mod_zip_path))}',
                 'mod',
                 '{$db->sanitize($modinfo['loadertype'])}',
