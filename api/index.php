@@ -29,11 +29,12 @@ if (!isset($db)){
 }
 
 if ($config->exists('protocol')) {
-    $PROTO_STR = $config->get('protocol');
+    $PROTO_STR = strtolower($config->get('protocol'));
 }
 if (empty($PROTO_STR) || !in_array($PROTO_STR, ['http', 'https'])) {
-    $PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+    $PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL'])));
 }
+$PROTO_STR .= '://';
 
 if(str_ends_with($url, "api/")){
 	die('{"api":"Solder.cf","version":"v1.4.0","stream":"Release"}'); // todo: this is Dev not release, but may break things if changed...
