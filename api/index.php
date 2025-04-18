@@ -2,7 +2,6 @@
 header('Content-Type: application/json');
 
 $url = $_SERVER['REQUEST_URI'];
-$PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
 
 // remove args
 if (strpos($url, '?') !== FALSE) {
@@ -27,6 +26,13 @@ require_once("../functions/db.php");
 if (!isset($db)){
     $db=new Db;
     $db->connect();
+}
+
+if ($config->exists('protocol')) {
+    $PROTO_STR = $config->get('protocol');
+}
+if (empty($PROTO_STR) || !in_array($PROTO_STR, ['http', 'https'])) {
+    $PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
 }
 
 if(str_ends_with($url, "api/")){
@@ -224,7 +230,7 @@ else if (preg_match("/api\/modpack$/", $url)) { // modpacks
             }
         }
     }
-    die(json_encode(["modpacks"=>$modpacks, "mirror_url"=>"http://".$config->get('host')."/mods"], JSON_UNESCAPED_SLASHES));
+    die(json_encode(["modpacks"=>$modpacks, "mirror_url"=>$PROTO_STR.$config->get('host')."/mods"], JSON_UNESCAPED_SLASHES));
 } 
 elseif (preg_match("/api\/modpack\/([a-z\-|0-9]+)$/", $url, $matches)) { // modpack details
     $uri_modpack = $matches[1];
