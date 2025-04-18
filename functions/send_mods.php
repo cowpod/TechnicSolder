@@ -10,6 +10,7 @@ if (substr($_SESSION['perms'],3,1)!=="1") {
     echo '{"status":"error","message":"Insufficient permission!"}';
     exit();
 }
+
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
@@ -208,10 +209,18 @@ $mi = new modInfo();
 $modinfos = $mi->getModInfo($file_tmp, $file_name);
 $warn = $mi->getWarnings();
 
+// if any mod entries are missing mcversion, use fallback from modloader
+// note if we don't have a fallback (no modloaders installed),
+// this will be empty.
+
+$fallback_mcversion = '';
+if (!empty($_POST['fallback_mcversion'])) {
+    $fallback_mcversion = $db->sanitize($_POST['fallback_mcversion']);
+}
+
 foreach ($modinfos as $type=>$mod) {
     if (!empty($mod) && empty($mod['mcversion'])) {
-        assert($_POST['fallback_mcversion']);
-        $modinfos[$type]['mcversion']=$db->sanitize($_POST['fallback_mcversion']);
+        $modinfos[$type]['mcversion'] = $fallback_mcversion;
         unset($warn[array_search('Missing mcversion!', array_keys($warn))]);
     }
 }

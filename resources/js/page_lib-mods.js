@@ -40,11 +40,16 @@ function remove(name,force) {
 
 mn = 1;
 function sendFile(file, i) {
-    let mcv = $('#mcv option:selected').attr('mc');
     var formData = new FormData();
     var request = new XMLHttpRequest();
     formData.set('fiels', file);
-    formData.set('fallback_mcversion', mcv)
+
+    var modloader_mcv = "";
+    if ($('#mcv option').length > 0) {
+        modloader_mcv = $('#mcv option:selected').attr('mc');
+    }
+
+    formData.set('fallback_mcversion', modloader_mcv)
     request.open('POST', './functions/send_mods.php');
     request.upload.addEventListener("progress", function(evt) {
         if (evt.lengthComputable) {
@@ -52,99 +57,97 @@ function sendFile(file, i) {
             $("#" + i).attr('aria-valuenow', percentage + '%');
             $("#" + i).css('width', percentage + '%');
             request.onreadystatechange = function() {
-                if (request.readyState == 4) {
-                    if (request.status == 200) {
-                        if ( mn == modcount ) {
-                            $("#btn-done").attr("disabled",false);
-                        } else {
-                            mn = mn + 1;
-                        }
-                        console.log(request.response);
-                        response = JSON.parse(request.response);
-                        switch(response.status) {
-                            case "succ":
-                            {
-                                $("#cog-" + i).hide();
-                                $("#check-" + i).show();
-                                $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                $("#" + i).addClass("bg-success");
-                                $("#info-" + i).text(response.message);
-                                $("#" + i).attr("id", i + "-done");
-                                break;
-                            }
-                            case "info":
-                            {
-                                $("#cog-" + i).hide();
-                                $("#inf-" + i).show();
-                                $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                $("#" + i).addClass("bg-success");
-                                $("#info-" + i).text(response.message);
-                                $("#" + i).attr("id", i + "-done");
-                                break;
-                            }
-                            case "warn":
-                            {
-                                $("#cog-" + i).hide();
-                                $("#exc-" + i).show();
-                                $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                $("#" + i).addClass("bg-warning");
-                                $("#info-" + i).text(response.message);
-                                $("#" + i).attr("id", i + "-done");
-                                break;
-                            }
-                            case "error":
-                            {
-                                $("#cog-" + i).hide();
-                                $("#times-" + i).show();
-                                $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                $("#" + i).addClass("bg-danger");
-                                $("#info-" + i).text(response.message);
-                                $("#" + i).attr("id", i + "-done");
-                                break;
-                            }
-                        }
-
-                        // console.log(response['status']);
-                        if (response['status']!="error") {
-                            let num_versions = response['modid'].length;
-                            let author = response['author'];
-                            if (author instanceof Array && author.length>=1) {
-                                author=author[0];
-                            }
-                            let name = response['name'];
-                            if (name instanceof Array && name.length>=1) {
-                                name=name[0];
-                            }
-                            let pretty_name = response['pretty_name'];
-                            if (pretty_name instanceof Array && pretty_name.length>=1) {
-                                pretty_name=pretty_name[0];
-                            }
-                            let mcversion = response['mcversion'];
-                            let version = response['version'];
-                            // console.log('add new row');
-
-                                $('#table-available-mods').append(`
-                                    <tr id="mod-row-${name[i]}">
-                                        <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
-                                        <td data-value="${author}" class="d-none d-sm-table-cell">${author}</td>
-                                        <td id="mod-row-${name[i]}-num" data-value="${num_versions}">${num_versions}</td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                                <button onclick="window.location='./mod?id=${name}'" class="btn btn-primary">Edit</button>
-                                                <button onclick="remove_box('${name}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                `);
-                        }
+                if (request.readyState == 4 && request.status == 200) {
+                    if ( mn == modcount ) {
+                        $("#btn-done").attr("disabled",false);
                     } else {
-                        $("#cog-" + i).hide();
-                        $("#times-" + i).show();
-                        $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                        $("#" + i).addClass("bg-danger");
-                        $("#info-" + i).text("An error occured: " + request.status);
-                        $("#" + i).attr("id", i + "-done");
+                        mn = mn + 1;
                     }
+                    console.log(request.response);
+                    response = JSON.parse(request.response);
+                    switch(response.status) {
+                        case "succ":
+                        {
+                            $("#cog-" + i).hide();
+                            $("#check-" + i).show();
+                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
+                            $("#" + i).addClass("bg-success");
+                            $("#info-" + i).text(response.message);
+                            $("#" + i).attr("id", i + "-done");
+                            break;
+                        }
+                        case "info":
+                        {
+                            $("#cog-" + i).hide();
+                            $("#inf-" + i).show();
+                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
+                            $("#" + i).addClass("bg-success");
+                            $("#info-" + i).text(response.message);
+                            $("#" + i).attr("id", i + "-done");
+                            break;
+                        }
+                        case "warn":
+                        {
+                            $("#cog-" + i).hide();
+                            $("#exc-" + i).show();
+                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
+                            $("#" + i).addClass("bg-warning");
+                            $("#info-" + i).text(response.message);
+                            $("#" + i).attr("id", i + "-done");
+                            break;
+                        }
+                        case "error":
+                        {
+                            $("#cog-" + i).hide();
+                            $("#times-" + i).show();
+                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
+                            $("#" + i).addClass("bg-danger");
+                            $("#info-" + i).text(response.message);
+                            $("#" + i).attr("id", i + "-done");
+                            break;
+                        }
+                    }
+
+                    // console.log(response['status']);
+                    if (response['status']!="error") {
+                        let num_versions = response['modid'].length;
+                        let author = response['author'];
+                        if (author instanceof Array && author.length>=1) {
+                            author=author[0];
+                        }
+                        let name = response['name'];
+                        if (name instanceof Array && name.length>=1) {
+                            name=name[0];
+                        }
+                        let pretty_name = response['pretty_name'];
+                        if (pretty_name instanceof Array && pretty_name.length>=1) {
+                            pretty_name=pretty_name[0];
+                        }
+                        let mcversion = response['mcversion'];
+                        let version = response['version'];
+                        // console.log('add new row');
+
+                            $('#table-available-mods').append(`
+                                <tr id="mod-row-${name[i]}">
+                                    <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
+                                    <td data-value="${author}" class="d-none d-sm-table-cell">${author}</td>
+                                    <td id="mod-row-${name[i]}-num" data-value="${num_versions}">${num_versions}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                                            <button onclick="window.location='./mod?id=${name}'" class="btn btn-primary">Edit</button>
+                                            <button onclick="remove_box('${name}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `);
+                    }
+                } else {
+                    $("#cog-" + i).hide();
+                    $("#times-" + i).show();
+                    $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
+                    $("#" + i).addClass("bg-danger");
+                    $("#info-" + i).text("An error occured: " + request.status);
+                    $("#" + i).attr("id", i + "-done");
                 }
             }
         }
