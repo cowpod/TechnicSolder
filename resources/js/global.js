@@ -121,16 +121,26 @@ function getQueryVariable(variable) {
 // caching
 var havelocalstorage=null;
 var temp_cache={};
-function isLocalStorageAvailable(){
+
+// if local storage is unavailable, this will loop the full amount before
+// failing.
+function isLocalStorageAvailable(attempts_remaining = 1){
+    if (attempts_remaining == 0) {
+        return false;
+    }
+
     var test = 'test';
     try {
         localStorage.setItem(test, test);
         localStorage.removeItem(test);
         return true;
     } catch(e) {
-        return false;
+        // clear storage and try again
+        localStorage.clear();
+        return isLocalStorageAvailable(attempts_remaining-1);
     }
 }
+
 function get_cached(key) {
     if (havelocalstorage==null) {
         havelocalstorage=isLocalStorageAvailable()
