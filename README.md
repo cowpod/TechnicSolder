@@ -25,7 +25,7 @@ runs on pure PHP with zip and MySQL extensions and it's very easy to use. To ins
 just need to install zip extension, setup MySQL database and download Solder to your server 
 (No composer needed). And the usage is even easier! Just Drag n' Drop your mods.
 
-## Docker installation (requires Docker + Docker Compose and SSH access)
+# Docker installation (requires Docker + Docker Compose and SSH access)
 
 Easiest method, but requires ssh, docker, and docker-compose on the host machine.
 Also allows using the built-in updater if you're on the `dev` channel
@@ -66,12 +66,12 @@ By default, the MySQL login details are:
 - username: solder
 - password: solder (which you changed previously)
 
-## Generic installation and configuration (without SSH/CLI access)
+# Generic installation and configuration (without SSH/CLI access)
 If you are using a shared host, or for some reason don't have access to the command-line 
 interface, the general set-up is as follows. This assumes you'll be using something like cPanel.
 
 - Set PHP version to 8.3. 
-- Install the PHP ZIP, PDO extensions.
+- Install the PHP ZIP, PDO, PDO_MYSQL extensions.
     - Enable one or both of pdo_mysql, pdo_sqlite 
 - In Apache2 settings, enable rewriteengine, and the PHP module.
 - Upload the contents of this git to your document root, such that index.php is directly in 
@@ -90,7 +90,7 @@ server) or the IP address of your database, and the password you created earlier
 - For the Solder API key, go to [https://technicpack.net](https://technicpack.net), log 
 in/create an account, go to my settings/profile, and click on "solder" on the left menu.
 
-## Detailed Installation (SSH/CLI access required)
+# Detailed Installation (SSH/CLI access required)
 > ***Note: If you already have a working web server with PDO and ZIP extensions and enabled
 rewrite mod, you can [skip to step 6.](#cloning-technicsolder-repository)***
 
@@ -237,10 +237,14 @@ Installation is complete. Now you need to configure TechnicSolder before using i
 
 ### If you are using nginx
 
-Here is an incomplete example for nginx configuration. For a complete (but unrelated) example, 
-see [https://nginx.org/en/docs/example.html](https://nginx.org/en/docs/example.html). 
+Here is an incomplete example for nginx configuration. 
+
+For a complete (but unrelated) example, see [https://nginx.org/en/docs/example.html](https://nginx.org/en/docs/example.html).
+
+For https/SSL, see [https://nginx.org/en/docs/http/configuring_https_servers.html](https://nginx.org/en/docs/http/configuring_https_servers.html).
+
  ```nginx
-    listen 80; # for https, see https://nginx.org/en/docs/http/configuring_https_servers.html
+    listen 80; 
 
     root /var/www/TechnicSolder;
 
@@ -265,31 +269,25 @@ see [https://nginx.org/en/docs/example.html](https://nginx.org/en/docs/example.h
         fastcgi_max_temp_file_size 0;
     }
 
-
     location /config/ {
         deny all;
     }
-
     location /Dockerfile {
         deny all;
     }
-
     location /compose.yaml {
         deny all;
     }
-    
     location ~ /\.ht {
         deny all;
     }
-
+    location = ~* /db\.sqlite$ {
+                deny all;
+    }
     location ~ .*/\. {
         return 403;
     }
 
-    # block access to sqlite database file
-    location = ~* /db\.sqlite$ {
-                deny all;
-    }
     error_page 403 /403.html;
 
     location ~* \.(?:ico|css|js|jpe?g|JPG|png|svg|woff)$ {
@@ -301,8 +299,12 @@ see [https://nginx.org/en/docs/example.html](https://nginx.org/en/docs/example.h
 **You will also need to configure a PHP server seperately, eg. PHP-FPM, and make it available 
 at `/run/php/php8.3-fpm.sock` or update the nginx configuration accordingly.**
 
-# Configuration
-**Configure MySQL** (not applicable if you are using SQLite)
+## Configuration
+
+**MySQL** <br/>
+
+Not applicable if you are using SQLite or are using the docker image.
+
 ```bash
 mysql
 ```
@@ -338,9 +340,48 @@ profile)
 
 That's it. You have successfully installed and configured TechnicSolder. It's ready to use!
 
+## Detailed configuration
+
+Here's an example of the configuration file at /config/config.json:
+
+```
+{
+    "configured": true,
+    "db-type": "sqlite",
+    "db-host": "",
+    "db-user": "",
+    "db-pass": "",
+    "db-name": "",
+    "host": "localhost",
+    "protocol": "http",
+    "dir": "/",
+    "config_version": 1,
+    "fabric_integration": "on",
+    "forge_integration": "on",
+    "neoforge_integration": "on",
+    "modrinth_integration": "on",
+    "use_verifier": "on",
+    "api_key": "YOUR_TECHNICPACK_API_KEY_HERE",
+    "dev_builds": "on",
+    "enable_self_updater": "on"
+}
+```
+
+Settings which are not exposed in the GUI:
+- `protocol`: Override which of `http` or `https` protocol is used, primarily by the `/api` endpoint, determined by the client's requests.
+- `configured`: Determine if the server has been configured. Don't change.
+- `config_version`: What version the config file is. Don't change.
+
+
 # Updating
+
+If you used the docker image, and are on the `dev` channel, you can use the built-in updater. Make sure that that the
+self-updater is enabled in server settings.
+
+Otherwise, manual updating is as follows.
+
 1. PHP
-- Install/update to PHP8.3, and install+enable PHP8.3-PDO and PHP8.3-ZIP. See Installation above for  details.
+- Install/update PHP8.3, and install+enable PHP8.3-PDO PHP8.3-PDO_MYSQL and PHP8.3-ZIP. See manual installation steps above for details.
 
 2. Files/folders
 
@@ -360,8 +401,7 @@ in your web browser.
 
 # Upload larger files > 1GB
 
-This is a fairy simple process but can become complicated with nginx and apache2. Nextcloud has a 
-great guide on this [here](https://docs.nextcloud.com/server/stable/admin_manual/configuration_files/big_file_upload_configuration.html).
+Nextcloud has a great guide on this [here](https://docs.nextcloud.com/server/stable/admin_manual/configuration_files/big_file_upload_configuration.html).
 
 Essentially, you'll want to update PHP's `.user.ini` file to something higher.
 ```php
@@ -369,7 +409,8 @@ upload_max_filesize=10G
 post_max_size=10G 
 ```
 
-And then relevant settings in nginx/apache2, eg.
+And then relevant settings in nginx/apache2, eg. for nginx
 ```nginx
 client_max_body_size 10G;
 ```
+And for apache whatever relevant setting.
