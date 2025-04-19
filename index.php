@@ -1294,9 +1294,9 @@ if (uri('/update')) {
                     ?>
                 <div class="card">
                     <h2>Allowed clients</h2>
-                    <form method="GET" action="./functions/change-clients-build.php">
-                    <input hidden name="id" value="<?php echo $_GET['id'] ?>">
-                    <?php if (sizeof($clients)<1) {
+                    <form id="update-build-clients">
+                    <input hidden id="build_id" value="<?php echo $_GET['id'] ?>">
+                    <?php if (sizeof($clients) === 0) {
                         ?>
                         <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
                         <br />
@@ -1305,15 +1305,16 @@ if (uri('/update')) {
                     <?php
                     $clientlist = isset($user['clients']) ? explode(',', $user['clients']) : [];
                     foreach ($clients as $client) {
+                        $client_checked = in_array($client['id'], $clientlist) ? 'checked' : '';
                         ?>
                         <div class="custom-control custom-checkbox">
-                            <input <?php if (in_array($client['id'],$clientlist)){echo "checked";} ?> type="checkbox" name="client[]" value="<?php echo $client['id'] ?>" class="custom-control-input" id="client-<?php echo $client['id'] ?>">
+                            <input class="custom-control-input buildClientId" id="client-<?php echo $client['id'] ?>" type="checkbox" value="<?php echo $client['id'] ?>" <?php echo $client_checked ?>>
                             <label class="custom-control-label" for="client-<?php echo $client['id'] ?>"><?php echo $client['name']." (".$client['UUID'].")" ?></label>
                         </div><br />
                         <?php
                     }
                     ?>
-                    <?php if (sizeof($clients)>0) { ?> <input class="btn btn-primary" type="submit" name="submit" value="Save"> <?php } ?>
+                    <?php if (sizeof($clients)>0) { ?> <input class="btn btn-primary" id="update-build-clients-submit" type="submit" name="submit" value="Save" disabled> <?php } ?>
                 </form>
                 </div>
             <?php } ?>

@@ -274,6 +274,39 @@ $(document).on('change', '.form-control', function() {
     }
 });
 
+$('#update-build-clients').on('submit', function(e) {
+    e.preventDefault();
+
+    let checkedItems = [];
+    $('.buildClientId:checked').each(function(){
+        checkedItems.push($(this).val());
+    });
+    console.log(checkedItems);
+
+    let formData = new FormData();
+    formData.set('build_id', $("#build_id").val());
+    formData.set('client_ids', checkedItems.join(','));
+    let request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (request.readyState == 4 && request.status == 200) {
+            console.log(request.responseText);
+            let json = JSON.parse(request.responseText);
+            if (json['status']==='succ') {
+                $('#update-build-clients-submit').attr('disabled', true);
+            }
+        }
+    }
+    request.onerror = function() {
+        console.log('could not set build clients');
+    }
+    request.open('POST', 'functions/update-build-clients.php');
+    request.send(formData);
+});
+
+$('.buildClientId').on('change', function() {
+    $('#update-build-clients-submit').removeAttr('disabled');
+})
+
 $(document).ready(function() {
     if (get_cached('showall') && $('#showall').prop('checked', get_cached('showall'))) {
         toggled_showall()
