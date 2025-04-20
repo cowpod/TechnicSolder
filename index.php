@@ -2501,7 +2501,7 @@ if (!uri("/login")) {
                 </div>
                 <div class="card">
                     <h2>Technic Solder integration</h2>
-                <?php if ($config->exists('api_key')) { ?>
+                <?php if ($config->exists('api_key') && !empty($config->get('api_key'))) { ?>
                     <font class="text-danger">A server-wide API key has been set.</font>
                     <?php if ($perms->privileged()) { ?>
                     <span>You, an administrator, can update the server-wide API key in <a href="admin#solder">Server Settings</a></span>
