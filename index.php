@@ -641,19 +641,7 @@ if (uri('/update')) {
                             <br />
                             <input autocomplete="off" required id="slug" pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Modpack slug (same as on technicpack.net)" />
                             <br />
-                            <label for="java">Select java version</label>
-                            <select name="java" class="form-control">
-                                <?php
-                                foreach (SUPPORTED_JAVA_VERSIONS as $jv) {
-                                    $selected = isset($user['java']) && $user['java']==$jv ? "selected" : "";
-                                    echo "<option value=".$jv." ".$selected.">".$jv."</option>";
-                                }
-                                ?>
-                            </select> <br />
-                            <label for="memory">Memory (RAM in MB)</label>
-                            <input required class="form-control" type="number" id="memory" name="memory" value="2048" min="1024" max="65536" placeholder="2048" step="512">
-                            <br />
-                            <label for="versions">Select minecraft version</label>
+                            <label for="versions">Minecraft version</label>
                             <select required id="versions" name="versions" class="form-control">
                             <?php
                             // select all forge versions
@@ -668,6 +656,18 @@ if (uri('/update')) {
                                 echo "<div style='display:block' class='invalid-feedback'>There are no versions available. Please fetch versions in the <a href='./modloaders'>Forge Library</a></div>";
                             }
                             ?>
+                            <br />
+                            <label for="java">Java version</label>
+                            <select name="java" class="form-control">
+                                <?php
+                                foreach (SUPPORTED_JAVA_VERSIONS as $jv) {
+                                    $selected = isset($user['java']) && $user['java']==$jv ? "selected" : "";
+                                    echo "<option value=".$jv." ".$selected.">".$jv."</option>";
+                                }
+                                ?>
+                            </select> <br />
+                            <label for="memory">Memory (RAM in MB)</label>
+                            <input required class="form-control" type="number" id="memory" name="memory" value="2048" min="1024" max="65536" placeholder="2048" step="512">
                             <br />
                             <input id="modlist" class="form-control" type="hidden" name="modlist" />
                             <input autocomplete="off" id="modliststr" required readonly class="form-control" type="text" name="modliststr" placeholder="Mods to add" />
@@ -1102,25 +1102,34 @@ if (uri('/update')) {
                         <?php
                         $users = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC");
                         foreach($users as $user) { ?>
-                            <tr rec="<?php if ($packdata['recommended']==$user['id']){ echo "true"; } else { echo "false"; } ?>" id="b-<?php echo $user['id'] ?>">
+                            <tr rec="<?php if ($packdata['recommended']===$user['id']){ echo "true"; } else { echo "false"; } ?>" id="b-<?php echo $user['id'] ?>">
                                 <td scope="row"><?php echo $user['name'] ?></td>
                                 <td><?php echo $user['minecraft'] ?></td>
                                 <td class="d-none d-md-table-cell"><?php echo $user['java'] ?></td>
                                 <td><?php echo isset($user['mods']) ? count(explode(',', $user['mods'])) : '' ?></td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                    <?php if (substr($_SESSION['perms'],1,1)=="1") { ?> 
-                                        <button onclick="edit(<?php echo $user['id'] ?>)" class="btn <?php echo empty($user['minecraft']) ? 'btn-warning' : 'btn-primary'; ?>">Edit</button>
+                                    <?php 
+                                    if (substr($_SESSION['perms'],1,1)=="1") { 
+                                        if (empty($user['minecraft'])) { ?> 
+                                        <button onclick="edit(<?php echo $user['id'] ?>)" class="btn btn-warning">Set details</button>
+                                        <?php } else { ?>
+                                        <button onclick="edit(<?php echo $user['id'] ?>)" class="btn btn-primary">Edit</button>
+                                        <?php } ?>
                                         <button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeModal" class="btn btn-danger">Remove</button> 
-                                    <?php } 
-                                    if (substr($_SESSION['perms'],2,1)=="1") { ?>
-                                        <button bid="<?php echo $user['id'] ?>" id="pub-<?php echo $user['id']?>" class="btn btn-success" onclick="set_public(<?php echo $user['id'] ?>)" style="display:<?php echo (isset($user['minecraft']) && $user['public']!='1')?'block':'none' ?>">Publish</button>
-                                        <!-- if public is null then MC version and loader hasn't been set yet-->
-
+                                    <?php 
+                                    } 
+                                    if (substr($_SESSION['perms'],2,1)=="1") {
+                                        // if public is null then MC version and loader hasn't been set yet
+                                        if (isset($user['minecraft']) && $user['public']!='1') { ?>
+                                        <button bid="<?php echo $user['id'] ?>" id="pub-<?php echo $user['id']?>" class="btn btn-success" onclick="set_public(<?php echo $user['id'] ?>)">Publish</button>
+                                        <?php } ?>
                                         <button bid="<?php echo $user['id'] ?>" id="rec-<?php echo $user['id']?>" class="btn btn-success" onclick="set_recommended(<?php echo $user['id'] ?>)" style="display:<?php echo ($packdata['recommended']!=$user['id']&&$user['public']=='1')?'block':'none' ?>">Recommend</button>
 
                                         <button bid="<?php echo $user['id'] ?>" id="recd-<?php echo $user['id']?>" class="btn btn-success" style="display:<?php echo ($packdata['recommended']==$user['id']&&$user['public']=='1')?'block':'none' ?>" disabled>Recommended</button>
-                                    <?php } ?>
+                                    <?php 
+                                    } 
+                                    ?>
                                     </div>
                                 </td>
                                 <td>
@@ -1226,9 +1235,12 @@ if (uri('/update')) {
                 <div class="card">
                     <h2>Build <?php echo $user['name'] ?></h2>
                     <hr>
+                    <?php if (empty($user['minecraft'])) { ?>
+                        <h3>Details must be set before mods can be added.</h3>
+                    <?php } ?>
                     <form method="POST" action="./functions/update-build.php">
                         <input type="hidden" name="id" value="<?php echo $_GET['id'] ?>">
-                        <label for="versions">Select minecraft version</label>
+                        <label for="versions">Minecraft version</label>
                         <select id="versions" name="versions" class="form-control">
                             <?php
                             $loadertype='';
@@ -1250,7 +1262,7 @@ if (uri('/update')) {
                             ?>
                             <input type="text" name="forgec" id="forgec" value="none" hidden required>
                         <br />
-                        <label for="java">Select java version</label>
+                        <label for="java">Java version</label>
                         <select name="java" class="form-control">
                                 <?php
                                 foreach (SUPPORTED_JAVA_VERSIONS as $jv) {
@@ -1269,7 +1281,7 @@ if (uri('/update')) {
                         </div><br />
                         <?php } ?>
                         <div style='display:none' id="wipewarn" class='text-danger'>Build will be wiped.</div>
-                        <button type="submit" id="submit-button" class="btn btn-success">Save and Refresh</button>
+                        <button type="submit" id="submit-button" class="btn btn-success">Save</button>
                     </form>
                     <div class="modal fade" id="editBuild" tabindex="-1" role="dialog" aria-labelledby="rm" aria-hidden="true">
                       <div class="modal-dialog" role="document">
@@ -1516,7 +1528,9 @@ if (uri('/update')) {
                         </table>
                     </div>
                 <?php }
-                } else echo "<div class='card'><h3 class='text-info'>Select minecraft version and save before editing mods.</h3></div>"; ?>
+                } 
+                // else echo "<div class='card'><h3 class='text-info'>Select minecraft version and save before editing mods.</h3></div>"; 
+                ?>
                 <script>
                     const INSTALLED_MODS = JSON.parse('<?php echo json_encode($modslist, JSON_UNESCAPED_SLASHES) ?>');
                     const INSTALLED_MOD_NAMES = JSON.parse('<?php echo json_encode($modslist_names, JSON_UNESCAPED_SLASHES) ?>');
