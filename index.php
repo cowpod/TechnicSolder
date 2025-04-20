@@ -1110,16 +1110,17 @@ if (uri('/update')) {
                                         <button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeModal" class="btn btn-danger">Remove</button> 
                                     <?php 
                                     } 
-                                    if (substr($_SESSION['perms'],2,1)=="1") {
-                                        // if public is null then MC version and loader hasn't been set yet
-                                        if (isset($user['minecraft']) && $user['public']!='1') { ?>
-                                        <button bid="<?php echo $user['id'] ?>" id="pub-<?php echo $user['id']?>" class="btn btn-success" onclick="set_public(<?php echo $user['id'] ?>)">Publish</button>
-                                        <?php } ?>
-                                        <button bid="<?php echo $user['id'] ?>" id="rec-<?php echo $user['id']?>" class="btn btn-success" onclick="set_recommended(<?php echo $user['id'] ?>)" style="display:<?php echo ($packdata['recommended']!=$user['id']&&$user['public']=='1')?'block':'none' ?>">Recommend</button>
-
-                                        <button bid="<?php echo $user['id'] ?>" id="recd-<?php echo $user['id']?>" class="btn btn-success" style="display:<?php echo ($packdata['recommended']==$user['id']&&$user['public']=='1')?'block':'none' ?>" disabled>Recommended</button>
-                                    <?php 
-                                    } 
+                                    if (!empty($user['minecraft'])) {
+                                        if (substr($_SESSION['perms'],2,1)=="1") {
+                                            // if public is null then MC version and loader hasn't been set yet
+                                            if (isset($user['minecraft']) && $user['public']!='1') { ?>
+                                            <button bid="<?php echo $user['id'] ?>" id="pub-<?php echo $user['id']?>" class="btn btn-success" onclick="set_public(<?php echo $user['id'] ?>)">Publish</button>
+                                            <?php } ?>
+                                            <button bid="<?php echo $user['id'] ?>" id="rec-<?php echo $user['id']?>" class="btn btn-success" onclick="set_recommended(<?php echo $user['id'] ?>)" style="display:<?php echo ($packdata['recommended']!=$user['id']&&$user['public']=='1')?'block':'none' ?>">Recommend</button>
+                                            <button bid="<?php echo $user['id'] ?>" id="recd-<?php echo $user['id']?>" class="btn btn-success" style="display:<?php echo ($packdata['recommended']==$user['id']&&$user['public']=='1')?'block':'none' ?>" disabled>Recommended</button>
+                                        <?php 
+                                        }
+                                    }
                                     ?>
                                     </div>
                                 </td>
@@ -1294,7 +1295,7 @@ if (uri('/update')) {
                         </div>
 
                         <div id="wipewarn" class='text-danger' style='display:none'>Build will be wiped.</div>
-                        <button type="submit" id="build-details-save" class="btn btn-success" disabled>Save</button>
+                        <button type="submit" id="build-details-save" class="btn btn-success" <?php if (!empty($user['minecraft'])) { echo 'disabled'; } else { echo 'custom_reload="true"'; } ?>>Save</button>
                     </form>
 
                     <div class="modal fade" id="editBuild" tabindex="-1" role="dialog" aria-labelledby="rm" aria-hidden="true">
