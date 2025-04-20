@@ -38,6 +38,7 @@ if (!empty($config->get('api_key'))) {
 
 $client_uuid = isset($_GET['cid']) ? $_GET['cid'] : '';
 
+// this key should always have access.
 $valid_client_key = FALSE;
 if (isset($_GET['k'])) {
     if ($server_wide_api_key) {
@@ -205,14 +206,15 @@ elseif (($arg = endpoint_arg($url, 'api/modpack')) === TRUE) {
 
         foreach($modpacksq as $modpack) {
             $builds = [];
-            $counter=0;
-            $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
+            $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = {$modpack['id']} AND minecraft IS NOT NULL");
 
             foreach($buildsq as $build) {
+                if ($build['minecraft'] === null) {
+                    continue;
+                }
                 $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
                 if ($build['public']==1 || $clientsq || $valid_client_key) {
-                    $builds[$counter]=$build['name'];
-                    $counter++;
+                    array_push($builds, $build['name']);
                 }
             }
             $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
@@ -266,6 +268,11 @@ elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== FALSE) {
         }
         $modpack = $modpacksq[0];
 
+        $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '{$db->sanitize($client_uuid)}' AND `id` IN ({$modpack['clients']})");
+        if ($modpack['public']!=1 && !$clientsq && !$valid_client_key) {
+            die('{"error":"This modpack is private."}');
+        }
+
         $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']." AND name='".$db->sanitize($uri_build)."'");
         if (!$buildsq) {
             die('{"error":"Build does not exist."}');
@@ -277,7 +284,11 @@ elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== FALSE) {
         }
         $build = $buildsq[0];
 
-        $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
+        if ($build['minecraft'] === null) {
+            die('{"error":"Build does not exist"}');
+        }
+
+        $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '{$db->sanitize($client_uuid)}' AND `id` IN ({$build['clients']})");
         if ($build['public']==1 || $clientsq || $valid_client_key) {
             $mods = [];
             $modslist = explode(',', $build['mods']);
@@ -365,44 +376,45 @@ elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== FALSE) {
 
         $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
         if ($modpack['public']==1 || $clientsq || $valid_client_key) {
-            $builds = [];
-            $counter=0;
+            // set details of modpack
+            if (isset($_GET['include']) && $_GET['include'] == "full") {
+                $modpack_info=[
+                    "name" => $modpack['name'],
+                    "display_name" => $modpack['display_name'],
+                    "url" => $modpack['url'],
+                    "icon" => $modpack['icon'],
+                    "icon_md5" => $modpack['icon_md5'],
+                    "logo" => $modpack['logo'],
+                    "logo_md5" => $modpack['logo_md5'],
+                    "background" => $modpack['background'],
+                    "background_md5" => $modpack['background_md5'],
+                    "recommended" => $modpack['recommended_name'],
+                    "latest" => $modpack['latest_name'],
+                    "builds" => [] //set later
+                ];
+            } else {
+                $modpack_info=[
+                    "name" => $modpack['name'],
+                    "display_name" => $modpack['display_name'],
+                    "recommended" => $modpack['recommended_name'],
+                    "latest" => $modpack['latest_name'],
+                    "builds" => [] // set later
+                ];
+            }
 
+            // set build names of modpack
             $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$modpack['id']);
-            
             foreach ($buildsq as $build) {
+                if ($build['minecraft'] === null) {
+                    continue;
+                }
                 $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
                 if ($build['public']==1 || $clientsq || $valid_client_key) {
-                    $builds[$counter]=$build['name'];
-                    $counter++;
-                }
-                
-                if (isset($_GET['include']) && $_GET['include'] == "full") {
-                    $data=[
-                        "name" => $modpack['name'],
-                        "display_name" => $modpack['display_name'],
-                        "url" => $modpack['url'],
-                        "icon" => $modpack['icon'],
-                        "icon_md5" => $modpack['icon_md5'],
-                        "logo" => $modpack['logo'],
-                        "logo_md5" => $modpack['logo_md5'],
-                        "background" => $modpack['background'],
-                        "background_md5" => $modpack['background_md5'],
-                        "recommended" => $modpack['recommended_name'],
-                        "latest" => $modpack['latest_name'],
-                        "builds" => $builds
-                    ];
-                } else {
-                    $data=[
-                        "name" => $modpack['name'],
-                        "display_name" => $modpack['display_name'],
-                        "recommended" => $modpack['recommended_name'],
-                        "latest" => $modpack['latest_name'],
-                        "builds" => $builds
-                    ];
+                    array_push($modpack_info['builds'], $build['name']);
                 }
             }
-            die(json_encode($data, JSON_UNESCAPED_SLASHES));
+
+            die(json_encode($modpack_info, JSON_UNESCAPED_SLASHES));
         } else {
             die('{"error":"This modpack is private."}');
         }

@@ -180,13 +180,19 @@ $('#copybuild').on('submit', async function(event){
                     if (json['status']==='succ') {
                         // window.location.reload()
                         let details = json['details'] // id,name,modpack,minecraft,java,mods
+                        let minecraft = details['minecraft']
+                        if (minecraft === null) {
+                            // we copied a blank build? reload page
+                            setTimeout(function() {
+                                window.location.reload()
+                              }, 250);
+                        }
                         let id = details['id']
                         let name = details['name']
-                        let modpack=details['modpack']
-                        let minecraft=details['minecraft']
-                        let java=details['java']
-                        let mods=details['mods'].split(',')
-                        let modcount=mods.length
+                        let modpack = details['modpack']
+                        let java = details['java']
+                        let mods = details['mods'].split(',')
+                        let modcount = mods.length
                         let table = $('#table-builds')
                         let row = `<tr rec="false" id="b-${id}">
                                 <td scope="row" data-value="${name}">${name}</td>

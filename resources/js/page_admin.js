@@ -127,7 +127,7 @@ function new_user(email,name,pass) {
             json=JSON.parse(request.responseText);
             if (json['status']=='succ') {
                 // $("#info").html('<span class="text-success">'+json['message']+"</span><br />");
-                // setTimeout(function(){ window.location.reload(); }, 500);
+                // setTimeout(function(){ window.location.reload(); }, 250);
 
                 // if editing remember to change in index.php
                 let newuserrow = $("<tr>", {

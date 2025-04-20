@@ -14,7 +14,7 @@ function fwipe(){
     $('#build-details-save').trigger('click');
     setTimeout(function() {
         window.location.reload();
-    }, 500);
+    }, 250);
 };
 function remove_mod(id,name) {
     var request = new XMLHttpRequest();
@@ -331,7 +331,7 @@ $('#build-details').on('submit', function(e) {
                 if ($('#build-details-save').attr('custom_reload') !== undefined && $('#build-details-save').attr('custom_reload')) {
                     setTimeout(function() {
                         window.location.reload();
-                    }, 500);
+                    }, 250);
                 }
             }
         }
