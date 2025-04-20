@@ -2507,11 +2507,11 @@ if (!uri("/login")) {
                     <span>You, an administrator, can update the server-wide API key in <a href="admin#solder">Server Settings</a></span>
                     <?php } else { ?>
                     As such, you cannot set your own API key. Contact your server administrator if you think this is a mistake.
-                <?php } 
-                    } else { ?>
+                    <?php } 
+                } else { ?>
                     <p>To integrate with the Technic API, you will need your API key from <a href="https://technicpack.net/" target="_blank">technicpack.net</a>; Sign in (or register), "Edit [My] Profile" in the top right account menu, "Solder Configuration", and copy the API key and paste it in the text box below.</p>
                     <form>
-                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if (get_setting('api_key')) echo 'value="'.get_setting('api_key').'"' ?> <?php if ($config->exists('api_key')) echo "disabled" ?>/>
+                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if (get_setting('api_key')) echo 'value="'.get_setting('api_key').'"'; ?>/>
                         <br/>
                         <input class="btn btn-success" type="button" id="save_api_key" value="Save" disabled />
                     </form>
@@ -2681,7 +2681,7 @@ if (!uri("/login")) {
                     <h2>Server-wide Technic Solder integration</h2>
                     <p>To integrate with the Technic API, you will need your API key from <a href="https://technicpack.net/" target="_blank">technicpack.net</a>; Sign in (or register), "Edit [My] Profile" in the top right account menu, "Solder Configuration", and copy the API key and paste it in the text box below.</p>
                     <form>
-                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if ($config->exists('api_key')) echo 'value="'.$config->get('api_key').'"' ?>/>
+                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if ($config->exists('api_key') && !empty($config->get('api_key'))) echo 'value="'.$config->get('api_key').'"' ?>/>
                         <br/>
                         <input class="btn btn-success" type="button" id="save_api_key" value="Save" disabled />
                     </form>

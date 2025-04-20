@@ -30,19 +30,20 @@ if ($perms->privileged() && isset($_POST['serverwide']) && $_POST['serverwide']=
     die('{"status":"succ", "message":"successfuly set server-wide api_key"}');
 }
 
-if ($config->exists('api_key')) {
+if ($config->exists('api_key') && !empty($config->get('api_key'))) {
     die('{"status":"error", "message":"Cannot set a user API key as a server-wide API key is already set."}');
-}
-
-require_once("user-settings.php");
-
-if (get_setting('api_key') && get_setting('api_key')==$api_key) {
-    die('{"status":"succ", "message":"api_key is the same"}');
 }
 
 require_once("db.php");
 $db=new Db;
 $db->connect();
+
+require_once("user-settings.php");
+
+if (get_setting('api_key') && get_setting('api_key')==$api_key) {
+    $db->disconnect();
+    die('{"status":"succ", "message":"api_key is the same"}');
+}
 
 set_setting('api_key', $api_key);
 
