@@ -954,6 +954,7 @@ if (uri('/update')) {
                             <label class="custom-control-label" for="public">Public</label>
                         </div><br />
 
+                        <?php if (substr($_SESSION['perms'],2,1)=="1") { ?>
                         <div id="card-allowed-clients" <?php if ($modpack['public']==1) { echo 'style="display:none"'; } ?>>
                             <p>Select which clients are allowed to access this non-public modpack.</p>
                             <input hidden id="modpack_id" value="<?php echo $_GET['id'] ?>">
@@ -971,6 +972,7 @@ if (uri('/update')) {
                         <?php } ?>
                             <br/>
                         </div>
+                        <?php } ?>
 
                         <!-- <div class="btn-group" role="group" aria-label="Actions"> -->
                         <button type="submit" name="type" value="rename" class="btn btn-primary" id="modpack-details-save" disabled>Save</button>
@@ -1272,6 +1274,7 @@ if (uri('/update')) {
                         </div><br />
                         <?php } ?>
 
+                        <?php if (substr($_SESSION['perms'],2,1)=="1") { ?>
                         <div id="card-allowed-clients" <?php if ($user['public']==1) { echo 'style="display:none"'; } ?>>
                             <p>Select which clients are allowed to access this non-public build.</p>
                             <input hidden id="build_id" value="<?php echo $_GET['id'] ?>">
@@ -1289,6 +1292,7 @@ if (uri('/update')) {
                             <?php } ?>
                             <br/>
                         </div>
+                        <?php } ?>
 
                         <div id="wipewarn" class='text-danger' style='display:none'>Build will be wiped.</div>
                         <button type="submit" id="build-details-save" class="btn btn-success" <?php if (!empty($user['minecraft'])) { echo 'disabled'; } else { echo 'custom_reload="true"'; } ?>>Save</button>
@@ -2460,7 +2464,7 @@ if (uri('/update')) {
                     </div>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm3" disabled>
-                        <label class="custom-control-label" for="perm3">Set public/recommended build</label>
+                        <label class="custom-control-label" for="perm3">Publish and manage client access for builds/modpacks</label>
                     </div>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm4" disabled>
@@ -2468,15 +2472,15 @@ if (uri('/update')) {
                     </div>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm5" disabled>
-                        <label class="custom-control-label" for="perm5">Edit mods and files</label>
+                        <label class="custom-control-label" for="perm5">Edit and delete mods and files</label>
                     </div>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm6" disabled>
-                        <label class="custom-control-label" for="perm6">Download and remove forge versions.</label>
+                        <label class="custom-control-label" for="perm6">Upload and delete modloaders</label>
                     </div>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm7" disabled>
-                        <label class="custom-control-label" for="perm7">Manage Clients</label>
+                        <label class="custom-control-label" for="perm7">Add and delete clients</label>
                     </div>
                     <hr />
                     <h3>User Picture</h3>
