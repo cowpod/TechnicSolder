@@ -31,6 +31,9 @@ Easiest method, but requires ssh, docker, and docker-compose on the host machine
 Also allows using the built-in updater if you're on the `dev` channel
 (it will check and pull the newest changes for you using `git`).
 
+Note this container image puts Technic Solder at `/var/www/html`, and not 
+`/var/www/TechnicSolder`, as written later in this file.
+
 On the remote machine, as root (or prefix everything with sudo)
 Clone repository to a location of your choice (likely in your home folder)
 ```bash
