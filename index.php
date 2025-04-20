@@ -571,7 +571,7 @@ if (uri('/update')) {
             if (isset($notechnic) && $notechnic) {
             ?>
                 <div class="card alert-warning">
-                    <strong>Warning! </strong>Cannot connect to Technic! Verify you set your slug and API key in your <a href="/account">Account Settings</a>
+                    <strong>Warning! </strong>Cannot connect to Technic! Verify the modpack slug is set below, and an API key is set in <a href="/account">Account Settings</a>
                 </div>
                 <?php
             } else {
@@ -877,7 +877,7 @@ if (uri('/update')) {
                 
                 if (isset($notechnic) &&$notechnic) {
                     ?><div class="card alert-warning">
-                        <strong>Warning! </strong>Cannot connect to Technic! Verify you set your slug and API key in your <a href="/account">Account Settings</a>
+                        <strong>Warning! </strong>annot connect to Technic! Verify the modpack slug is set below, and an API key is set in <a href="/account">Account Settings</a>
                     </div><?php
                 }
                 
@@ -1233,7 +1233,7 @@ if (uri('/update')) {
             <div class="main">
                 <?php if (substr($_SESSION['perms'],1,1)=="1") { ?>
                 <div class="card">
-                    <h2>Build <?php echo $user['name'] ?></h2>
+                    <h2>Build details - <?php echo $user['name'] ?></h2>
                     <hr>
                     <?php if (empty($user['minecraft'])) { ?>
                         <h3>Details must be set before mods can be added.</h3>
@@ -1306,33 +1306,30 @@ if (uri('/update')) {
                     ?>
                 <div class="card">
                     <h2>Allowed clients</h2>
+                    <p>Select which clients are allowed to access this non-public build.</p>
                     <form id="update-build-clients">
                     <input hidden id="build_id" value="<?php echo $_GET['id'] ?>">
                     <?php if (sizeof($clients) === 0) {
                         ?>
                         <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
                         <br />
-                        <?php
-                    } ?>
-                    <?php
+                    <?php }
                     $clientlist = isset($user['clients']) ? explode(',', $user['clients']) : [];
                     foreach ($clients as $client) {
-                        $client_checked = in_array($client['id'], $clientlist) ? 'checked' : '';
-                        ?>
-                        <div class="custom-control custom-checkbox">
-                            <input class="custom-control-input buildClientId" id="client-<?php echo $client['id'] ?>" type="checkbox" value="<?php echo $client['id'] ?>" <?php echo $client_checked ?>>
-                            <label class="custom-control-label" for="client-<?php echo $client['id'] ?>"><?php echo $client['name']." (".$client['UUID'].")" ?></label>
-                        </div><br />
-                        <?php
-                    }
-                    ?>
+                        $client_checked = in_array($client['id'], $clientlist) ? 'checked' : ''; ?>
+                    <div class="custom-control custom-checkbox">
+                        <input class="custom-control-input buildClientId" id="client-<?php echo $client['id'] ?>" type="checkbox" value="<?php echo $client['id'] ?>" <?php echo $client_checked ?>>
+                        <label class="custom-control-label" for="client-<?php echo $client['id'] ?>"><?php echo $client['name']." (".$client['UUID'].")" ?></label>
+                    </div>
+                    <?php } ?>
+                    <br/>
                     <?php if (sizeof($clients)>0) { ?> <input class="btn btn-primary" id="update-build-clients-submit" type="submit" name="submit" value="Save" disabled> <?php } ?>
                 </form>
                 </div>
             <?php } ?>
                 <?php } if (!empty($modslist)) { // only empty on new build before mcversion is set?>
                     <div class="card">
-                        <h2>Mods in Build <?php echo $user['name'] ?></h2>
+                        <h2>Enabled loaders/mods/files</h2>
                         <table class="table table-striped sortable">
                             <thead>
                                 <tr>
@@ -1468,7 +1465,7 @@ if (uri('/update')) {
 
                     <?php if (substr($_SESSION['perms'],1,1)=="1") { ?>
                     <div class="card">
-                        <h2>Mods <font id='mods-for-version-string'></font></h2>
+                        <h2>Available mods <font id='mods-for-version-string'></font></h2>
                         <hr>
                         <input id="search" type="text" placeholder="Search..." class="form-control">
                         <br />
@@ -1493,7 +1490,7 @@ if (uri('/update')) {
                         <div id='no-mods-available-search-results' class='text-center' style='display:none'>No mods match your search.</div>
                     </div>
                     <div class="card">
-                        <h2>Other Files</h2>
+                        <h2>Available other files</h2>
                         <hr>
                         <input id="search" type="text" placeholder="Search..." class="form-control">
                         <table class="table table-striped sortable">
