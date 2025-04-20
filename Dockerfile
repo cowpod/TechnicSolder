@@ -6,6 +6,14 @@ RUN apt install libzip-dev -y
 RUN docker-php-ext-install zip
 RUN docker-php-ext-install pdo
 RUN docker-php-ext-install pdo_mysql
+RUN docker-php-ext-install opcache
+
+# jit isn't particularly useful for our use case.
+#RUN echo "opcache.enable=1\n" \
+#         "opcache.jit_buffer_size=128M\n" \
+#         "opcache.jit=tracing" \
+#    > /usr/local/etc/php/conf.d/custom_opcache_jit.ini
+
 RUN apt install git -y
 
 ADD . /var/www/html
