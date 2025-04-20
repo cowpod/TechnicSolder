@@ -451,7 +451,7 @@ if (uri('/update')) {
                             }
 
                             $notechnic = true;
-                            if (!str_starts_with($modpack['name'], 'unnamed-modpack-') && get_setting('api_key')) {
+                            if (!str_starts_with($modpack['name'], 'unnamed-modpack-') && (!empty($config->get('api_key')) || !empty(get_setting('api_key')))) {
                                 $cache = [];
                                 $cached_info = [];
 
@@ -496,8 +496,8 @@ if (uri('/update')) {
                             $totaldownloads += $info['installs'];
                             $totalruns += $info['runs'];
                             $totallikes += $info['ratings'];
-
-                        ?><a href="./modpack?id=<?php echo $modpack['id'] ?>">
+                        ?>
+                        <a href="./modpack?id=<?php echo $modpack['id'] ?>">
                             <div class="modpack">
                                 <p class="text-white"><img alt="<?php echo $modpack['display_name'] ?>" class="d-inline-block align-top" height="25px" src="<?php echo $info_icon; ?>"> <?php echo $modpack['display_name'] ?></p>
                             </div>
@@ -780,13 +780,95 @@ if (uri('/update')) {
             <?php
         }
         elseif (uri('/modpack')){
-            $modpack = $db->query("SELECT * FROM `modpacks` WHERE `id` = ".$db->sanitize($_GET['id']));
-            if ($modpack) {
-                assert(sizeof($modpack)==1);
-                $modpack=$modpack[0];
+            $modpacksq = $db->query("SELECT * FROM `modpacks` WHERE `id` = ".$db->sanitize($_GET['id']));
+            if ($modpacksq) {
+                assert(sizeof($modpacksq)==1);
+                $modpack = $modpacksq[0];
+            }
+            
+            $_GET['name'] = $modpack['name'];
 
-                // todo: get rid of this
-                $_GET['name'] = $modpack['name'];
+            $clients = $db->query("SELECT * FROM `clients`");
+
+            $packdata = json_decode(mp_latest_recommended($db), true);
+
+            $latest=false;
+            if ($packdata['latest']!=null) {
+                $latestres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `id` = ".$packdata['latest']);
+                if (sizeof($latestres)!==0) {
+                    $latest=true;
+                    $user = $latestres[0];
+                }
+            } else {
+                $user=['id'=>$_GET['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'clients'=>'null', 'public'=>0];
+            }
+
+            $rec=false;
+            if ($packdata['recommended']!=null) {
+                $recres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `id` = '".$packdata['recommended']."'");
+                if (sizeof($recres)!==0) {
+                    $rec=true;
+                    $user = $recres[0];
+                }
+            } else {
+                $user=['id'=>$_GET['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'clients'=>'null', 'public'=>0];
+            }
+
+            $notechnic=true;
+            if (!str_starts_with($modpack['name'], 'unnamed-modpack-') && (!empty($config->get('api_key')) || !empty(get_setting('api_key')))) {
+                $cache = [];
+                $cached_info = [];
+
+                // clean up old cached data
+                $db->execute("DELETE FROM metrics WHERE time_stamp < ".time());
+
+                $cacheq = $db->query("SELECT info FROM metrics WHERE name = '".$db->sanitize($modpack['name'])."' AND time_stamp > ".time());
+                if ($cacheq && !empty($cacheq[0]) && !empty($cacheq[0]['info'])) {
+                    $info = json_decode(base64_decode($cacheq[0]['info']),true);
+                }
+                elseif (@$info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
+                    $time = time()+1800;
+                    $info_data = base64_encode(json_encode($info));
+                    if ($config->exists('db-type') && $config->get('db-type')=='sqlite') {
+                        $db->execute("
+                            INSERT OR REPLACE INTO metrics (name,time_stamp,info)
+                            VALUES (
+                                '".$db->sanitize($modpack['name'])."',
+                                ".$time.",
+                                '".$info_data."'
+                        )");
+                    } else {
+                        $db->execute("
+                            REPLACE INTO metrics (name,time_stamp,info)
+                            VALUES (
+                                '".$db->sanitize($modpack['name'])."',
+                                ".$time.",
+                                '".$info_data."'
+                        )");
+                    }
+                }
+                $notechnic = false;
+            }
+            
+            if (empty($info['installs']) && empty($info['runs']) && empty($info['ratings'])) {
+                $info=['installs'=>0,'runs'=>0,'ratings'=>0];
+            }
+
+            $totaldownloads = $info['installs'];
+            $totalruns = $info['runs'];
+            $totallikes = $info['ratings'];
+
+            $num_downloads=number_suffix_string($totaldownloads);
+            $downloadsbig = $num_downloads['big'];
+            $downloadssmall = $num_downloads['small'];
+
+            $num_runs=number_suffix_string($totalruns);
+            $runsbig = $num_runs['big'];
+            $runssmall = $num_runs['small'];
+
+            $num_likes=number_suffix_string($totallikes);
+            $likesbig = $num_likes['big'];
+            $likessmall = $num_likes['small'];
             ?>
             <script>document.title = 'Modpack - <?php echo addslashes($modpack['display_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             
@@ -794,20 +876,6 @@ if (uri('/update')) {
                 <li class="nav-item">
                     <a class="nav-link" href="./dashboard"><em class="fas fa-arrow-left fa-lg"></em> <?php echo $modpack['display_name'] ?></a>
                 </li>
-                <?php
-                $packdata = json_decode(mp_latest_recommended($db), true);
-
-                $latest=false;
-                if ($packdata['latest']!=null) {
-                    $latestres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `id` = ".$packdata['latest']);
-                    if (sizeof($latestres)!==0) {
-                        $latest=true;
-                        $user = $latestres[0];
-                    }
-                } else {
-                    $user=['id'=>$_GET['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'public'=>0];
-                }
-                ?>
                 <li <?php if (!$latest){ echo "style='display:none'"; } ?> id="latest-v-li" class="nav-item">
                     <span class="navbar-text"><em style="color:#2E74B2" class="fas fa-exclamation"></em> Latest: <strong id="latest-name"><?php echo $user['name'] ?></strong></span>
                 </li>
@@ -815,19 +883,6 @@ if (uri('/update')) {
                     <span class="navbar-text"><?php if (isset($user['minecraft'])){echo "MC: ";} ?><strong id="latest-mc"><?php echo $user['minecraft'] ?></strong></span>
                 </li>
                 <div style="width:30px"></div>
-                    <?php
-
-                $rec=false;
-                if ($packdata['recommended']!=null) {
-                    $recres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `id` = '".$packdata['recommended']."'");
-                    if (sizeof($recres)!==0) {
-                        $rec=true;
-                        $user = $recres[0];
-                    }
-                } else {
-                    $user=['id'=>$_GET['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'public'=>0];
-                }
-                ?>
                 <li <?php if (!$rec){ echo "style='display:none'"; } ?> id="rec-v-li" class="nav-item">
                     <span class="navbar-text"><em style="color:#329C4E" class="fas fa-check"></em> Recommended: <strong id="rec-name"><?php echo $user['name'] ?></strong></span>
                 </li>
@@ -838,71 +893,15 @@ if (uri('/update')) {
             </ul>
 
             <div class="main">
-                <?php
-                $notechnic=true;
-                if (!str_starts_with($modpack['name'], 'unnamed-modpack-') && get_setting('api_key')) {
-                    $cache = [];
-                    $cached_info = [];
-
-                    // clean up old cached data
-                    $db->execute("DELETE FROM metrics WHERE time_stamp < ".time());
-
-                    $cacheq = $db->query("SELECT info FROM metrics WHERE name = '".$db->sanitize($modpack['name'])."' AND time_stamp > ".time());
-                    if ($cacheq && !empty($cacheq[0]) && !empty($cacheq[0]['info'])) {
-                        $info = json_decode(base64_decode($cacheq[0]['info']),true);
-                    }
-                    elseif (@$info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
-                        $time = time()+1800;
-                        $info_data = base64_encode(json_encode($info));
-                        if ($config->exists('db-type') && $config->get('db-type')=='sqlite') {
-                            $db->execute("
-                                INSERT OR REPLACE INTO metrics (name,time_stamp,info)
-                                VALUES (
-                                    '".$db->sanitize($modpack['name'])."',
-                                    ".$time.",
-                                    '".$info_data."'
-                            )");
-                        } else {
-                            $db->execute("
-                                REPLACE INTO metrics (name,time_stamp,info)
-                                VALUES (
-                                    '".$db->sanitize($modpack['name'])."',
-                                    ".$time.",
-                                    '".$info_data."'
-                            )");
-                        }
-                    }
-                    $notechnic = false;
-                }
-                
-                if (isset($notechnic) &&$notechnic) {
-                    ?><div class="card alert-warning">
-                        <strong>Warning! </strong>annot connect to Technic! Verify the modpack slug is set below, and an API key is set in <a href="/account">Account Settings</a>
-                    </div><?php
-                }
-                
-                if (empty($info['installs']) && empty($info['runs']) && empty($info['ratings'])) {
-                    $info=['installs'=>0,'runs'=>0,'ratings'=>0];
-                }
-
-                $totaldownloads = $info['installs'];
-                $totalruns = $info['runs'];
-                $totallikes = $info['ratings'];
-
-                $num_downloads=number_suffix_string($totaldownloads);
-                $downloadsbig = $num_downloads['big'];
-                $downloadssmall = $num_downloads['small'];
-
-                $num_runs=number_suffix_string($totalruns);
-                $runsbig = $num_runs['big'];
-                $runssmall = $num_runs['small'];
-
-                $num_likes=number_suffix_string($totallikes);
-                $likesbig = $num_likes['big'];
-                $likessmall = $num_likes['small'];
-                
-                if (isset($runsbig)) {
-                ?>
+            <?php
+            if ($notechnic) { ?>
+                <div class="card alert-warning">
+                    <strong>Warning! </strong>annot connect to Technic! Verify the modpack slug is set below, and an API key is set in <a href="/account">Account Settings</a>
+                </div>
+            <?php
+            }
+            if (isset($runsbig)) {
+            ?>
                 <div style="margin-left: 0;margin-right: 0" class="row">
                     <div class="col-4">
                         <div class="card text-white bg-success" style="padding: 0">
@@ -938,10 +937,10 @@ if (uri('/update')) {
                         </div>
                     </div>
                 </div>
-                <?php } ?>
+            <?php } ?>
 
-                <?php
-                if (substr($_SESSION['perms'],0,1)=="1") { ?>
+            <?php
+            if (substr($_SESSION['perms'],0,1)=="1") { ?>
                 <div class="card">
                     <h2>Modpack details</h2>
                     <hr>
@@ -983,7 +982,6 @@ if (uri('/update')) {
                 </div>
                 <?php
                     if (!$modpack['public']) {
-                    $clients = $db->query("SELECT * FROM `clients`");
                 ?>
 
                 <div class="card">
@@ -1083,7 +1081,7 @@ if (uri('/update')) {
                         <button id="copylatestbutton" type="submit" class="btn btn-secondary">Latest</button>
                     </form>
                 </div>
-            <?php } ?>
+
                 <div class="card">
                     <h2>Builds</h2>
                     <hr>
@@ -1215,6 +1213,8 @@ if (uri('/update')) {
                 assert(sizeof($mpack)==1);
                 $mpack = $mpack[0];
             }
+
+            $clients = $db->query("SELECT * FROM `clients`");
             ?>
             <script>document.title = '<?php echo addslashes($mpack['display_name'])." ".addslashes($user['name'])  ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <ul class="nav justify-content-end info-versions">
@@ -1302,7 +1302,6 @@ if (uri('/update')) {
                     </div>
                 </div>
                 <?php if (!$user['public']) {
-                    $clients = $db->query("SELECT * FROM `clients`");
                     ?>
                 <div class="card">
                     <h2>Allowed clients</h2>
