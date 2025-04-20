@@ -4,7 +4,8 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
-if (substr($_SESSION['perms'], 1, 1)!=='1') {
+// can create edit delete builds, or can create edit delete modpacks
+if (substr($_SESSION['perms'], 0, 1)!=='1' && substr($_SESSION['perms'], 1, 1)!=='1') {
     die('{"status":"error","message":"Insufficient permission!"}');
 }
 

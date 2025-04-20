@@ -896,7 +896,7 @@ if (uri('/update')) {
             <?php
             if ($notechnic) { ?>
                 <div class="card alert-warning">
-                    <strong>Warning! </strong>annot connect to Technic! Verify the modpack slug is set below, and an API key is set in <a href="/account">Account Settings</a>
+                    <strong>Warning! </strong>Cannot connect to Technic! Verify the modpack slug is set below, and an API key is set in <a href="/account">Account Settings</a>
                 </div>
             <?php
             }
@@ -939,8 +939,7 @@ if (uri('/update')) {
                 </div>
             <?php } ?>
 
-            <?php
-            if (substr($_SESSION['perms'],0,1)=="1") { ?>
+            <?php if (substr($_SESSION['perms'],0,1)=="1") { ?>
                 <div class="card">
                     <h2>Modpack details</h2>
                     <hr>
@@ -958,21 +957,19 @@ if (uri('/update')) {
                         <div id="card-allowed-clients" <?php if ($modpack['public']==1) { echo 'style="display:none"'; } ?>>
                             <p>Select which clients are allowed to access this non-public modpack.</p>
                             <input hidden id="modpack_id" value="<?php echo $_GET['id'] ?>">
-                        <?php if (sizeof($clients) === 0) {
-                            ?>
+                            <?php if (sizeof($clients) === 0) { ?>
                             <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
                             <br />
-                        <?php }
-                        $clientlist = !empty($modpack['clients']) ? explode(',', $modpack['clients']) : [];
-                        foreach ($clients as $client) {
-                            $client_checked = in_array($client['id'], $clientlist) ? 'checked' : ''; ?>
+                            <?php }
+                            $clientlist = !empty($modpack['clients']) ? explode(',', $modpack['clients']) : [];
+                            foreach ($clients as $client) {
+                                $client_checked = in_array($client['id'], $clientlist) ? 'checked' : ''; ?>
                             <div class="custom-control custom-checkbox">
                                 <input class="custom-control-input modpackClientId" id="client-<?php echo $client['id'] ?>" type="checkbox" value="<?php echo $client['id'] ?>" <?php echo $client_checked ?>>
                                 <label class="custom-control-label" for="client-<?php echo $client['id'] ?>"><?php echo $client['name']." (".$client['UUID'].")" ?></label>
                             </div>
                         <?php } ?>
                             <br/>
-
                         </div>
 
                         <!-- <div class="btn-group" role="group" aria-label="Actions"> -->
@@ -1278,19 +1275,18 @@ if (uri('/update')) {
                         <div id="card-allowed-clients" <?php if ($user['public']==1) { echo 'style="display:none"'; } ?>>
                             <p>Select which clients are allowed to access this non-public build.</p>
                             <input hidden id="build_id" value="<?php echo $_GET['id'] ?>">
-                        <?php if (sizeof($clients) === 0) {
-                            ?>
+                            <?php if (sizeof($clients) === 0) { ?>
                             <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
                             <br />
-                        <?php }
-                        $clientlist = !empty($user['clients']) ? explode(',', $user['clients']) : [];
-                        foreach ($clients as $client) {
-                            $client_checked = in_array($client['id'], $clientlist) ? 'checked' : ''; ?>
+                            <?php }
+                            $clientlist = !empty($user['clients']) ? explode(',', $user['clients']) : [];
+                            foreach ($clients as $client) {
+                                $client_checked = in_array($client['id'], $clientlist) ? 'checked' : ''; ?>
                             <div class="custom-control custom-checkbox">
                                 <input class="custom-control-input buildClientId" id="client-<?php echo $client['id'] ?>" type="checkbox" value="<?php echo $client['id'] ?>" <?php echo $client_checked ?>>
                                 <label class="custom-control-label" for="client-<?php echo $client['id'] ?>"><?php echo $client['name']." (".$client['UUID'].")" ?></label>
                             </div>
-                        <?php } ?>
+                            <?php } ?>
                             <br/>
                         </div>
 
@@ -2366,8 +2362,6 @@ if (uri('/update')) {
                         } elseif ($update_status === OUTDATED) {
                             echo "alert-info";
                         } elseif ($update_status === NO_GIT || $update_status === UPDATES_DISABLED) {
-                            // echo "alert-success";
-                            // we set it later in js
                         } else {
                             echo "alert-warning";
                         } 
@@ -2771,8 +2765,8 @@ if (uri('/update')) {
                             <input readonly id="mail2" placeholder="Email" class="form-control" type="text"><br />
                             <input id="name2" placeholder="Username" class="form-control" type="text"><br />
                             <h4>Permissions</h4>
-                            <input id="perms" placeholder="Permissions" readonly value="0000000" class="form-control" type="text"><br />
-
+                            <input id="perms" placeholder="Permissions" readonly value="0000000" class="form-control" type="text" hidden>
+                            <p>User will need to log out and back in again for new permissions to take effect.</p>
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="perm1">
                                     <label class="custom-control-label" for="perm1">
