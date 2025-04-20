@@ -1,6 +1,9 @@
 <?php
 // purely a function file.
-// requires $db
+// requires $db to be defined and initialized
+assert(array_key_exists('db', $GLOBALS) || array_key_exists('db', get_defined_vars()));
+assert($db->status());
+
 function write_settings($settings, $user): bool {
     // write to db/disk settings for a user
     global $db;

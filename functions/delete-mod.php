@@ -4,7 +4,10 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
-if (substr($_SESSION['perms'], 4, 1)!=="1" && substr($_SESSION['perms'], 5, 1)!=="1") {
+require_once('./permissions.php');
+global $perms;
+$perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
+if (!$perms->mods_delete() && !$perms->modloaders_delete()) {
     die('{"status":"error","message":"Insufficient permission!"}');
 }
 

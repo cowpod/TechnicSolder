@@ -23,7 +23,10 @@ if (isset($_GET['reconfig'])) {
     if (!isset($_SESSION['user'])) {
         die("You need to be logged in!");
     }
-    if (!$_SESSION['privileged']) {
+    require_once('./functions/permissions.php');
+    global $perms;
+    $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
+    if (!$perms->privileged()) {
         die("Insufficient permission!");
     }
 } elseif ($config->exists('configured') && $config->get('configured')) {

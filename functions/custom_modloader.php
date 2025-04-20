@@ -4,10 +4,11 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
-if (substr($_SESSION['perms'], 5, 1)!=="1") {
-    echo '{"status":"error","message":"Insufficient permission!"}';
-    echo $_SESSION['perms'];
-    exit();
+require_once('./permissions.php');
+global $perms;
+$perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
+if (!$perms->modloaders_upload()) {
+    die('{"status":"error","message":"Insufficient permission!"}');
 }
 
 if (!isset($_POST['version'])) {

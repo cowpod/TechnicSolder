@@ -31,6 +31,10 @@ final class Db {
 		return true; // can provide arguments later, bypassing config!
 	}
 
+	public function status() {
+		return $this->conn !== null;
+	}
+
 	public function test2(string|array $dbtype, string|array $host, string|array $user, string|array $pass, string|array $name): bool { // Arg
 		try {
 			if ($dbtype=='sqlite') {

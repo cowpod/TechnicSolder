@@ -4,9 +4,11 @@ session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
-if (substr($_SESSION['perms'], 4, 1)!=="1") {
-    echo 'Insufficient permission!';
-    exit();
+require_once('./permissions.php');
+global $perms;
+$perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
+if (!$perms->mods_edit()) {
+    die('Insufficient permission!');
 }
 if (empty($_POST['id'])) {
     die("Mod not specified.");

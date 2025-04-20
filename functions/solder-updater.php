@@ -182,7 +182,7 @@ if (basename(__FILE__) == basename($_SERVER["SCRIPT_FILENAME"])) {
     if (empty($_SESSION['user'])) {
         die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
     }
-    if (empty($_SESSION['privileged']) || !$_SESSION['privileged']) {
+    if (!$perms->privileged()) {
         die ('{"status"=>"error","message"=>"Insufficient permission!"}');
     }
 

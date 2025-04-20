@@ -7,6 +7,10 @@ if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 
+require_once('./permissions.php');
+global $perms;
+$perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
+
 function isStrongPassword($password): bool {
     if (strlen($password) < 8) {
         return false;
@@ -71,24 +75,25 @@ function update_icon($db, $target_user, $iconfile) {
     return ["status"=>"succ","message"=>"Icon updated.","data"=>["type"=>$type,"data"=>$icon_base64]];
 }
 
-function update_perms($db,$target_user,$perms) {
-    if (empty($perms)) {
+function update_perms($db,$target_user,$newperms) {
+    global $perms;
+    if (empty($newperms)) {
         return ["status"=>"error","message"=>"Perms missing"];
     }
     if (empty($target_user)) {
         return ["status"=>"error","message"=>"User missing"];
     }
-    if (empty($_SESSION['privileged']) || !$_SESSION['privileged']) {
+    if (!$perms->privileged()) {
         return ["status"=>"error","message"=>"Insufficient permission!"];
     }
-    if (strspn($perms, '01') != strlen($perms)) {
+    if (strspn($newperms, '01') != strlen($newperms)) {
         return ["status"=>"error","message"=>"Malformed permission data"];
     }
     if (!filter_var($target_user, FILTER_VALIDATE_EMAIL)) {
         return ["status"=>"error","message"=>"Bad input data; name"];
     }
 
-    $setpermsx = $db->execute("UPDATE users SET perms = '{$perms}' WHERE name = '{$target_user}'");
+    $setpermsx = $db->execute("UPDATE users SET perms = '{$newperms}' WHERE name = '{$target_user}'");
     if (!$setpermsx) {
         return ["status"=>"error","message"=>"Could not update permissions"];
     }
@@ -162,7 +167,7 @@ $target_user = isset($_POST['user']) ? $_POST['user'] : $_SESSION['user'];
 
 // if _SESSION is targetting _POST, validate user is actually admin
 if (isset($_POST['user']) && $_POST['user'] != $_SESSION['user']) {
-    if (!$_SESSION['privileged']) {
+    if (!$perms->privileged()) {
         die("Insuffient permission!");
     }
 }
@@ -178,7 +183,7 @@ if (!empty($_FILES["newIcon"]["tmp_name"])
         $return_arr = array_merge($return_arr, $ret['data']); // append contents of data to return array
     }
 }
-if (!empty($_SESSION['privileged']) && $_SESSION['privileged'] && !empty($_POST['perms']) && !empty($_POST['user']) 
+if ($perms->privileged() && !empty($_POST['perms']) && !empty($_POST['user']) 
     && ($ret=update_perms($db, $target_user, $_POST['perms']))) {
     if ($return_arr['status']=='succ') {
         $return_arr['status'] = $ret['status'];

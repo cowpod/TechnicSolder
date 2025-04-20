@@ -3,7 +3,11 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
-if (substr($_SESSION['perms'], 1, 1)!=="1") {
+
+require_once('./permissions.php');
+global $perms;
+$perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
+if (!$perms->build_edit()) {
     die('{"status":"error","message":"Insufficient permission!"}');
 }
 
@@ -75,7 +79,7 @@ $publicq = $db->query("SELECT public FROM builds WHERE id = ".$db->sanitize($_PO
 error_log('PUBLIC: '.json_encode($publicq));
 if ($publicq && sizeof($publicq)==1 && array_key_exists('public', $publicq[0])) {
     if ($publicq[0]['public']!=$ispublic) {
-        if (substr($_SESSION['perms'], 2, 1)!=="1") {
+        if (!$perms->build_publish()) {
             die('{"status":"error","message":"Insufficient permission!"}');
         }
     }

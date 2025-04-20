@@ -4,12 +4,13 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
-// can create edit delete builds, or can create edit delete modpacks
-if (substr($_SESSION['perms'],0,1)!=='1' && substr($_SESSION['perms'],1,1)!=='1') {
-    die('{"status":"error","message":"Insufficient permission!"}');
-}
-// can publish builds modpacks
-if (substr($_SESSION['perms'],2,1)!=='1') {
+require_once('./permissions.php');
+global $perms;
+$perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
+// can't create edit delete builds nor publish
+if ($perms->build_edit() && $perms->build_publish()) {
+} elseif ($perms->modpack_edit() && $perms->modpack_publish()) {
+} else {
     die('{"status":"error","message":"Insufficient permission!"}');
 }
 

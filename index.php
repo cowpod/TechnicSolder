@@ -98,8 +98,7 @@ if (!empty($_POST['email']) && !empty($_POST['password'])) {
     } else {
         header("Location: ".$config->get('dir')."login?ic");
         exit();
-    }
-        
+    }       
 }
 
 if (isset($_SESSION['user']) && (uri("/login")||uri("/"))) {
@@ -135,6 +134,10 @@ if (uri('/update')) {
     header("Access-Control-Allow-Origin: raw.githubusercontent.com");
 }
 
+if (!uri("/login")) {
+    require('./functions/permissions.php');
+    $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -501,11 +504,8 @@ if (uri('/update')) {
                             <div class="modpack">
                                 <p class="text-white"><img alt="<?php echo $modpack['display_name'] ?>" class="d-inline-block align-top" height="25px" src="<?php echo $info_icon; ?>"> <?php echo $modpack['display_name'] ?></p>
                             </div>
-                        </a><?php
-
-                        }
-                        ?>
-                        <?php if (substr($_SESSION['perms'],0,1)=="1") { ?>
+                        </a>
+                        <?php } if ($perms->modpack_create()) { ?>
                         <a href="./functions/new-modpack.php"><div class="modpack">
                             <p><em style="height:25px" class="d-inline-block align-top fas fa-plus-circle"></em> Add Modpack</p>
                         </div></a>
@@ -527,7 +527,7 @@ if (uri('/update')) {
                 <div class="tab-pane" id="settings" role="tabpanel">
                     <div style="overflow:auto;max-height: 88vh">
                         <p class="text-muted">SETTINGS</p>
-                    <?php if ($_SESSION['privileged']) { ?>
+                    <?php if ($perms->privileged()) { ?>
                         <a href="./admin"><div class="modpack">
                             <p><em class="fas fa-user-tie fa-lg"></em> <span style="margin-left:inherit;">Admin</span></p>
                         </div></a>
@@ -535,7 +535,7 @@ if (uri('/update')) {
                         <a href="./account"><div class="modpack">
                             <p><em class="fas fa-cog fa-lg"></em> <span style="margin-left:inherit;">Account</span></p>
                         </div></a>
-                    <?php if (substr($_SESSION['perms'],6,1)=="1") { ?>
+                    <?php if ($perms->clients_add() || $perms->clients_delete()) { ?>
                         <a href="./clients"><div class="modpack">
                             <p><em class="fas fa-users fa-lg"></em><span style="margin-left:inherit;">Clients</span></p>
                         </div></a>
@@ -632,7 +632,7 @@ if (uri('/update')) {
                         <p class="display-5">The best Application to create and manage your modpacks.</p>
                     </center>
                     <hr />
-                    <?php if (substr($_SESSION['perms'],0,1)=="1" && substr($_SESSION['perms'],1,1)=="1") { ?>
+                    <?php if ($perms->modpack_create() && $perms->build_create()) { ?>
                     <button class="btn btn-success" data-toggle="collapse" href="#collapseMp" role="button" aria-expanded="false" aria-controls="collapseMp">Instant Modpack</button>
                     <div class="collapse" id="collapseMp">
                         <form method="POST" action="./functions/instant-modpack.php">
@@ -674,6 +674,9 @@ if (uri('/update')) {
                             <br />
                             <input type="submit" id="submit" disabled class="btn btn-primary btn-block" value="Create">
                         </form>
+
+                        <?php
+                        if ($perms->mods_upload()) { ?>
                         <div id="upload-card" class="card">
                             <h2>Upload mods</h2>
                             <div class="card-img-bottom">
@@ -681,23 +684,12 @@ if (uri('/update')) {
                                     <div class="upload-mods">
                                         <center>
                                             <div>
-                                                <?php
-                                                if (substr($_SESSION['perms'],3,1)=="1") {
-                                                    echo "
-                                                    Drag n' Drop .jar files here.
-                                                    <br />
-                                                    <em class='fas fa-upload fa-4x'></em>
-                                                    ";
-                                                } else {
-                                                    echo "
-                                                    Insufficient permissions!
-                                                    <br />
-                                                    <em class='fas fa-times fa-4x'></em>
-                                                    ";
-                                                } ?>
+                                                Drag n' Drop .jar files here.
+                                                <br />
+                                                <em class='fas fa-upload fa-4x'></em>
                                             </div>
                                         </center>
-                                        <input <?php if (substr($_SESSION['perms'],3,1)!=="1") { echo "disabled"; } ?> type="file" name="fiels" accept=".jar" multiple/>
+                                        <input type="file" name="fiels" accept=".jar" multiple/>
                                     </div>
                                 </form>
                             </div>
@@ -719,6 +711,7 @@ if (uri('/update')) {
                         </div>
                     </div>
                     <br />
+                    <?php } ?>
                 <?php } ?>
                     <a target="_blank" href="https://github.com/TheGameSpider/TechnicSolder/wiki/"><button class="btn btn-secondary btn-block" >Documentation</button></a>
                     <br />
@@ -939,7 +932,7 @@ if (uri('/update')) {
                 </div>
             <?php } ?>
 
-            <?php if (substr($_SESSION['perms'],0,1)=="1") { ?>
+            <?php if ($perms->modpack_edit()) { ?>
                 <div class="card">
                     <h2>Modpack details</h2>
                     <hr>
@@ -954,7 +947,7 @@ if (uri('/update')) {
                             <label class="custom-control-label" for="public">Public</label>
                         </div><br />
 
-                        <?php if (substr($_SESSION['perms'],2,1)=="1") { ?>
+                        <?php if ($perms->modpack_publish()) { ?>
                         <div id="card-allowed-clients" <?php if ($modpack['public']==1) { echo 'style="display:none"'; } ?>>
                             <p>Select which clients are allowed to access this non-public modpack.</p>
                             <input hidden id="modpack_id" value="<?php echo $_GET['id'] ?>">
@@ -976,7 +969,9 @@ if (uri('/update')) {
 
                         <!-- <div class="btn-group" role="group" aria-label="Actions"> -->
                         <button type="submit" name="type" value="rename" class="btn btn-primary" id="modpack-details-save" disabled>Save</button>
+                        <?php if ($perms->modpack_delete()) { ?>
                         <button data-toggle="modal" data-target="#removeModpack" type="button" class="btn btn-danger">Delete</button>
+                        <?php } ?>
                         <!-- </div> -->
                     </form>
                     <div class="modal fade" id="removeModpack" tabindex="-1" role="dialog" aria-labelledby="rmp" aria-hidden="true">
@@ -1002,7 +997,7 @@ if (uri('/update')) {
             <?php 
             }
 
-            if (substr($_SESSION['perms'],1,1)=="1") { ?>
+            if ($perms->build_create()) { ?>
                 <div class="card">
                     <h2>New Build</h2>
                     <hr>
@@ -1100,17 +1095,19 @@ if (uri('/update')) {
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                     <?php 
-                                    if (substr($_SESSION['perms'],1,1)=="1") { 
+                                    if ($perms->build_edit()) { 
                                         if (empty($user['minecraft'])) { ?> 
                                         <button onclick="edit(<?php echo $user['id'] ?>)" class="btn btn-warning">Set details</button>
                                         <?php } else { ?>
                                         <button onclick="edit(<?php echo $user['id'] ?>)" class="btn btn-primary">Edit</button>
-                                        <?php } ?>
+                                        <?php } 
+                                    } 
+                                    if ($perms->build_delete()) { ?>
                                         <button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeModal" class="btn btn-danger">Remove</button> 
                                     <?php 
                                     } 
                                     if (!empty($user['minecraft'])) {
-                                        if (substr($_SESSION['perms'],2,1)=="1") {
+                                        if ($perms->build_publish()) {
                                             // if public is null then MC version and loader hasn't been set yet
                                             if (isset($user['minecraft']) && $user['public']!='1') { ?>
                                             <button bid="<?php echo $user['id'] ?>" id="pub-<?php echo $user['id']?>" class="btn btn-success" onclick="set_public(<?php echo $user['id'] ?>)">Publish</button>
@@ -1224,7 +1221,7 @@ if (uri('/update')) {
                 <div style="width:30px"></div>
             </ul>
             <div class="main">
-                <?php if (substr($_SESSION['perms'],1,1)=="1") { ?>
+                <?php if ($perms->build_edit()) { ?>
                 <div class="card">
                     <h2>Build details - <?php echo $user['name'] ?></h2>
                     <hr>
@@ -1267,14 +1264,11 @@ if (uri('/update')) {
                         <label for="memory">Memory (RAM in MB)</label>
                         <input class="form-control" type="number" id="memory" name="memory" value="<?php echo $user['memory'] ?>" min="1024" max="65536" placeholder="2048" step="512">
                         <br />
-                        <?php if (substr($_SESSION['perms'],2,1)=="1") { ?>
+                        <?php if ($perms->build_publish()) { ?>
                         <div class="custom-control custom-checkbox">
                             <input <?php if ($user['public']==1) echo "checked" ?> type="checkbox" name="ispublic" class="custom-control-input" id="public">
                             <label class="custom-control-label" for="public">Public Build</label>
                         </div><br />
-                        <?php } ?>
-
-                        <?php if (substr($_SESSION['perms'],2,1)=="1") { ?>
                         <div id="card-allowed-clients" <?php if ($user['public']==1) { echo 'style="display:none"'; } ?>>
                             <p>Select which clients are allowed to access this non-public build.</p>
                             <input hidden id="build_id" value="<?php echo $_GET['id'] ?>">
@@ -1437,13 +1431,14 @@ if (uri('/update')) {
                                         }
                                     ?></td>
                                     <td><?php
-                                        // todo: we should switch type to be 'loader' instead of 'forge' for loaders.
-                                        if (substr($_SESSION['perms'], 1, 1)=="1" && (empty($mod) || $mod['type'] == "mod" || $mod['type'] == "other")) {
-                                            ?>
+                                        if ($perms->mods_delete()) {
+                                            // allow deleting non-forges and invalids
+                                            if (empty($mod) || $mod['type'] !== "forge") { ?>
                                             <button onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo $build_mod_name ?>')" class="btn btn-danger">
                                                 <em class="fas fa-times"></em>
                                             </button>
                                             <?php
+                                            }
                                         }
                                     ?></td>
                                 </tr>
@@ -1454,7 +1449,7 @@ if (uri('/update')) {
                         </table>
                     </div>
 
-                    <?php if (substr($_SESSION['perms'],1,1)=="1") { ?>
+                    <?php if ($perms->build_edit()) { ?>
                     <div class="card">
                         <h2>Available mods <font id='mods-for-version-string'></font></h2>
                         <hr>
@@ -1543,9 +1538,9 @@ if (uri('/update')) {
                     <br/>Note you will need to install a mod loader before using a mod.
                 </div>
             </div>
-            <?php if (substr($_SESSION['perms'],3,1)=="1") { ?>
+            <?php if ($perms->mods_upload()) { ?>
 
-            <?php if ($config->get('modrinth_integration')=='on') { ?>
+                <?php if ($config->get('modrinth_integration')=='on') { ?>
             <div class="card">
                 <h2>Modrinth</h2>
                 <form class="row" action="javascript:void(0)">
@@ -1583,7 +1578,6 @@ if (uri('/update')) {
                     <tbody id="searchresults">
                     </tbody>
                 </table>
-
                     <div class="row justify-content-center align-items-center">
                         <div class="col-auto">
                             <button class="btn btn-primary" id="leftButton">
@@ -1602,7 +1596,6 @@ if (uri('/update')) {
 
                 <div id='noresults' class='text-center' style='display:none'>No results</div>
             </div>
-
             <div class="modal fade" id="description" tabindex="-1" role="dialog" aria-labelledby="description-title" aria-hidden="true">
               <div class="modal-dialog modal-dialog-centered modal-fullscreen modal-xl" role="document">
                 <div class="modal-content">
@@ -1620,7 +1613,6 @@ if (uri('/update')) {
                 </div>
               </div>
             </div>
-
             <div class="modal fade" id="installation" tabindex="-1" role="dialog" aria-labelledby="installation-title" aria-hidden="true">
               <div class="modal-dialog modal-dialog-centered modal-fullscreen" role="document">
                 <div class="modal-content">
@@ -1648,8 +1640,7 @@ if (uri('/update')) {
                 </div>
               </div>
             </div>
-
-            <?php } ?>
+                <?php } ?>
 
             <div id="upload-card" class="card">
                 <h2>Upload</h2>
@@ -1663,7 +1654,7 @@ if (uri('/update')) {
                                     <em class='fas fa-upload fa-4x'></em>
                                 </div>
                             </center>
-                            <input <?php if (substr($_SESSION['perms'],3,1)!=="1") { echo "disabled"; } ?> type="file" name="fiels" accept=".jar" multiple/>
+                            <input type="file" name="fiels" accept=".jar" multiple/>
                         </div>
                     </form>
                 </div>
@@ -1685,7 +1676,8 @@ if (uri('/update')) {
             </div>
 
             <div class="card">
-                <p class="ml-3"><a href="./remote-mod"><em class="fas fa-plus-circle"></em> Add remote mods</a></p>
+                <h2>Remote mods</h2>
+                <a href="./remote-mod"><em class="fas fa-plus-circle"></em> Add mods by direct-download URL</a>
             </div>
             <?php } ?>
 
@@ -1741,9 +1733,10 @@ if (uri('/update')) {
                                     <td <?php if (implode(", ", $mod['author'])=="") echo 'class="table-danger"' ?> class="d-none d-md-table-cell"><?php if (implode(", ", $mod['author'])!=="") { echo implode(", ", $mod['author']); } else { echo "<span class='text-danger'>Unknown</span>"; } ?></td>
                                     <td id="mod-row-<?php echo $mod['name'] ?>-num"><?php echo count($mod['versions']); ?></td>
                                     <td>
-                                        <?php if (substr($_SESSION['perms'], 4, 1)=="1") { ?>
+                                        <?php if ($perms->mods_edit()) { ?>
                                         <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                             <a href="mod?id=<?php echo $mod['name'] ?>" class="btn btn-primary">Edit</a>
+                                        <?php } if ($perms->mods_delete()) { ?>
                                             <button onclick="remove_box('<?php echo $mod['name'] ?>')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
                                         </div>
                                     <?php } ?>
@@ -1862,13 +1855,7 @@ if (uri('/update')) {
                 </div>
             </div>
 
-            <?php if (substr($_SESSION['perms'], 5, 1)=="1") { ?>
-<!--             <div class="btn-group btn-group-justified btn-block">
-                <button id="fetch-forge" onclick="fetch_forges()" class="btn btn-primary mr-1">Show Forge Versions</button>
-                <button id="fetch-neoforge" onclick="fetch_neoforge()" class="btn btn-primary mr-1">Show Neoforge Versions</button>
-                <button id="fetch-fabric" onclick="fetchfabric()" class="btn btn-primary mr-1">Show Fabric Versions</button>
-            </div> -->
-            <?php 
+            <?php if ($perms->modloaders_upload()) {
             if ($config->get('fabric_integration')=='on') { ?>
             <div class="card" id="fabrics">
                 <h2>Fabric</h2>
@@ -1994,7 +1981,7 @@ if (uri('/update')) {
                                 <td scope="row"><?php echo $mod['mcversion'] ?></td>
                                 <td><?php echo $mod['version'] ?></td>
                                 <td><?php echo $mod['loadertype']?></td>
-                                <td><?php if (substr($_SESSION['perms'], 5, 1)=="1") { ?><button  onclick="remove_box(<?php echo $remove_box_str ?>)" data-toggle="modal" data-target="#removeMod" class="btn btn-danger btn-sm">Remove</button><?php } ?></td>
+                                <td><?php if ($perms->modloaders_delete()) { ?><button  onclick="remove_box(<?php echo $remove_box_str ?>)" data-toggle="modal" data-target="#removeMod" class="btn btn-danger btn-sm">Remove</button><?php } ?></td>
                                 <td><em style="display: none" class="fas fa-cog fa-spin fa-sm"></em></td>
                             </tr>
                             <?php
@@ -2028,7 +2015,7 @@ if (uri('/update')) {
         ?>
         <script>document.title = 'Other Files - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
-            <?php if (substr($_SESSION['perms'], 3, 1)=="1") { ?>
+            <?php if ($perms->files_upload()) { ?>
             <div id="upload-card" class="card">
                 <h2>Upload files</h2>
                 <div class="card-img-bottom">
@@ -2041,7 +2028,7 @@ if (uri('/update')) {
                                     <em class='fas fa-upload fa-4x'></em>
                                 </div>
                             </center>
-                            <input <?php if (substr($_SESSION['perms'], 3, 1)!=="1") { echo "disabled"; } ?> type="file" name="fiels" accept=".zip" multiple />
+                            <input type="file" name="fiels" accept=".zip" multiple />
                         </div>
                     </form>
                 </div>
@@ -2083,7 +2070,9 @@ if (uri('/update')) {
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                             <button onclick="window.location = './file?id=<?php echo $mod['id'] ?>'" data-toggle="modal" data-target="#infoMod" class="btn btn-primary">Info</button>
-                                             <?php if (substr($_SESSION['perms'], 3, 1)=="1") { ?><button onclick="remove_box(<?php echo $mod['id'].",'".$mod['name']."'" ?>)" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button><?php } ?>
+                                             <?php if ($perms->files_delete()) { ?>
+                                            <button onclick="remove_box(<?php echo $mod['id'].",'".$mod['name']."'" ?>)" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
+                                            <?php } ?>
                                             <button onclick="window.location = '<?php echo $mod['url'] ?>'" class="btn btn-secondary">Download</button>
                                         </div>
                                     </td>
@@ -2453,7 +2442,7 @@ if (uri('/update')) {
                     <h2>My Account</h2>
                     <hr />
                     <h3>Your permissions</h3>
-                    <input type="text" style="display:none" class="form-control" id="perms" value="<?php echo $_SESSION['perms'] ?>" readonly>
+                    <input type="text" class="form-control" id="perms" value="<?php echo $_SESSION['perms'] ?>" readonly hidden>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm1" disabled>
                         <label class="custom-control-label" for="perm1">Create, delete and edit modpacks</label>
@@ -2514,7 +2503,7 @@ if (uri('/update')) {
                     <h2>Technic Solder integration</h2>
                 <?php if ($config->exists('api_key')) { ?>
                     <font class="text-danger">A server-wide API key has been set.</font>
-                    <?php if ($_SESSION['privileged']) { ?>
+                    <?php if ($perms->privileged()) { ?>
                     <span>You, an administrator, can update the server-wide API key in <a href="admin#solder">Server Settings</a></span>
                     <?php } else { ?>
                     As such, you cannot set your own API key. Contact your server administrator if you think this is a mistake.
@@ -2536,7 +2525,7 @@ if (uri('/update')) {
             </script>
             <script src="./resources/js/page_account.js"></script>
             <?php
-        } elseif (uri("/admin") && $_SESSION['privileged']==TRUE) {
+        } elseif (uri("/admin") && $perms->privileged()) {
             if (isset($_POST['bug-submit'])) {
                 if (isset($_POST['enable_self_updater'])) {
                     $config->set('enable_self_updater','on');
