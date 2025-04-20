@@ -7,11 +7,14 @@ function fnone(){
 };
 function fchange(){
     $('#forgec').val('change');
-    $('#submit-button').trigger('click');
+    $('#build-details-save').trigger('click');
 };
 function fwipe(){
     $('#forgec').val('wipe');
-    $('#submit-button').trigger('click');
+    $('#build-details-save').trigger('click');
+    setTimeout(function() {
+        window.location.reload();
+    }, 500);
 };
 function remove_mod(id,name) {
     var request = new XMLHttpRequest();
@@ -274,9 +277,8 @@ $(document).on('change', '.form-control', function() {
     }
 });
 
-$('#update-build-clients').on('submit', function(e) {
-    e.preventDefault();
-
+// todo: save build details should do this, instead of on every change
+function saveAllowedClients() {
     let checkedItems = [];
     $('.buildClientId:checked').each(function(){
         checkedItems.push($(this).val());
@@ -299,12 +301,46 @@ $('#update-build-clients').on('submit', function(e) {
     request.onerror = function() {
         console.log('could not set build clients');
     }
-    request.open('POST', 'functions/update-build-clients.php');
+    request.open('POST', 'functions/update-allowed-clients.php');
     request.send(formData);
+}
+
+$('#public').on('change', function() {
+    if ($('#public').is(':checked')) {
+        $('#card-allowed-clients').hide();
+    } else {
+        $('#card-allowed-clients').show();
+    }
+})
+
+$('#build-details :input').on('change input', function () {
+    $('#build-details-save').removeAttr('disabled');
 });
 
-$('.buildClientId').on('change', function() {
-    $('#update-build-clients-submit').removeAttr('disabled');
+$('#build-details').on('submit', function(e) {
+    e.preventDefault();
+    let formData = $(this).serialize();
+    let request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (request.readyState == 4 && request.status == 200) {
+            console.log(request.responseText);
+            let json = JSON.parse(request.responseText);
+            if (json['status']==='succ') {
+                saveAllowedClients();
+                $('#build-details-save').attr('disabled', true);
+            }
+        }
+    }
+    request.onerror = function() {
+        console.log('could not set build clients');
+    }
+    request.open('POST', 'functions/update-build.php');
+    request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    request.send(formData);
+
+    $(this).serializeArray().forEach(function(field) {
+        console.log(field.name + ': ' + field.value);
+    });
 })
 
 $(document).ready(function() {

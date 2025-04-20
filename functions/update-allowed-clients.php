@@ -2,14 +2,26 @@
 session_start();
 
 if (empty($_SESSION['user'])) {
-    die('Unauthorized request or login session has expired!');
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 if (substr($_SESSION['perms'], 1, 1)!=='1') {
-    die('Insufficient permission!');
+    die('{"status":"error","message":"Insufficient permission!"}');
 }
 
-if (empty($_POST['build_id'])) {
-    die('Id (modpack) not specified.');
+// build/modpack id
+if (empty($_POST['build_id']) && empty($_POST['modpack_id'])) {
+    die('{"status":"error","message":"Build/modpack id not specified."}');
+}
+if (!empty($_POST['modpack_id']) && !empty($_POST['build_id'])) {
+    die('{"status":"error","message":"Only one of build/modpack id can be specified."}');
+}
+if (!empty($_POST['modpack_id'])) {
+    $id = $_POST['modpack_id'];
+    $which_table = 'modpacks';
+}
+if (!empty($_POST['build_id'])) {
+    $id = $_POST['build_id'];
+    $which_table = 'builds';
 }
 if (empty($_POST['client_ids'])) {
     // allow setting no clients
@@ -19,11 +31,12 @@ if (empty($_POST['client_ids'])) {
     $client_ids = $_POST['client_ids'];
 }
 
-if (!is_numeric($_POST['build_id'])) {
-    die('Malformed id');
-} else {
-    $build_id = $_POST['build_id'];
+if (!is_numeric($id)) {
+    die('{"status":"error","message":"Malformed id"}');
 }
+
+assert(!empty($which_table));
+
 // client ids are checked later
 
 require_once('./configuration.php');
@@ -54,10 +67,10 @@ if ($client_ids !== '') {
     }
 }
 
-$setclientsx = $db->execute("UPDATE builds SET clients = '{$client_ids}' WHERE id = {$build_id}");
+$setclientsx = $db->execute("UPDATE {$which_table} SET clients = '{$client_ids}' WHERE id = {$id}");
 if (!$setclientsx) {
-    error_log("update-build-clients.php: could not set clients for build '{$build_id}'.");
-    die('{"status":"error","message":"Could not set clients."}');
+    error_log("update-allowed-clients.php: could not set allowed clients for id '{$id}'.");
+    die('{"status":"error","message":"Could not set allowedclients."}');
 }
 
-die('{"status":"succ","message":"Build clients updated."}');
+die('{"status":"succ","message":"Allowed clients updated."}');

@@ -237,3 +237,68 @@ $('#copybuild').on('submit', async function(event){
 $('#copylatestbutton').on('click', async function(){
     await copylatest()
 })
+
+function saveAllowedClients() {
+    let checkedItems = [];
+    $('.modpackClientId:checked').each(function(){
+        checkedItems.push($(this).val());
+    });
+    console.log(checkedItems);
+
+    let formData = new FormData();
+    formData.set('modpack_id', $("#modpack_id").val());
+    formData.set('client_ids', checkedItems.join(','));
+    let request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (request.readyState == 4 && request.status == 200) {
+            console.log(request.responseText);
+            let json = JSON.parse(request.responseText);
+            if (json['status']==='succ') {
+                $('#update-modpack-clients-submit').attr('disabled', true);
+            }
+        }
+    }
+    request.onerror = function() {
+        console.log('could not set modpack clients');
+    }
+    request.open('POST', 'functions/update-allowed-clients.php');
+    request.send(formData);
+}
+
+$('#public').on('change', function() {
+    if ($('#public').is(':checked')) {
+        $('#card-allowed-clients').hide();
+    } else {
+        $('#card-allowed-clients').show();
+    }
+})
+
+$('#modpack-details :input').on('change input', function () {
+    $('#modpack-details-save').removeAttr('disabled');
+});
+
+$('#modpack-details').on('submit', function(e) {
+    e.preventDefault();
+    let formData = $(this).serialize();
+    let request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (request.readyState == 4 && request.status == 200) {
+            console.log(request.responseText);
+            let json = JSON.parse(request.responseText);
+            if (json['status']==='succ') {
+                saveAllowedClients();
+                $('#modpack-details-save').attr('disabled', true);
+            }
+        }
+    }
+    request.onerror = function() {
+        console.log('could not set modpack clients');
+    }
+    request.open('POST', 'functions/edit-modpack.php');
+    request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    request.send(formData);
+
+    $(this).serializeArray().forEach(function(field) {
+        console.log(field.name + ': ' + field.value);
+    });
+})

@@ -1,23 +1,23 @@
 <?php
 session_start();
 if (empty($_SESSION['user'])) {
-    die("Unauthorized request or login session has expired!");
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 if (substr($_SESSION['perms'], 1, 1)!=="1") {
-    die('Insufficient permission!');
+    die('{"status":"error","message":"Insufficient permission!"}');
 }
 
 if (empty($_POST['id'])) {
-    die("id (build id) not specified");
+    die('{"status":"error","message":"id (build id) not specified"}');
 }
 if (empty($_POST['versions'])) {
-    die("versions not specified");
+    die('{"status":"error","message":"versions not specified"}');
 }
 if (empty($_POST['forgec'])) {
-    die("forgec not specified");
+    die('{"status":"error","message":"forgec not specified"}');
 }
 if (empty($_POST['java'])) {
-    die("java not specified");
+    die('{"status":"error","message":"java not specified"}');
 }
 if (empty($_POST['memory'])) {
     // die("memory not specified");
@@ -76,7 +76,7 @@ error_log('PUBLIC: '.json_encode($publicq));
 if ($publicq && sizeof($publicq)==1 && array_key_exists('public', $publicq[0])) {
     if ($publicq[0]['public']!=$ispublic) {
         if (substr($_SESSION['perms'], 2, 1)!=="1") {
-            die('Insufficient permission!');
+            die('{"status":"error","message":"Insufficient permission!"}');
         }
     }
 }
@@ -89,4 +89,4 @@ if ($ispublic) {
     $db->execute("UPDATE modpacks SET latest = {$db->sanitize($_POST['id'])} WHERE id = {$user['modpack']}");
 }
 
-header('Location: '.$config->get('dir').'build?id='.$_POST['id']);
+die('{"status":"succ","message":"Build details updated."}');

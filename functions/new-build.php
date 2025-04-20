@@ -1,4 +1,5 @@
 <?php
+define('IS_BUILD_PUBLIC', 1);
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
@@ -36,7 +37,7 @@ $nameexistsq = $db->query("SELECT 1 FROM builds WHERE name = '{$name}' AND modpa
 if ($nameexistsq) {
     die("Build with name {$_GET['name']} already exists");
 }
-$addbuild = $db->execute("INSERT INTO builds(name,modpack,public) VALUES ('{$name}', '{$id}', 0)");
+$addbuild = $db->execute("INSERT INTO builds(name,modpack,public) VALUES ('{$name}', '{$id}', IS_BUILD_PUBLIC)");
 if (!$addbuild) {
     die("Could not add build.");
 }

@@ -1,14 +1,13 @@
 <?php
 session_start();
 if (empty($_SESSION['user'])) {
-    die("Unauthorized request or login session has expired!");
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 if (substr($_SESSION['perms'], 0, 1)!=="1") {
-    echo 'Insufficient permission!';
-    exit();
+    die('{"status":"error","message":Insufficient permission!"}');
 }
-if (empty($_GET['id'])) {
-    die("Modpack not specified.");
+if (empty($_POST['id'])) {
+    die('{"status":"error","message":"Modpack not specified."}');
 }
 
 require_once('./configuration.php');
@@ -23,13 +22,13 @@ if (!isset($db)){
     $db->connect();
 }
 
-$ispublic = (isset($_GET['ispublic']) && $_GET['ispublic']=="on") ? 1 : 0;
+$ispublic = (isset($_POST['ispublic']) && $_POST['ispublic']=="on") ? 1 : 0;
 
 $db->execute("UPDATE `modpacks`
-    SET `name` = '".$db->sanitize($_GET['name'])."',
-     `display_name` = '".$db->sanitize($_GET['display_name'])."',
+    SET `name` = '".$db->sanitize($_POST['name'])."',
+     `display_name` = '".$db->sanitize($_POST['display_name'])."',
       `public` = ".$ispublic."
-      WHERE `id`=".$_GET['id']
+      WHERE `id`=".$_POST['id']
 );
 
-header("Location: ".$config->get('dir')."modpack?id=".$_GET['id']);
+die('{"status":"succ","message":"Modpack details updated."}');

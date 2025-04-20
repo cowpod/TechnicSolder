@@ -944,7 +944,7 @@ if (uri('/update')) {
                 <div class="card">
                     <h2>Modpack details</h2>
                     <hr>
-                    <form action="./functions/edit-modpack.php" method="">
+                    <form method="POST" id="modpack-details">
                         <input hidden type="text" name="id" value="<?php echo $_GET['id'] ?>">
                         <input autocomplete="off" id="dn" class="form-control" type="text" name="display_name" placeholder="Name" value="<?php echo $modpack['display_name'] ?>" />
                         <br />
@@ -954,11 +954,31 @@ if (uri('/update')) {
                             <input <?php if ($modpack['public']==1){echo "checked";} ?> type="checkbox" name="ispublic" class="custom-control-input" id="public">
                             <label class="custom-control-label" for="public">Public</label>
                         </div><br />
-                        <!-- <div class="btn-group" role="group" aria-label="Actions"> -->
-                            <button type="submit" name="type" value="rename" class="btn btn-primary">Save</button>
-                            <button data-toggle="modal" data-target="#removeModpack" type="button" class="btn btn-danger">Delete</button>
-                        <!-- </div> -->
 
+                        <div id="card-allowed-clients" <?php if ($modpack['public']==1) { echo 'style="display:none"'; } ?>>
+                            <p>Select which clients are allowed to access this non-public modpack.</p>
+                            <input hidden id="modpack_id" value="<?php echo $_GET['id'] ?>">
+                        <?php if (sizeof($clients) === 0) {
+                            ?>
+                            <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
+                            <br />
+                        <?php }
+                        $clientlist = !empty($modpack['clients']) ? explode(',', $modpack['clients']) : [];
+                        foreach ($clients as $client) {
+                            $client_checked = in_array($client['id'], $clientlist) ? 'checked' : ''; ?>
+                            <div class="custom-control custom-checkbox">
+                                <input class="custom-control-input modpackClientId" id="client-<?php echo $client['id'] ?>" type="checkbox" value="<?php echo $client['id'] ?>" <?php echo $client_checked ?>>
+                                <label class="custom-control-label" for="client-<?php echo $client['id'] ?>"><?php echo $client['name']." (".$client['UUID'].")" ?></label>
+                            </div>
+                        <?php } ?>
+                            <br/>
+
+                        </div>
+
+                        <!-- <div class="btn-group" role="group" aria-label="Actions"> -->
+                        <button type="submit" name="type" value="rename" class="btn btn-primary" id="modpack-details-save" disabled>Save</button>
+                        <button data-toggle="modal" data-target="#removeModpack" type="button" class="btn btn-danger">Delete</button>
+                        <!-- </div> -->
                     </form>
                     <div class="modal fade" id="removeModpack" tabindex="-1" role="dialog" aria-labelledby="rmp" aria-hidden="true">
                       <div class="modal-dialog" role="document">
@@ -980,37 +1000,10 @@ if (uri('/update')) {
                       </div>
                     </div>
                 </div>
-                <?php
-                    if (!$modpack['public']) {
-                ?>
+            <?php 
+            }
 
-                <div class="card">
-                    <h2>Allowed clients</h2>
-                    <hr>
-                    <form method="GET" action="./functions/change-clients.php">
-                    <input hidden name="id" value="<?php echo $_GET['id'] ?>">
-                    <?php if (sizeof($clients)<1) {
-                        ?>
-                        <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
-                        <br />
-                        <?php
-                    } ?>
-                    <?php
-                    $clientlist = isset($modpack['clients']) ? explode(',', $modpack['clients']) : [];
-                    foreach ($clients as $client) {
-                        ?>
-                        <div class="custom-control custom-checkbox">
-                            <input <?php if (in_array($client['id'],$clientlist)){echo "checked";} ?> type="checkbox" name="client[]" value="<?php echo $client['id'] ?>" class="custom-control-input" id="client-<?php echo $client['id'] ?>">
-                            <label class="custom-control-label" for="client-<?php echo $client['id'] ?>"><?php echo $client['name']." (".$client['UUID'].")" ?></label>
-                        </div><br />
-                        <?php
-                    }
-                    ?>
-                    <?php if (sizeof($clients)>0) { ?> <input class="btn btn-primary" type="submit" name="submit" value="Save"> <?php } ?>
-                </form>
-                </div>
-            <?php }
-                } if (substr($_SESSION['perms'],1,1)=="1") { ?>
+            if (substr($_SESSION['perms'],1,1)=="1") { ?>
                 <div class="card">
                     <h2>New Build</h2>
                     <hr>
@@ -1238,7 +1231,7 @@ if (uri('/update')) {
                     <?php if (empty($user['minecraft'])) { ?>
                         <h3>Details must be set before mods can be added.</h3>
                     <?php } ?>
-                    <form method="POST" action="./functions/update-build.php">
+                    <form method="POST" id="build-details">
                         <input type="hidden" name="id" value="<?php echo $_GET['id'] ?>">
                         <label for="versions">Minecraft version</label>
                         <select id="versions" name="versions" class="form-control">
@@ -1280,9 +1273,30 @@ if (uri('/update')) {
                             <label class="custom-control-label" for="public">Public Build</label>
                         </div><br />
                         <?php } ?>
-                        <div style='display:none' id="wipewarn" class='text-danger'>Build will be wiped.</div>
-                        <button type="submit" id="submit-button" class="btn btn-success">Save</button>
+
+                        <div id="card-allowed-clients" <?php if ($user['public']==1) { echo 'style="display:none"'; } ?>>
+                            <p>Select which clients are allowed to access this non-public build.</p>
+                            <input hidden id="build_id" value="<?php echo $_GET['id'] ?>">
+                        <?php if (sizeof($clients) === 0) {
+                            ?>
+                            <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
+                            <br />
+                        <?php }
+                        $clientlist = !empty($user['clients']) ? explode(',', $user['clients']) : [];
+                        foreach ($clients as $client) {
+                            $client_checked = in_array($client['id'], $clientlist) ? 'checked' : ''; ?>
+                            <div class="custom-control custom-checkbox">
+                                <input class="custom-control-input buildClientId" id="client-<?php echo $client['id'] ?>" type="checkbox" value="<?php echo $client['id'] ?>" <?php echo $client_checked ?>>
+                                <label class="custom-control-label" for="client-<?php echo $client['id'] ?>"><?php echo $client['name']." (".$client['UUID'].")" ?></label>
+                            </div>
+                        <?php } ?>
+                            <br/>
+                        </div>
+
+                        <div id="wipewarn" class='text-danger' style='display:none'>Build will be wiped.</div>
+                        <button type="submit" id="build-details-save" class="btn btn-success" disabled>Save</button>
                     </form>
+
                     <div class="modal fade" id="editBuild" tabindex="-1" role="dialog" aria-labelledby="rm" aria-hidden="true">
                       <div class="modal-dialog" role="document">
                         <div class="modal-content border-danger">
@@ -1301,32 +1315,9 @@ if (uri('/update')) {
                       </div>
                     </div>
                 </div>
-                <?php if (!$user['public']) {
-                    ?>
-                <div class="card">
-                    <h2>Allowed clients</h2>
-                    <p>Select which clients are allowed to access this non-public build.</p>
-                    <form id="update-build-clients">
-                    <input hidden id="build_id" value="<?php echo $_GET['id'] ?>">
-                    <?php if (sizeof($clients) === 0) {
-                        ?>
-                        <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
-                        <br />
-                    <?php }
-                    $clientlist = isset($user['clients']) ? explode(',', $user['clients']) : [];
-                    foreach ($clients as $client) {
-                        $client_checked = in_array($client['id'], $clientlist) ? 'checked' : ''; ?>
-                    <div class="custom-control custom-checkbox">
-                        <input class="custom-control-input buildClientId" id="client-<?php echo $client['id'] ?>" type="checkbox" value="<?php echo $client['id'] ?>" <?php echo $client_checked ?>>
-                        <label class="custom-control-label" for="client-<?php echo $client['id'] ?>"><?php echo $client['name']." (".$client['UUID'].")" ?></label>
-                    </div>
-                    <?php } ?>
-                    <br/>
-                    <?php if (sizeof($clients)>0) { ?> <input class="btn btn-primary" id="update-build-clients-submit" type="submit" name="submit" value="Save" disabled> <?php } ?>
-                </form>
-                </div>
-            <?php } ?>
-                <?php } if (!empty($modslist)) { // only empty on new build before mcversion is set?>
+                <?php 
+                }
+                if (!empty($modslist)) { // only empty on new build before mcversion is set?>
                     <div class="card">
                         <h2>Enabled loaders/mods/files</h2>
                         <table class="table table-striped sortable">
