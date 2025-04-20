@@ -543,9 +543,11 @@ if (!uri("/login")) {
                         <a href="./about"><div class="modpack">
                             <p><em class="fas fa-info-circle fa-lg"></em> <span style="margin-left:inherit;">About</span></p>
                         </div></a>
+                        <?php if ($perms->privileged()) { ?>
                         <a href="./update"><div class="modpack">
                             <p><em class="fas fa-arrow-alt-circle-up fa-lg"></em> <span style="margin-left:inherit;">Update</span></p>
                         </div></a>
+                        <?php } ?>
                         <a style="margin-bottom: 3em;" href="?logout=true&logout=true" id="logoutside"><div class="modpack">
                             <p><em class="fas fa-sign-out-alt fa-lg"></em> <span style="margin-left:inherit;">Logout</span></p>
                         </div></a>
@@ -2334,7 +2336,7 @@ if (!uri("/login")) {
             </script>
             <?php
         }
-        elseif (uri("/update")) {
+        elseif (uri("/update") && $perms->privileged()) {
 
             $updater = new Updater(__DIR__,$config);
             $update_status = $updater->check();
