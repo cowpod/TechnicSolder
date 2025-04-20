@@ -95,6 +95,9 @@ if (isset($_POST['host'])) {
     if (!preg_match("/^[a-z0-9\.\-]+$/", $host)) {
         die("Bad input data; host");
     }
+    if ($dir !== '/' && (!str_starts_with($dir, '/') || !str_ends_with($dir, '/'))) {
+        die("Bad input data; dir must start and end with a '/'.");
+    }
     if (!is_dir($dir)) {
         die("Bad input data; dir (path) does not exist. This should be the directory containing the TechnicSolder repository.");
     }
@@ -426,7 +429,7 @@ if (isset($_POST['host'])) {
                             <li>If MySQL was previously used, your data will not be transferred to SQLite, and vice-versa.</li>
                         </small>
                         <small id="errtext" class="form-text text-muted">
-                            Five tables will be created: users, clients, modpacks, builds, mods
+                            Six tables will be created: users, clients, modpacks, builds, mods, metrics.
                         </small>
                     </div>
                     <h4>Server</h4>
@@ -437,7 +440,8 @@ if (isset($_POST['host'])) {
                             IP/hostname should NOT start with http[s]://!
                         </small><br />
                         <input id="dir" class="form-control" type="text" name="dir"
-                               placeholder="Install Directory" value="/" required><br />
+                               placeholder="Install Directory" value="/" required>
+                        <small class="form-text text-muted">Must be '/', or start and end with a '/'.</small>
                     </div>
                     <button id="save" type="submit" class="btn btn-success btn-block btn-lg" disabled>Save</button>
                 </form>

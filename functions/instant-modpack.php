@@ -22,6 +22,13 @@ if (!isset($db)){
     $db->connect();
 }
 
+$url = $_SERVER['REQUEST_URI'];
+if ($config->exists('protocol') && !empty($config->get('protocol'))) {
+    $protocol = strtolower($config->get('protocol')).'://';
+} else {
+    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+}
+
 $mpdname = $db->sanitize($_POST['display_name']);
 $mpname = $db->sanitize($_POST['name']);
 $bmods = $db->sanitize($_POST['modlist']);
@@ -46,11 +53,11 @@ $addmodpackx = $db->execute("INSERT INTO modpacks (
     VALUES (
         '{$mpname}',
         '{$mpdname}',
-        'http://{$config->get('host').$config->get('dir')}resources/default/icon.png',
+        '{$protocol.$config->get('host').$config->get('dir')}resources/default/icon.png',
         'A5EA4C8FA53984C911A1B52CA31BC008',
-        'http://{$config->get('host').$config->get('dir')}resources/default/logo.png',
+        '{$protocol.$config->get('host').$config->get('dir')}resources/default/logo.png',
         '70A114D55FF1FA4C5EEF7F2FDEEB7D03',
-        'http://{$config->get('host').$config->get('dir')}resources/default/background.png',
+        '{$protocol.$config->get('host').$config->get('dir')}resources/default/background.png',
         '88F838780B89D7C7CD10FE6C3DBCDD39',
         {$public_modpack},
         '',

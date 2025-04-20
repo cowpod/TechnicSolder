@@ -50,6 +50,13 @@ if (!isset($db)){
     $db->connect();
 }
 
+$url = $_SERVER['REQUEST_URI'];
+if ($config->exists('protocol') && !empty($config->get('protocol'))) {
+    $protocol = strtolower($config->get('protocol')).'://';
+} else {
+    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+}
+
 $type_pretty_names=["forge"=>"Forge","neoforge"=>"Neoforge","fabric"=>"Fabric"];
 $type_links=["forge"=>"https://minecraftforge.net","neoforge"=>"https://neoforged.net","fabric"=>"https://fabricmc.net"];
 $type_authors=["forge"=>"LexManos, cpw, RainWarrior, and others","neoforge"=>"LexManos, cpw, RainWarrior, and others","fabric"=>"modmuss50, technici4n, Grondag, and others."];
@@ -71,7 +78,7 @@ if (file_put_contents("../forges/modpack-".$version."/modpack.jar", file_get_con
     rmdir("../forges/modpack-".$version);
     $md5 = md5_file("../forges/".$type."-".$version.".zip");
     $file_size = filesize("../forges/".$type."-".$version.".zip");
-    $url = "http://".$config->get('host').$config->get('dir')."forges/".$type."-".$version.".zip";
+    $url = $protocol.$config->get('host').$config->get('dir')."forges/".$type."-".$version.".zip";
     $res = $db->execute("
         INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`filesize`,`type`,`loadertype`) 
         VALUES (

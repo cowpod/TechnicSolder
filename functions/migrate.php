@@ -41,6 +41,13 @@ if (!$db2) {
     die("error");
 }
 
+$url = $_SERVER['REQUEST_URI'];
+if ($config->exists('protocol') && !empty($config->get('protocol'))) {
+    $protocol = strtolower($config->get('protocol')).'://';
+} else {
+    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+}
+
 $db->execute("TRUNCATE `modpacks`");
 $db->execute("TRUNCATE `builds`");
 $db->execute("TRUNCATE `clients`");
@@ -76,7 +83,7 @@ foreach ($res as $row) {
 // ----- MODS ----- \\
 $res = $db2->query("SELECT * FROM `releases`");
 foreach ($res as $row) {
-    $url = "http://".$config->get('host').$config->get('dir')."mods/".end(explode("/",$row['path']));
+    $url = $protocol.$config->get('host').$config->get('dir')."mods/".end(explode("/",$row['path']));
     $packageres = $db2->query("SELECT * FROM `packages` WHERE `id` = ".$row['package_id']);
     if (!$packageres) {
         die("Package id does not exist");

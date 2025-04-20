@@ -10,7 +10,7 @@ if (!preg_match('/[\w\-_]+/',$_GET['slug'])||!preg_match('/[\w\.\-_]+/',$_GET['b
 	die("{}");
 }
 
-@$data=file_get_contents("http://api.technicpack.net/modpack/".$_GET['slug']."?build=".$_GET['build']);
+@$data=file_get_contents("https://api.technicpack.net/modpack/".$_GET['slug']."?build=".$_GET['build']);
 if ($data) {
 	die($data);
 } else {

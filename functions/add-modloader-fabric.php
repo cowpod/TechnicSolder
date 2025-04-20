@@ -33,6 +33,13 @@ if (!isset($db)){
     $db->connect();
 }
 
+$url = $_SERVER['REQUEST_URI'];
+if ($config->exists('protocol') && !empty($config->get('protocol'))) {
+    $protocol = strtolower($config->get('protocol')).'://';
+} else {
+    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+}
+
 if (file_put_contents("../forges/modpack-".$version."/version.json", file_get_contents("https://meta.fabricmc.net/v2/versions/loader/".$mcversion."/".urlencode($version)."/profile/json"))) {
     $zip = new ZipArchive();
     if ($zip->open("../forges/fabric-".$version.".zip", ZIPARCHIVE::CREATE) !== TRUE) {
@@ -49,7 +56,7 @@ if (file_put_contents("../forges/modpack-".$version."/version.json", file_get_co
     rmdir("../forges/modpack-".$version);
     $md5 = md5_file("../forges/fabric-".$version.".zip");
     $file_size=filesize("../forges/fabric-".$version.".zip");
-    $url = "http://".$config->get('host').$config->get('dir')."forges/fabric-".urlencode($version).".zip";
+    $url = $protocol.$config->get('host').$config->get('dir')."forges/fabric-".urlencode($version).".zip";
     $res = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`filesize`,`type`,`loadertype`) VALUES (
         'fabric',
         'Fabric (alpha)',

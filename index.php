@@ -28,7 +28,11 @@ if (!$query_num_users) {
 }
 
 $url = $_SERVER['REQUEST_URI'];
-$SERVER_PROTOCOL=strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+if ($config->exists('protocol') && !empty($config->get('protocol'))) {
+    $protocol = strtolower($config->get('protocol')).'://';
+} else {
+    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+}
 
 require('functions/interval_range_utils.php');
 require('functions/format_number.php');
@@ -2193,7 +2197,7 @@ if (!uri("/login")) {
                                             class="btn btn-primary">Edit</button>
                                     <button onclick="remove_box(<?php echo $mod['id'].",'".$mod['version']."','".$mod['filename']."'" ?>)" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
                                     <!-- url from api/index.php -->
-                                    <button onclick="window.location = '<?php echo !empty($mod['url']) ? $mod['url'] : $SERVER_PROTOCOL.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'] ?>'" class="btn btn-secondary"><em class="fas fa-file-download"></em> .zip</button>
+                                    <button onclick="window.location = '<?php echo !empty($mod['url']) ? $mod['url'] : $protocol.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'] ?>'" class="btn btn-secondary"><em class="fas fa-file-download"></em> .zip</button>
                                     <?php if (!empty($mod['filename'])) { ?><button onclick="window.location = './functions/mod_extract.php?id=<?php echo $mod['id']; ?>'" class="btn btn-secondary"><em class="fas fa-file-download"></em> .jar</button><?php } ?>
                                 </div>
                             </td>
@@ -2518,7 +2522,7 @@ if (!uri("/login")) {
                         <input class="btn btn-success" type="button" id="save_api_key" value="Save" disabled />
                     </form>
                     <br/>
-                    <p>Then, copy <?php echo $SERVER_PROTOCOL.$config->get('host').$config->get('dir').'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
+                    <p>Then, copy <?php echo $protocol.$config->get('host').$config->get('dir').'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
                 <?php } ?>
                 </div>
             </div>
@@ -2688,7 +2692,7 @@ if (!uri("/login")) {
                         <input class="btn btn-success" type="button" id="save_api_key" value="Save" disabled />
                     </form>
                     <br/>
-                    <p>Then, copy <?php echo $SERVER_PROTOCOL.$config->get('host').$config->get('dir').'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
+                    <p>Then, copy <?php echo $protocol.$config->get('host').$config->get('dir').'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
                     <hr/>
                     <b>Setting an API key here will make it available to all other users, and will prevent them from using their own key.</b>
                 </div>

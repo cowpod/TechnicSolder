@@ -48,6 +48,13 @@ if (!isset($db)){
     $db->connect();
 }
 
+$url = $_SERVER['REQUEST_URI'];
+if ($config->exists('protocol') && !empty($config->get('protocol'))) {
+    $protocol = strtolower($config->get('protocol')).'://';
+} else {
+    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+}
+
 require('slugify.php');
 
 $version = $db->sanitize(slugify($_POST['version']));
@@ -79,7 +86,7 @@ if (move_uploaded_file($fileTmpLoc, "../forges/modpack-".$version."/modpack.jar"
     rmdir("../forges/modpack-".$version);
     
     $md5 = md5_file("../forges/forge-".$version.".zip");
-    $url = "http://".$config->get('host').$config->get('dir')."forges/forge-".$version.".zip";
+    $url = $protocol.$config->get('host').$config->get('dir')."forges/forge-".$version.".zip";
     $insertq = $db->execute("INSERT INTO `mods`
         (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`)
         VALUES (

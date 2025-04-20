@@ -19,13 +19,12 @@ if (($querypos = strpos($url, "?")) !== FALSE) {
     $url = rtrim(substr($url, 0, $querypos), '/');
 }
 
-if ($config->exists('protocol')) {
-    $protocol = strtolower($config->get('protocol'));
+if ($config->exists('protocol') && !empty($config->get('protocol'))) {
+    $protocol = strtolower($config->get('protocol')).'://';
 }
 if (empty($protocol) || !in_array($protocol, ['http', 'https'])) {
-    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL'])));
+    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
 }
-$protocol .= '://';
 
 $dir = $config->get('dir');
 
@@ -245,7 +244,7 @@ elseif (($arg = endpoint_arg($url, 'api/modpack')) === TRUE) {
             }
         }
     }
-    die(json_encode(["modpacks"=>$modpacks, "mirror_url"=>$protocol.$config->get('host')."/mods"], JSON_UNESCAPED_SLASHES));
+    die(json_encode(["modpacks"=>$modpacks, "mirror_url"=>$protocol.$config->get('host').$config->get('dir')."mods"], JSON_UNESCAPED_SLASHES));
 } 
 elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== FALSE) {
     $uri_modpack = $arg;
