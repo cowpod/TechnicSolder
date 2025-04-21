@@ -410,10 +410,10 @@ if (!uri("/login")) {
         </div>
         <?php
         } else {
-            $api_version_json = file_get_contents('./api/version.json');
+            $api_version_json = json_decode(file_get_contents('./api/version.json'), true);
         ?>
         <nav class="navbar <?php if (get_setting('dark')=="on") { echo "navbar-dark bg-dark sticky-top";}else { echo "navbar-light bg-white sticky-top";}?>">
-            <span class="navbar-brand"  href="#"><img id="techniclogo" alt="Technic logo" class="d-inline-block align-top" height="46px" src="./resources/wrenchIcon<?php if (get_setting('dark')=="on") {echo "W";}?>.svg"><em id="menuopen" class="fas fa-bars menu-bars"></em> Technic Solder <span id="solderinfo"><?php echo(json_decode($api_version_json,true))['version']; ?></span></span></span>
+            <span class="navbar-brand"  href="#"><img id="techniclogo" alt="Technic logo" class="d-inline-block align-top" height="46px" src="./resources/wrenchIcon<?php if (get_setting('dark')=="on") {echo "W";}?>.svg"><em id="menuopen" class="fas fa-bars menu-bars"></em> Technic Solder <span id="solderinfo"><?php echo $api_version_json['version']; ?></span></span></span>
             <span style="cursor: pointer;" class="dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <img id="user-photo" class="img-thumbnail" style="width: 40px;height: 40px" src="functions/get-user-icon.php">
                 <span id="user-name" class="navbar-text"><?php echo $_SESSION['name'] ?> </span>
@@ -741,7 +741,7 @@ if (!uri("/login")) {
                     <button class="btn btn-secondary" data-toggle="collapse" href="#collapseAnno" role="button" aria-expanded="false" aria-controls="collapseAnno">Public Announcements</button>
                     <div class="collapse" id="collapseAnno">
                         <?php
-                        echo $newversion['warns'];
+                        echo $api_version_json['warns'];
                         ?>
                     </div>
                     <br />
@@ -2434,7 +2434,7 @@ if (!uri("/login")) {
                                     3b. If using an older version before 1.4.0: <br />
                                     <div class=code>
                                         cd <?php echo dirname(dirname(get_included_files()[0])) ?><br/>
-                                        git clone <?php if ($newversion['stream']=="Dev"||($config->exists('dev_builds') && ['dev_builds']=="on")) echo "--single-branch --branch Dev" ?>
+                                        git clone <?php if (strtolower($api_version_json['stream'])==="dev" || ($config->exists('dev_builds') && ['dev_builds']==="on")) echo "--single-branch --branch Dev" ?>
                                             https://github.com/TheGameSpider/TechnicSolder.git SolderUpdate<br/>
                                         cp -a SolderUpdate/. TechnicSolder/<br/>
                                         rm -rf SolderUpdate<br/>
@@ -2643,10 +2643,10 @@ if (!uri("/login")) {
                     <h3>Server Settings</h3>
                     <form method="POST">
                         <div class="custom-control custom-switch">
-                            <input id="dev_builds" type="checkbox" class="custom-control-input" name="dev_builds" <?php if (json_decode($api_version_json, true)['stream']=="Dev") { echo "checked disabled";} elseif ($config->exists('dev_builds') && $config->get('dev_builds')=="on") {echo "checked";} ?> >
+                            <input id="dev_builds" type="checkbox" class="custom-control-input" name="dev_builds" <?php if (strtolower($api_version_json['stream'])==="dev") { echo "checked disabled"; } elseif ($config->exists('dev_builds') && $config->get('dev_builds')==="on") { echo "checked"; } ?>>
                             <label class="custom-control-label" for="dev_builds">Subscribe to dev builds</label>
                         </div>
-                        <?php if (json_decode($api_version_json, true)['stream']=="Dev") { ?>
+                        <?php if (strtolower($api_version_json['stream'])==="dev") { ?>
                         You are on the Dev release channel.
                         <?php } else { ?>
                         Switching to the Dev release channel is permanent!
