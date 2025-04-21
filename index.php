@@ -379,7 +379,7 @@ if (!uri("/login")) {
         if (!$config->exists('config_version')) { ?>
         <div class="container">
             <div class="alert alert-danger text-center">
-                <h2>Upgrade required.</h2>
+                <h3>Upgrade required.</h3>
                 <a href="./functions/upgrade1.3.5to1.4.0.php">Click here to upgrade</a>
             </div>
         </div>
@@ -519,7 +519,7 @@ if (!uri("/login")) {
                 <div class="tab-pane" id="mods" role="tabpanel">
                     <p class="text-muted">LIBRARIES</p>
                     <a href="./lib-mods"><div class="modpack">
-                        <p><em class="fas fa-cubes fa-lg"></em> <span style="margin-left:inherit;">Mod library</span></p>
+                        <p><em class="fas fa-cubes fa-lg"></em> <span style="margin-left:inherit;">Mods</span></p>
                     </div></a>
                     <a href="./modloaders"><div class="modpack">
                         <p><em class="fas fa-database fa-lg"></em> <span style="margin-left:inherit;">Mod loaders</span> </p>
@@ -575,11 +575,6 @@ if (!uri("/login")) {
             // TODO: check for updates here? adds load time...
 
             if (isset($notechnic) && $notechnic) {
-            ?>
-                <div class="card alert-warning">
-                    <strong>Warning! </strong>Cannot connect to Technic! Verify the modpack slug is set below, and an API key is set in <a href="/account">Account Settings</a>
-                </div>
-                <?php
             } else {
                 $num_downloads=number_suffix_string($totaldownloads);
                 $downloadsbig = $num_downloads['big'];
@@ -684,7 +679,7 @@ if (!uri("/login")) {
                         <?php
                         if ($perms->mods_upload()) { ?>
                         <div id="upload-card" class="card">
-                            <h2>Upload mods</h2>
+                            <h3>Upload mods</h3>
                             <div class="card-img-bottom">
                                 <form id="modsform" enctype="multipart/form-data">
                                     <div class="upload-mods">
@@ -701,7 +696,7 @@ if (!uri("/login")) {
                             </div>
                         </div>
                         <div style="display: none" id="u-mods" class="card">
-                            <h2>Mods</h2>
+                            <h3>Mods</h3>
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -892,15 +887,18 @@ if (!uri("/login")) {
             </ul>
 
             <div class="main">
-            <?php
-            if ($notechnic) { ?>
-                <div class="card alert-warning">
-                    <strong>Warning! </strong>Cannot connect to Technic! Verify the modpack slug is set below, and an API key is set in <a href="/account">Account Settings</a>
+                <div class="card">
+                    <h2 id="modpack-title"><?php echo $modpack['display_name']; ?></h2>
                 </div>
             <?php
-            }
-            if (isset($runsbig)) {
-            ?>
+            if ($notechnic) { ?>
+                <div class="card alert-danger">
+                    Cannot connect to Technic! Verify the slug is set in modpack details, and an API key is set in <a href="/account">Account Settings</a>
+                </div>
+            <?php
+            } ?>
+
+            <?php if (isset($runsbig)) { ?>
                 <div style="margin-left: 0;margin-right: 0" class="row">
                     <div class="col-4">
                         <div class="card text-white bg-success" style="padding: 0">
@@ -940,7 +938,7 @@ if (!uri("/login")) {
 
             <?php if ($perms->modpack_edit()) { ?>
                 <div class="card">
-                    <h2>Modpack details</h2>
+                    <h3>Details</h3>
                     <hr>
                     <form method="POST" id="modpack-details">
                         <input hidden type="text" name="id" value="<?php echo $_GET['id'] ?>">
@@ -1005,7 +1003,7 @@ if (!uri("/login")) {
 
             if ($perms->build_create()) { ?>
                 <div class="card">
-                    <h2>New Build</h2>
+                    <h3>New Build</h3>
                     <hr>
                     <form action="./functions/new-build.php" method="">
                         <input pattern="^[a-zA-Z0-9.-]+$" required id="newbname" autocomplete="off" class="form-control" type="text" name="name" placeholder="Build name (e.g. 1.0) (a-z, A-Z, 0-9, dot and dash)" />
@@ -1019,7 +1017,7 @@ if (!uri("/login")) {
                     </form><br />
                 </div>
                 <div class="card">
-                    <h2>Copy Build</h2>
+                    <h3>Copy Build</h3>
                     <hr>
                     <form id="copybuild" method="POST">
                         <input hidden type="text" name="dest_modpack_id" value="<?php echo $_GET['id'] ?>">
@@ -1076,7 +1074,7 @@ if (!uri("/login")) {
                 </div>
 
                 <div class="card">
-                    <h2>Builds</h2>
+                    <h3>Builds</h3>
                     <hr>
                     <table class="table sortable table-striped">
                         <thead>
@@ -1320,7 +1318,7 @@ if (!uri("/login")) {
                 }
                 if (!empty($modslist)) { // only empty on new build before mcversion is set?>
                     <div class="card">
-                        <h2>Enabled loaders/mods/files</h2>
+                        <h3>Enabled loaders/mods/files</h3>
                         <table class="table table-striped sortable">
                             <thead>
                                 <tr>
@@ -1457,7 +1455,7 @@ if (!uri("/login")) {
 
                     <?php if ($perms->build_edit()) { ?>
                     <div class="card">
-                        <h2>Available mods <font id='mods-for-version-string'></font></h2>
+                        <h3>Available mods <font id='mods-for-version-string'></font></h3>
                         <hr>
                         <input id="search" type="text" placeholder="Search..." class="form-control">
                         <br />
@@ -1482,7 +1480,7 @@ if (!uri("/login")) {
                         <div id='no-mods-available-search-results' class='text-center' style='display:none'>No mods match your search.</div>
                     </div>
                     <div class="card">
-                        <h2>Available other files</h2>
+                        <h3>Available other files</h3>
                         <hr>
                         <input id="search" type="text" placeholder="Search..." class="form-control">
                         <table class="table table-striped sortable">
@@ -1548,7 +1546,7 @@ if (!uri("/login")) {
 
                 <?php if ($config->get('modrinth_integration')=='on') { ?>
             <div class="card">
-                <h2>Modrinth</h2>
+                <h3>Modrinth installer</h3>
                 <form class="row" action="javascript:void(0)">
                     <div class="col-md-12 col-12 mb-2">
                         <select class="form-control" id="mcv">
@@ -1649,7 +1647,7 @@ if (!uri("/login")) {
                 <?php } ?>
 
             <div id="upload-card" class="card">
-                <h2>Upload</h2>
+                <h3>Upload</h3>
                 <div class="card-img-bottom">
                     <form id="modsform" enctype="multipart/form-data">
                         <div class="upload-mods">
@@ -1667,7 +1665,7 @@ if (!uri("/login")) {
             </div>
 
             <div style="display: none" id="u-mods" class="card">
-                <h2>New</h2>
+                <h3>New</h3>
                 <table class="table">
                     <thead>
                         <tr>
@@ -1682,13 +1680,13 @@ if (!uri("/login")) {
             </div>
 
             <div class="card">
-                <h2>Remote mods</h2>
+                <h3>Remote</h3>
                 <a href="./remote-mod"><em class="fas fa-plus-circle"></em> Add mods by direct-download URL</a>
             </div>
             <?php } ?>
 
             <div class="card">
-                <h2>Installed</h2>
+                <h3>Installed</h3>
                 <input placeholder="Search..." type="text" id="search" class="form-control"><br />
                 <table id="modstable" class="table table-striped sortable">
                     <thead>
@@ -1794,7 +1792,7 @@ if (!uri("/login")) {
             <script>document.title = 'Add Mod - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <div class="card">
                 <button onclick="window.location = './lib-mods'" style="width: fit-content;" class="btn btn-primary"><em class="fas fa-arrow-left"></em> Back</button><br />
-                <h3>Add Mod</h3>
+                <h2>Add Mod</h2>
                 <form method="POST" action="./functions/add-modv.php">
                     <input id="pn" required class="form-control" type="text" name="pretty_name" placeholder="Mod name" />
                     <br />
@@ -1831,26 +1829,6 @@ if (!uri("/login")) {
         ?>
         <script>document.title = 'Forge Versions - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
-            <div class="modal fade" id="removeMod" tabindex="-1" role="dialog" aria-labelledby="rm" aria-hidden="true">
-              <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="rm">Delete loader <span id="mod-name-title"></span>?</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                      <span aria-hidden="true">&times;</span>
-                    </button>
-                  </div>
-                  <div class="modal-body">
-                    Are you sure you want to delete loader <span id="mod-name"></span>? Mod's file will be deleted too.
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
-                    <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
 
             <div class="card">
                 <h2>Mod loaders</h2>
@@ -1864,7 +1842,7 @@ if (!uri("/login")) {
             <?php if ($perms->modloaders_upload()) {
             if ($config->get('fabric_integration')=='on') { ?>
             <div class="card" id="fabrics">
-                <h2>Fabric</h2>
+                <h3>Fabric installer</h3>
                 <form>
                     <label for="lod">Loader Version</label>
                     <select id="lod"></select><br>
@@ -1877,7 +1855,7 @@ if (!uri("/login")) {
             <?php }
             if ($config->get('neoforge_integration')=='on') { ?>
             <div class="card" id="neoforges">
-                <h2>Neoforge</h2>
+                <h3>Neoforge installer</h3>
                 <form>
                     <label for="lod">Version</label>
                     <select id="lod-neoforge" required></select><br>
@@ -1890,7 +1868,7 @@ if (!uri("/login")) {
             <?php }
             if ($config->get('forge_integration')=='on') { ?>
             <div class="card" id="fetched-mods">
-                <h2>Forge</h2>
+                <h3>Forge installer</h3>
                 <form>
                     <button id="fetch-forge" onclick="fetch_forges()" class="btn btn-primary">Show Versions</button>
                 </form>
@@ -1911,7 +1889,7 @@ if (!uri("/login")) {
             </div>
             <?php } ?>
             <div class="card">
-                <h2>Custom</h2>
+                <h3>Upload</h3>
                 <form action="./functions/custom_modloader.php" method="POST" enctype="multipart/form-data">
                     <div class="form-group">
                         <input class="form-control" type="text" name="version" placeholder="Loader version" required="">
@@ -1938,7 +1916,7 @@ if (!uri("/login")) {
             <?php } ?>
 
             <div class="card">
-                <h2>Installed</h2>
+                <h3>Installed</h3>
                 <?php if (isset($_GET['errfilesize'])) {
                     echo '<span class="text-danger">File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'</span>';
                 } ?>
@@ -1998,6 +1976,26 @@ if (!uri("/login")) {
                 </table>
             </div>
 
+            <div class="modal fade" id="removeMod" tabindex="-1" role="dialog" aria-labelledby="rm" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="rm">Delete loader <span id="mod-name-title"></span>?</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                    </button>
+                  </div>
+                  <div class="modal-body">
+                    Are you sure you want to delete loader <span id="mod-name"></span>? Mod's file will be deleted too.
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
+                    <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <script>
             <?php
             if (!empty($installed_loaders)) {
@@ -2021,9 +2019,15 @@ if (!uri("/login")) {
         ?>
         <script>document.title = 'Other Files - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
+            <div class="card">
+                <h2>Other files</h2>
+                <div>
+                    These files will be extracted to modpack's root directory. (e.g. Config files, worlds, resource packs, etc.)
+                </div>
+            </div>
             <?php if ($perms->files_upload()) { ?>
             <div id="upload-card" class="card">
-                <h2>Upload files</h2>
+                <h3>Upload</h3>
                 <div class="card-img-bottom">
                     <form id="modsform" enctype="multipart/form-data">
                         <div class="upload-mods">
@@ -2038,10 +2042,9 @@ if (!uri("/login")) {
                         </div>
                     </form>
                 </div>
-                <p>These files will be extracted to modpack's root directory. (e.g. Config files, worlds, resource packs....)</p>
             </div>
             <div style="display: none" id="u-mods" class="card">
-                <h2>New Files</h2>
+                <h3>New Files</h3>
                 <table class="table">
                     <thead>
                         <tr>
@@ -2057,7 +2060,7 @@ if (!uri("/login")) {
             </div>
             <?php } ?>
             <div class="card">
-                <h2>Files</h2>
+                <h3>Installed</h3>
                 <table class="table table-striped sortable">
                     <thead>
                         <tr>
@@ -2126,7 +2129,7 @@ if (!uri("/login")) {
                     <button onclick="window.location = './lib-others'" style="width: fit-content;" class="btn btn-primary">
                         <em class="fas fa-arrow-left"></em> Back
                     </button><br />
-                    <h2><?php echo $file['filename'] ?></h2>
+                    <h3><?php echo $file['filename'] ?></h3>
                     <hr>
                     <p>MD5: <?php echo $file['md5'] ?><br >
                     Size: <?php echo formatSizeUnits($file['filesize']) ?></p>
@@ -2149,19 +2152,38 @@ if (!uri("/login")) {
                 <script src="./resources/js/page_file.js"></script>
             </div>
             <?php
-        } elseif (uri("/mod")) {
+        } elseif (uri('/mod')) {
+            assert(!empty($_GET['id']));
+            
+            $mres = $db->query("SELECT * FROM mods WHERE name = '{$db->sanitize($_GET['id'])}'");
+
+            $mod_slug = '';
+            $mod_name = '';
+            $mod_description = '';
+            $mod_author = '';
+
+            // get details from first mod version
+            foreach ($mres as $mod) {
+                $mod_slug = $mod['name'];
+                $mod_name = $mod['pretty_name'];
+                $mod_description = $mod['description'];
+                $mod_author = $mod['author'];
+                if (!empty($mod_slug)) {
+                    break;
+                }
+            }
         ?>
         <div class="main">
-            <?php
-            $mres = $db->query("SELECT * FROM `mods` WHERE `name` = '".$db->sanitize($_GET['id'])."'");
-            ?>
             <script>document.title = 'Mod - <?php echo addslashes($_GET['id']) ?> - <?php echo addslashes($_SESSION['name']) ?>';
             </script>
+            <button onclick="window.location = './lib-mods'" style="width: fit-content;" class="btn btn-primary">
+                <em class="fas fa-arrow-left"></em> Back
+            </button><br />
             <div class="card">
-                <button onclick="window.location = './lib-mods'" style="width: fit-content;" class="btn btn-primary">
-                    <em class="fas fa-arrow-left"></em> Back
-                </button><br />
-                <h2>Versions</h2>
+                <h2><?php echo $mod_name ?></h2>
+            </div>
+            <div class="card">
+                <h3>Versions</h3>
                 <table class="table sortable table-striped">
                     <thead>
                         <tr>
@@ -2173,19 +2195,7 @@ if (!uri("/login")) {
                         </tr>
                     </thead>
                     <tbody id="table-mods">
-                    <?php
-                    $mod_slug="";
-                    foreach ($mres as $mod) {
-                        if (empty($mod_slug)) { // get first one
-                            $mod_slug = $mod['name'];
-                            if($mod_slug!=$_GET['id']) {
-                                error_log("WARNING: mod slug {$mod_slug} does NOT match page ID {$_GET['id']}!");
-                            }
-                            $mod_name = $mod['pretty_name'];
-                            $mod_description = $mod['description'];
-                            $mod_author = $mod['author'];
-                        }
-                        ?>
+                    <?php foreach ($mres as $mod) { ?>
                         <tr id="mod-row-<?php echo $mod['id'] ?>">
                             <td <?php if (empty($mod['version'])) echo 'class="table-danger"'; ?> scope="row"><?php echo empty($mod['version'])? '<span class="text-danger">Unknown</span>' : $mod['version'] ?></td>
                             <td <?php if (empty($mod['mcversion'])) echo 'class="table-danger"'; ?>><?php echo empty($mod['mcversion'])? '<span class="text-danger">Unknown</span>' : $mod['mcversion'] ?></td>
@@ -2227,7 +2237,9 @@ if (!uri("/login")) {
                     </div>
                   </div>
                 </div>
-                <h2>Details</h2><hr>
+            </div>
+            <div class="card">
+                <h3>Details</h3><hr>
                 <form method="POST" action="./functions/edit-mod.php">
                     <input id="pn" required class="form-control" type="text" name="pretty_name" placeholder="Mod name" value="<?php echo $mod_name ?>" />
                     <br />
@@ -2445,9 +2457,10 @@ if (!uri("/login")) {
             ?>
             <div class="main">
                 <div class="card">
-                    <h2>My Account</h2>
-                    <hr />
-                    <h3>Your permissions</h3>
+                    <h2>Account</h2>
+                </div>
+                <div class="card">   
+                    <h3>Permissions</h3>
                     <input type="text" class="form-control" id="perms" value="<?php echo $_SESSION['perms'] ?>" readonly hidden>
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="perm1" disabled>
@@ -2477,7 +2490,8 @@ if (!uri("/login")) {
                         <input type="checkbox" class="custom-control-input" id="perm7" disabled>
                         <label class="custom-control-label" for="perm7">Add and delete clients</label>
                     </div>
-                    <hr />
+                </div>
+                <div class="card">
                     <h3>User Picture</h3>
                     <img id="user-photo-preview" class="img-thumbnail" style="width:128px; height: 128px" src="functions/get-user-icon.php">
                      <br/>
@@ -2506,7 +2520,7 @@ if (!uri("/login")) {
                      </form>
                 </div>
                 <div class="card">
-                    <h2>Technic Solder integration</h2>
+                    <h3>Technic Solder integration</h3>
                 <?php if ($config->exists('api_key') && !empty($config->get('api_key'))) { ?>
                     <font class="text-danger">A server-wide API key has been set.</font>
                     <?php if ($perms->privileged()) { ?>
@@ -2576,7 +2590,9 @@ if (!uri("/login")) {
             <div class="main">
                 <div class="card">
                     <h2>Administration</h2>
-                    <hr />
+                </div>
+
+                <div class="card">
                     <h3>Users</h3>
                     <div id="info">
                     </div>
@@ -2621,7 +2637,9 @@ if (!uri("/login")) {
                         ?>
                     </tbody>
                     </table>
-                    <br/><hr/>
+                </div>
+
+                <div class="card">
                     <h3>Server Settings</h3>
                     <form method="POST">
                         <div class="custom-control custom-switch">
@@ -2633,7 +2651,7 @@ if (!uri("/login")) {
                         <?php } else { ?>
                         Switching to the Dev release channel is permanent!
                         <?php } ?>
-                        <br/><br/>
+                        <br/>
                         <div class="custom-control custom-switch">
                             <input id="enable_self_updater" type="checkbox" class="custom-control-input" name="enable_self_updater" <?php if ($config->exists('enable_self_updater') && $config->get('enable_self_updater')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="enable_self_updater">
@@ -2641,8 +2659,6 @@ if (!uri("/login")) {
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
-                        <br/>
-                        <b>The following features require cookies</b>
                         <div class="custom-control custom-switch">
                             <input id="use_verifier" type="checkbox" class="custom-control-input" name="use_verifier" <?php if ($config->exists('use_verifier') && $config->get('use_verifier')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="use_verifier">
@@ -2650,31 +2666,35 @@ if (!uri("/login")) {
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
+                        <br/>
+                        Mod installers
                         <div class="custom-control custom-switch">
                             <input id="modrinth_integration" type="checkbox" class="custom-control-input" name="modrinth_integration" <?php if ($config->exists('modrinth_integration') && $config->get('modrinth_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="modrinth_integration">
-                                Enable Modrinth.com installer (mods)
+                                Modrinth.com
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
+                        <br/>
+                        Mod loader installers
                         <div class="custom-control custom-switch">
                             <input id="forge_integration" type="checkbox" class="custom-control-input" name="forge_integration" <?php if ($config->exists('forge_integration') && $config->get('forge_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="forge_integration">
-                                Enable MinecraftForge.net installer (modloaders)
+                                Forge <a href="https://minecraftforge.net" target="_blank">MinecraftForge.net</a>
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="neoforge_integration" type="checkbox" class="custom-control-input" name="neoforge_integration" <?php if ($config->exists('neoforge_integration') && $config->get('neoforge_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="neoforge_integration">
-                                Enable Neoforged.net installer (modloaders)
+                                Neoforge <a href="https://neoforged.net" target="_blank">NeoForged.net</a>
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="fabric_integration" type="checkbox" class="custom-control-input" name="fabric_integration" <?php if ($config->exists('fabric_integration') && $config->get('fabric_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="fabric_integration">
-                                Enable FabricMC.net installer (modloaders)
+                                Fabric <a href="https://fabricmc.net" target="_blank">FabricMC.net</a>
                             </label>
                             <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
@@ -2684,7 +2704,7 @@ if (!uri("/login")) {
                 </div>
                 <div class="card">
                     <a name="solder"/>
-                    <h2>Server-wide Technic Solder integration</h2>
+                    <h3>Server-wide Technic Solder integration</h3>
                     <p>To integrate with the Technic API, you will need your API key from <a href="https://technicpack.net/" target="_blank">technicpack.net</a>; Sign in (or register), "Edit [My] Profile" in the top right account menu, "Solder Configuration", and copy the API key and paste it in the text box below.</p>
                     <form>
                         <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if ($config->exists('api_key') && !empty($config->get('api_key'))) echo 'value="'.$config->get('api_key').'"' ?>/>
@@ -2818,7 +2838,8 @@ if (!uri("/login")) {
         <div class="main">
             <div class="card">
                 <h2>Clients</h2>
-                <hr>
+            </div>
+            <div class="card">
                 <h3>Add Client</h3>
                 <form class="needs-validation" novalidate action="./functions/new-client.php">
                     <div class="form-row">
@@ -2891,7 +2912,7 @@ if (!uri("/login")) {
         <div style="margin-top: 15%" class="main">
 
                 <center><h1>Error 404 :(</h1></center>
-                <center><h2>There is nothing...</h2></center>
+                <center><h3>There is nothing...</h3></center>
         </div>
         <?php }
     }

@@ -30,12 +30,6 @@ function remove(id,force) {
     request.send();
 }
 
-$("#pn").on("keyup", function(){
-    var slug = slugify($(this).val());
-    console.log(slug);
-    $("#slug").val(slug);
-});
-
 $(document).ready(function(){
     $("#nav-mods").trigger('click');
 });

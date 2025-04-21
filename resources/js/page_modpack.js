@@ -292,6 +292,7 @@ $('#modpack-details').on('submit', function(e) {
             console.log(request.responseText);
             let json = JSON.parse(request.responseText);
             if (json['status']==='succ') {
+                $('#modpack-title').text($('#dn').val())
                 saveAllowedClients();
                 $('#modpack-details-save').attr('disabled', true);
             }
