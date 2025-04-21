@@ -20,8 +20,8 @@ if (empty($_POST['db-host'])) {
 if (empty($_POST['solder-orig'])) {
     die("error");
 }
-if (!$_SESSION['user']||$_SESSION['user']=="") {
-    die("error");
+if (empty($_SESSION['user'])) {
+    die("Unauthorized request or login session has expired!");
 }
 $PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
 
