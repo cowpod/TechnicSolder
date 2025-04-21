@@ -47,11 +47,11 @@ $db->execute("INSERT INTO modpacks (
 VALUES (
     'unnamed-modpack-{$mpi}',
     'Unnamed modpack',
-    '{$protocol.$config->get('host').$config->get('dir')}resources/default/icon.png',
+    '{$protocol}{$config->get('host')}{$config->get('dir')}resources/default/icon.png',
     'A5EA4C8FA53984C911A1B52CA31BC008',
-    '{$prococol.$config->get('host').$config->get('dir')}resources/default/logo.png',
+    '{$protocol}{$config->get('host')}{$config->get('dir')}resources/default/logo.png',
     '70A114D55FF1FA4C5EEF7F2FDEEB7D03',
-    '{$protocol.$config->get('host').$config->get('dir')}resources/default/background.png',
+    '{$protocol}{$config->get('host')}{$config->get('dir')}resources/default/background.png',
     '88F838780B89D7C7CD10FE6C3DBCDD39',
     1
 )");
