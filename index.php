@@ -123,15 +123,6 @@ if (isset($_SESSION['user'])) {
     }
 }
 
-if (isset($_SESSION['user'])) {
-    if (isset($_GET['dark'])) {
-        set_setting('dark','on');
-    } 
-    elseif (isset($_GET['light']) || !get_setting('dark')) {
-        set_setting('dark','off');
-    }
-}
-
 require('functions/solder-updater.php');
 
 if (uri('/update')) {
@@ -148,11 +139,8 @@ if (!uri("/login")) {
     <head>
         <link rel="icon" href="./resources/wrenchIcon.png" type="image/png" />
         <title>Technic Solder</title>
-        <?php if (get_setting('dark')=="on") {
-            echo '<link rel="stylesheet" href="./resources/bootstrap/dark/bootstrap.min.css">';
-        } else {
-            echo '<link rel="stylesheet" href="./resources/bootstrap/bootstrap.min.css">';
-        } ?>
+        <link rel="stylesheet" href="./resources/bootstrap/bootstrap.min.css">
+        <link rel="stylesheet" href="./resources/bootstrap/dark/bootstrap.min.css" media="(prefers-color-scheme: dark)">
         <script src="./resources/js/jquery.min.js"></script>
         <script src="./resources/js/popper.min.js"></script>
         <script src="./resources/js/fontawesome.js"></script>
@@ -255,9 +243,17 @@ if (!uri("/login")) {
                 border-radius: 5px;
                 width: 100%;
                 height: 15em;
-                background-color: <?php if (get_setting('dark')=="on") {echo "#333";}else {echo "#ddd";} ?>;
-
+                background-color: #ddd;
                 transition: 0.2s;
+            }
+            @media (prefers-color-scheme: dark) {
+                .upload-mods {
+                    border-radius: 5px;
+                    width: 100%;
+                    height: 15em;
+                    background-color: #333;
+                    transition: 0.2s;
+                }
             }
             .upload-mods input{
                 width: 100%;
@@ -275,7 +271,12 @@ if (!uri("/login")) {
                 left: calc( 50% - 10em );
             }
             .upload-mods:hover{
-                background-color: <?php if (get_setting('dark')=="on") {echo "#444";}else {echo "#ccc";} ?>;
+                background-color: #ccc;
+            }
+            @media (prefers-color-scheme: dark) { 
+                .upload-mods:hover{
+                    background-color: #444;
+                }
             }
             .sidenav {
                 width:20em;
@@ -358,21 +359,31 @@ if (!uri("/login")) {
                     display:block;
                 }
             }
-            <?php if (get_setting('dark')=="on") {?>
-            .custom-file-label::after {
-                background-color: #df691a;
+
+            @media (prefers-color-scheme: dark) {
+                .custom-file-label::after {
+                    background-color: #df691a;
+                }
+                table.sortable>thead th:hover:not([data-defaultsort=disabled]) {
+                    background-color:#2E3D4C;
+                }
+                .form-control:disabled, .form-control[readonly] {
+                    background-color: rgba(255,255,255,0.5);
+                }
             }
-            table.sortable>thead th:hover:not([data-defaultsort=disabled]) {
-                background-color:#2E3D4C;
+
+            body {
+                background-color: #f0f4f9;
             }
-            .form-control:disabled, .form-control[readonly] {
-                background-color: rgba(255,255,255,0.5);
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background-color: #202429;
+                }
             }
-        <?php } ?>
         </style>
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
-    <body style="<?php if (get_setting('dark')=="on") { echo "background-color: #202429";} else { echo "background-color: #f0f4f9";} ?>">
+    <body>
         <?php
         // prompt to upgrade
         // you'll want to check config_version value to determine what to do.
@@ -412,8 +423,9 @@ if (!uri("/login")) {
         } else {
             $api_version_json = json_decode(file_get_contents('./api/version.json'), true);
         ?>
-        <nav class="navbar <?php if (get_setting('dark')=="on") { echo "navbar-dark bg-dark sticky-top";}else { echo "navbar-light bg-white sticky-top";}?>">
-            <span class="navbar-brand"  href="#"><img id="techniclogo" alt="Technic logo" class="d-inline-block align-top" height="46px" src="./resources/wrenchIcon<?php if (get_setting('dark')=="on") {echo "W";}?>.svg"><em id="menuopen" class="fas fa-bars menu-bars"></em> Technic Solder <span id="solderinfo"><?php echo $api_version_json['version']; ?></span></span></span>
+        <!-- dark theme for navbar and logo is managed by javascript -->
+        <nav id="navbar" class="navbar navbar-light bg-white sticky-top">
+            <span class="navbar-brand"  href="#"><img id="techniclogo" alt="Technic logo" class="d-inline-block align-top" height="46px" src="./resources/wrenchIcon.svg"><em id="menuopen" class="fas fa-bars menu-bars"></em> Technic Solder <span id="solderinfo"><?php echo $api_version_json['version']; ?></span></span></span>
             <span style="cursor: pointer;" class="dropdown-toggle" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <img id="user-photo" class="img-thumbnail" style="width: 40px;height: 40px" src="functions/get-user-icon.php">
                 <span id="user-name" class="navbar-text"><?php echo $_SESSION['name'] ?> </span>
@@ -437,10 +449,6 @@ if (!uri("/login")) {
                 <li class="nav-item">
                     <a id="nav-settings" class="nav-link" href="#settings" data-toggle="tab" role="tab"><em class="fas fa-sliders-h fa-lg"></em></a>
                 </li>
-                <div style="position:absolute;bottom:5em;left:4em;" class="custom-control custom-switch">
-                    <input <?php if (get_setting('dark')=="on"){echo "checked";} ?> type="checkbox" class="custom-control-input" name="dark" id="dark">
-                    <label class="custom-control-label" for="dark">Dark theme</label>
-                </div>
             </ul>
             <div class="tab-content">
                 <div class="tab-pane active" id="modpacks" role="tabpanel">
@@ -750,9 +758,9 @@ if (!uri("/login")) {
                     <div class="collapse" id="collapseVerify">
                         <br />
                         <div class="input-group">
-                            <input autocomplete="off" class="form-control <?php if (get_setting('dark')=="on") {echo "border-primary";}?>" type="text" id="link" placeholder="Modpack slug (same as on technicpack.net)" aria-describedby="search" />
+                            <input autocomplete="off" class="form-control" type="text" id="link" placeholder="Modpack slug (same as on technicpack.net)" aria-describedby="search" />
                             <div class="input-group-append">
-                                <button class="<?php if (get_setting('dark')=="on") { echo "btn btn-primary";} else { echo "btn btn-outline-secondary";} ?>" onclick="get();" type="button" id="search">Search</button>
+                                <button class="btn btn-primary" onclick="get();" type="button" id="search">Search</button>
                             </div>
                         </div>
                         <!-- <pre class="card border-primary" style="white-space: pre-wrap;width: 100%" id="responseRaw">
@@ -2917,5 +2925,7 @@ if (!uri("/login")) {
         <?php }
     }
     ?>
+
+        <script src="./resources/js/body.js"></script>
     </body>
 </html>

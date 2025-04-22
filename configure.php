@@ -323,12 +323,8 @@ if (isset($_POST['host'])) {
 <html lang="en">
     <head>
         <title>Configure Solder</title>
-        <?php if (isset($_SESSION['dark']) && $_SESSION['dark']=="on") {
-            echo '<link rel="stylesheet" href="https://bootswatch.com/4/superhero/bootstrap.min.css">';
-        } else {
-            echo '<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
-        integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">';
-        } ?>
+        <link rel="stylesheet" href="./resources/bootstrap/bootstrap.min.css">
+        <link rel="stylesheet" href="./resources/bootstrap/dark/bootstrap.min.css" media="(prefers-color-scheme: dark)">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
                 integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
@@ -344,13 +340,17 @@ if (isset($_POST['host'])) {
                  padding: 2em;
                  margin: 2em 0;
             }
+            body {
+                background-color: #f0f4f9;
+            }
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background-color: #202429;
+                }
+            }
         </style>
     </head>
-    <body style="<?php if (isset($_SESSION['dark']) && $_SESSION['dark']=="on") {
-        echo "background-color: #202429";
-    } else {
-        echo "background-color: #f0f4f9";
-    } ?>">
+    <body>
         <div class="container">
             <div class="card">
                 <?php
