@@ -192,10 +192,11 @@ if (basename(__FILE__) == basename($_SERVER["SCRIPT_FILENAME"])) {
     $updater = new Updater();
     if (isset($_POST['install-updates'])) {
         $update_status = $updater->update();
+        $log_str = str_replace(["\n", "\r"], '', implode("<br/>",$updater->logs()));
         if ($update_status === UPDATE_SUCCESS) {
-            die('{"status":"succ","message":"'.$update_status.'","logs":"'.implode("<br/>",$updater->logs()).'"}');
+            die('{"status":"succ","message":"'.$update_status.'","logs":"'.$log_str.'"}');
         } else {
-            die('{"status":"error","message":"'.$update_status.'","logs":"'.implode("<br/>",$updater->logs()).'"}');
+            die('{"status":"error","message":"'.$update_status.'","logs":"'.$log_str.'"}');
         }
     }
 }
