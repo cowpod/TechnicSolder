@@ -151,7 +151,7 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
         $zip->setCompressionName('mods', ZipArchive::CM_STORE); 
 
         if ($zip->addFile($filePath, 'mods/'.$fileName)) { 
-            $zip->setCompressionName($filePath, ZipArchive::CM_STORE); 
+            $zip->setCompressionName('mods/'.$fileName, ZipArchive::CM_STORE); 
             $zip->close();
 
             // if a file exists with same name, look for a file with duplicate contents OR rename it
@@ -171,14 +171,16 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
             // move tmp zip to actual zip, overwriting if identical
             rename($mod_zip_path_tmp, $mod_zip_path);
 
+            $jar_md5 = md5_file($filePath);
             $mod_zip_md5 = md5_file($mod_zip_path);
             $zip_size= filesize($mod_zip_path);
 
             // error_log('adding mod of loadertype='.$modinfo['loadertype']);
-            $addq = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`,`filesize`) VALUES (
+            $addq = $db->execute("INSERT INTO mods (name,pretty_name,md5,jar_md5,url,link,author,description,version,mcversion,filename,type,loadertype,filesize) VALUES (
                 '{$db->sanitize($modinfo['modid'])}',
                 '{$db->sanitize($modinfo['name'])}',
                 '{$db->sanitize($mod_zip_md5)}',
+                '{$db->sanitize($jar_md5)}',
                 '',
                 '{$db->sanitize($modinfo['url'])}',
                 '{$db->sanitize($modinfo['authors'])}',
