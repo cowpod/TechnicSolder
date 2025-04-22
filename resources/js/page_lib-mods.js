@@ -141,13 +141,13 @@ function sendFile(file, i) {
                                 </tr>
                             `);
                     }
-                } else {
-                    $("#cog-" + i).hide();
-                    $("#times-" + i).show();
-                    $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                    $("#" + i).addClass("bg-danger");
-                    $("#info-" + i).text("An error occured: " + request.status);
-                    $("#" + i).attr("id", i + "-done");
+                // } else {
+                //     $("#cog-" + i).hide();
+                //     $("#times-" + i).show();
+                //     $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
+                //     $("#" + i).addClass("bg-danger");
+                //     $("#info-" + i).text("An error occured: " + request.status);
+                //     $("#" + i).attr("id", i + "-done");
                 }
             }
         }
@@ -174,7 +174,7 @@ $("#search").on('keyup',function(){
     }
 });
 
-function showFile(file, i) {
+async function showFile(file, i) {
     $("#table-mods").append('<tr><td scope="row">' + file.name + '</td> <td><em id="cog-' + i + '" class="fas fa-cog fa-spin"></em><em id="check-' + i + '" style="display:none" class="text-success fas fa-check"></em><em id="times-' + i + '" style="display:none" class="text-danger fas fa-times"></em><em id="exc-' + i + '" style="display:none" class="text-warning fas fa-exclamation"></em><em id="inf-' + i + '" style="display:none" class="text-info fas fa-info"></em> <small class="text-muted" id="info-' + i + '"></small></h4><div class="progress"><div id="' + i + '" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div></div></td></tr>');
 }
 
@@ -837,20 +837,83 @@ $('#searchbutton').on('click', async function() {
     }
 });
 
+async function hashFile(file, i) {
+    return new Promise((resolve, reject) => {
+        if (!file) {
+            console.log('hashFile: File does not exist.')
+            $("#info-" + i).text('File does not exist.');
+            reject(false);
+        }
+
+        const chunkSize = 512*1024; // 512KB
+        const spark = new SparkMD5.ArrayBuffer();
+        const fileReader = new FileReader();
+        let cursor = 0;
+
+        function readNextChunk() {
+            const nextChunk = file.slice(cursor, cursor + chunkSize);
+            fileReader.readAsArrayBuffer(nextChunk);
+        }
+
+        fileReader.onload = function (e) {
+            spark.append(e.target.result);
+            cursor += chunkSize;
+            if (cursor < file.size) {
+                readNextChunk();
+            } else {
+                const md5Hash = spark.end();
+                $("#info-" + i).text(`MD5: ${md5Hash}`);
+                resolve(md5Hash);
+            }
+        }
+
+        fileReader.onerror = function () {
+            console.log('hashFile: Error reading file.')
+            $("#info-" + i).text('Error reading file.');
+            reject(false);
+        }
+
+        readNextChunk();
+    })
+}
+
 $(document).ready(function() {
     $("#nav-mods").trigger('click');
     
-    $(':file').change(function() {
+    $(':file').change(async function() {
         $("#upload-card").hide();
         $("#u-mods").show();
         modcount = this.files.length;
+        // show them
         for (var i = 0; i < this.files.length; i++) {
             var file = this.files[i];
-            showFile(file, i);
+            await showFile(file, i);
         }
+        // calculate hash
+
+        var hashes = [];
         for (var i = 0; i < this.files.length; i++) {
             var file = this.files[i];
-            sendFile(file, i);
+            let hash = await hashFile(file, i);
+            hashes.push(hash);
+        }
+
+        // upload them
+        for (var i = 0; i < this.files.length; i++) {
+            var file = this.files[i];
+            let api_response = await getData('functions/check_mod_exists.php?md5='+hashes[i])
+            if (api_response['status']=='succ') {
+                console.log(`mod ${file} not in database, uploading`)
+                sendFile(file, i);
+            } else {
+                console.log(`mod ${file} in database, skipping`)
+                $("#cog-" + i).hide();
+                $("#inf-" + i).show();
+                $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
+                $("#" + i).addClass("bg-success");
+                $("#info-" + i).text("Mod already in database.");
+                $("#" + i).attr("id", i + "-done");
+            }
         }
     });
 

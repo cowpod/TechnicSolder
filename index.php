@@ -146,6 +146,7 @@ if (!uri("/login")) {
         <script src="./resources/js/fontawesome.js"></script>
         <script src="./resources/js/global.js"></script>
         <script src="./resources/js/marked.min.js"></script>
+        <script src="./resources/js/spark-md5.min.js"></script>
         <script src="./resources/bootstrap/bootstrap.min.js"></script>
         <script src="./resources/bootstrap/bootstrap-sortable.js"></script>
         <link rel="stylesheet" href="./resources/bootstrap/bootstrap-sortable.css" type="text/css">
