@@ -3,7 +3,7 @@ session_start();
 
 define('SUPPORTED_JAVA_VERSIONS', [21,20,19,18,17,16,15,14,13,12,11,1.8,1.7,1.6]);
 define('SOLDER_BUILD', '999');
-
+define('METRICS_CACHE_TIME', 3600);
 require_once('./functions/configuration.php');
 // global $config;
 // if (empty($config)) {
@@ -151,237 +151,6 @@ if (!uri("/login")) {
         <script src="./resources/bootstrap/bootstrap-sortable.js"></script>
         <link rel="stylesheet" href="./resources/bootstrap/bootstrap-sortable.css" type="text/css">
         <link rel="stylesheet" href="./resources/css/global.css" type="text/css">
-        <style type="text/css">
-            .menu-bars {
-                vertical-align: middle;
-                font-size: 34px;
-                color: #2789C9;
-                display: none;
-                cursor: pointer;
-            }
-            .nav-tabs .nav-link {
-                border: 1px solid transparent;
-                border-top-left-radius: .25rem;
-                border-top-right-radius: .25rem;
-                background: #2F363F;
-            }
-            .nav-tabs .nav-link.active {
-                color: white;
-                background-color:#3E4956 !important;
-                border-color: transparent !important;
-            }
-            .nav-tabs .nav-link {
-                border: 1px solid transparent;
-                border-top-left-radius: 0rem!important;
-                border-top-right-radius: 0rem!important;
-                width: 100%;
-                padding:12px;
-                overflow: auto;
-                color:#4F5F6D;
-            }
-            .tab-content.active {
-                display: block;
-                min-height: 165px;
-                overflow: auto;
-            }
-            .nav-tabs .nav-item {
-                width:102%
-            }
-            .nav-tabs .nav-link:hover {
-                border:1px solid transparent;
-                color: white;
-            }
-            .nav.nav-tabs {
-                float: left;
-                display: block;
-                border-bottom: 0;
-                border-right: 1px solid transparent;
-                background-color: #2F363F;
-            }
-            .tab-content .tab-pane .text-muted {
-                padding-left: 4em;
-                margin:1em;
-            }
-            .modpack {
-                color:white;
-                overflow:hidden;
-                cursor: pointer;
-                white-space: nowrap;
-            }
-            .modpack p {
-                margin:16px;
-            }
-            .modpack:hover {
-                background-color: #2776B3;
-            }
-            ::-webkit-scrollbar {
-                width: 10px;
-                height:10px;
-            }
-            ::-webkit-scrollbar-thumb {
-                background: #2776B3;
-            }
-
-            ::-webkit-scrollbar-thumb:hover {
-                background: #1766A3;
-            }
-            .info-versions .nav-item{
-                margin:5px;
-            }
-            a:hover {
-                text-decoration: none;
-            }
-            .main {
-                margin:2em;
-                margin-left: 22em;
-                transition: 0.5s;
-            }
-            .card {
-                 padding: 2em;
-                 margin: 2em 0;
-            }
-            .upload-mods {
-                border-radius: 5px;
-                width: 100%;
-                height: 15em;
-                background-color: #ddd;
-                transition: 0.2s;
-            }
-            @media (prefers-color-scheme: dark) {
-                .upload-mods {
-                    border-radius: 5px;
-                    width: 100%;
-                    height: 15em;
-                    background-color: #333;
-                    transition: 0.2s;
-                }
-            }
-            .upload-mods input{
-                width: 100%;
-                height: 100%;
-                position:absolute;
-                top:0px;
-                left:0px;
-                opacity: 0.0001;
-                cursor: pointer;
-            }
-            .upload-mods center {
-                position: absolute;
-                width: 20em;
-                top: 8em;
-                left: calc( 50% - 10em );
-            }
-            .upload-mods:hover{
-                background-color: #ccc;
-            }
-            @media (prefers-color-scheme: dark) { 
-                .upload-mods:hover{
-                    background-color: #444;
-                }
-            }
-            .sidenav {
-                width:20em;
-                height: 100%;
-                position:fixed;
-                background-color: #3E4956;
-                z-index: 1050;
-                transition: 0.5s;
-            }
-            #logindiv {
-                width:25em;
-                margin:auto;
-                margin-top:15em;
-                padding:0px
-            }
-            .d-icon {
-                font-size: 0.5em;
-                vertical-align: middle;
-                margin-right: 0.5em;
-            }
-            .w-text {
-                vertical-align: middle;
-            }
-            @media only screen and (min-width: 1001px) {
-                #logoutside {
-                    display:none;
-                }
-            }
-            @media only screen and (min-width: 1251px), (max-width: 780px) {
-                .w-sm {
-                    display: none;
-                }
-            }
-            @media only screen and (max-width: 780px) {
-                .row {
-                    display: block;
-                }
-                .col-4 {
-                    max-width: unset;
-                }
-            }
-
-            @media only screen and (max-width: 1250px) and (min-width: 781px) {
-                .w-lg {
-                    display: none;
-                }
-            }
-            @media only screen and (max-width: 1500px) and (min-width: 781px), (max-width: 450px) {
-                .d-icon {
-                    display: none;
-                }
-            }
-            @media only screen and (max-width: 1000px) {
-                .menu-bars {
-                    display: inline-block;
-                }
-                #logindiv {
-                    width: auto;
-                    margin-top:5em;
-                }
-                #techniclogo {
-                    display: none!important;
-                }
-                #dropdownMenuButton, #solderinfo, #welcome {
-                    display: none;
-                }
-                .sidenav {
-                    margin-left: -20em;
-                    transition: 0.5s;
-                }
-                .sidenavexpand {
-                    margin-left: 0em;
-                    transition: 0.5s;
-                }
-                .main {
-                    margin-left: 2em;
-                    transition: 0.5s;
-                }
-                #logoutside {
-                    display:block;
-                }
-            }
-
-            @media (prefers-color-scheme: dark) {
-                .custom-file-label::after {
-                    background-color: #df691a;
-                }
-                table.sortable>thead th:hover:not([data-defaultsort=disabled]) {
-                    background-color:#2E3D4C;
-                }
-                .form-control:disabled, .form-control[readonly] {
-                    background-color: rgba(255,255,255,0.5);
-                }
-            }
-
-            body {
-                background-color: #f0f4f9;
-            }
-            @media (prefers-color-scheme: dark) {
-                body {
-                    background-color: #202429;
-                }
-            }
-        </style>
         <meta name="viewport" content="width=device-width, initial-scale=1">
     </head>
     <body>
@@ -423,6 +192,88 @@ if (!uri("/login")) {
         <?php
         } else {
             $api_version_json = json_decode(file_get_contents('./api/version.json'), true);
+
+            // per modpack
+            $modpack_metrics = []; 
+
+            // for all modpacks
+            $totaldownloads = 0;
+            $totalruns = 0;
+            $totallikes = 0;
+
+            $modpacksq = $db->query("SELECT * FROM modpacks");
+            $modpacks = []; // associative by id
+
+            foreach($modpacksq as $modpack) {
+                if (empty($modpack['name'])) {
+                    continue;
+                }
+                $modpacks[$modpack['id']] = $modpack;
+
+                if ($modpack['public']==1 && empty($config->get('api_key')) || empty(get_setting('api_key'))) {
+                } else {
+                    $cache = [];
+                    $cached_info = [];
+                    $time = time();
+
+                    // clean up old cached data
+                    $db->execute("DELETE FROM metrics WHERE time_stamp < {$time}");
+
+                    $cacheq = $db->query("SELECT info FROM metrics WHERE name = '{$db->sanitize($modpack['name'])}' AND time_stamp >= {$time}");
+
+                    if ($cacheq && !empty($cacheq[0]) && !empty($cacheq[0]['info'])) {
+                        $info = json_decode(base64_decode($cacheq[0]['info']), true);
+                    } elseif (@$info = json_decode(file_get_contents("http://api.technicpack.net/modpack/{$modpack['name']}?build=".SOLDER_BUILD), true)) {
+                        $time = $time + METRICS_CACHE_TIME;
+                        $info_data = base64_encode(json_encode($info));
+
+                        if ($config->exists('db-type') && $config->get('db-type')=='sqlite') {
+                            $db->execute("
+                                INSERT OR REPLACE INTO metrics (
+                                    name,
+                                    time_stamp,
+                                    info
+                                )
+                                VALUES (
+                                    '{$db->sanitize($modpack['name'])}',
+                                    {$time},
+                                    '{$info_data}'
+                            )");
+                        } else {
+                            $db->execute("
+                                REPLACE INTO metrics (
+                                    name,
+                                    time_stamp,
+                                    info
+                                )
+                                VALUES (
+                                    '{$db->sanitize($modpack['name'])}',
+                                    {$time},
+                                    '{$info_data}'
+                            )");
+                        }
+                    }
+                }
+
+                $modpack_metrics[$modpack['name']] = $info;
+                
+                // can be non-numeric values
+                $totaldownloads += empty($info['installs']) ? 0 : $info['installs'];
+                $totalruns += empty($info['runs']) ? 0 : $info['runs'];
+                $totallikes += empty($info['ratings']) ? 0 : $info['ratings'];
+            }
+
+            $num_downloads = number_suffix_string($totaldownloads);
+            $downloadsbig = $num_downloads['big'];
+            $downloadssmall = $num_downloads['small'];
+
+            $num_runs = number_suffix_string($totalruns);
+            $runsbig = $num_runs['big'];
+            $runssmall = $num_runs['small'];
+
+            $num_likes = number_suffix_string($totallikes);
+            $likesbig = $num_likes['big'];
+            $likessmall = $num_likes['small'];
         ?>
         <!-- dark theme for navbar and logo is managed by javascript -->
         <nav id="navbar" class="navbar navbar-light bg-white sticky-top">
@@ -455,70 +306,19 @@ if (!uri("/login")) {
                 <div class="tab-pane active" id="modpacks" role="tabpanel">
                     <div class="overflow-auto" style="max-height: 88vh">
                         <p class="text-muted">MODPACKS</p>
-                        <?php
-                        $modpacksq = $db->query("SELECT * FROM `modpacks`");
-                        $totaldownloads=0;
-                        $totalruns=0;
-                        $totallikes=0;
-
+                        <?php 
                         foreach($modpacksq as $modpack) {
                             if (empty($modpack['name'])) {
                                 continue;
                             }
-
-                            $notechnic = true;
-                            if (!str_starts_with($modpack['name'], 'unnamed-modpack-') && (!empty($config->get('api_key')) || !empty(get_setting('api_key')))) {
-                                $cache = [];
-                                $cached_info = [];
-
-                                // clean up old cached data
-                                $db->execute("DELETE FROM metrics WHERE time_stamp < ".time());
-
-                                $cacheq = $db->query("SELECT info FROM metrics WHERE name = '".$db->sanitize($modpack['name'])."' AND time_stamp > ".time());
-
-                                if ($cacheq && !empty($cacheq[0]) && !empty($cacheq[0]['info'])) {
-                                    $info = json_decode(base64_decode($cacheq[0]['info']), true);
-                                }
-                                elseif (@$info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
-                                    $time = time()+1800;
-                                    $info_data = base64_encode(json_encode($info));
-
-                                    if ($config->exists('db-type') && $config->get('db-type')=='sqlite') {
-                                        $db->execute("
-                                            INSERT OR REPLACE INTO metrics (name,time_stamp,info)
-                                            VALUES (
-                                                '".$db->sanitize($modpack['name'])."',
-                                                ".$time.",
-                                                '".$info_data."'
-                                        )");
-                                    } else {
-                                        $db->execute("
-                                            REPLACE INTO metrics (name,time_stamp,info)
-                                            VALUES (
-                                                '".$db->sanitize($modpack['name'])."',
-                                                ".$time.",
-                                                '".$info_data."'
-                                        )");
-                                    }
-                                }
-                                $notechnic = false;
-                            }
-                            
-                            $info_icon = $modpack['icon'];
-
-                            if ((empty($info['installs']) && empty($info['runs']) && empty($info['ratings']))) {
-                                $info=['installs'=>0,'runs'=>0,'ratings'=>0];
-                            }
-                            $totaldownloads += $info['installs'];
-                            $totalruns += $info['runs'];
-                            $totallikes += $info['ratings'];
-                        ?>
+                            ?>
                         <a href="./modpack?id=<?php echo $modpack['id'] ?>">
                             <div class="modpack">
-                                <p class="text-white"><img alt="<?php echo $modpack['display_name'] ?>" class="d-inline-block align-top" height="25px" src="<?php echo $info_icon; ?>"> <?php echo $modpack['display_name'] ?></p>
+                                <p class="text-white"><img alt="<?php echo $modpack['display_name'] ?>" class="d-inline-block align-top" height="25px" src="<?php echo $modpack['icon']; ?>"> <font id="modpacklist-<?php echo $modpack['id'] ?>"><?php echo $modpack['display_name'] ?></font></p>
                             </div>
                         </a>
-                        <?php } if ($perms->modpack_create()) { ?>
+                        <?php } 
+                        if ($perms->modpack_create()) { ?>
                         <a href="./functions/new-modpack.php"><div class="modpack">
                             <p><em style="height:25px" class="d-inline-block align-top fas fa-plus-circle"></em> Add Modpack</p>
                         </div></a>
@@ -580,60 +380,43 @@ if (!uri("/login")) {
             ?>
             <script>document.title = 'Solder.cf - Dashboard - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <div class="main">
-            <?php
-            // TODO: check for updates here? adds load time...
-
-            if (isset($notechnic) && $notechnic) {
-            } else {
-                $num_downloads=number_suffix_string($totaldownloads);
-                $downloadsbig = $num_downloads['big'];
-                $downloadssmall = $num_downloads['small'];
-
-                $num_runs=number_suffix_string($totalruns);
-                $runsbig = $num_runs['big'];
-                $runssmall = $num_runs['small'];
-
-                $num_likes=number_suffix_string($totallikes);
-                $likesbig = $num_likes['big'];
-                $likessmall = $num_likes['small'];
-
-                ?>
-                    <div style="margin-left: 0;margin-right: 0" class="row">
-                        <div class="col-4">
-                            <div class="card text-white bg-success" style="padding: 0">
-                                <div class="card-header">Total Runs</div>
-                                <div class="card-body">
-                                    <center>
-                                        <h1 class="display-2 w-lg"><em class="fas fa-play d-icon"></em><span class="w-text"><?php echo $runsbig ?></span></h1>
-                                        <h1 class="display-4 w-sm"><em class="fas fa-play d-icon"></em><?php echo $runssmall ?></h1>
-                                    </center>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="card bg-info text-white" style="padding: 0">
-                                <div class="card-header">Total Downloads</div>
-                                <div class="card-body">
-                                    <center>
-                                        <h1 class="display-2 w-lg"><em class="d-icon fas fa-download"></em><span class="w-text"><?php echo $downloadsbig ?></span></h1>
-                                        <h1 class="display-4 w-sm"><em class="d-icon fas fa-download"></em><?php echo $downloadssmall ?></h1>
-                                    </center>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="card bg-primary text-white" style="padding: 0">
-                                <div class="card-header">Total Likes</div>
-                                <div class="card-body">
-                                    <center>
-                                        <h1 class="display-2 w-lg"><em class="fas fa-heart d-icon"></em><span class="w-text"><?php echo $likesbig ?></span></h1>
-                                        <h1 class="display-4 w-sm"><em class="fas fa-heart d-icon"></em><?php echo $likessmall ?></h1>
-                                    </center>
-                                </div>
+            <?php if (!empty($modpack_metrics)) { ?>
+                <div style="margin-left: 0;margin-right: 0" class="row">
+                    <div class="col-4">
+                        <div class="card text-white bg-success" style="padding: 0">
+                            <div class="card-header">Total Runs</div>
+                            <div class="card-body">
+                                <center>
+                                    <h1 class="display-2 w-lg"><em class="fas fa-play d-icon"></em><span class="w-text"><?php echo $runsbig ?></span></h1>
+                                    <h1 class="display-4 w-sm"><em class="fas fa-play d-icon"></em><?php echo $runssmall ?></h1>
+                                </center>
                             </div>
                         </div>
                     </div>
-                <?php } ?>
+                    <div class="col-4">
+                        <div class="card bg-info text-white" style="padding: 0">
+                            <div class="card-header">Total Downloads</div>
+                            <div class="card-body">
+                                <center>
+                                    <h1 class="display-2 w-lg"><em class="d-icon fas fa-download"></em><span class="w-text"><?php echo $downloadsbig ?></span></h1>
+                                    <h1 class="display-4 w-sm"><em class="d-icon fas fa-download"></em><?php echo $downloadssmall ?></h1>
+                                </center>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card bg-primary text-white" style="padding: 0">
+                            <div class="card-header">Total Likes</div>
+                            <div class="card-body">
+                                <center>
+                                    <h1 class="display-2 w-lg"><em class="fas fa-heart d-icon"></em><span class="w-text"><?php echo $likesbig ?></span></h1>
+                                    <h1 class="display-4 w-sm"><em class="fas fa-heart d-icon"></em><?php echo $likessmall ?></h1>
+                                </center>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php } ?>
 
                 <!--todo: check the compatibility of instant modpack's mods-->
                 <div class="card">
@@ -783,95 +566,32 @@ if (!uri("/login")) {
             <?php
         }
         elseif (uri('/modpack')){
-            $modpacksq = $db->query("SELECT * FROM `modpacks` WHERE `id` = ".$db->sanitize($_GET['id']));
-            if ($modpacksq) {
-                assert(sizeof($modpacksq)==1);
-                $modpack = $modpacksq[0];
-            }
-            
-            $_GET['name'] = $modpack['name'];
+            $modpack = $modpacks[$db->sanitize($_GET['id'])];
 
             $clients = $db->query("SELECT * FROM `clients`");
 
             $packdata = json_decode(mp_latest_recommended($db), true);
-
-            $latest=false;
-            if ($packdata['latest']!=null) {
-                $latestres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `id` = ".$packdata['latest']);
+            $latest = false;
+            if ($packdata['latest']!==null) {
+                $latestres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($modpack['id'])." AND `id` = ".$packdata['latest']);
                 if (sizeof($latestres)!==0) {
                     $latest=true;
                     $user = $latestres[0];
                 }
             } else {
-                $user=['id'=>$_GET['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'clients'=>'null', 'public'=>0];
+                $user=['id'=>$modpack['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'clients'=>'null', 'public'=>0];
             }
 
-            $rec=false;
-            if ($packdata['recommended']!=null) {
-                $recres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." AND `id` = '".$packdata['recommended']."'");
+            $rec = false;
+            if ($packdata['recommended']!==null) {
+                $recres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($modpack['id'])." AND `id` = '".$packdata['recommended']."'");
                 if (sizeof($recres)!==0) {
                     $rec=true;
                     $user = $recres[0];
                 }
             } else {
-                $user=['id'=>$_GET['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'clients'=>'null', 'public'=>0];
+                $user=['id'=>$modpack['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'clients'=>'null', 'public'=>0];
             }
-
-            $notechnic=true;
-            if (!str_starts_with($modpack['name'], 'unnamed-modpack-') && (!empty($config->get('api_key')) || !empty(get_setting('api_key')))) {
-                $cache = [];
-                $cached_info = [];
-
-                // clean up old cached data
-                $db->execute("DELETE FROM metrics WHERE time_stamp < ".time());
-
-                $cacheq = $db->query("SELECT info FROM metrics WHERE name = '".$db->sanitize($modpack['name'])."' AND time_stamp > ".time());
-                if ($cacheq && !empty($cacheq[0]) && !empty($cacheq[0]['info'])) {
-                    $info = json_decode(base64_decode($cacheq[0]['info']),true);
-                }
-                elseif (@$info = json_decode(file_get_contents("http://api.technicpack.net/modpack/".$modpack['name']."?build=".SOLDER_BUILD),true)) {
-                    $time = time()+1800;
-                    $info_data = base64_encode(json_encode($info));
-                    if ($config->exists('db-type') && $config->get('db-type')=='sqlite') {
-                        $db->execute("
-                            INSERT OR REPLACE INTO metrics (name,time_stamp,info)
-                            VALUES (
-                                '".$db->sanitize($modpack['name'])."',
-                                ".$time.",
-                                '".$info_data."'
-                        )");
-                    } else {
-                        $db->execute("
-                            REPLACE INTO metrics (name,time_stamp,info)
-                            VALUES (
-                                '".$db->sanitize($modpack['name'])."',
-                                ".$time.",
-                                '".$info_data."'
-                        )");
-                    }
-                }
-                $notechnic = false;
-            }
-            
-            if (empty($info['installs']) && empty($info['runs']) && empty($info['ratings'])) {
-                $info=['installs'=>0,'runs'=>0,'ratings'=>0];
-            }
-
-            $totaldownloads = $info['installs'];
-            $totalruns = $info['runs'];
-            $totallikes = $info['ratings'];
-
-            $num_downloads=number_suffix_string($totaldownloads);
-            $downloadsbig = $num_downloads['big'];
-            $downloadssmall = $num_downloads['small'];
-
-            $num_runs=number_suffix_string($totalruns);
-            $runsbig = $num_runs['big'];
-            $runssmall = $num_runs['small'];
-
-            $num_likes=number_suffix_string($totallikes);
-            $likesbig = $num_likes['big'];
-            $likessmall = $num_likes['small'];
             ?>
             <script>document.title = 'Modpack - <?php echo addslashes($modpack['display_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             
@@ -900,7 +620,7 @@ if (!uri("/login")) {
                     <h2 id="modpack-title"><?php echo $modpack['display_name']; ?></h2>
                 </div>
             <?php
-            if ($notechnic) { ?>
+            if (empty($modpack_metrics)) { ?>
                 <div class="card alert-danger">
                     Cannot connect to Technic! Verify the slug is set in modpack details, and an API key is set in <a href="/account">Account Settings</a>
                 </div>
@@ -950,10 +670,10 @@ if (!uri("/login")) {
                     <h3>Details</h3>
                     <hr>
                     <form method="POST" id="modpack-details">
-                        <input hidden type="text" name="id" value="<?php echo $_GET['id'] ?>">
-                        <input autocomplete="off" id="dn" class="form-control" type="text" name="display_name" placeholder="Name" value="<?php echo $modpack['display_name'] ?>" />
+                        <input hidden type="text" id="modpack-details-id" name="id" value="<?php echo $modpack['id'] ?>">
+                        <input autocomplete="off" id="dn" class="form-control" type="text" name="display_name" placeholder="Name" value="<?php echo $modpack['display_name'] ?>" required/>
                         <br />
-                        <input autocomplete="off" id="slug" pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Unqiue ID (technicpack.net slug)" value="<?php echo $modpack['name'] ?>" />
+                        <input autocomplete="off" id="slug" pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Unqiue ID (technicpack.net slug)" value="<?php echo $modpack['name'] ?>" required/>
                         <br />
                         <div class="custom-control custom-checkbox">
                             <input <?php if ($modpack['public']==1){echo "checked";} ?> type="checkbox" name="ispublic" class="custom-control-input" id="public">
@@ -963,7 +683,7 @@ if (!uri("/login")) {
                         <?php if ($perms->modpack_publish()) { ?>
                         <div id="card-allowed-clients" <?php if ($modpack['public']==1) { echo 'style="display:none"'; } ?>>
                             <p>Select which clients are allowed to access this non-public modpack.</p>
-                            <input hidden id="modpack_id" value="<?php echo $_GET['id'] ?>">
+                            <input hidden id="modpack_id" value="<?php echo $modpack['id'] ?>">
                             <?php if (sizeof($clients) === 0) { ?>
                             <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
                             <br />
@@ -1010,14 +730,48 @@ if (!uri("/login")) {
             <?php 
             }
 
-            if ($perms->build_create()) { ?>
+            if ($perms->build_create()) { 
+                $sbn = array();
+                $allbuildnames = $db->query("SELECT `name` FROM `builds` WHERE `modpack` = {$modpack['id']}");
+                foreach($allbuildnames as $bn) {
+                    array_push($sbn, $bn['name']);
+                }
+                $mpab = array();
+                $allbuilds = $db->query("SELECT `id`,`name`,`modpack` FROM `builds`");
+                foreach($allbuilds as $b) {
+                    $display_nameq=$db->query("SELECT `display_name` FROM `modpacks` WHERE `id` = {$b['modpack']}");
+                    if($display_nameq) {
+                        assert(sizeof($display_nameq)==1);
+                        $display_name=$display_nameq[0]['display_name'];
+                    }
+                    $ba = array(
+                        "id" => $b['id'],
+                        "name" => $b['name'],
+                        "mpid" =>  $b['modpack'],
+                        "mpname" => $display_name
+                    );
+                    array_push($mpab, $ba);
+                }
+                $mps = array();
+                $allmps = $db->query("SELECT `id`,`display_name` FROM `modpacks`");
+                foreach($allmps as $mp) {
+                    $mpa = array(
+                        "id" => $mp['id'],
+                        "name" => $mp['display_name']
+                    );
+                    array_push($mps, $mpa);
+                }
+
+
+                $users = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($modpack['id'])." ORDER BY `id` DESC");
+                ?>
                 <div class="card">
                     <h3>New Build</h3>
                     <hr>
                     <form action="./functions/new-build.php" method="">
                         <input pattern="^[a-zA-Z0-9.-]+$" required id="newbname" autocomplete="off" class="form-control" type="text" name="name" placeholder="Build name (e.g. 1.0) (a-z, A-Z, 0-9, dot and dash)" />
                         <span id="warn_newbname" style="display: none" class="text-danger">Build with this name already exists.</span>
-                        <input hidden type="text" name="id" value="<?php echo $_GET['id'] ?>">
+                        <input hidden type="text" name="id" value="<?php echo $modpack['id'] ?>">
                         <br />
                         <div class="btn-group">
                             <button id="create1" type="submit" name="type" value="new" class="btn btn-primary">Create</button>
@@ -1029,39 +783,7 @@ if (!uri("/login")) {
                     <h3>Copy Build</h3>
                     <hr>
                     <form id="copybuild" method="POST">
-                        <input hidden type="text" name="dest_modpack_id" value="<?php echo $_GET['id'] ?>">
-                        <?php
-                            $sbn = array();
-                            $allbuildnames = $db->query("SELECT `name` FROM `builds` WHERE `modpack` = {$modpack['id']}");
-                            foreach($allbuildnames as $bn) {
-                                array_push($sbn, $bn['name']);
-                            }
-                            $mpab = array();
-                            $allbuilds = $db->query("SELECT `id`,`name`,`modpack` FROM `builds`");
-                            foreach($allbuilds as $b) {
-                                $display_nameq=$db->query("SELECT `display_name` FROM `modpacks` WHERE `id` = {$b['modpack']}");
-                                if($display_nameq) {
-                                    assert(sizeof($display_nameq)==1);
-                                    $display_name=$display_nameq[0]['display_name'];
-                                }
-                                $ba = array(
-                                    "id" => $b['id'],
-                                    "name" => $b['name'],
-                                    "mpid" =>  $b['modpack'],
-                                    "mpname" => $display_name
-                                );
-                                array_push($mpab, $ba);
-                            }
-                            $mps = array();
-                            $allmps = $db->query("SELECT `id`,`display_name` FROM `modpacks`");
-                            foreach($allmps as $mp) {
-                                $mpa = array(
-                                    "id" => $mp['id'],
-                                    "name" => $mp['display_name']
-                                );
-                                array_push($mps, $mpa);
-                            }
-                            ?>
+                        <input hidden type="text" name="dest_modpack_id" value="<?php echo $modpack['id'] ?>">
                         <select id="mplist" class="form-control" required> <!-- Not passed to API -->
                             <option value=null>Please select a modpack..</option>
                             <?php
@@ -1097,9 +819,7 @@ if (!uri("/login")) {
                             </tr>
                         </thead>
                         <tbody id="table-builds">
-                        <?php
-                        $users = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($_GET['id'])." ORDER BY `id` DESC");
-                        foreach($users as $user) { ?>
+                        <?php foreach($users as $user) { ?>
                             <tr rec="<?php if ($packdata['recommended']===$user['id']){ echo "true"; } else { echo "false"; } ?>" id="b-<?php echo $user['id'] ?>">
                                 <td scope="row"><?php echo $user['name'] ?></td>
                                 <td><?php echo $user['minecraft'] ?></td>
@@ -1196,9 +916,6 @@ if (!uri("/login")) {
             if (empty($modslist[0])){
                 unset($modslist[0]);
             }
-            // for ($i=0;$i<sizeof($modslist);$i++) {
-            //     $modslist[$i]=intval($modslist[$i]);
-            // }
 
             // this is terrible, and should be done in SQL, or even better rewritten so that it's NOT a string-list of mod ids...
             $modslist_names = [];
@@ -1218,6 +935,7 @@ if (!uri("/login")) {
             }
 
             $clients = $db->query("SELECT * FROM `clients`");
+            $othersq = $db->query("SELECT * FROM `mods` WHERE `type` = 'other'");
             ?>
             <script>document.title = '<?php echo addslashes($mpack['display_name'])." ".addslashes($user['name'])  ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <ul class="nav justify-content-end info-versions">
@@ -1327,7 +1045,7 @@ if (!uri("/login")) {
                 }
                 if (!empty($modslist)) { // only empty on new build before mcversion is set?>
                     <div class="card">
-                        <h3>Enabled loaders/mods/files</h3>
+                        <h3>Items in build</h3>
                         <table class="table table-striped sortable">
                             <thead>
                                 <tr>
@@ -1384,15 +1102,15 @@ if (!uri("/login")) {
                                 <tr <?php if (empty($mod)) { echo 'class="table-danger"'; } elseif (!$userModVersionOK || empty($mod['version'])) { echo 'class="table-warning"'; } ?> id="mod-<?php echo empty($mod) ? 'missing-'.$build_mod_id : $build_mod_id ?>">
                                     <td scope="row"><?php
                                     echo empty($mod)?'MISSING':$mod['pretty_name'];
-                                    if (empty($mod)) {
-                                        echo '<span id="warn-incompatible-missing-'.$build_mod_id.'">: Mod does not exist! Please remove from this build.</span>';
-                                    } elseif(empty($mod['version'])) {
-                                        echo '<span id="warn-incompatible-'.$mod['name'].'">: Missing version! You must set it in <a href="modv?id='.$build_mod_id.'" target="_blank">mod details</a>.</span>';
-                                    } elseif(empty($mod['mcversion'])) {
-                                        echo '<span id="warn-incompatible-'.$mod['name'].'">: Missing mcversion! You must set it in <a href="modv?id='.$build_mod_id.'" target="_blank">mod details</a>.</span>';
-                                    } elseif (!$userModVersionOK) {
-                                        echo '<span id="warn-incompatible-'.$mod['name'].'">: For Minecraft '.$mod['mcversion'].', you have '.$user['minecraft'].'. May not be compatible!</span>';
-                                    }
+                                    if (empty($mod)) { ?>
+                                        <span id="warn-incompatible-missing-<?php echo $build_mod_id ?>">: Mod does not exist! Please remove from this build.</span>
+                                    <?php } elseif(empty($mod['version'])) { ?>
+                                        <span id="warn-incompatible-<?php echo $mod['name'] ?>">: Missing version! You must set it in <a href="modv?id=<?php echo $build_mod_id ?>" target="_blank">mod details</a>.</span>
+                                    <?php } elseif(empty($mod['mcversion'])) { ?>
+                                        <span id="warn-incompatible-<?php echo $mod['name'] ?>">: Missing mcversion! You must set it in <a href="modv?id=<?php echo $build_mod_id ?>" target="_blank">mod details</a>.</span>
+                                    <?php } elseif (!$userModVersionOK) { ?>
+                                        <span id="warn-incompatible-<?php echo $mod['name'] ?>">: For Minecraft <?php echo $mod['mcversion'] ?>, you have <?php echo $user['minecraft'] ?>. May not be compatible!</span>
+                                    <?php }
                                     ?></td>
                                     <td <?php 
                                         if (isset($mod['type']) && $mod['type']=='mod') { 
@@ -1422,16 +1140,17 @@ if (!uri("/login")) {
                                             echo $mod['name'] ?>"><?php
 
                                             // get versions for mod
-                                            $modv = $db->query("SELECT id,version,loadertype FROM mods WHERE name='".$mod['name']."'");
-                                            if($modv && sizeof($modv)>0) {
-                                                foreach ($modv as $mv) {
+                                            $modvq = $db->query("SELECT id,version,loadertype FROM mods WHERE name='{$mod['name']}'");
+
+                                            if($modvq && sizeof($modvq)>0) {
+                                                foreach ($modvq as $mv) {
                                                     if ($mv['loadertype']==$installed_loader) {
                                                         if ($mv['id'] == $mod['id']) {
                                                             echo "<option selected value='".$mv['id']."'>".$mv['version']."</option>";
                                                         } else {
                                                             echo "<option value='".$mv['id']."'>".$mv['version']."</option>";
                                                         }
-                                                }
+                                                    }
                                                 }
                                             }
                                         }
@@ -1502,12 +1221,9 @@ if (!uri("/login")) {
                             </thead>
                             <tbody>
                             <?php
-                            $mres = $db->query("SELECT * FROM `mods` WHERE `type` = 'other'");
-                            if (sizeof($mres)!==0) {
-                                ?>
-                                <?php
-                                foreach($mres as $mod) {
-                                    if (!in_array($mod['id'], $modslist)) {
+                            if (!empty($othersq)) {
+                                foreach($othersq as $mod) {
+                                    if (!in_array($mod['id'], $modslist)) { 
                                         ?>
                                         <tr>
                                             <td scope="row"><?php echo $mod['pretty_name'] ?></td>
@@ -1517,28 +1233,61 @@ if (!uri("/login")) {
                                         <?php
                                     }
                                 }
-                            } else {
-                                echo "<div style='display:block' class='invalid-feedback'>There are no files available. Please upload files in <a href='./lib-others'>Files Library</a></div>";
-                            } ?>
+                            } else { ?>
+                                <div style='display:block' class='invalid-feedback'>There are no files available. Please upload files in <a href='./lib-others'>Files Library</a></div>
+                            <?php } ?>
                             </tbody>
                         </table>
                     </div>
                 <?php }
-                } 
-                // else echo "<div class='card'><h3 class='text-info'>Select minecraft version and save before editing mods.</h3></div>"; 
+                }
                 ?>
                 <script>
-                    const INSTALLED_MODS = JSON.parse('<?php echo json_encode($modslist, JSON_UNESCAPED_SLASHES) ?>');
-                    const INSTALLED_MOD_NAMES = JSON.parse('<?php echo json_encode($modslist_names, JSON_UNESCAPED_SLASHES) ?>');
-                    const BUILD_ID = '<?php echo $user['id'] ?>';
-                    const MCV = '<?php echo $user['minecraft'] ?>';
-                    const TYPE = '<?php echo $user['loadertype'] ?>';
+                    var INSTALLED_MODS = JSON.parse('<?php echo json_encode($modslist, JSON_UNESCAPED_SLASHES) ?>');
+                    var INSTALLED_MOD_NAMES = JSON.parse('<?php echo json_encode($modslist_names, JSON_UNESCAPED_SLASHES) ?>');
+                    var BUILD_ID = '<?php echo $user['id'] ?>';
+                    var MCV = '<?php echo $user['minecraft'] ?>';
+                    var TYPE = '<?php echo $user['loadertype'] ?>';
                 </script>
                 <script src="./resources/js/page_build.js"></script>
             </div>
         <?php
         }
         elseif (uri('/lib-mods')) {
+
+            $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'mod' ORDER BY `id` DESC");
+            
+            if (!empty($mods)) {
+                $modsi = array();
+                $modslugs = array();
+                foreach ($mods as $mod) {
+                    $modversionsq = $db->query("SELECT `version`,`author` FROM `mods` WHERE `type` = 'mod' AND `name` = '".$mod['name']."' ORDER BY `version` DESC");
+                    $modversions = array();
+                    $modauthors = array();
+
+                    foreach ($modversionsq as $modversionsa) {
+                        array_push($modversions, $modversionsa['version']);
+                        foreach (explode(", ", $modversionsa['author']) as $a) {
+                            if (!in_array($a, $modauthors)) {
+                                array_push($modauthors, $a);
+                            }
+                        }
+                    }
+                    $modarray = array(
+                        "id" => $mod['id'],
+                        "name" => $mod['name'],
+                        "pretty_name" => $mod['pretty_name'],
+                        "versions" => $modversions,
+                        "author" => $modauthors,
+                        "mcversion" => $mod['mcversion']
+                    );
+
+                    if (!in_array($mod['name'], $modslugs)) {
+                        array_push($modslugs, $mod['name']);
+                        array_push($modsi, $modarray);
+                    }
+                }
+            }
         ?>
         <script>document.title = 'Mod Library - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
@@ -1708,39 +1457,8 @@ if (!uri("/login")) {
                     </thead>
                     <tbody id="table-available-mods">
                         <?php
-                        $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'mod' ORDER BY `id` DESC");
-                        if ($mods){
-                            $modsi = array();
-                            $modslugs = array();
-                            foreach ($mods as $mod) {
-                                $modversionsq = $db->query("SELECT `version`,`author` FROM `mods` WHERE `type` = 'mod' AND `name` = '".$mod['name']."' ORDER BY `version` DESC");
-                                $modversions = array();
-                                $modauthors = array();
-
-                                foreach ($modversionsq as $modversionsa) {
-                                    array_push($modversions, $modversionsa['version']);
-                                    foreach (explode(", ", $modversionsa['author']) as $a) {
-                                        if (!in_array($a, $modauthors)) {
-                                            array_push($modauthors, $a);
-                                        }
-                                    }
-                                }
-                                $modarray = array(
-                                    "id" => $mod['id'],
-                                    "name" => $mod['name'],
-                                    "pretty_name" => $mod['pretty_name'],
-                                    "versions" => $modversions,
-                                    "author" => $modauthors,
-                                    "mcversion" => $mod['mcversion']
-                                );
-
-                                if (!in_array($mod['name'], $modslugs)) {
-                                    array_push($modslugs, $mod['name']);
-                                    array_push($modsi, $modarray);
-                                }
-                            }
-                            foreach ($modsi as $mod) {
-                            ?>
+                        if (!empty($mods)) {
+                            foreach ($modsi as $mod) { ?>
                                 <tr id="mod-row-<?php echo $mod['name'] ?>">
                                     <td scope="row" <?php if (empty($mod['pretty_name'])) echo 'class="table-danger"' ?>><?php echo empty($mod['pretty_name']) ? "<span class='text-danger'>Unknown</span>" : $mod['pretty_name'] ?></td>
                                     <td <?php if (implode(", ", $mod['author'])=="") echo 'class="table-danger"' ?> class="d-none d-md-table-cell"><?php if (implode(", ", $mod['author'])!=="") { echo implode(", ", $mod['author']); } else { echo "<span class='text-danger'>Unknown</span>"; } ?></td>
@@ -1755,10 +1473,8 @@ if (!uri("/login")) {
                                     <?php } ?>
                                     </td>
                                 </tr>
-                            <?php
-                            }
-                        }
-                        ?>
+                            <?php }
+                        } ?>
                     </tbody>
                 </table>
             </div>
@@ -1787,17 +1503,14 @@ if (!uri("/login")) {
         </div>
         <?php
         } elseif (uri('/remote-mod')) {
-        ?>
-        <div class="main">
-            <?php
             if (isset($_GET['id'])) {
                 $mres = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
                 if ($mres) {
                     assert(sizeof($mres)==1);
                     $mod = $mres[0];
                 }
-            }
-            ?>
+            } ?>
+        <div class="main">
             <script>document.title = 'Add Mod - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <div class="card">
                 <button onclick="window.location = './lib-mods'" style="width: fit-content;" class="btn btn-primary"><em class="fas fa-arrow-left"></em> Back</button><br />
@@ -1835,6 +1548,33 @@ if (!uri("/login")) {
 
         <?php
         } elseif (uri('/modloaders')) {
+            $buildsq = $db->query("SELECT id,name,mods FROM builds");
+
+            $installed_loader_ids = [];
+            if (!empty($buildsq)) {
+                foreach ($buildsq as $build) {
+                    if (!empty($build['mods'])) {
+                        $mods_list = explode(',', $build['mods'],2);
+                        // first item is always the mod loader
+                        array_push($installed_loader_ids, $mods_list[0]);
+                    }
+                }
+            }
+
+            $used_loaders=[];
+            $installed_loaders=[];
+
+            $modsq = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge' ORDER BY `id` DESC");
+
+            if ($modsq){
+                foreach ($modsq as $mod) {
+                    if (in_array($mod['id'],$installed_loader_ids)) {
+                        array_push($used_loaders, $mod['loadertype'].'-'.$mod['mcversion'].'-'.$mod['version']);
+                    }
+                    array_push($installed_loaders, $mod['loadertype'].'-'.$mod['mcversion'].'-'.$mod['version']);
+                }
+            }
+                                
         ?>
         <script>document.title = 'Forge Versions - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
@@ -1946,35 +1686,19 @@ if (!uri("/login")) {
                     </thead>
                     <tbody id="forge-available">
                         <?php
-
-                        $buildsq=$db->query("SELECT id,name,mods FROM builds");
-                        $installed_loader_ids=[];
-                        if ($buildsq){
-                            foreach ($buildsq as $build){
-                                if (!empty($build['mods'])) {
-                                    $mods=explode(',', $build['mods'],2);
-                                    array_push($installed_loader_ids, $mods[0]);
-                                }
-                            }
-                        }
-
-                        $used_loaders=[];
-                        $installed_loaders=[];
-                        $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge' ORDER BY `id` DESC");
-                        if ($mods){
-                            foreach ($mods as $mod) {
-                                if (in_array($mod['id'],$installed_loader_ids)) {
-                                    array_push($used_loaders, $mod['loadertype'].'-'.$mod['mcversion'].'-'.$mod['version']);
-                                }
-                                array_push($installed_loaders, $mod['loadertype'].'-'.$mod['mcversion'].'-'.$mod['version']);
-
-                                $remove_box_str="{$mod['id']}, '{$mod['loadertype']}', '{$mod['mcversion']}', '{$mod['version']}', ";
+                        if ($modsq){
+                            foreach ($modsq as $mod) { 
+                                $remove_box_str = "remove_box({$mod['id']}, '{$mod['loadertype']}', '{$mod['mcversion']}', '{$mod['version']}')";
                                 ?>
                             <tr id="mod-row-<?php echo $mod['id'] ?>">
                                 <td scope="row"><?php echo $mod['mcversion'] ?></td>
                                 <td><?php echo $mod['version'] ?></td>
                                 <td><?php echo $mod['loadertype']?></td>
-                                <td><?php if ($perms->modloaders_delete()) { ?><button  onclick="remove_box(<?php echo $remove_box_str ?>)" data-toggle="modal" data-target="#removeMod" class="btn btn-danger btn-sm">Remove</button><?php } ?></td>
+                                <td>
+                                <?php if ($perms->modloaders_delete()) { ?>
+                                    <button  onclick="<?php echo $remove_box_str ?>" data-toggle="modal" data-target="#removeMod" class="btn btn-danger btn-sm">Remove</button>
+                                <?php } ?>
+                                </td>
                                 <td><em style="display: none" class="fas fa-cog fa-spin fa-sm"></em></td>
                             </tr>
                             <?php
@@ -2008,16 +1732,16 @@ if (!uri("/login")) {
             <script>
             <?php
             if (!empty($installed_loaders)) {
-                $installed_loaders_json=json_encode($installed_loaders, JSON_UNESCAPED_SLASHES);
-                echo "let installed_loaders=JSON.parse('{$installed_loaders_json}');";
+                $installed_loaders_json = json_encode($installed_loaders, JSON_UNESCAPED_SLASHES);
+                echo "var installed_loaders=JSON.parse('{$installed_loaders_json}');";
             } else {
-                echo 'let installed_loaders=[];';
+                echo 'var installed_loaders=[];';
             }
             if (!empty($used_loaders)) {
                 $used_loaders_json = json_encode($used_loaders, JSON_UNESCAPED_SLASHES);
-                echo "let used_loaders=JSON.parse('{$used_loaders_json}');";
+                echo "var used_loaders=JSON.parse('{$used_loaders_json}');";
             } else {
-                echo 'let used_loaders=[];';
+                echo 'var used_loaders=[];';
             }
             ?>
             </script>
@@ -2131,6 +1855,17 @@ if (!uri("/login")) {
                 assert(sizeof($mres)==1);
                 $file = $mres[0];
             }
+
+            $zip = new ZipArchive;
+            $paths = [];
+            if ($zip->open("./others/{$file['filename']}")===TRUE) {
+                for ($i=0; $i<$zip->numFiles; $i++) {
+                    array_push($paths, $zip->getNameIndex($i));
+                }
+                $zip->close();
+            }
+            
+            $paths_json = json_encode($paths);
             ?>
             <script>document.title = 'File - <?php echo addslashes($file['name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <div class="main">
@@ -2147,17 +1882,9 @@ if (!uri("/login")) {
                     </pre>
                     <h4 id="loadingfiles"><em class="fas fa-cog fa-spin"></em> Loading...</h4>
                 </div>
-                <?php
-                $zip = new ZipArchive;
-                $paths=[];
-                if ($zip->open('./others/'.$file['filename'])===TRUE) {
-                    for ($i=0; $i<$zip->numFiles; $i++) {
-                        array_push($paths, $zip->getNameIndex($i));
-                    }
-                    $zip->close();
-                }
-                echo '<script>var paths = JSON.parse(\''.json_encode($paths).'\');</script>';
-                ?>
+                <script>
+                <?php echo "var paths = JSON.parse('{$paths_json}');"; ?>
+                </script>
                 <script src="./resources/js/page_file.js"></script>
             </div>
             <?php
@@ -2359,10 +2086,8 @@ if (!uri("/login")) {
                     $("#nav-settings").trigger('click');
                 });
             </script>
-            <?php
-        }
-        elseif (uri("/update") && $perms->privileged()) {
-
+        <?php
+        } elseif (uri("/update") && $perms->privileged()) {
             $updater = new Updater(__DIR__,$config);
             $update_status = $updater->check();
 
@@ -2464,6 +2189,7 @@ if (!uri("/login")) {
         <?php
         } elseif (uri("/account")) {
             ?>
+            <script> document.title = 'My Account - <?php echo addslashes($_SESSION['name']) ?>'; </script>
             <div class="main">
                 <div class="card">
                     <h2>Account</h2>
@@ -2549,11 +2275,8 @@ if (!uri("/login")) {
                 <?php } ?>
                 </div>
             </div>
-            <script>
-                document.title = 'My Account - <?php echo addslashes($_SESSION['name']) ?>';
-            </script>
             <script src="./resources/js/page_account.js"></script>
-            <?php
+        <?php
         } elseif (uri("/admin") && $perms->privileged()) {
             if (isset($_POST['bug-submit'])) {
                 if (isset($_POST['enable_self_updater'])) {
@@ -2595,7 +2318,9 @@ if (!uri("/login")) {
                 error_log('no post data');
             }
 
+            $usersq = $db->query("SELECT * FROM `users`");
             ?>
+            <script>document.title = 'Admin - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <div class="main">
                 <div class="card">
                     <h2>Administration</h2>
@@ -2615,35 +2340,30 @@ if (!uri("/login")) {
                         </tr>
                     </thead>
                     <tbody id="users">
-                        <?php
-                        $users = $db->query("SELECT * FROM `users`");
-                        foreach ($users as $user) {
-                            if ($user['name']===$_SESSION['user']) {
-                                // if editing remember to change in page_admin.js
-                                ?>
-                                <tr>
-                                    <td><?php echo $user['display_name'] ?></td>
-                                    <td><?php echo $user['name'] ?></td>
-                                    <td>(you)</td>
-                                </tr>
-                            <?php
-                            } else {
-                                ?>
-                                <tr id="user-<?php echo $user['id'] ?>">
-                                    <td scope="row" id="displayname-<?php echo $user['id'] ?>"><?php echo $user['display_name'] ?></td>
-                                    <td><?php echo $user['name'] ?></td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                            <font style="display:hidden" id="user-perms-<?php echo $user['id'] ?>" perms="<?php echo $user['perms'] ?>"></font>
-                                            <button id="user-edit-<?php echo $user['id'] ?>" onclick="edit(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>','<?php echo $user['display_name'] ?>')" class="btn btn-primary" data-toggle="modal" data-target="#editUser" >Edit</button>
-                                            <button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeUser" class="btn btn-danger">Remove</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php
-                            }
-                        }
-                        ?>
+            <?php foreach ($usersq as $user) {
+                // if editing remember to change in page_admin.js 
+                if ($user['name']===$_SESSION['user']) { ?>
+                        <tr>
+                            <td><?php echo $user['display_name'] ?></td>
+                            <td><?php echo $user['name'] ?></td>
+                            <td>(you)</td>
+                        </tr>
+            <?php } else { ?>
+                        <tr id="user-<?php echo $user['id'] ?>">
+                            <td scope="row" id="displayname-<?php echo $user['id'] ?>"><?php echo $user['display_name'] ?></td>
+                            <td><?php echo $user['name'] ?></td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                                    <font style="display:hidden" id="user-perms-<?php echo $user['id'] ?>" perms="<?php echo $user['perms'] ?>"></font>
+                                    <button id="user-edit-<?php echo $user['id'] ?>" onclick="edit(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>','<?php echo $user['display_name'] ?>')" class="btn btn-primary" data-toggle="modal" data-target="#editUser" >Edit</button>
+                                    <button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeUser" class="btn btn-danger">Remove</button>
+                                </div>
+                            </td>
+                        </tr>
+                <?php
+                }
+            }
+            ?>
                     </tbody>
                     </table>
                 </div>
@@ -2655,11 +2375,11 @@ if (!uri("/login")) {
                             <input id="dev_builds" type="checkbox" class="custom-control-input" name="dev_builds" <?php if (strtolower($api_version_json['stream'])==="dev") { echo "checked disabled"; } elseif ($config->exists('dev_builds') && $config->get('dev_builds')==="on") { echo "checked"; } ?>>
                             <label class="custom-control-label" for="dev_builds">Subscribe to dev builds</label>
                         </div>
-                        <?php if (strtolower($api_version_json['stream'])==="dev") { ?>
+            <?php if (strtolower($api_version_json['stream'])==="dev") { ?>
                         You are on the Dev release channel.
-                        <?php } else { ?>
+            <?php } else { ?>
                         Switching to the Dev release channel is permanent!
-                        <?php } ?>
+            <?php } ?>
                         <br/>
                         <div class="custom-control custom-switch">
                             <input id="enable_self_updater" type="checkbox" class="custom-control-input" name="enable_self_updater" <?php if ($config->exists('enable_self_updater') && $config->get('enable_self_updater')=="on") {echo "checked";} ?> >
@@ -2716,12 +2436,12 @@ if (!uri("/login")) {
                     <h3>Server-wide Technic Solder integration</h3>
                     <p>To integrate with the Technic API, you will need your API key from <a href="https://technicpack.net/" target="_blank">technicpack.net</a>; Sign in (or register), "Edit [My] Profile" in the top right account menu, "Solder Configuration", and copy the API key and paste it in the text box below.</p>
                     <form>
-                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if ($config->exists('api_key') && !empty($config->get('api_key'))) echo 'value="'.$config->get('api_key').'"' ?>/>
+                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if ($config->exists('api_key') && !empty($config->get('api_key'))) echo "value='{$config->get('api_key')}'" ?>/>
                         <br/>
                         <input class="btn btn-success" type="button" id="save_api_key" value="Save" disabled />
                     </form>
                     <br/>
-                    <p>Then, copy <?php echo $protocol.$config->get('host').$config->get('dir').'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
+                    <p>Then, copy <?php echo "{$protocol}{$config->get('host')}{$config->get('dir')}api" ?> into "Solder URL" text box, and click "Link Solder".</p>
                     <hr/>
                     <b>Setting an API key here will make it available to all other users, and will prevent them from using their own key.</b>
                 </div>
@@ -2772,7 +2492,7 @@ if (!uri("/login")) {
                       <div class="modal-footer">
                         <font id="newUser-message"></font>
                         <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
-                        <button id="save-button" type="button" class="btn btn-success" disabled="disabled" onclick='new_user($("#email").val(),$("#name").val(),$("#pass1").val())' >Save</button>
+                        <button id="save-button" type="button" class="btn btn-success" disabled="disabled" onclick="new_user($('#email').val(),$('#name').val(),$('#pass1').val())" >Save</button>
                       </div>
                     </div>
                   </div>
@@ -2832,17 +2552,16 @@ if (!uri("/login")) {
                       <div class="modal-footer">
                         <font id="editUser-message"></font>
                         <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
-                        <button id="save-button-2" type="button" class="btn btn-success" disabled="disabled" onclick='edit_user($("#mail2").val(),$("#name2").val(),$("#perms").val())'>Save</button>
+                        <button id="save-button-2" type="button" class="btn btn-success" disabled="disabled" onclick="edit_user($('#mail2').val(),$('#name2').val(),$('#perms').val())">Save</button>
                       </div>
                     </div>
                   </div>
                 </div>
-                <script>document.title = 'Admin - <?php echo addslashes($_SESSION['name']) ?>';</script>
                 <script src="./resources/js/page_admin.js"></script>
             </div>
         
         <?php } elseif (uri('/clients')) {
-        ?>
+            $clientsq = $db->query("SELECT * FROM `clients`"); ?>
         <script>document.title = 'Clients - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
             <div class="card">
@@ -2875,19 +2594,14 @@ if (!uri("/login")) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php
-                        $users = $db->query("SELECT * FROM `clients`");
-                        foreach ($users as $user) {
-                            ?>
+            <?php foreach ($clientsq as $user) { ?>
                             <tr id="mod-row-<?php echo $user['id'] ?>">
                                 <td scope="row"><?php echo $user['name'] ?></td>
                                 <td><?php echo $user['UUID'] ?></td>
                                 <td><button onclick="remove_box(<?php echo $user['id'] ?>,'<?php echo $user['name'] ?>')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
                                     </div></td>
                             </tr>
-                            <?php
-                        }
-                        ?>
+            <?php } ?>
                     </tbody>
                 </table>
                 <div class="modal fade" id="removeMod" tabindex="-1" role="dialog" aria-labelledby="rm"
@@ -2915,8 +2629,7 @@ if (!uri("/login")) {
             </div>
             <script src="./resources/js/page_clients.js"></script>
         </div>
-        <?php } else {
-            ?>
+        <?php } else { ?>
         <script>document.title = '404 - Not Found';</script>
         <div style="margin-top: 15%" class="main">
 
@@ -2924,8 +2637,7 @@ if (!uri("/login")) {
                 <center><h3>There is nothing...</h3></center>
         </div>
         <?php }
-    }
-    ?>
+    } ?>
 
         <script src="./resources/js/body.js"></script>
     </body>
