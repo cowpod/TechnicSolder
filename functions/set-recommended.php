@@ -25,28 +25,21 @@ if (!is_numeric($_GET['modpackid'])) {
     die("Malformed modpack id");
 }
 
-
 require_once("db.php");
 $db=new Db;
 $db->connect();
 
-$setrecq = $db->execute("UPDATE `modpacks` SET `recommended` = {$_GET['buildid']} WHERE `id` = {$_GET['modpackid']}");
+$setrecq = $db->execute("UPDATE modpacks SET recommended = {$_GET['buildid']} WHERE id = {$_GET['modpackid']}");
 if (!$setrecq) {
     die("Could not set recommended build to {$_GET['buildid']} for modpack {$_GET['modpackid']}");
 }
 
-$bq = $db->query("SELECT * FROM `builds` WHERE `id` = {$_GET['buildid']}");
-if (!$bq) {
-    die("Build id does not exist");
-}
-
-$build = $bq[0];
-$response = array(
-    "name" => $build['name'],
-    "mc" => $build['minecraft']
-);
+$bq = $db->query("SELECT * FROM builds WHERE id = {$_GET['buildid']}");
 
 $db->disconnect();
 
-echo(json_encode($response));
-exit();
+if (empty($bq)) {
+    die('{"name": null, "mc": null}');
+}
+
+die('{"name": "'.$bq[0]['name'].'", "mc": "'.$bq[0]['minecraft'].'"}');

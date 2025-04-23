@@ -567,30 +567,29 @@ if (!uri("/login")) {
         }
         elseif (uri('/modpack')){
             $modpack = $modpacks[$db->sanitize($_GET['id'])];
+            $packdata = get_modpack_latest_recommended($db, $modpack['id']);
 
             $clients = $db->query("SELECT * FROM `clients`");
+            $build_latest = ['id'=>$modpack['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'clients'=>'null', 'public'=>0];
+            $build_recommended = ['id'=>$modpack['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'clients'=>'null', 'public'=>0];
 
-            $packdata = json_decode(mp_latest_recommended($db), true);
             $latest = false;
-            if ($packdata['latest']!==null) {
-                $latestres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($modpack['id'])." AND `id` = ".$packdata['latest']);
-                if (sizeof($latestres)!==0) {
-                    $latest=true;
-                    $user = $latestres[0];
+            $rec = false;
+
+            if (!empty($packdata['latest'])) {
+                $buildq = $db->query("SELECT * FROM builds WHERE modpack = {$modpack['id']} AND id = {$packdata['latest']}");
+                if (!empty($buildq)) {
+                    $latest = true;
+                    $build_latest = $buildq[0];
                 }
-            } else {
-                $user=['id'=>$modpack['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'clients'=>'null', 'public'=>0];
             }
 
-            $rec = false;
-            if ($packdata['recommended']!==null) {
-                $recres = $db->query("SELECT * FROM `builds` WHERE `modpack` = ".$db->sanitize($modpack['id'])." AND `id` = '".$packdata['recommended']."'");
-                if (sizeof($recres)!==0) {
-                    $rec=true;
-                    $user = $recres[0];
+            if (!empty($packdata['recommended'])) {
+                $buildq = $db->query("SELECT * FROM builds WHERE modpack = {$modpack['id']} AND id = {$packdata['recommended']}");
+                if (!empty($buildq)) {
+                    $rec = true;
+                    $build_recommended = $buildq[0];
                 }
-            } else {
-                $user=['id'=>$modpack['id'], 'name'=>'null', 'minecraft'=>'null', 'display_name'=>'null', 'clients'=>'null', 'public'=>0];
             }
             ?>
             <script>document.title = 'Modpack - <?php echo addslashes($modpack['display_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -600,17 +599,17 @@ if (!uri("/login")) {
                     <a class="nav-link" href="./dashboard"><em class="fas fa-arrow-left fa-lg"></em> <?php echo $modpack['display_name'] ?></a>
                 </li>
                 <li <?php if (!$latest){ echo "style='display:none'"; } ?> id="latest-v-li" class="nav-item">
-                    <span class="navbar-text"><em style="color:#2E74B2" class="fas fa-exclamation"></em> Latest: <strong id="latest-name"><?php echo $user['name'] ?></strong></span>
+                    <span class="navbar-text"><em style="color:#2E74B2" class="fas fa-exclamation"></em> Latest: <strong id="latest-name"><?php echo $build_latest['name'] ?></strong></span>
                 </li>
                 <li <?php if (!$latest){ echo "style='display:none'"; } ?> id="latest-mc-li" class="nav-item">
-                    <span class="navbar-text"><?php if (isset($user['minecraft'])){echo "MC: ";} ?><strong id="latest-mc"><?php echo $user['minecraft'] ?></strong></span>
+                    <span class="navbar-text"><?php if (isset($build_latest['minecraft'])){echo "MC: ";} ?><strong id="latest-mc"><?php echo $build_latest['minecraft'] ?></strong></span>
                 </li>
                 <div style="width:30px"></div>
                 <li <?php if (!$rec){ echo "style='display:none'"; } ?> id="rec-v-li" class="nav-item">
-                    <span class="navbar-text"><em style="color:#329C4E" class="fas fa-check"></em> Recommended: <strong id="rec-name"><?php echo $user['name'] ?></strong></span>
+                    <span class="navbar-text"><em style="color:#329C4E" class="fas fa-check"></em> Recommended: <strong id="rec-name"><?php echo $build_recommended['name'] ?></strong></span>
                 </li>
                 <li <?php if (!$rec){ echo "style='display:none'"; } ?> id="rec-mc-li" class="nav-item">
-                    <span class="navbar-text"><?php if (isset($user['minecraft'])){echo "MC: ";} ?><strong id="rec-mc"><?php echo $user['minecraft'] ?></strong></span>
+                    <span class="navbar-text"><?php if (isset($build_recommended['minecraft'])){echo "MC: ";} ?><strong id="rec-mc"><?php echo $build_recommended['minecraft'] ?></strong></span>
                 </li>
                 <div style="width:30px"></div>
             </ul>
