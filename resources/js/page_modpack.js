@@ -49,8 +49,9 @@ function edit(id) {
 function remove_box(id,name) {
     $("#build-title").text(name);
     $("#build-text").text(name);
-    $("#remove-button").attr("onclick","remove("+id+")");
+    $("#remove-button").attr("onclick", `remove(${id})`);
 }
+
 function set_public(id) {
     $("#cog-"+id).show();
     var request = new XMLHttpRequest();
@@ -85,34 +86,81 @@ function remove(id) {
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             response = JSON.parse(this.response);
+            console.log(response);
+
             $("#cog-"+id).hide();
             $("#b-"+id).hide();
-            if ($("#b-"+id).attr("rec")=="true") {
-                $("#rec-v-li").hide();
-                $("#rec-mc-li").hide();
-            }
-            console.log(response);
-            if (response['exists']==true) {
-                $("#latest-v-li").show();
-                $("#latest-mc-li").show();
-                $("#latest-name").text(response['name']);
-                $("#latest-mc").text(response['mc']);
-                if (response['name']==null) {
-                    $("#latest-v-li").hide();
-                    $("#latest-mc-li").hide();
-                }
-            } else {
+
+            if (response['data']['latest']==null) {
                 $("#latest-v-li").hide();
                 $("#latest-mc-li").hide();
+            } else {
+                $("#latest-v-li").show();
+                $("#latest-mc-li").show();
+                $("#latest-name").text(response['data']['latest']['name']);
+                $("#latest-mc").text(response['data']['latest']['mcversion']);
+            }
+            if (response['data']['recommended']==null) {
+                $("#rec-v-li").hide();
+                $("#rec-mc-li").hide();
+            } else {
+                $("#rec-v-li").show();
+                $("#rec-mc-li").show();
+                $("#rec-name").text(response['data']['recommended']['name']);
+                $("#rec-mc").text(response['data']['recommended']['mcversion']);
             }
 
-            for (let b of bd) {
-                if (b['id']==id) {
-                    let name=b['name'];
-                    bd.splice(bd.indexOf(b),1);
-                    sbna.splice(sbna.indexOf(name),1);
-                }
+            // mark new recommended
+            if (response['data']['recommended'] != null && 'id' in response['data']['recommended']) {
+                $(['rec']).each(function() {
+                    let build_id = $(this).attr('id')
+
+                    // this should be deleted by now...
+                    if (build_id == id) {
+                        console.log('got item which should be gone?? '+build_id)
+                        return
+                    }
+
+                    // skip builds which aren't public
+                    if (!$('#pub-'+build_id).is(":hidden")) {
+                        return
+                    }
+                    
+                    if (build_id == response['data']['recommended']['id']) {
+                        $('#recd-'+build_id).show()
+                        $('#rec-'+build_id).hide()
+                    } else {
+                        $('#recd-'+build_id).hide()
+                        $('#rec-'+build_id).show()
+                    }
+                });
             }
+
+            // if ($("#b-"+id).attr("rec")=="true") {
+            //     $("#rec-v-li").hide();
+            //     $("#rec-mc-li").hide();
+            // }
+            // if (response['exists']==true) {
+            //     $("#latest-v-li").show();
+            //     $("#latest-mc-li").show();
+            //     $("#latest-name").text(response['name']);
+            //     $("#latest-mc").text(response['mc']);
+            //     if (response['name']==null) {
+            //         $("#latest-v-li").hide();
+            //         $("#latest-mc-li").hide();
+            //     }
+            // } else {
+            //     $("#latest-v-li").hide();
+            //     $("#latest-mc-li").hide();
+            // }
+
+            // for (let b of bd) {
+            //     if (b['id']==id) {
+            //         let name=b['name'];
+            //         bd.splice(bd.indexOf(b),1);
+            //         sbna.splice(sbna.indexOf(name),1);
+            //     }
+            // }
 
         }
     }
@@ -127,19 +175,23 @@ function set_recommended(id) {
             console.log(this.response)
             response = JSON.parse(this.response);
 
-            $("[id^='recd-']").each(function() {
-                let otherid = $(this).attr("id").substring(5);
-                if (otherid==id) { 
-                    return;
-                } else {
-                    // hide all recd
-                    $(this).hide();
-                    // show all rec
-                    $("#rec-"+otherid).show();
+            $("#recd-"+id).show();
+            $("#rec-"+id).hide();
+
+            $('[bid]').each(function() {
+                let bid = $(this).attr('bid');
+
+                // skip builds which aren't public
+                if (!$('#pub-'+bid).is(":hidden")) {
+                    return
+                }
+
+                if (bid != id) {
+                    $("#rec-"+bid).show();
+                    $("#recd-"+bid).hide();
                 }
             });
-            $("#recd-"+id).show(); // recommended
-            $("#rec-"+id).hide(); // reccommend
+
             $("#rec-v-li").show();
             $("#rec-mc-li").show();
             $("#cog-"+id).hide();
@@ -201,9 +253,11 @@ $('#copybuild').on('submit', async function(event){
                                 <td data-value="${modcount}">${modcount}</td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                        <button onclick="edit(${id})" class="btn btn-primary">Edit</button>
-                                        <button onclick="remove_box(${id},'${name}')" data-toggle="modal" data-target="#removeModal" class="btn btn-danger">Remove</button> 
-                                            <button bid="${id}" id="pub-${id}" class="btn btn-success" onclick="set_public(${id})" style="display:block">Publish</button>
+                                        <button onclick="edit(${id})" class="btn btn-primary"><em class="fas fa-edit"></button>
+                                        <button onclick="remove_box(${id},'${name}')" data-toggle="modal" data-target="#removeModal" class="btn btn-danger"><em class="fas fa-times"></em> /button>
+                                    </div>
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Actions"> 
+                                        <button bid="${id}" id="pub-${id}" class="btn btn-success" onclick="set_public(${id})" style="display:block">Publish</button>
                                         <button bid="${id}" id="rec-${id}" class="btn btn-success" onclick="set_recommended(${id})" style="display:none">Recommend</button>
                                         <button bid="${id}" id="recd-${id}" class="btn btn-success" style="display:none" disabled>Recommended</button>
                                     </div>
@@ -285,7 +339,7 @@ $('#modpack-details :input').on('change input', function () {
 
 $('#modpack-details').on('submit', function(e) {
     e.preventDefault();
-    let formData = $(this).serialize();
+    let formData = $(this).serialize(); // contains #modpack-details-id
     let request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (request.readyState == 4 && request.status == 200) {
@@ -293,6 +347,7 @@ $('#modpack-details').on('submit', function(e) {
             let json = JSON.parse(request.responseText);
             if (json['status']==='succ') {
                 $('#modpack-title').text($('#dn').val())
+                $('#modpacklist-'+$('#modpack-details-id').val()).text($('#dn').val())
                 saveAllowedClients();
                 $('#modpack-details-save').attr('disabled', true);
             }

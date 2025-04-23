@@ -8,21 +8,21 @@ require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
 if (!$perms->build_delete()) {
-    die("Insufficient permission!");
+    die('{"status":"error","message":"Insufficient permission!"}');
 }
 
 if (empty($_GET['buildid'])) {
-    die("Build id not specified.");
+    die('{"status":"error","message":"Build id not specified."}');
 }
 if (empty($_GET['modpackid'])) {
-    die("Modpack id not specified.");
+    die('{"status":"error","message":"Modpack id not specified."}');
 }
 
 if (!is_numeric($_GET['buildid'])) {
-    die("Malformed build id");
+    die('{"status":"error","message":"Malformed build id"}');
 }
 if (!is_numeric($_GET['modpackid'])) {
-    die("Malformed modpack id");
+    die('{"status":"error","message":"Malformed modpack id"}');
 }
 
 global $db;
@@ -32,39 +32,73 @@ if (!isset($db)){
     $db->connect();
 }
 
-$db->execute("DELETE FROM `builds` WHERE `id` = {$_GET['buildid']}");
 
-
-$bq = $db->query("SELECT * FROM `builds` WHERE `modpack` = {$_GET['modpackid']} AND `public` = 1 ORDER BY `id` DESC LIMIT 1");
-if ($bq) {
-    assert(sizeof($bq)==1);
-    $build = $bq[0];
-    $response = array(
-        "exists" => true,
-        "name" => $build['name'],
-        "mc" => $build['minecraft']
-    );
-} else {
-    $response = array(
-        "exists" => false
-    );
+// delete the build
+$del = $db->execute("DELETE FROM builds WHERE id = {$_GET['buildid']} AND modpack = {$_GET['modpackid']}");
+if (!$del) {
+    die('{"status":"error","message":"Could not delete build"}');
 }
 
-$latestq = $db->execute("
+// set latest public build
+$set_latestx = $db->execute("
     UPDATE modpacks 
     SET latest = (
-        SELECT id 
-        FROM builds 
-        WHERE public=1
-        AND modpack = {$_GET['modpackid']}
-        ORDER BY id DESC
+        SELECT id
+        FROM builds
+        WHERE modpack = {$_GET['modpackid']}
+        AND public = 1
+        ORDER BY id DESC 
         LIMIT 1
     )
     WHERE id = {$_GET['modpackid']}
 ");
-if (!$latestq) {
-    die("Could not set latest build");
+if (!$set_latestx) {
+    die('{"status":"error","message":{"Could not set latest build"}');
 }
 
-echo json_encode($response);
-exit();
+// un-set recommended if needed for modpack
+$unset_recommendedx = $db->execute("
+    UPDATE modpacks 
+    SET recommended = null 
+    WHERE id = {$_GET['modpackid']} 
+    AND recommended = {$_GET['buildid']}
+");
+if (!$unset_recommendedx) {
+    die('{"status":"error","message":"Could not un-set recommended build for modpack"}');
+}
+
+// get latest and recommended builds for modpack
+// can be empty!
+
+$response = ["latest"=>null, "recommended"=>null];
+
+$getq = $db->query("
+    SELECT id,name,minecraft AS mcversion
+    FROM builds
+    WHERE id = (
+        SELECT latest
+        FROM modpacks 
+        WHERE id = {$_GET['modpackid']}
+        AND public = 1
+    )
+");
+if (!empty($getq)) {
+    // allow null/empty values for name, mcversion
+    $response["latest"] = $getq[0];
+}
+$getq = $db->query("
+    SELECT id,name,minecraft AS mcversion
+    FROM builds
+    WHERE id = (
+        SELECT recommended
+        FROM modpacks 
+        WHERE id = {$_GET['modpackid']}
+        AND public = 1
+    )
+");
+if (!empty($getq)) {
+    // allow null/empty values for name, mcversion
+    $response["recommended"] = $getq[0];
+}
+
+die('{"status":"succ","message":"Build deleted.","data":'.json_encode($response).'}');

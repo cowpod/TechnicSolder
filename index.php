@@ -862,9 +862,9 @@ if (!uri("/login")) {
                         <?php foreach($builds as $build) { ?>
                             <tr rec="<?php if ($packdata['recommended']===$build['id']){ echo "true"; } else { echo "false"; } ?>" id="b-<?php echo $build['id'] ?>">
                                 <td scope="row"><?php echo $build['name'] ?></td>
-                                <td><?php echo $build['minecraft'] ?></td>
-                                <td class="d-none d-md-table-cell"><?php echo $build['java'] ?></td>
-                                <td><?php echo isset($build['mods']) ? count(explode(',', $build['mods'])) : '' ?></td>
+                                <td class="<?php if (empty($build['minecraft'])) echo 'alert-danger' ?>"><?php echo $build['minecraft'] ?></td>
+                                <td class="<?php if (empty($build['minecraft'])) echo 'alert-danger' ?> d-none d-md-table-cell"><?php echo $build['java'] ?></td>
+                                <td class="<?php if (empty($build['minecraft'])) echo 'alert-danger' ?>"><?php echo isset($build['mods']) ? count(explode(',', $build['mods'])) : '' ?></td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                     <?php 
@@ -872,11 +872,13 @@ if (!uri("/login")) {
                                         if (empty($build['minecraft'])) { ?> 
                                         <button onclick="edit(<?php echo $build['id'] ?>)" class="btn btn-warning">Set details</button>
                                         <?php } else { ?>
-                                        <button onclick="edit(<?php echo $build['id'] ?>)" class="btn btn-primary">Edit</button>
+                                        <button onclick="edit(<?php echo $build['id'] ?>)" class="btn btn-primary"><em class="fas fa-edit"></em> </button>
                                         <?php } 
                                     } 
                                     if ($perms->build_delete()) { ?>
-                                        <button onclick="remove_box(<?php echo $build['id'] ?>,'<?php echo $build['name'] ?>')" data-toggle="modal" data-target="#removeModal" class="btn btn-danger">Remove</button> 
+                                        <button onclick="remove_box(<?php echo $build['id'] ?>,'<?php echo $build['name'] ?>')" data-toggle="modal" data-target="#removeModal" class="btn btn-danger"><em class="fas fa-times"></em> </button> 
+                                    </div>
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Publish-actions">
                                     <?php 
                                     } 
                                     if (!empty($build['minecraft'])) {
@@ -1209,11 +1211,11 @@ if (!uri("/login")) {
                                             echo $mod['mcversion'];
                                         }
                                     ?></td>
-                                    <td><?php
+                                    <td class="text-right"><?php
                                         if ($perms->mods_delete()) {
                                             // allow deleting non-forges and invalids
                                             if (empty($mod) || $mod['type'] !== "forge") { ?>
-                                            <button onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo $build_mod_name ?>')" class="btn btn-danger">
+                                            <button onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo $build_mod_name ?>', '<?php echo $mod['pretty_name'] ?>', '<?php echo $mod['version'] ?>', '<?php echo $mod['mcversion'] ?>')" class="btn btn-danger">
                                                 <em class="fas fa-times"></em>
                                             </button>
                                             <?php
@@ -1242,10 +1244,10 @@ if (!uri("/login")) {
                         <table id="modstable" class="table table-striped sortable">
                             <thead>
                                 <tr>
-                                    <th scope="col" style="width: 40%" data-defaultsign="AZ">Mod Name</th>
+                                    <th scope="col" style="width: 50%" data-defaultsign="AZ">Mod Name</th>
                                     <th scope="col" style="width: 20%" data-defaultsign="_19">Version</th>
-                                    <th scope="col" style="width: 20%" data-defaultsign="_19">Minecraft</th>
-                                    <th scope="col" style="width: 20%" data-defaultsort="disabled"></th>
+                                    <th scope="col" style="width: 15%" data-defaultsign="_19">Minecraft</th>
+                                    <th scope="col" style="width: 15%" data-defaultsort="disabled"></th>
                                 </tr>
                             </thead>
                             <tbody id="build-available-mods">
@@ -1261,21 +1263,20 @@ if (!uri("/login")) {
                         <table class="table table-striped sortable">
                             <thead>
                                 <tr>
-                                    <th scope="col" style="width: 40%" data-defaultsign="AZ">File Name</th>
-                                    <th scope="col" style="width: 30%" data-defaultsort="disabled"></th>
-                                    <th scope="col" style="width: 5%" data-defaultsort="disabled"></th>
+                                    <th scope="col" style="width: 85%" data-defaultsign="AZ">File Name</th>
+                                    <th scope="col" style="width: 15%" data-defaultsort="disabled"></th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="build-available-others">
                             <?php
                             if (!empty($othersq)) {
                                 foreach($othersq as $mod) {
                                     if (!in_array($mod['id'], $modslist)) { 
+                                        $add_other_string = "add_o({$mod['id']},'{$mod['name']}','{$mod['pretty_name']}','{$mod['version']}','{$mod['mcversion']}')";
                                         ?>
-                                        <tr>
+                                        <tr id="other-add-row-<?php echo $mod['name'] ?>">
                                             <td scope="row"><?php echo $mod['pretty_name'] ?></td>
-                                            <td><button id="btn-add-o-<?php echo $mod['id'] ?>" onclick="add_o(<?php echo $mod['id'] ?>)" class="btn btn-primary">Add to build</button></td>
-                                            <td><em id="cog-o-<?php echo $mod['id'] ?>" style="display:none" class="fas fa-cog fa-spin fa-2x"></em><em id="check-o-<?php echo $mod['id'] ?>" style="display:none" class="text-success fas fa-check fa-2x"></em></td>
+                                            <td class="text-right"><button id="btn-add-o-<?php echo $mod['id'] ?>" onclick="<?php echo $add_other_string ?>" class="btn btn-primary">Add</button></td>
                                         </tr>
                                         <?php
                                     }

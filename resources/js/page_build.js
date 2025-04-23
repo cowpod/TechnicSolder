@@ -16,13 +16,20 @@ function fwipe(){
         window.location.reload();
     }, 250);
 };
-function remove_mod(id,name) {
+function remove_mod(id, name, pretty_name, v, mcv, type) {
+    // assert(type=='mod'||type=='other')
     var request = new XMLHttpRequest();
     request.open("GET", "./functions/remove-mod.php?bid="+BUILD_ID+"&id="+id);
     request.onreadystatechange = function() {
         if (request.readyState == 4 && request.status == 200) {
             if (request.responseText=='Mod removed') {
                 $("#mod-"+id).remove();
+                if (type == 'mod') {
+                    add_mod_row(id,pretty_name,name,v,mcv)
+                } else if (type == 'other') {
+                    add_other_row(id,name,pretty_name,v,mcv)
+                }
+
                 let index = INSTALLED_MODS.indexOf(id);
                 if (index!==-1) {
                     INSTALLED_MODS.splice(index, 1);
@@ -70,19 +77,42 @@ function changeversion(id_new, id_old, name, compatible) {
     }
     request.send();
 }
-function add_o(id) {
+
+// add mod row to installed
+function add_mods_in_build(id, name, pretty_name, v, mcv, type) {
+        INSTALLED_MODS.push(id);
+        INSTALLED_MOD_NAMES.push(name)
+        $("#mods-in-build").append(`
+        <tr id="mod-${id}">
+            <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
+            <td data-value="${v}">${v}</td>
+            <td data-value="${mcv}" class="d-none d-sm-table-cell">${mcv}</td>
+            <td class="text-right">
+                <button onclick="remove_mod(${id},'${name}','${pretty_name}','${v}','${mcv}','${type}')" class="btn btn-danger">
+                    <em class="fas fa-times"></em>
+                </button>
+            </td>
+        </tr>
+    `);
+}
+
+// add other
+function add_o(id, name, pretty_name, v, mcv) {
     $("#btn-add-o-"+id).attr("disabled", true);
     $("#cog-o-"+id).show();
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            $("#cog-o-"+id).hide();
-            $("#check-o-"+id).show();
+            // $("#cog-o-"+id).hide();
+            // $("#check-o-"+id).show();
+            $("#other-add-row-"+name).remove()
+            add_mods_in_build(id, name, pretty_name, v, mcv, 'other')
         }
     };
     request.open("GET", "./functions/add-mod.php?bid="+BUILD_ID+"&id="+id);
     request.send();
 }
+// add mod
 function add(name, pretty_name, id, mcv) {
     if ($("#versionselect-"+name+' option:selected').attr('missing')=='true') {
         return;
@@ -106,21 +136,7 @@ function add(name, pretty_name, id, mcv) {
                 // $('#btn-add-mod-'+name).html('<em class="text-success fas fa-check"></em>');
 
                 // remember to modify index.php/build too
-                $("#mods-in-build").append(`
-                    <tr id="mod-${id}">
-                        <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
-                        <td data-value="${v}">${v}</td>
-                        <td data-value="${mcv}" class="d-none d-sm-table-cell">${mcv}</td>
-                        <td>
-                            <button onclick="remove_mod(${id},${name})" class="btn btn-danger">
-                                <em class="fas fa-times"></em>
-                            </button>
-                        </td>
-                    </tr>
-                `);
-
-                INSTALLED_MODS.push(id);
-                INSTALLED_MOD_NAMES.push(name)
+                add_mods_in_build(id,name,pretty_name,v,mcv,'mod')
 
                 // remove from list of available mods
                 const index = rows_mods_available.indexOf(name);
@@ -128,7 +144,7 @@ function add(name, pretty_name, id, mcv) {
                   rows_mods_available.splice(index, 1);
                 }
             } else {
-                // $('#btn-add-mod-'+name).html('Add to build');
+                // $('#btn-add-mod-'+name).html('Add');
             }
         }
     };
@@ -137,12 +153,13 @@ function add(name, pretty_name, id, mcv) {
     request.send();
 }
 
+// add available mod row
 function add_mod_row(id,pretty_name,name,versions,mcv) {
     // console.log('adding row',name);
     if (pretty_name=='' || name=='' || versions=='' || mcv=='') {
         var addbutton=`<a id="btn-add-mod-${name}" href="mod?id=${name}" class="btn btn-warning">Issue(s)</a>`;
     } else {
-        var addbutton=`<a id="btn-add-mod-${name}" onclick="add('${name}', '${pretty_name}', '${id}', '${mcv}')" class="btn btn-primary">Add to build</a>`;
+        var addbutton=`<a id="btn-add-mod-${name}" onclick="add('${name}', '${pretty_name}', '${id}', '${mcv}')" class="btn btn-primary">Add</a>`;
     }
     
     var versions_str = ``;
@@ -155,12 +172,22 @@ function add_mod_row(id,pretty_name,name,versions,mcv) {
             <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
             <td data-value="${versions}"><select id="versionselect-${name}" class="form-control">${versions_str}</select></td>
             <td data-value="${mcv}">${mcv}</td>
-            <td data-value="Add to build">
+            <td data-value="Add" class="text-right">
                 ${addbutton}
             </td>
         </tr>
     `);
-    // console.log('added')
+}
+
+function add_other_row(id,name,pretty_name,v,mcv) {
+    $('#build-available-others').append(`
+        <tr id="other-add-row-${name}">
+            <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
+            <td data-value="Add" class="text-right">
+                <button id="btn-add-o-${id}" onclick="add_o(${id},'${name}','${pretty_name}','${v}','${mcv}')" class="btn btn-primary">Add</button>
+            </td>
+        </tr>
+    `);
 }
 
 var rows_mods_available=[];
