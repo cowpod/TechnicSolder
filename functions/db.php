@@ -35,7 +35,7 @@ final class Db {
 		return $this->conn !== null;
 	}
 
-	public function test2(string|array $dbtype, string|array $host, string|array $user, string|array $pass, string|array $name): bool { // Arg
+	public function test2(string $dbtype, string $host, string $user, string $pass, string $name): bool { // Arg
 		try {
 			if ($dbtype=='sqlite') {
 				if (is_dir('./config')) {
@@ -83,7 +83,7 @@ final class Db {
 		return TRUE;
 	}
 
-	public function connect2(string|array $dbtype, array|string $host, array|string $user, array|string $pass, array|string $name): bool { // Arg
+	public function connect2(string $dbtype, string $host, string $user, string $pass, string $name): bool { // Arg
 		if (!empty($this->conn)) {
 			error_log("db.php: connect2(): already connected!");
 			return TRUE;
@@ -119,6 +119,7 @@ final class Db {
 	 * @psalm-return false|list<mixed>
 	 */
 	public function query(string $querystring): array|false {
+		// error_log("db->query: '{$querystring}'");
 		if (empty($querystring)) {
 			return false;
 		}
@@ -133,11 +134,12 @@ final class Db {
 		} catch (PDOException $e) {
 		    error_log("db.php: query(): SQL query exception: ".$e->getMessage());
 		}
+		error_log(json_encode($result_array, JSON_UNESCAPED_SLASHES));
 		return $result_array;
 	}
 
-	public function execute(string $querystring) {
-		error_log("db->execute: '{$querystring}'");
+	public function execute(string $querystring): bool {
+		// error_log("db->execute: '{$querystring}'");
 		if (empty($querystring)) {
 			return false;
 		}
@@ -151,26 +153,27 @@ final class Db {
 		}
 	}
 
-
 	/**
 	 * @param (array|string)[]|false|string $str
 	 *
 	 * @psalm-param array<int|string, array<int|string, mixed>|string>|false|string $str
 	 */
-	public function sanitize(string|null $str) {
+	public function sanitize(null|int|string $str): null|int|string {
 		if (empty($str)) {
-			return $str; // allow either NULL or "" values
+			return $str;
+		} elseif (is_numeric($str)) {
+			return $str;
 		} else {
 			return addslashes(htmlspecialchars($str, ENT_QUOTES, 'UTF-8'));
 		}
 	}
 
-	public function insert_id() {
+	public function insert_id(): int {
 		// error_log("db.php: insert_id(): ".$this->conn->lastInsertId());
 		return $this->conn->lastInsertId();
 	}
 
-	public function error() {
+	public function error(): string {
 		// error_log("db.php: error(): ".$this->conn->errorInfo());
 		return $this->conn->errorInfo();
 	}
