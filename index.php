@@ -1215,7 +1215,7 @@ if (!uri("/login")) {
                                         if ($perms->mods_delete()) {
                                             // allow deleting non-forges and invalids
                                             if (empty($mod) || $mod['type'] !== "forge") { ?>
-                                            <button onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo $build_mod_name ?>', '<?php echo $mod['pretty_name'] ?>', '<?php echo $mod['version'] ?>', '<?php echo $mod['mcversion'] ?>')" class="btn btn-danger">
+                                            <button id="remove-mod-<?php echo $mod['id'] ?>" onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo $build_mod_name ?>', '<?php echo $mod['pretty_name'] ?>', '<?php echo $mod['version'] ?>', '<?php echo $mod['mcversion'] ?>')" class="btn btn-danger">
                                                 <em class="fas fa-times"></em>
                                             </button>
                                             <?php

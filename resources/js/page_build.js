@@ -18,6 +18,7 @@ function fwipe(){
 };
 function remove_mod(id, name, pretty_name, v, mcv, type) {
     // assert(type=='mod'||type=='other')
+    $('#remove-mod-'+id).prop('disabled',true);
     var request = new XMLHttpRequest();
     request.open("GET", "./functions/remove-mod.php?bid="+BUILD_ID+"&id="+id);
     request.onreadystatechange = function() {
@@ -88,7 +89,7 @@ function add_mods_in_build(id, name, pretty_name, v, mcv, type) {
             <td data-value="${v}">${v}</td>
             <td data-value="${mcv}" class="d-none d-sm-table-cell">${mcv}</td>
             <td class="text-right">
-                <button onclick="remove_mod(${id},'${name}','${pretty_name}','${v}','${mcv}','${type}')" class="btn btn-danger">
+                <button id='remove-mod-${id}' onclick="remove_mod(${id},'${name}','${pretty_name}','${v}','${mcv}','${type}')" class="btn btn-danger">
                     <em class="fas fa-times"></em>
                 </button>
             </td>
