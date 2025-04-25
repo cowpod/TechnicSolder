@@ -389,23 +389,23 @@ if (!uri("/login")) {
             <?php if ($api_key && sizeof($modpack_metrics)>0) { ?>
                 <div style="margin-left: 0;margin-right: 0" class="row">
                     <div class="col-4">
-                        <div class="card text-white bg-success" style="padding: 0">
-                            <div class="card-header">Total Runs</div>
-                            <div class="card-body">
-                                <center>
-                                    <h1 class="display-2 w-lg"><em class="fas fa-play d-icon"></em><span class="w-text"><?php echo $runsbig ?></span></h1>
-                                    <h1 class="display-4 w-sm"><em class="fas fa-play d-icon"></em><?php echo $runssmall ?></h1>
-                                </center>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-4">
                         <div class="card bg-info text-white" style="padding: 0">
                             <div class="card-header">Total Downloads</div>
                             <div class="card-body">
                                 <center>
                                     <h1 class="display-2 w-lg"><em class="d-icon fas fa-download"></em><span class="w-text"><?php echo $downloadsbig ?></span></h1>
                                     <h1 class="display-4 w-sm"><em class="d-icon fas fa-download"></em><?php echo $downloadssmall ?></h1>
+                                </center>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card text-white bg-success" style="padding: 0">
+                            <div class="card-header">Total Runs</div>
+                            <div class="card-body">
+                                <center>
+                                    <h1 class="display-2 w-lg"><em class="fas fa-play d-icon"></em><span class="w-text"><?php echo $runsbig ?></span></h1>
+                                    <h1 class="display-4 w-sm"><em class="fas fa-play d-icon"></em><?php echo $runssmall ?></h1>
                                 </center>
                             </div>
                         </div>
@@ -629,14 +629,14 @@ if (!uri("/login")) {
 
             if ($api_key && isset($modpack_metrics[$modpack['name']])) {
 
-                $modpack_metric = $modpack_metrics[$modpack['name']];
+                $metric = $modpack_metrics[$modpack['name']];
 
-                if (isset($modpack_metric['error'])) { ?>
+                if (isset($metric['error'])) { ?>
                 <div class="card alert-danger">
-                    Error getting metrics from Technic API: <?php echo $modpack_metric['error'] ?><br/>
+                    Error getting metrics from Technic API: <?php echo $metric['error'] ?><br/>
                     <?php
                     // for non-known errors (anything but modpack does not exist)
-                    if ($modpack_metric['error'] != 'Modpack does not exist') {
+                    if ($metric['error'] != 'Modpack does not exist') {
                         // server-wide key is set
                         if ($config->exists('api_key') && $config->get('api_key')) { ?>
                             Verify the unique ID (slug) is set in modpack details.
@@ -647,41 +647,30 @@ if (!uri("/login")) {
                         <?php }
                     } ?>
                 </div>
-                <?php
-                } else {
-
-                    $num_downloads_ = number_suffix_string($modpack_metric['installs']);
-                    $downloadsbig_ = $num_downloads['big'];
-                    $downloadssmall_ = $num_downloads['small'];
-
-                    $num_runs_ = number_suffix_string($modpack_metric['runs']);
-                    $runsbig_ = $num_runs['big'];
-                    $runssmall_ = $num_runs['small'];
-
-                    $num_likes_ = number_suffix_string($modpack_metric['ratings']);
-                    $likesbig_ = $num_likes['big'];
-                    $likessmall_ = $num_likes['small'];
-
-                    if (isset($runsbig)) { ?>
+                <?php } else {
+                    $num_downloads2 = number_suffix_string($metric['installs']);
+                    $num_runs2 = number_suffix_string($metric['runs']);
+                    $num_likes2 = number_suffix_string($metric['ratings']);
+                    ?>
                 <div style="margin-left: 0;margin-right: 0" class="row">
-                    <div class="col-4">
-                        <div class="card text-white bg-success" style="padding: 0">
-                            <div class="card-header">Runs</div>
-                            <div class="card-body">
-                                <center>
-                                    <h1 class="display-2 w-lg"><em class="fas fa-play d-icon"></em><span class="w-text"><?php echo $runsbig_ ?></span></h1>
-                                    <h1 class="display-4 w-sm"><em class="fas fa-play d-icon"></em><?php echo $runssmall_ ?></h1>
-                                </center>
-                            </div>
-                        </div>
-                    </div>
                     <div class="col-4">
                         <div class="card bg-info text-white" style="padding: 0">
                             <div class="card-header">Downloads</div>
                             <div class="card-body">
                                 <center>
-                                    <h1 class="display-2 w-lg"><em class="d-icon fas fa-download"></em><span class="w-text"><?php echo $downloadsbig_ ?></span></h1>
-                                    <h1 class="display-4 w-sm"><em class="d-icon fas fa-download"></em><?php echo $downloadssmall_ ?></h1>
+                                    <h1 class="display-2 w-lg"><em class="d-icon fas fa-download"></em><span class="w-text"><?php echo $num_downloads2['big'] ?></span></h1>
+                                    <h1 class="display-4 w-sm"><em class="d-icon fas fa-download"></em><?php echo $num_downloads2['small'] ?></h1>
+                                </center>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card text-white bg-success" style="padding: 0">
+                            <div class="card-header">Runs</div>
+                            <div class="card-body">
+                                <center>
+                                    <h1 class="display-2 w-lg"><em class="fas fa-play d-icon"></em><span class="w-text"><?php echo $num_runs2['big'] ?></span></h1>
+                                    <h1 class="display-4 w-sm"><em class="fas fa-play d-icon"></em><?php echo $num_runs2['small'] ?></h1>
                                 </center>
                             </div>
                         </div>
@@ -691,16 +680,16 @@ if (!uri("/login")) {
                             <div class="card-header">Likes</div>
                             <div class="card-body">
                                 <center>
-                                    <h1 class="display-2 w-lg"><em class="fas fa-heart d-icon"></em><span class="w-text"><?php echo $likesbig_ ?></span></h1>
-                                    <h1 class="display-4 w-sm"><em class="fas fa-heart d-icon"></em><?php echo $likessmall_ ?></h1>
+                                    <h1 class="display-2 w-lg"><em class="fas fa-heart d-icon"></em><span class="w-text"><?php echo $num_likes2['big'] ?></span></h1>
+                                    <h1 class="display-4 w-sm"><em class="fas fa-heart d-icon"></em><?php echo $num_likes2['small'] ?></h1>
                                 </center>
                             </div>
                         </div>
                     </div>
                 </div>
-                <?php }
-                } 
-            } ?>
+            <?php }
+            } 
+            ?>
 
             <?php if ($perms->modpack_edit()) { ?>
                 <div class="card">
@@ -948,8 +937,7 @@ if (!uri("/login")) {
             </div>
             <?php
             }
-        }
-        elseif (uri('/build')) {
+        } elseif (uri('/build')) {
             $buildq = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
             if (!empty($buildq)) {
                 $build = $buildq[0];
