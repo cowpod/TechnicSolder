@@ -4,6 +4,9 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
+
+require_once('sanitize.php');
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -13,7 +16,9 @@ if (!$perms->clients_delete()) {
 if (empty($_GET['id'])) {
     die('{"status":"error","message":"Id not specified."}');
 }
-
+if (!is_numeric($_GET['id'])) {
+    die('{"status":"error","message":"Malformed id"}');
+}
 global $db;
 require_once("db.php");
 if (!isset($db)){

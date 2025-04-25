@@ -4,6 +4,7 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -68,7 +69,7 @@ if ($client_ids !== '') {
         $client_existsx = $db->execute("SELECT 1 FROM clients where id = {$client_id}");
         if (!$client_existsx) {
             // yeah yeah we re-use db's sanitization function
-            die('{"status":"error","message":"Invalid client id '.$db->sanitize($client_id).'."}');
+            die('{"status":"error","message":"Invalid client id '.$client_id.'."}');
         }
     }
 }

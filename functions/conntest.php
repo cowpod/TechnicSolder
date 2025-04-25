@@ -2,6 +2,9 @@
 /*
 TODO: This is insecure.
 */
+
+require_once('sanitize.php');
+
 require_once("db.php");
 $db=new Db;
 

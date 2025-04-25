@@ -1,4 +1,7 @@
 <?php
+
+require_once('sanitize.php');
+
 function slugify(string $text): string {
   $text = preg_replace('~[^\pL\d]+~u', '-', $text);
   //$text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);

@@ -3,6 +3,9 @@ session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
+
+require_once('sanitize.php');
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -20,6 +23,19 @@ if (empty($_POST['description'])) {
 }
 if (empty($_POST['author'])) {
     die("author not specified.");
+}
+
+if (strpbrk($_POST['name'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed name"}');
+}
+if (strpbrk($_POST['pretty_name'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed pretty_name"}');
+}
+if (strpbrk($_POST['description'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed description"}');
+}
+if (strpbrk($_POST['author'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed author"}');
 }
 
 require_once('./configuration.php');

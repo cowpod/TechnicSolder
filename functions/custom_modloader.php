@@ -4,6 +4,9 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
+
+require_once('sanitize.php');
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -24,6 +27,13 @@ if (!isset($_POST['type'])) {
     die('type missing!');
 } elseif (!in_array($_POST['type'], ['fabric','forge','neoforge'])) {
     die('type is invalid! only accepted are fabric,forge,neoforge');
+}
+
+if (strpbrk($_POST['version'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed version"}');
+}
+if (strpbrk($_POST['mcversion'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed mcversion"}');
 }
 
 $fileTmpLoc = $_FILES["file"]["tmp_name"];

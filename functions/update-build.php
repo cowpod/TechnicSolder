@@ -4,6 +4,8 @@ if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 
+require_once('sanitize.php');
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -27,9 +29,25 @@ if (empty($_POST['memory'])) {
     // die("memory not specified");
     $_POST['memory']='2048'; 
 }
-if (empty($_POST['ispublic'])) {
-    // die("ispublic not specified");
+
+if (empty($_POST['ispublic']) || $_POST['ispublic'] != 'on') {
     $_POST['ispublic']='off';
+}
+
+if (!is_numeric($_POST['id'])) {
+    die('{"status":"error","message":"Malformed id"}');
+}
+if (!is_numeric($_POST['memory'])) {
+    die('{"status":"error","message":"Malformed memory"}');
+}
+if (strpbrk($_POST['versions'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed versions"}');
+}
+if (strpbrk($_POST['forgec'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed forgec"}');
+}
+if (strpbrk($_POST['java'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed java"}');
 }
 
 require_once('./configuration.php');

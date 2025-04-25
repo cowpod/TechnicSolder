@@ -5,6 +5,8 @@ O(n(m+t)), where n = number of lines in file, m = chars in line, t = number of n
 todo: make static?
 */
 
+require_once('sanitize.php');
+
 final class Toml {
     /**
      * @param string[] $arr
@@ -92,7 +94,10 @@ final class Toml {
                 $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
                 $parsedjson = preg_replace('/\'([^\']*)\'/', '"$1"', $parsedjson);
                 // error_log('got complete json: '.$json_key.'='.$parsedjson);
-                $ret[$json_key] = json_decode($parsedjson,true);
+                $ret[$json_key] = @json_decode($parsedjson,true);
+                if ($ret[$json_key] === null) {
+                    error_log("toml.php: end-bracket encountered (1) but got null from json_decode: '{$parsedjson}'");
+                }
                 $json_key=NULL;
                 $json_str=NULL;
             } else if ($json_key && trim($element)[strlen($element)-1]==']') { // also non-danging ]
@@ -100,7 +105,10 @@ final class Toml {
                 $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
                 $parsedjson = preg_replace('/\'([^\']*)\'/', '"$1"', $parsedjson);
                 // error_log('got complete json: '.$json_key.'='.$parsedjson);
-                $ret[$json_key] = json_decode($parsedjson,true);
+                $ret[$json_key] = @json_decode($parsedjson,true);
+                if ($ret[$json_key] === null) {
+                    error_log("toml.php: end-bracket encountered (2) but got null from json_decode: '{$parsedjson}'");
+                }
                 $json_key=NULL;
                 $json_str=NULL;
             } else if ($json_key) { 
@@ -164,7 +172,10 @@ final class Toml {
                         $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
                         $parsedjson = preg_replace('/\'([^\']+)\'/', '"$1"', $parsedjson);
                         // error_log('got complete json: '.$json_key.'='.$parsedjson);
-                        $ret[$json_key] = json_decode($parsedjson,true);
+                        $ret[$json_key] = @json_decode($parsedjson,true);
+                        if ($ret[$json_key] === null) {
+                            error_log("toml.php: end-bracket encountered (3) but got null from json_decode: '{$parsedjson}'");
+                        }
                         $json_key=NULL;
                         $json_str=NULL;
                     } else if (strlen($value_r)>=2 && $value_r[strlen($value_r)-1]==']') { // DONE WITH JSON
@@ -173,7 +184,10 @@ final class Toml {
                         $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
                         $parsedjson = preg_replace('/\'([^\']+)\'/', '"$1"', $parsedjson);
                         // error_log('got complete json: '.$json_key.'='.$parsedjson);
-                        $ret[$json_key] = json_decode($parsedjson,true);
+                        $ret[$json_key] = @json_decode($parsedjson,true);
+                        if ($ret[$json_key] === null) {
+                            error_log("toml.php: end-bracket encountered (4) but got null from json_decode: '{$parsedjson}'");
+                        }
                         $json_key=NULL;
                         $json_str=NULL;
                     } 

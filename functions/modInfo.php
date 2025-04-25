@@ -3,8 +3,9 @@ define('FABRIC_INFO_PATH', 'fabric.mod.json');
 define('FORGE_INFO_PATH', 'META-INF/mods.toml');
 define('NEOFORGE_INFO_PATH', 'META-INF/neoforge.mods.toml');
 define('FORGE_OLD_INFO_PATH', 'mcmod.info');
-require('toml.php');
-require('interval_range_utils.php');
+require_once('toml.php');
+require_once('interval_range_utils.php');
+require_once('sanitize.php');
 
 final class modInfo {
     private $warn=[];
@@ -82,8 +83,6 @@ final class modInfo {
             error_log ('{"status": "error", "message": "Could not open JAR file as ZIP"}');
             die ('{"status": "error", "message": "Could not open JAR file as ZIP"}');
         }
-
-        // error_log('modtypes: '.json_encode($modTypes));
 
         foreach (array_keys($modTypes) as $modtype) {
 
@@ -287,7 +286,15 @@ final class modInfo {
                 $mod_info['forge_old']=$mcmod_orig;
 
                 // dictionary is nested in an array
-                $parsed = json_decode(preg_replace('/\r|\n/', '', trim($raw)), true)[0];
+                $cleaned = preg_replace('/\r|\n/', '', trim($raw));
+                $parsed_obj = @json_decode($cleaned, true);
+                if ($parsed_obj === null) {
+                    error_log("Forge_old: got null from json_decode '{$cleaned}'");
+                    $parsed = [];
+                } else {
+                    $parsed = $parsed_obj[0];
+                }
+
                 if (empty($parsed['modid'])) {
                     error_log ('{"status": "error", "message": "Forge_Old: Missing modid!"}');
                     // die ('{"status": "error", "message": "Missing modid!"}');
@@ -357,7 +364,15 @@ final class modInfo {
                 }
 
                 $mod_info['fabric']=$mcmod_orig;
-                $parsed = json_decode(preg_replace('/\r|\n/', '', trim($raw)), true);
+
+                $cleaned = preg_replace('/\r|\n/', '', trim($raw));
+                $parsed_obj = @json_decode($cleaned, true);
+                if ($parsed_obj === null) {
+                    error_log("Fabric: got null from json_decode '{$cleaned}'");
+                    $parsed = [];
+                } else {
+                    $parsed = $parsed_obj[0];
+                }
 
                 if (empty($parsed['id'])) {
                     error_log ('{"status": "error", "message": "Fabric: Missing id!"}');
@@ -417,7 +432,6 @@ final class modInfo {
             }
         }
 
-        // error_log("MOD_INFO: ".json_encode($mod_info,JSON_UNESCAPED_SLASHES));
         return $mod_info;
     }
 

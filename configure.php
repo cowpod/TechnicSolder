@@ -102,7 +102,14 @@ if (isset($_POST['host'])) {
         die("Bad input data; dir (path) does not exist. This should be the directory containing the TechnicSolder repository.");
     }
 
-    $version = json_decode(file_get_contents("./api/version.json"),true);
+    $version_raw = @file_get_contents("./api/version.json");
+    if ($version_raw === false) {
+        die("Could not get api version data");
+    }
+    $version = @json_decode($version_raw,true);
+    if ($version === null) {
+        die("Could not decode api version data");
+    }
 
     $config_contents = [
         'db-type'=>$dbtype,

@@ -3,6 +3,9 @@ session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
+
+require_once('sanitize.php');
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -15,6 +18,10 @@ if (empty($_GET['id'])) {
 }
 if (empty($_GET['bid'])) {
     die("Build not specified.");
+}
+
+if (!is_numeric($_GET['id']) || !is_numeric($_GET['bid'])) {
+    die('Malformed id/bid');
 }
 
 require_once("db.php");

@@ -16,6 +16,8 @@ define('UPDATE_ERROR', "GIT UPDATE ERROR");
 define('UPDATES_DISABLED', "GIT UPDATES ARE DISABLED");
 define('UPDATE_IN_PROGRESS', "UPDATE IN PROGRESS");
 
+require_once('sanitize.php');
+
 final class Updater {
     private $config = null;
     private $git_return = null;
@@ -67,10 +69,15 @@ final class Updater {
                 error_log("solder-updater.php: Couldn't locate version.json");
                 die("Couldn't locate version.json");
             }
-            $version_data = @json_decode(file_get_contents($version_file),true);
+            $version_data_raw = @file_get_contents($version_file);
+            if ($version_data_raw === false) {
+                error_log("solder-updater.php: Couldn't read version.json");
+                die("Couldn't read version.json");
+            }
+            $version_data = @json_decode($version_data_raw,true);
             if (!$version_data) {
                 error_log("solder-updater.php: Couldn't decode version.json");
-                die("Couldn't get version.json");
+                die("Couldn't decode version.json");
             }
             if ($version_data['version'][0]==='v') {
                  $version_data['version'] = substr($version_data['version'], 1);
@@ -86,7 +93,12 @@ final class Updater {
         if (is_array($data)) {
             $prnt = array_merge($prnt, $data);
         }
-        return json_encode($prnt,JSON_UNESCAPED_SLASHES);
+        $encoded = @json_encode($prnt, JSON_UNESCAPED_SLASHES);
+        if ($encoded === false) {
+            error_log("solder-updater: json(): could not encode data to json");
+        }
+
+        return $encoded;
     }
 
     private function check_git() {

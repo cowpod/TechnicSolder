@@ -1,10 +1,10 @@
 <?php
 header('Content-Type: application/json');
-
 session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
+
 if (empty($_GET['md5'])) {
     die('{"status":"error","message":"MD5 missing"}');
 }

@@ -6,6 +6,9 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
+
+require_once('sanitize.php');
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -19,113 +22,74 @@ if (empty($config)) {
     $config=new Config();
 }
 
-global $db;
-require_once("db.php");
-
 require_once('slugify.php');
 
 // fiels = name of input in index.php
 
 // download from given _POST data
 // todo: download directly to disk or buffer 
-if (isset($_FILES['fiels']) && isset($_FILES["fiels"]["name"]) && isset($_FILES["fiels"]["tmp_name"])) {
-    $file_name = $_FILES["fiels"]["name"];
-    $file_tmp = $_FILES["fiels"]["tmp_name"];
-} else {
-    // accept urls via POST (for modrinth)
-    if ($config->exists('modrinth_integration') && $config->get('modrinth_integration') == 'on' && isset($_POST['url'])) {
-        if (filter_var($_POST['url'], FILTER_VALIDATE_URL)) {
-            $apiversiondata = json_decode(file_get_contents('../api/version.json'),true);
-            if (!$apiversiondata) {
-                die('{"status":"error","message": "could not get solder version"}');
-            }
-            $apiversion=$apiversiondata['version'];
+function download_url($url, $filename) {
+    $apiversion_raw = @file_get_contents('../api/version.json');
+    if ($apiversion_raw === false || empty($apiversion_raw)) {
+        die('{"status":"error","message": "Could not get solder version"}');
+    }
+    $apiversion_json = @json_decode($apiversion_raw, true);
+    if ($apiversion_json === null) {
+        die('{"status":"error","message": "Could not decode api version data"}');
+    }
+    $apiversion = $apiversion_json['version'];
 
-            $options = [
-                'http' => [
-                    'method' => 'GET',
-                    'header' => 'User-Agent: TheGameSpider/TechnicSolder/'.$apiversion.' (Download to package mod into ZIP)\r\nContent-Type: application/json'
-                ]
-            ];
-            $context = stream_context_create($options);
-            @$getfile = file_get_contents($_POST['url'], false, $context);
-            if ($getfile && strlen($getfile)>0) {
-                if (empty($_POST['filename'])) {
-                    $file_name = bin2hex(random_bytes(16)).'.jar';
-                    error_log("filename empty! using random name: {$file_name}");
-                } else {
-                    $file_name = slugify3($_POST['filename']);
-                }
+    $options = [
+        'http' => [
+            'method' => 'GET',
+            'header' => "User-Agent: TheGameSpider/TechnicSolder/{$apiversion} (Download to package mod into ZIP)\r\nContent-Type: application/json"
+        ]
+    ];
 
-                $file_tmp_dir = sys_get_temp_dir().'/send_mods/'.bin2hex(random_bytes(16));
-                if (!is_dir($file_tmp_dir)) {
-                    mkdir($file_tmp_dir, recursive:true);
-                }
-                $file_tmp = $file_tmp_dir.'/'.$file_name;
-
-                $num_rolls=0;
-                while (file_exists($file_tmp)) {
-                    if ($num_rolls>=MAX_TMP_ROLLS) {
-                        error_log('Could not upload file to temporary directory after '.MAX_TMP_ROLLS.' attempts. Temporary dir: '.$file_tmp_dir);
-                        die('Could not upload file to temporary directory after '.MAX_TMP_ROLLS.' attempts.');
-                    }
-                    $num_rolls+=1;
-                    error_log("send_mods.php: temp file exists, re-rolling ".$file_tmp);
-                    $file_tmp_dir = sys_get_temp_dir().'/send_mods/'.bin2hex(random_bytes(16));
-                    if (!is_dir($file_tmp_dir)) {
-                        mkdir($file_tmp_dir, recursive:false);
-                    }
-                    $file_tmp = $file_tmp_dir.'/'.$file_name;
-                }
-
-                error_log('got temp file: '.$file_tmp);
-
-                @$putfile = file_put_contents($file_tmp, $getfile);
-                if ($putfile) {
-                    error_log('file downloaded to '.$file_tmp);
-                } else {
-                    die('{"status":"error","message":"Could not save file"}');
-                }
-            } else {
-                die('{"status":"error","message":"Could not download file"}');
-            }
-        } else {
-            die('{"status":"error","message":"Invalid URL (not a JAR?)"}');
-        }
+    $context = stream_context_create($options);
+    $getfile = @file_get_contents($url, false, $context);
+    if ($getfile === false || empty($getfile)) {
+        die('{"status":"error","message":"Could not download file"}');
+    }
+    if (empty($filename)) {
+        $file_name = bin2hex(random_bytes(16)).'.jar';
+        error_log("filename empty! using random name: {$file_name}");
     } else {
-        die('{"status":"error","message":"No file uploaded."}');
+        $file_name = slugify3($filename);
     }
-}
 
-if (empty($file_tmp)) {
-    error_log ('{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}');
-    die ('{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}');
-}
-
-if (str_ends_with($file_name, '.jar')) {
-    // check file magic
-    // JAR files can be either java-archive or zip.
-    $filetype=mime_content_type($file_tmp);
-    if ($filetype!='application/java-archive'&&$filetype!='application/zip') {
-        error_log ('{"status":"error","message":"Not a JAR file."}');
-        die ('{"status":"error","message":"Not a JAR file."}');
+    $file_tmp_dir = sys_get_temp_dir().'/send_mods/'.bin2hex(random_bytes(16));
+    if (!is_dir($file_tmp_dir)) {
+        mkdir($file_tmp_dir, recursive:true);
     }
-} else {
-    error_log ('{"status":"error","message":"Not a JAR file."}');
-    die ('{"status":"error","message":"Not a JAR file."}');
-}
+    $file_tmp = $file_tmp_dir.'/'.$file_name;
 
-require('compareZipContents.php');
-require('modInfo.php');
+    $num_rolls = 0;
+    while (file_exists($file_tmp)) {
+        if ($num_rolls>=MAX_TMP_ROLLS) {
+            error_log('Could not upload file to temporary directory after '.MAX_TMP_ROLLS.' attempts. Temporary dir: '.$file_tmp_dir);
+            die('Could not upload file to temporary directory after '.MAX_TMP_ROLLS.' attempts.');
+        }
+        $num_rolls+=1;
+        error_log("send_mods.php: temp file exists, re-rolling ".$file_tmp);
+        $file_tmp_dir = sys_get_temp_dir().'/send_mods/'.bin2hex(random_bytes(16));
+        if (!is_dir($file_tmp_dir)) {
+            mkdir($file_tmp_dir, recursive:false);
+        }
+        $file_tmp = $file_tmp_dir.'/'.$file_name;
+    }
 
-if (!file_exists($file_tmp)){
-    error_log ('{"status":"error","message":"Uploaded file does not exist!?"}');
-    die ('{"status":"error","message":"Uploaded file does not exist!?"}');
-}
+    error_log('got temp file: '.$file_tmp);
 
-if (!isset($db)){
-    $db=new Db;
-    $db->connect();
+    $putfile = @file_put_contents($file_tmp, $getfile);
+    if ($putfile === false) {
+        die('{"status":"error","message":"Could not save file"}');
+    } 
+    
+    // done getting file from url
+    error_log('file downloaded to '.$file_tmp);
+
+    return [$file_tmp, $file_name];
 }
 
 function processFile(string $filePath, string $fileName, array $modinfo): int {
@@ -146,7 +110,7 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
     $mod_zip_path ='../mods/'.$mod_zip_name;
     $zip = new ZipArchive();
 
-    if ($zip->open($mod_zip_path_tmp, ZipArchive::CREATE|ZipArchive::OVERWRITE)===TRUE) {
+    if ($zip->open($mod_zip_path_tmp, ZipArchive::CREATE|ZipArchive::OVERWRITE) === TRUE) {
         $zip->addEmptyDir('mods');
         $zip->setCompressionName('mods', ZipArchive::CM_STORE); 
 
@@ -157,7 +121,7 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
             // if a file exists with same name, look for a file with duplicate contents OR rename it
 
             // if we got a file with the same name and is DIFFERENT
-            if (file_exists($mod_zip_path) && compareZipContents($mod_zip_path, $mod_zip_path_tmp)===FALSE) {
+            if (file_exists($mod_zip_path) && compareZipContents($mod_zip_path, $mod_zip_path_tmp) === FALSE) {
                 $counter=1;
                 $new_dest_name = str_replace('.zip', '-'.$counter.'.zip', $mod_zip_path);
                 // if our new name also exists and is DIFFERENT
@@ -173,7 +137,7 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
 
             $jar_md5 = md5_file($filePath);
             $mod_zip_md5 = md5_file($mod_zip_path);
-            $zip_size= filesize($mod_zip_path);
+            $zip_size = filesize($mod_zip_path);
 
             // error_log('adding mod of loadertype='.$modinfo['loadertype']);
             $addq = $db->execute("INSERT INTO mods (name,pretty_name,md5,jar_md5,url,link,author,description,version,mcversion,filename,type,loadertype,filesize) VALUES (
@@ -208,6 +172,57 @@ function processFile(string $filePath, string $fileName, array $modinfo): int {
         die ('{"status":"error","message":"Could not create zip. Bad folder permissions?"}');
     }
 }
+
+if (isset($_FILES['fiels']) && isset($_FILES["fiels"]["name"]) && isset($_FILES["fiels"]["tmp_name"])) {
+    // get from uploaded file
+
+    $file_name = $_FILES["fiels"]["name"];
+    $file_tmp = $_FILES["fiels"]["tmp_name"];
+} else {
+    // get from URL
+
+    if (!$config->exists('modrinth_integration') || $config->get('modrinth_integration') != 'on') {
+        die('{"status":"error","message":"Modrinth integration is disabled - refusing URL"}');
+    }
+
+    if (empty($_POST['url']) || !filter_var($_POST['url'], FILTER_VALIDATE_URL)) {
+        die('{"status":"error","message":"Invalid URL (not a JAR?)"}');
+    }
+
+    // todo: sanitize $_POST['filename']
+
+    [$file_tmp, $file_name] = download_url($_POST['url'], $_POST['filename']);
+}
+
+if (empty($file_tmp)) {
+    error_log ('{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}');
+    die ('{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}');
+}
+
+if (str_ends_with($file_name, '.jar')) {
+    // check file magic
+    // JAR files can be either java-archive or zip.
+    $filetype = mime_content_type($file_tmp);
+    if ($filetype!='application/java-archive' && $filetype!='application/zip') {
+        error_log ('{"status":"error","message":"Not a JAR file."}');
+        die ('{"status":"error","message":"Not a JAR (or renamed ZIP) file."}');
+    }
+} else {
+    error_log ('{"status":"error","message":"Not a JAR file."}');
+    die ('{"status":"error","message":"Not a JAR file."}');
+}
+
+if (!file_exists($file_tmp)){
+    error_log ('{"status":"error","message":"Uploaded file does not exist!?"}');
+    die ('{"status":"error","message":"Uploaded file does not exist!?"}');
+}
+
+require_once('compareZipContents.php');
+require_once('modInfo.php');
+
+require_once("db.php");
+$db = new Db;
+$db->connect();
 
 $mi = new modInfo();
 $modinfos = $mi->getModInfo($file_tmp, $file_name);
@@ -297,7 +312,7 @@ if (sizeof($added_ids)+$num_already_added+$num_process_failed==0) {
     die('{"status":"error","message":"Unable to add mod to database (parsed 0 mods)."}');
 }
 
-$moredata='"modid":'.json_encode($added_ids,JSON_UNESCAPED_SLASHES).',"name":'.json_encode($added_modids,JSON_UNESCAPED_SLASHES).', "pretty_name": '.json_encode($added_pretty_names,JSON_UNESCAPED_SLASHES).', "author": '.json_encode($added_authors,JSON_UNESCAPED_SLASHES).',"mcversion":'.json_encode($added_mcversions,JSON_UNESCAPED_SLASHES).',"version": '.json_encode($added_versions,JSON_UNESCAPED_SLASHES);
+$moredata = '"modid":'.json_encode($added_ids,JSON_UNESCAPED_SLASHES).',"name":'.json_encode($added_modids,JSON_UNESCAPED_SLASHES).', "pretty_name": '.json_encode($added_pretty_names,JSON_UNESCAPED_SLASHES).', "author": '.json_encode($added_authors,JSON_UNESCAPED_SLASHES).',"mcversion":'.json_encode($added_mcversions,JSON_UNESCAPED_SLASHES).',"version": '.json_encode($added_versions,JSON_UNESCAPED_SLASHES);
 
 // if we got warnings
 if (!empty($warn) && sizeof($warn)>0) {

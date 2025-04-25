@@ -3,6 +3,9 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
+
+require_once('sanitize.php');
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -33,6 +36,31 @@ if (empty($_POST['mcversion'])) {
 }
 if (empty($_POST['loadertype'])) {
     die('{"status":"error","message":"Loader type not specified."}');
+}
+
+if (strpbrk($_POST['pretty_name'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed pretty_name"}');
+}
+if (strpbrk($_POST['name'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed name"}');
+}
+if (strpbrk($_POST['version'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed version"}');
+}
+if (!filter_var($_POST['url'], FILTER_VALIDATE_URL)) {
+    die('{"status":"error","message":"Malformed url"}');
+}
+if (strlen($_POST['md5'])!==32 || !ctype_alnum($_POST['md5'])) {
+    die('{"status":"error","message":"Malformed md5"}');
+}
+if (!is_numeric($_POST['filesize'])) {
+    die('{"status":"error","message":"Malformed filesize"}');
+}
+if (strpbrk($_POST['mcversion'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed mcversion"}');
+}
+if (!in_array($_POST['loadertype'], ['fabric','forge','neoforge'])) {
+    die('{"status":"error","message":"Malformed loadertype"}');
 }
 
 require_once('./configuration.php');

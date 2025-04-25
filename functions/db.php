@@ -1,4 +1,16 @@
 <?php
+define('DB_SANITIZE_BACKLIST', [
+    "'",    // single quote
+    '"',    // double quote
+    '\\',   // backslash
+    ';',    // semicolon
+    '--',   // SQL comment
+    '#',    // MySQL comment
+    '/*',   // Start of multiline comment
+    '*/'    // End of multiline comment
+]);
+require_once('sanitize.php');
+
 final class Db {
 	private $config=null;
 	private $conn=null;
@@ -134,7 +146,7 @@ final class Db {
 		} catch (PDOException $e) {
 		    error_log("db.php: query(): SQL query exception: ".$e->getMessage());
 		}
-		error_log(json_encode($result_array, JSON_UNESCAPED_SLASHES));
+		// error_log(json_encode($result_array, JSON_UNESCAPED_SLASHES));
 		return $result_array;
 	}
 
@@ -153,19 +165,13 @@ final class Db {
 		}
 	}
 
-	/**
-	 * @param (array|string)[]|false|string $str
-	 *
-	 * @psalm-param array<int|string, array<int|string, mixed>|string>|false|string $str
-	 */
-	public function sanitize(null|int|string $str): null|int|string {
-		if (empty($str)) {
+	public function sanitize(null|string $str): null|string {
+		if (is_null($str)) {
 			return $str;
-		} elseif (is_numeric($str)) {
-			return $str;
-		} else {
-			return addslashes(htmlspecialchars($str, ENT_QUOTES, 'UTF-8'));
 		}
+		$utf8_str = sanitize_string_utf8($str);
+		$sql_str = str_replace(DB_SANITIZE_BACKLIST, '', $utf8_str);
+		return $sql_str;
 	}
 
 	public function insert_id(): int {

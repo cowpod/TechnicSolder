@@ -4,6 +4,9 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
+
+require_once('sanitize.php');
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -40,7 +43,7 @@ function removeMod($id) {
             $build_id = !empty($querybuilds[0]['id']) ? $querybuilds[0]['id'] : null;
             $build_name = !empty($querybuilds[0]['name']) ? $querybuilds[0]['name'] : null;
             if (in_array($id, $build_mods)) {
-                return json_decode('{"status":"error","message":"Cannot delete as it is in use!", "bid":"'.$build_id.'", "bname":"'.$build_name.'"}',true);
+                return ["status"=>"error","message"=>"Cannot delete as it is in use!", "bid"=>$build_id, "bname"=>$build_name];
             }
         }
     }
@@ -49,7 +52,7 @@ function removeMod($id) {
     $modq = $db->query("SELECT type,filename FROM `mods` WHERE `id` = '{$id}'");
     if ($modq) {
         if(sizeof($modq)==0) {
-            return json_decode('{"status":"error","message":"Specified id does not exist."}',true);
+            return ["status"=>"error","message"=>"Specified id does not exist."];
         }
         $mod = $modq[0];
     }
@@ -62,7 +65,7 @@ function removeMod($id) {
         $mod2q = $db->query("SELECT 1 FROM `mods` WHERE `filename` = '{$mod['filename']}' LIMIT 1");
         if ($mod2q && sizeof($mod2q)==1) {
             error_log('delete-mod.php: mod file is still in use, not removing');
-            return json_decode('{"status":"succ","message":"Mod version deleted from database, but file is still in use by other mod version."}',true); // leave file on disk
+            return ["status"=>"succ","message"=>"Mod version deleted from database, but file is still in use by other mod version."]; // leave file on disk
         }
     }
     if (file_exists("../".$mod['type']."s/".$mod['filename'])) {
@@ -71,12 +74,16 @@ function removeMod($id) {
     } else {
         error_log("delete-mod.php: couldn't find file!");
     }
-    return json_decode('{"status":"succ","message":"Mod version deleted."}',true);
+    return ["status"=>"succ","message"=>"Mod version deleted."];
 }
 
 if(!empty($_GET['id'])) {
     $status = removeMod($_GET['id']);
-    die(json_encode($status)); 
+    $json = @json_encode($status);
+    if ($json === false) {
+        error_log('delete-mod.php: could not encode status to json');
+    }
+    die($json); 
 }
 elseif (!empty($_GET['name'])) {
     // for all mod versions (ids) associated with name

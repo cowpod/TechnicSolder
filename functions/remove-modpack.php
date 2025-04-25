@@ -2,7 +2,11 @@
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
-}require_once('./permissions.php');
+}
+
+require_once('sanitize.php');
+
+require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
 if (!$perms->modpack_delete()) {

@@ -1,12 +1,14 @@
 <?php
-/*
-TODO: This is insecure.
-*/
-// this is patchwork in order to make up for missing links in the offical json file.
-// should the links become available, or the format of their files change, this needs to be rewritten.
+header('Content-Type: application/json');
+session_start();
+if (empty($_SESSION['user'])) {
+    die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
+}
 
-$forge_data = file_get_contents("https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json"); // can't find normal promotions.json
-if (empty($forge_data)) {
+require_once('sanitize.php');
+
+$forge_data = @file_get_contents("https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json"); // can't find normal promotions.json
+if ($forge_data===false) {
     error_log("forge-links.php: couldn't get forge data");
     die("couldn't get forge data");
 }
@@ -29,7 +31,12 @@ if($forgesq) {
 }
 
 $forges=[];
-foreach (json_decode($forge_data, true)['promos'] as $gameVersion => $forgeVersion) { // key, value
+$decode = @json_decode($forge_data, true);
+if ($decode === null || empty($decode['promos'])) {
+    die('{"status":"error","message":"Could not decode forge data"}');
+}
+
+foreach ($decode['promos'] as $gameVersion => $forgeVersion) { // key, value
     $id++;
     if (strpos($gameVersion, "latest")) {
         $gameVersion = str_replace("-latest", "", $gameVersion);
@@ -51,7 +58,9 @@ foreach (json_decode($forge_data, true)['promos'] as $gameVersion => $forgeVersi
         }
     }
 }
+$encoded = @json_encode($forges);
+if ($encoded === false) {
+    error_log('forge-links.php: could not encode forges to json');
+}
 
-header('Content-Type: application/json');
-print_r(json_encode($forges, JSON_PRETTY_PRINT));
-exit();
+die($encoded);

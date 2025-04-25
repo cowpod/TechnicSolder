@@ -5,6 +5,7 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -28,11 +29,14 @@ if (!is_numeric($_GET['buildid'])) {
 if (!is_numeric($_GET['modpackid'])) {
     die('{"status":"error","message":"Malformed modpack id"}');
 }
-if (!is_numeric($_GET['ispublic'])) {
+if (in_array($_GET['ispublic'],[0,1,'on','off'])) {
     die('{"status":"error","message":"Malformed ispublic"}');
 }
-if ($_GET['ispublic']!=0 && $_GET['ispublic']!=1) {
-    die('{"status":"error","message":"Malformed ispublic (0/1)"}');
+
+if ($_GET['ispublic']=='on') {
+    $_GET['ispublic']=1;
+} elseif ($_GET['ispublic']=='off') {
+    $_GET['ispublic']=0;
 }
 
 global $db;

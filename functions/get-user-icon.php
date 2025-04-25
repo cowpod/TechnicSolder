@@ -4,6 +4,8 @@ if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
 
+require_once('sanitize.php');
+
 require_once("db.php");
 $db=new Db;
 $db->connect();

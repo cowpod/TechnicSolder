@@ -3,6 +3,9 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
+
+require_once('sanitize.php');
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -17,6 +20,16 @@ if (empty($_POST['name'])) {
 }
 if (empty($_POST['display_name'])) {
     die('{"status":"error","message":"Display name not specified."}');
+}
+
+if (!is_numeric($_POST['id'])) {
+    die('{"status":"error","message":"Malformed id"}');
+}
+if (!preg_match('/[\w\-]+/',$_GET['name'])) {
+    die('{"status":"error","message":"Malformed name"}');
+}
+if (strpbrk($_POST['display_name'], '\\"\'') !== false) {
+    die('{"status":"error","message":"Malformed display_name"}');
 }
 
 $ispublic = (isset($_POST['ispublic']) && $_POST['ispublic']=="on") ? 1 : 0;

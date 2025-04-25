@@ -5,6 +5,9 @@ session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
+
+require_once('sanitize.php');
+
 if (empty($_POST['db-pass'])) {
     die("error");
 }

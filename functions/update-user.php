@@ -7,6 +7,8 @@ if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 
+require_once('sanitize.php');
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -60,9 +62,9 @@ function update_icon($db, $target_user, $iconfile) {
         return ["status"=>"error","message"=>"Bad image"];
     }
 
-    $contents = file_get_contents($iconfile);
+    $contents = @file_get_contents($iconfile);
     if ($contents===false) {
-        return ["status"=>"error","message"=>"Bad image"];
+        return ["status"=>"error","message"=>"Couldn't get image"];
     }
     
     $icon_base64 = base64_encode($contents);
@@ -145,7 +147,6 @@ function update_display_name($db,$target_user,$display_name) {
 
     $idq = $db->query("SELECT id FROM users WHERE name = '{$target_user}'");
     if (empty($idq[0]['id'])) {
-        error_log(json_encode($idq));
         return ["status"=>"error","message"=>"Couldn't get user id (database issue?)"];
     }
     $id = $idq[0]['id'];

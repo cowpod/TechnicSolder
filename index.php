@@ -191,7 +191,16 @@ if (!uri("/login")) {
         </div>
         <?php
         } else {
-            $api_version_json = json_decode(file_get_contents('./api/version.json'), true);
+            $api_version_raw = @file_get_contents('./api/version.json');
+            if ($api_version_raw === false) {
+                error_log('Could not get api version data');
+                die('Could not get api version data');
+            }
+            $api_version_json = @json_decode($api_version_raw, true);
+            if ($api_version_json === null) {
+                error_log('Could not decode api version data');
+                die('Could not decode api version data');
+            }
 
             // per modpack
             $modpack_metrics = []; 
@@ -224,10 +233,30 @@ if (!uri("/login")) {
                     $cacheq = $db->query("SELECT info FROM metrics WHERE name = '{$db->sanitize($modpack['name'])}' AND time_stamp >= {$time}");
 
                     if ($cacheq && !empty($cacheq[0]) && !empty($cacheq[0]['info'])) {
-                        $info = json_decode(base64_decode($cacheq[0]['info']), true);
-                    } elseif (@$info = json_decode(file_get_contents("http://api.technicpack.net/modpack/{$modpack['name']}?build=".SOLDER_BUILD), true)) {
+                        $decoded = @base64_decode($cacheq[0]['info']);
+                        if ($decoded === false) {
+                            error_log('Could not decode cached technicpack api data');
+                            continue;
+                        }
+                        $info = @json_decode($decoded, true);
+                        if ($info === null) {
+                            error_log('Could not decode cached technicpack api data');
+                            continue;
+                        }
+                    } else {
+                        $technicpackapi_raw = @file_get_contents("http://api.technicpack.net/modpack/{$modpack['name']}?build=".SOLDER_BUILD);
+                        if ($technicpackapi_raw === false) {
+                            error_log('Could not get technicpack api data');
+                            continue;
+                        }
+                        $info = @json_decode($technicpackapi_raw, true);
+                        if ($info === null) {
+                            error_log('Could not decode technicpack api data');
+                            continue;
+                        }
+
                         $time = $time + METRICS_CACHE_TIME;
-                        $info_data = base64_encode(json_encode($info));
+                        $info_data = base64_encode($technicpackapi_raw);
 
                         if ($config->exists('db-type') && $config->get('db-type')=='sqlite') {
                             $db->execute("
@@ -929,8 +958,30 @@ if (!uri("/login")) {
                     </div>
                 </div>
                 <script>
-                    var builds = "<?php echo isset($mpab) ? addslashes(json_encode($mpab)) : '' ?>";
-                    var sbn = "<?php echo isset($sbn) ? addslashes(json_encode($sbn)) : '' ?>";
+                    var builds = JSON.parse('<?php 
+                    if (isset($mpab)) { 
+                        $mpab_json = @json_encode($mpab);
+                        if ($mpab_json === false) {
+                            error_log('index.php: mpab could not be encoded to json');
+                            echo '[]';
+                        } else {
+                            echo addslashes($mpab_json);
+                        }
+                    } else {
+                        echo '[]';
+                    } ?>')
+                    var sbn = JSON.parse('<?php 
+                    if (isset($sbn)) {
+                        $sbn_json = @json_encode($sbn);
+                        if ($sbn_json === false) {
+                            error_log('index.php: sbn could not be encoded to json');
+                            echo '[]';
+                        } else {
+                            echo addslashes($sbn_json);
+                        }
+                    } else {
+                        echo '[]';
+                    } ?>')
                 </script>
                 <script src="./resources/js/page_modpack.js"></script>
             </div>
@@ -1278,8 +1329,24 @@ if (!uri("/login")) {
                 }
                 ?>
                 <script>
-                    var INSTALLED_MODS = JSON.parse('<?php echo json_encode($modslist, JSON_UNESCAPED_SLASHES) ?>');
-                    var INSTALLED_MOD_NAMES = JSON.parse('<?php echo json_encode($modslist_names, JSON_UNESCAPED_SLASHES) ?>');
+                    var INSTALLED_MODS = JSON.parse('<?php 
+                        $modslist_json = @json_encode($modslist, JSON_UNESCAPED_SLASHES);
+                        if ($modslist_json === false) {
+                            error_log('index.php: could not encode modslist to json');
+                            echo '';
+                        } else {
+                            echo $modslist_json;
+                        }
+                        ?>');
+                    var INSTALLED_MOD_NAMES = JSON.parse('<?php 
+                        $modslist_names_json = @json_encode($modslist_names, JSON_UNESCAPED_SLASHES);
+                        if ($modslist_names_json === false) {
+                            error_log('index.php: could not encode modslist_names to json');
+                            echo '';
+                        } else {
+                            echo $modslist_names_json;
+                        }
+                        ?>');
                     var BUILD_ID = '<?php echo $build['id'] ?>';
                     var MCV = '<?php echo $build['minecraft'] ?>';
                     var TYPE = '<?php echo $build['loadertype'] ?>';
@@ -1378,7 +1445,7 @@ if (!uri("/login")) {
                     <div class="row justify-content-center align-items-center">
                         <div class="col-auto">
                             <button class="btn btn-primary" id="leftButton">
-                                <i class="bi bi-arrow-left"></i> Previous
+                                <<
                             </button>
                         </div>
                         <div class="col-auto">
@@ -1386,7 +1453,7 @@ if (!uri("/login")) {
                         </div>
                         <div class="col-auto">
                             <button class="btn btn-primary" id="rightButton">
-                                Next <i class="bi bi-arrow-right"></i>
+                                >>
                             </button>
                         </div>
                     </div>
@@ -1767,14 +1834,24 @@ if (!uri("/login")) {
             <script>
             <?php
             if (!empty($installed_loaders)) {
-                $installed_loaders_json = json_encode($installed_loaders, JSON_UNESCAPED_SLASHES);
-                echo "var installed_loaders=JSON.parse('{$installed_loaders_json}');";
+                $installed_loaders_json = @json_encode($installed_loaders, JSON_UNESCAPED_SLASHES);
+                if ($installed_loaders_json === false) {
+                    error_log("index.php: could not parse installed_loaders to json");
+                    echo "var installed_loaders=[]";
+                } else {
+                    echo "var installed_loaders=JSON.parse('{$installed_loaders_json}');";
+                }
             } else {
                 echo 'var installed_loaders=[];';
             }
             if (!empty($used_loaders)) {
-                $used_loaders_json = json_encode($used_loaders, JSON_UNESCAPED_SLASHES);
-                echo "var used_loaders=JSON.parse('{$used_loaders_json}');";
+                $used_loaders_json = @json_encode($used_loaders, JSON_UNESCAPED_SLASHES);
+                if ($used_loaders_json === false) {
+                    error_log("index.php: could not parse used_loaders to json");
+                    echo "var used_loaders=[]";
+                } else {
+                    echo "var used_loaders=JSON.parse('{$used_loaders_json}');";
+                }
             } else {
                 echo 'var used_loaders=[];';
             }
@@ -1900,7 +1977,11 @@ if (!uri("/login")) {
                 $zip->close();
             }
             
-            $paths_json = json_encode($paths);
+            $paths_json = @json_encode($paths);
+            if ($paths_json===false) {
+                error_log("could not parse paths to json");
+                $paths_json='""';
+            }
             ?>
             <script>document.title = 'File - <?php echo addslashes($file['name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <div class="main">
@@ -2111,7 +2192,14 @@ if (!uri("/login")) {
                     <div class="card text-white bg-info mb3" style="padding:0">
                         <div class="card-header">License</div>
                         <div class="card-body">
-                            <p class="card-text"><?php print(file_get_contents("LICENSE")); ?></p>
+                            <p class="card-text"><?php 
+                            $license = @file_get_contents("LICENSE");
+                            if ($license === false) {
+                                print('Could not read LICENSE file.');
+                            } else {
+                                print($license); 
+                            }
+                        ?></p>
                         </div>
                     </div>
                 </div>

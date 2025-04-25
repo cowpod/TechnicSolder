@@ -6,6 +6,8 @@ if (empty($_SESSION['user'])) {
     die('{"status":"error", "message":"Unauthorized request or login session has expired!"}');
 }
 
+require_once('sanitize.php');
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);

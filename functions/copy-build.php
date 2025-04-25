@@ -4,6 +4,9 @@ session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
+
+require_once('sanitize.php');
+
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -27,7 +30,7 @@ if (!is_numeric($_POST['dest_modpack_id'])) {
 if (!is_numeric($_POST['src_build_id'])) {
     die('{"status":"error","message":"Malformed build"}');
 }
-if (!preg_match('/^[a-zA-Z0-9.-]+$/', $_POST['new_build_name'])) {
+if (!preg_match('/^[\w\-\.]+$/', $_POST['new_build_name'])) {
     die('{"status":"error","message":"Malformed new_build_name"}');
 }
 
@@ -85,5 +88,10 @@ if ($stats && sizeof($stats)==1){
     die('{"status":"error","message":"Could not get info for new build"}');
 }
 
+$json = @json_encode($stats);
+if ($json === false) {
+    error_log("copy-build.php: could not encode stats");
+}
+
 // header("Location: ".$config->get('dir')."modpack?id=".$_POST['dest_modpack_id']);
-die('{"status":"succ","message":"Successfully copied build!","details":'.json_encode($stats).'}');
+die('{"status":"succ","message":"Successfully copied build!","details":'.$json.'}');

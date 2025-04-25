@@ -4,6 +4,8 @@
 assert(array_key_exists('db', $GLOBALS) || array_key_exists('db', get_defined_vars()));
 assert($db->status());
 
+require_once('sanitize.php');
+
 function write_settings($settings, $user): bool {
     // write to db/disk settings for a user
     global $db;
@@ -18,7 +20,14 @@ function write_settings($settings, $user): bool {
         }
         unset($settings['api_key']);
     }
-    $usersettingsq = $db->execute("UPDATE users SET settings='".base64_encode(json_encode($settings))."' WHERE name='".$db->sanitize($user)."'");
+    $encoded_json = @json_encode($settings);
+    if ($encoded_json === false) {
+        error_log('Could not encode settings to json');
+        return FALSE;
+    }
+    $encoded_b64 = base64_encode($encoded_json);
+
+    $usersettingsq = $db->execute("UPDATE users SET settings='{$encoded_b64}' WHERE name='{$db->sanitize($user)}'");
     if ($usersettingsq) {
         return TRUE;
     }
@@ -31,7 +40,15 @@ function read_settings($user): void {
     assert(!empty($user));
     $usersettingsq = $db->query("SELECT settings FROM users WHERE name='".$db->sanitize($user)."'");
     if ($usersettingsq && sizeof($usersettingsq)==1 && isset($usersettingsq[0]['settings'])) {
-        $_SESSION['user-settings'] = json_decode(base64_decode($usersettingsq[0]['settings']),true);
+        $settings_json = @base64_decode($usersettingsq[0]['settings']);
+        if ($settings_json===false) {
+            error_log("failed to decode base64 user settings");
+        }
+        $settings = @json_decode($settings_json, true);
+        if ($settings===null) {
+            error_log("failed to decode json user settings");
+        }
+        $_SESSION['user-settings'] = $settings;
         error_log("got user settings from database");
     } else {
         error_log("unable to get user settings");
