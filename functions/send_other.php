@@ -85,7 +85,8 @@ if (move_uploaded_file($fileTmpLoc, "../others/".$fileName)) {
     $pretty_name = $db->sanitize($fileName);
     $name = slugify($pretty_name);
     $author = $_SESSION['name'];
-    $url = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL'])))."://".$config->get('host').$config->get('dir')."others/".$fileName;
+    $protocol = ($config->exists('protocol')&&!empty($config->get('protocol'))) ? $config->get('protocol') : strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL'])))."://";
+    $url = $protocol.$config->get('host').$config->get('dir')."others/".$fileName;
     $md5 = md5_file("../others/".$fileName);
     $file_size=filesize("../others/".$fileName);
 
