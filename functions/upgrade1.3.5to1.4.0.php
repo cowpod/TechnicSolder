@@ -3,19 +3,18 @@
 TODO: This is insecure.
 */
 define('CONFIG_VERSION', 1);
-session_start();
 
 function get_config() {
     global $config;
     if (file_exists("./config.php")) {
         $config = require("./config.php");
     } else {
-        die("<h2>We're not configured, or we're not on 1.3.5.");
+        die("We're not configured, or we're not on 1.3.5.");
     }
 
     if (!empty($config['config_version']) && $config['config_version']==CONFIG_VERSION) {
         $index = isset($config['dir']) ? $config['dir'] : '.';
-        die("<h2>We appear to not be on 1.3.5.");
+        die("We appear to not be on 1.3.5.");
     }
 }
 

@@ -517,14 +517,14 @@ if (!uri("/login")) {
                     <button class="btn btn-secondary" data-toggle="collapse" href="#collapseMigr" role="button" aria-expanded="false" aria-controls="collapseMigr">Database migration</button>
                     <div class="collapse" id="collapseMigr">
                         <br>
-                        <p>Fill out this form to migrate data from an existing local original solder v0.8 installation to this installation. <span class="text-danger"><strong>WARNING!</strong> This will rewrite your current Solder.cf database!</span></p>
-                        <hr>
+                        <p>Fill out this form to migrate data from an existing local original solder v0.8 installation to this installation.</p>
                         <div id="dbform">
                             <input type="text" class="form-control" id="orighost" placeholder="Address of the database you want to migrate from (e.g. 127.0.0.1)"><br>
                             <input type="text" class="form-control" id="origdatabase" placeholder="Name of the database"><br>
                             <input autocomplete="off" type="text" class="form-control" id="origname" placeholder="Username for the database"><br>
                             <input autocomplete="off" type="password" class="form-control" id="origpass" placeholder="Password for the database"><br>
-                            <button class="btn btn-primary" id="submitdbform">Connect</button>
+                            <p class="text-danger"><strong>WARNING!</strong> This will rewrite your current Solder.cf database!</p>
+                            <button class="btn btn-primary" id="submitdbform">Migrate</button>
                         </div>
                         <p id="errtext"></p>
                         <div id="migrating" style="display:none">
@@ -532,8 +532,7 @@ if (!uri("/login")) {
                             <button class="btn btn-primary" id="submitmigration">Start Migration</button>
                         </div>
                         <hr>
-                        <p>If you are using v1.0.0.rc4 or higher, <a href="./functions/upgrade100rc4.php">Click here</a> to upgrade your database to be compatible with v1.0.0.rc1 or higher, if created in a version lower than v1.0.0.rc1</p>
-                        <p>If you are using versions below 1.4.0 (and above 1.0.0rc4), click <a href="./functions/upgrade1.3.5to1.4.0.php">here</a> to upgrade your database.</p>
+                        <p>If you are using TheGameSpider TechnicSolder 1.3.4-1.3.5, click <a href="./functions/upgrade1.3.5to1.4.0.php">here</a> to upgrade your database.</p>
                     </div>
                     <br />
                     <button class="btn btn-secondary" data-toggle="collapse" href="#collapseAnno" role="button" aria-expanded="false" aria-controls="collapseAnno">Public Announcements</button>
