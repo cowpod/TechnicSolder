@@ -337,6 +337,31 @@ $("#save_api_key").on("click", function() {
     }
 });
 
+$('#server-settings').on('submit', function(e) {
+     e.preventDefault();
+
+    var formData = new FormData(this);
+
+    var formObject = {};
+    formData.forEach((value, key) => {
+      formObject[key] = value;
+    });
+
+    $.post('functions/save_server_settings.php', formObject, function(response) {
+      console.log('Server response:', response);
+      let json = JSON.parse(response);
+      if (json['status']=='succ') {
+        $('#save-server-settings').attr('disabled',true)
+      }
+    }).fail(function (error) {
+      console.error('Error:', error);
+    });
+})
+
+$('#server-settings :input').on('change', function() {
+    $('#save-server-settings').attr('disabled',false)
+})
+
 $(document).ready(function(){
     $("#nav-settings").trigger('click');
 });

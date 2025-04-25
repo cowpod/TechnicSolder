@@ -2326,46 +2326,6 @@ if (!uri("/login")) {
             <script src="./resources/js/page_account.js"></script>
         <?php
         } elseif (uri("/admin") && $perms->privileged()) {
-            if (isset($_POST['bug-submit'])) {
-                if (isset($_POST['enable_self_updater'])) {
-                    $config->set('enable_self_updater','on');
-                } else {
-                    $config->set('enable_self_updater','off');
-                }
-                if (isset($_POST['dev_builds'])) {
-                    $config->set('dev_builds','on');
-                } else {
-                    $config->set('dev_builds','off');
-                }
-                if (isset($_POST['use_verifier'])) {
-                    $config->set('use_verifier','on');
-                } else {
-                    $config->set('use_verifier','off');
-                }
-                if (isset($_POST['modrinth_integration'])) {
-                    $config->set('modrinth_integration','on');
-                } else {
-                    $config->set('modrinth_integration','off');
-                }
-                if (isset($_POST['forge_integration'])) {
-                    $config->set('forge_integration','on');
-                } else {
-                    $config->set('forge_integration','off');
-                }
-                if (isset($_POST['neoforge_integration'])) {
-                    $config->set('neoforge_integration','on');
-                } else {
-                    $config->set('neoforge_integration','off');
-                }
-                if (isset($_POST['fabric_integration'])) {
-                    $config->set('fabric_integration','on');
-                } else {
-                    $config->set('fabric_integration','off');
-                }
-            } else {
-                error_log('no post data');
-            }
-
             $usersq = $db->query("SELECT * FROM `users`");
             ?>
             <script>document.title = 'Admin - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -2418,7 +2378,7 @@ if (!uri("/login")) {
 
                 <div class="card">
                     <h3>Server Settings</h3>
-                    <form method="POST">
+                    <form id="server-settings">
                         <div class="custom-control custom-switch">
                             <input id="dev_builds" type="checkbox" class="custom-control-input" name="dev_builds" <?php if (strtolower($api_version_json['stream'])==="dev") { echo "checked disabled"; } elseif ($config->exists('dev_builds') && $config->get('dev_builds')==="on") { echo "checked"; } ?>>
                             <label class="custom-control-label" for="dev_builds">Subscribe to dev builds</label>
@@ -2434,14 +2394,12 @@ if (!uri("/login")) {
                             <label class="custom-control-label" for="enable_self_updater">
                                 Enable Git Self-Updater
                             </label>
-                            <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="use_verifier" type="checkbox" class="custom-control-input" name="use_verifier" <?php if ($config->exists('use_verifier') && $config->get('use_verifier')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="use_verifier">
                                 Enable Solder Verifier (check status of modpack on <a href="https://technicpack.net" target="_blank">technicpack.net</a>)
                             </label>
-                            <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <br/>
                         Mod installers
@@ -2450,7 +2408,6 @@ if (!uri("/login")) {
                             <label class="custom-control-label" for="modrinth_integration">
                                 Modrinth.com
                             </label>
-                            <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <br/>
                         Mod loader installers
@@ -2459,24 +2416,21 @@ if (!uri("/login")) {
                             <label class="custom-control-label" for="forge_integration">
                                 Forge <a href="https://minecraftforge.net" target="_blank">MinecraftForge.net</a>
                             </label>
-                            <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="neoforge_integration" type="checkbox" class="custom-control-input" name="neoforge_integration" <?php if ($config->exists('neoforge_integration') && $config->get('neoforge_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="neoforge_integration">
                                 Neoforge <a href="https://neoforged.net" target="_blank">NeoForged.net</a>
                             </label>
-                            <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <div class="custom-control custom-switch">
                             <input id="fabric_integration" type="checkbox" class="custom-control-input" name="fabric_integration" <?php if ($config->exists('fabric_integration') && $config->get('fabric_integration')=="on") {echo "checked";} ?> >
                             <label class="custom-control-label" for="fabric_integration">
                                 Fabric <a href="https://fabricmc.net" target="_blank">FabricMC.net</a>
                             </label>
-                            <input type="hidden" name="bug-submit" value="bug-submit">
                         </div>
                         <br>
-                        <input type="submit" class="btn btn-primary" value="Save">
+                        <input type="submit" id="save-server-settings" class="btn btn-primary" value="Save" disabled>
                     </form>
                 </div>
                 <div class="card">
