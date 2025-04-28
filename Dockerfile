@@ -17,8 +17,10 @@ RUN docker-php-ext-install opcache
 RUN apt install git -y
 
 ADD . /var/www/html
+RUN rm -f /var/www/html/Dockerfile /var/www/html/compose*.yaml /var/www/html/entrypoint.sh
 RUN chown -R www-data:www-data /var/www/html
 
 COPY entrypoint.sh /entrypoint.sh
-ENTRYPOINT ["/bin/sh", "entrypoint.sh"]
+
+ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
 CMD 'apache2-foreground'
