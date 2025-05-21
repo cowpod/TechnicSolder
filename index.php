@@ -958,7 +958,7 @@ if (!uri("/login")) {
                     </div>
                 </div>
                 <script>
-                    var builds = JSON.parse('<?php 
+                    var builds = '<?php 
                     if (isset($mpab)) { 
                         $mpab_json = @json_encode($mpab);
                         if ($mpab_json === false) {
@@ -969,8 +969,8 @@ if (!uri("/login")) {
                         }
                     } else {
                         echo '[]';
-                    } ?>')
-                    var sbn = JSON.parse('<?php 
+                    } ?>'
+                    var sbn = '<?php 
                     if (isset($sbn)) {
                         $sbn_json = @json_encode($sbn);
                         if ($sbn_json === false) {
@@ -981,7 +981,7 @@ if (!uri("/login")) {
                         }
                     } else {
                         echo '[]';
-                    } ?>')
+                    } ?>'
                 </script>
                 <script src="./resources/js/page_modpack.js"></script>
             </div>
@@ -1252,7 +1252,13 @@ if (!uri("/login")) {
                                     <td class="text-right"><?php
                                         if ($perms->mods_delete()) {
                                             // allow deleting non-forges and invalids
-                                            if (empty($mod) || $mod['type'] !== "forge") { ?>
+                                            if (empty($mod)) { 
+                                                // provide option to remove it from the build.
+                                                ?>
+                                            <button id="remove-mod-<?php echo $build_mod_id ?>" onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo $build_mod_name ?>', '', '', '')" class="btn btn-danger">
+                                                <em class="fas fa-times"></em>
+                                            </button>
+                                            <?php } elseif($mod['type'] !== "forge") { ?>
                                             <button id="remove-mod-<?php echo $mod['id'] ?>" onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo $build_mod_name ?>', '<?php echo $mod['pretty_name'] ?>', '<?php echo $mod['version'] ?>', '<?php echo $mod['mcversion'] ?>')" class="btn btn-danger">
                                                 <em class="fas fa-times"></em>
                                             </button>

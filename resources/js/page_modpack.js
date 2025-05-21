@@ -214,8 +214,10 @@ async function copylatest() {
     if ($('#mplist').prop('selectedIndex', 1)) {
         if (await fillBuildlist()) {
             $('#buildlist').prop('selectedIndex', 0);
+            return true
         }
     }
+    return false
 }
 $('#copybuild').on('submit', async function(event){
     // return new Promise((resolve,reject) => {
@@ -233,40 +235,40 @@ $('#copybuild').on('submit', async function(event){
                         // window.location.reload()
                         let details = json['details'] // id,name,modpack,minecraft,java,mods
                         let minecraft = details['minecraft']
-                        if (minecraft === null) {
+                        if (minecraft === null || true) { // always reload
                             // we copied a blank build? reload page
-                            setTimeout(function() {
+                            // setTimeout(function() {
                                 window.location.reload()
-                              }, 250);
+                            // }, 250);
                         }
-                        let id = details['id']
-                        let name = details['name']
-                        let modpack = details['modpack']
-                        let java = details['java']
-                        let mods = details['mods'].split(',')
-                        let modcount = mods.length
-                        let table = $('#table-builds')
-                        let row = `<tr rec="false" id="b-${id}">
-                                <td scope="row" data-value="${name}">${name}</td>
-                                <td data-value="${minecraft}">${minecraft}</td>
-                                <td class="d-none d-md-table-cell" data-value="${java}">${java}</td>
-                                <td data-value="${modcount}">${modcount}</td>
-                                <td>
-                                    <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                        <button onclick="edit(${id})" class="btn btn-primary"><em class="fas fa-edit"></button>
-                                        <button onclick="remove_box(${id},'${name}')" data-toggle="modal" data-target="#removeModal" class="btn btn-danger"><em class="fas fa-times"></em> /button>
-                                    </div>
-                                    <div class="btn-group btn-group-sm" role="group" aria-label="Actions"> 
-                                        <button bid="${id}" id="pub-${id}" class="btn btn-success" onclick="set_public(${id})" style="display:block">Publish</button>
-                                        <button bid="${id}" id="rec-${id}" class="btn btn-success" onclick="set_recommended(${id})" style="display:none">Recommend</button>
-                                        <button bid="${id}" id="recd-${id}" class="btn btn-success" style="display:none" disabled>Recommended</button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <em id="cog-<?php echo $user['id'] ?>" class="fas fa-cog fa-lg fa-spin" style="margin-top: 0.5rem" hidden></em>
-                                </td>
-                            </tr>`
-                        table.prepend(row)
+                        // let id = details['id']
+                        // let name = details['name']
+                        // let modpack = details['modpack']
+                        // let java = details['java']
+                        // let mods = details['mods'].split(',')
+                        // let modcount = mods.length
+                        // let table = $('#table-builds')
+                        // let row = `<tr rec="false" id="b-${id}">
+                        //         <td scope="row" data-value="${name}">${name}</td>
+                        //         <td data-value="${minecraft}">${minecraft}</td>
+                        //         <td class="d-none d-md-table-cell" data-value="${java}">${java}</td>
+                        //         <td data-value="${modcount}">${modcount}</td>
+                        //         <td>
+                        //             <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                        //                 <button onclick="edit(${id})" class="btn btn-primary"><em class="fas fa-edit"></button>
+                        //                 <button onclick="remove_box(${id},'${name}')" data-toggle="modal" data-target="#removeModal" class="btn btn-danger"><em class="fas fa-times"></em> /button>
+                        //             </div>
+                        //             <div class="btn-group btn-group-sm" role="group" aria-label="Actions"> 
+                        //                 <button bid="${id}" id="pub-${id}" class="btn btn-success" onclick="set_public(${id})" style="display:block">Publish</button>
+                        //                 <button bid="${id}" id="rec-${id}" class="btn btn-success" onclick="set_recommended(${id})" style="display:none">Recommend</button>
+                        //                 <button bid="${id}" id="recd-${id}" class="btn btn-success" style="display:none" disabled>Recommended</button>
+                        //             </div>
+                        //         </td>
+                        //         <td>
+                        //             <em id="cog-<?php echo $user['id'] ?>" class="fas fa-cog fa-lg fa-spin" style="margin-top: 0.5rem" hidden></em>
+                        //         </td>
+                        //     </tr>`
+                        // table.prepend(row)
                     } else {            
                         console.log(json)
                                 
@@ -295,7 +297,10 @@ $('#copybuild').on('submit', async function(event){
     
 })
 $('#copylatestbutton').on('click', async function(){
-    await copylatest()
+    let ret = await copylatest()
+    if (ret) {
+        window.location.reload()
+    }
 })
 
 function saveAllowedClients() {

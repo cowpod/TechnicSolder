@@ -25,21 +25,23 @@ function remove_mod(id, name, pretty_name, v, mcv, type) {
         if (request.readyState == 4 && request.status == 200) {
             if (request.responseText=='Mod removed') {
                 $("#mod-"+id).remove();
-                if (type == 'mod') {
-                    add_mod_row(id,pretty_name,name,v,mcv)
-                } else if (type == 'other') {
-                    add_other_row(id,name,pretty_name,v,mcv)
-                }
+                // add it back if it has all items
+                if (id && name && pretty_name && v && mcv && type) {
+                    if (type == 'mod') {
+                        add_mod_row(id,pretty_name,name,v,mcv)
+                    } else if (type == 'other') {
+                        add_other_row(id,name,pretty_name,v,mcv)
+                    }
 
-                let index = INSTALLED_MODS.indexOf(id);
-                if (index!==-1) {
-                    INSTALLED_MODS.splice(index, 1);
+                    let index = INSTALLED_MODS.indexOf(id);
+                    if (index!==-1) {
+                        INSTALLED_MODS.splice(index, 1);
+                    }
+                    // let index = INSTALLED_MOD_NAMES.indexOf(name);
+                    if (index!==-1) {
+                        INSTALLED_MOD_NAMES.splice(index, 1);
+                    }
                 }
-                // let index = INSTALLED_MOD_NAMES.indexOf(name);
-                if (index!==-1) {
-                    INSTALLED_MOD_NAMES.splice(index, 1);
-                }
-                
             }
         }
     }
