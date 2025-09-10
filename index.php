@@ -161,7 +161,7 @@ if (!uri("/login")) {
         <div class="container">
             <div class="alert alert-danger text-center">
                 <h3>Upgrade required.</h3>
-                <a href="./functions/upgrade1.3.5to1.4.0.php">Click here to upgrade</a>
+                <a href="./functions/upgrade2.0.php">Click here to upgrade</a>
             </div>
         </div>
         <?php 
@@ -561,7 +561,7 @@ if (!uri("/login")) {
                             <button class="btn btn-primary" id="submitmigration">Start Migration</button>
                         </div>
                         <hr>
-                        <p>If you are using TheGameSpider TechnicSolder 1.3.4-1.3.5, click <a href="./functions/upgrade1.3.5to1.4.0.php">here</a> to upgrade your database.</p>
+                        <p>If you are using TheGameSpider TechnicSolder 1.3.4-1.3.5, click <a href="./functions/upgrade2.0.php">here</a> to upgrade your database.</p>
                     </div>
                     <br />
                     <button class="btn btn-secondary" data-toggle="collapse" href="#collapseAnno" role="button" aria-expanded="false" aria-controls="collapseAnno">Public Announcements</button>

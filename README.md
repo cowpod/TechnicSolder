@@ -398,7 +398,7 @@ Otherwise, manual updating is as follows.
     - Then move config.php back to `/var/www/TechnicSolder/functions/`
 
 3. Database
-- If you were previously on v1.3.4, open `http[s]://[your host name]/functions/upgrade1.3.5to1.4.0.php`
+- If you were previously on v1.3.4, open `http[s]://[your host name]/functions/upgrade2.0.php`
 in your web browser. 
 - If you are on a version before 1.3.4, first update to v1.3.4, and then 1.4.0.
 
