@@ -272,7 +272,7 @@ if (isset($_POST['host'])) {
                 java VARCHAR(512),
                 loadertype VARCHAR(32),
                 memory VARCHAR(512),
-                mods VARCHAR(1024),
+                mods LONGTEXT,
                 public BOOLEAN,
                 clients LONGTEXT
             )";

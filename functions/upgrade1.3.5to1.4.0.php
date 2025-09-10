@@ -75,6 +75,12 @@ function alter_db() {
     if (!$addtype) {
         echo "Couldn't add new columns loadertype to table builds!<br/>";
     }
+
+    // increase size of mods column in builds table
+    $longtext = $db->execute("ALTER TABLE builds MODIFY COLUMN mods LONGTEXT;");
+    if ($longtext) {
+        echo "Couldn't alter column mods for table builds!<br/>";
+    }
 }
 
 function migrate_admin_user_from_config_to_db() {
