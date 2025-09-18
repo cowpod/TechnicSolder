@@ -12,9 +12,16 @@ $config = new Config();
 
 // regardless of configuration.php existing, configured=>false forces a re-configure.
 if (!$config->exists('configured') || $config->get('configured') !== true) {
-    header("Location: ".($config->exists('dir') ? $config->get('dir') : '/')."configure.php");
-    exit();
+    // we're from an old version!
+    if (file_exists('./functions/config.php')) {
+        header("Location: ./functions/upgrade2.0.php");
+        exit();
+    } else {
+        header("Location: ".($config->exists('dir') ? $config->get('dir') : '/')."configure.php");
+        exit();
+    }
 }
+$public_dir = $config->exists('dir') ? $config->get('dir') : '/';
 
 require_once("./functions/db.php");
 $db = new Db();
@@ -24,7 +31,7 @@ if ($db->connect() === false) {
 
 $query_num_users = $db->query("SELECT 1 FROM users LIMIT 1");
 if (!$query_num_users) {
-    die("No users! Please set <font style='font-family:\"Courier New\"'>\"configured\"=>false</font> in <font style='font-family:\"Courier New\"'>config/config.json</font>, and then visit <a href=/configure>/configure</a> to set up a new user.");
+    die("No users! Please set <font style='font-family:\"Courier New\"'>\"configured\"=>false</font> in <font style='font-family:\"Courier New\"'>config/config.json</font>, and then visit <a href='{$public_dir}configure'>{$public_dir}configure</a> to set up a new user.");
 }
 
 $url = $_SERVER['REQUEST_URI'];

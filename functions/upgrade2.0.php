@@ -11,12 +11,12 @@ function get_config()
     if (file_exists("./config.php")) {
         $config = require("./config.php");
     } else {
-        die("We're not configured, or we're not on 1.3.5.");
+        die("Already updated?");
     }
 
     if (!empty($config['config_version']) && $config['config_version'] == CONFIG_VERSION) {
         $index = isset($config['dir']) ? $config['dir'] : '.';
-        die("We appear to not be on 1.3.5.");
+        die("Already updated?");
     }
 }
 
@@ -348,5 +348,12 @@ $config_new = new Config();
 if ($config_new->setall($config)) {
     unlink('config.php');
 }
+
+$dir = '/';
+if ($config->exists('dir')) {
+    $dir = $config->get('dir');
+}
+
+die("Update complete. <a href='{$dir}'>press here to continue</a>.");
 
 exit();
