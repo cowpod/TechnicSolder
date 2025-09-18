@@ -1,4 +1,5 @@
 <?php
+
 // NOTE THIS USES EXEC CALLS
 // if modifying this be VERY sure of what you're doing.
 
@@ -11,21 +12,23 @@ define('UPDATE_ERROR_GET_BRANCH', "GIT GET BRANCH ERROR");
 define('UPDATE_ERROR_PULL', "GIT PULL ERROR");
 define('UPDATE_ERROR_MERGE', "GIT MERGE ERROR");
 define('UPDATE_SUCCESS', "GIT UPDATE SUCCESS");
-define('UPDATE_ERROR_DECODE',"GIT DECODE ERROR");
+define('UPDATE_ERROR_DECODE', "GIT DECODE ERROR");
 define('UPDATE_ERROR', "GIT UPDATE ERROR");
 define('UPDATES_DISABLED', "GIT UPDATES ARE DISABLED");
 define('UPDATE_IN_PROGRESS', "UPDATE IN PROGRESS");
 
 require_once('sanitize.php');
 
-final class Updater {
+final class Updater
+{
     private $config = null;
     private $git_return = null;
     private $git_result = null;
     private $repo_path = null;
     private $version = null;
 
-    function __construct($repoPathArg=null, $configArg=null, $versionDataArg=null) {
+    public function __construct($repoPathArg = null, $configArg = null, $versionDataArg = null)
+    {
         /*
             During construction, we fetch all local resources.
             We don't get remote resources until related functions are executed.
@@ -33,7 +36,9 @@ final class Updater {
         if (empty($configArg)) {
             $config_file = is_file('../functions/configuration.php') ? '../functions/configuration.php' : (
                 is_file('./functions/configuration.php') ? './functions/configuration.php' : (
-                    is_file('./configuration.php') ? './configuration.php' : false));
+                    is_file('./configuration.php') ? './configuration.php' : false
+                )
+            );
             if ($config_file === false) {
                 error_log("solder-updater.php: couldn't locate configuration.php");
                 die("Couldn't locate configuration.php");
@@ -51,7 +56,8 @@ final class Updater {
 
         if (empty($repoPathArg)) {
             $repopath = is_dir(__DIR__.'/api') ? __DIR__ : (
-                is_dir(__DIR__.'/../api') ? dirname(__DIR__) : false);
+                is_dir(__DIR__.'/../api') ? dirname(__DIR__) : false
+            );
             if ($repopath === false) {
                 error_log("solder-updater.php: couldn't locate base directory");
                 die("Couldn't locate base directory");
@@ -64,7 +70,9 @@ final class Updater {
         if (empty($versionJsonArg)) {
             $version_file = is_file('../api/version.json') ? '../api/version.json' : (
                 is_file('./api/version.json') ? './api/version.json' : (
-                    is_file('./version.json') ? './version.json' : false));
+                    is_file('./version.json') ? './version.json' : false
+                )
+            );
             if ($version_file === false) {
                 error_log("solder-updater.php: Couldn't locate version.json");
                 die("Couldn't locate version.json");
@@ -74,13 +82,13 @@ final class Updater {
                 error_log("solder-updater.php: Couldn't read version.json");
                 die("Couldn't read version.json");
             }
-            $version_data = @json_decode($version_data_raw,true);
+            $version_data = @json_decode($version_data_raw, true);
             if (!$version_data) {
                 error_log("solder-updater.php: Couldn't decode version.json");
                 die("Couldn't decode version.json");
             }
-            if ($version_data['version'][0]==='v') {
-                 $version_data['version'] = substr($version_data['version'], 1);
+            if ($version_data['version'][0] === 'v') {
+                $version_data['version'] = substr($version_data['version'], 1);
             }
             $this->version = $version_data;
         } else {
@@ -88,8 +96,9 @@ final class Updater {
         }
     }
 
-    private function json($status, $message, $data=null) {
-        $prnt = ["status"=>$status,"message"=>$message];
+    private function json($status, $message, $data = null)
+    {
+        $prnt = ["status" => $status,"message" => $message];
         if (is_array($data)) {
             $prnt = array_merge($prnt, $data);
         }
@@ -101,7 +110,8 @@ final class Updater {
         return $encoded;
     }
 
-    private function check_git() {
+    private function check_git()
+    {
         if (`which git` || `where git`) { // this is slow. so we do it here instead of at construction.
             // Ensure it's a valid repo
             if (!is_dir($this->repo_path . "/.git")) {
@@ -115,7 +125,7 @@ final class Updater {
             }
 
             $branch = trim(strtolower(implode(' ', $this->git_result)));
-            $this->git_result=[]; // clear result from checking branch
+            $this->git_result = []; // clear result from checking branch
 
             // ensure git branch matches release channel from api/version.json
             if (trim(strtolower($this->version['stream'])) != $branch) {
@@ -134,7 +144,7 @@ final class Updater {
                 return UPDATE_ERROR;
             }
 
-            if (trim($this->git_result[0])=="true") {
+            if (trim($this->git_result[0]) == "true") {
                 return OUTDATED;
             } else {
                 return UP_TO_DATE;
@@ -144,8 +154,9 @@ final class Updater {
         }
     }
 
-    public function update() {
-        if ($this->config->exists('enable_self_updater') && $this->config->get('enable_self_updater')!=='on') { // if updates are disabled
+    public function update()
+    {
+        if ($this->config->exists('enable_self_updater') && $this->config->get('enable_self_updater') !== 'on') { // if updates are disabled
             return UPDATES_DISABLED;
         }
 
@@ -154,7 +165,7 @@ final class Updater {
         }
 
         $this->config->set("update_in_progress", true);
-        
+
         if ($this->check_git() !== OUTDATED) { // if we can't first check for updates
             $this->config->delete("update_in_progress");
             return UPDATE_ERROR;
@@ -167,24 +178,26 @@ final class Updater {
             $this->config->delete("update_in_progress");
             return UPDATE_ERROR_MERGE;
         }
-        
+
         $this->config->delete("update_in_progress");
         return UPDATE_SUCCESS;
     }
-    
 
-    public function check() {        
-        if ($this->config->exists('enable_self_updater') && $this->config->get('enable_self_updater')!=='on') { // if updates are disabled
+
+    public function check()
+    {
+        if ($this->config->exists('enable_self_updater') && $this->config->get('enable_self_updater') !== 'on') { // if updates are disabled
             return UPDATES_DISABLED;
         }
         // wipe previous logs
-        $this->git_result=[];
-        $this->git_return=[];
+        $this->git_result = [];
+        $this->git_return = [];
 
         return $this->check_git();
     }
 
-    public function logs() {
+    public function logs()
+    {
         return $this->git_result;
     }
 }
@@ -198,13 +211,13 @@ if (basename(__FILE__) == basename($_SERVER["SCRIPT_FILENAME"])) {
     global $perms;
     $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
     if (!$perms->privileged()) {
-        die ('{"status"=>"error","message"=>"Insufficient permission!"}');
+        die('{"status"=>"error","message"=>"Insufficient permission!"}');
     }
 
     $updater = new Updater();
     if (isset($_POST['install-updates'])) {
         $update_status = $updater->update();
-        $log_str = str_replace(["\n", "\r"], '', implode("<br/>",$updater->logs()));
+        $log_str = str_replace(["\n", "\r"], '', implode("<br/>", $updater->logs()));
         if ($update_status === UPDATE_SUCCESS) {
             die('{"status":"succ","message":"'.$update_status.'","logs":"'.$log_str.'"}');
         } else {
@@ -212,5 +225,3 @@ if (basename(__FILE__) == basename($_SERVER["SCRIPT_FILENAME"])) {
         }
     }
 }
-
-?>

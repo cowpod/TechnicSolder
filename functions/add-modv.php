@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
@@ -50,7 +51,7 @@ if (strpbrk($_POST['version'], '\\"\'') !== false) {
 if (!filter_var($_POST['url'], FILTER_VALIDATE_URL)) {
     die('{"status":"error","message":"Malformed url"}');
 }
-if (strlen($_POST['md5'])!==32 || !ctype_alnum($_POST['md5'])) {
+if (strlen($_POST['md5']) !== 32 || !ctype_alnum($_POST['md5'])) {
     die('{"status":"error","message":"Malformed md5"}');
 }
 if (!is_numeric($_POST['filesize'])) {
@@ -66,13 +67,13 @@ if (!in_array($_POST['loadertype'], ['fabric','forge','neoforge'])) {
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 
@@ -87,7 +88,7 @@ $donlink = isset($_POST['donlink']) ? $db->sanitize($_POST['donlink']) : '';
 // we use name (slug) and md5 to determine if its already installed.
 // since we have md5. otherwise we should check version,mcversion,name/slug,type,loadertype
 $existsq = $db->query("SELECT 1 FROM mods WHERE name='{$name}' AND md5='{$md5}'");
-if ($existsq && sizeof($existsq)>=1) {
+if ($existsq && sizeof($existsq) >= 1) {
     die('{"status":"succ","message":"Mod is already added."}');
 }
 

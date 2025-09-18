@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
@@ -22,17 +23,17 @@ if (empty($_GET['name'])) {
 if (!is_numeric($_GET['id'])) {
     die("Malformed id");
 }
-if (!preg_match('/[\w\-\.]+/',$_GET['name'])) {
+if (!preg_match('/[\w\-\.]+/', $_GET['name'])) {
     die("Malformed name");
 }
 
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect();
 
 $name = strtolower($_GET['name']);

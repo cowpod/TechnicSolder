@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 if (empty($_SESSION['user'])) {
@@ -24,7 +25,7 @@ if (!isset($_GET['mcversion'])) {
 }
 if (!isset($_GET['type'])) {
     die('{"status":"error","message":"type missing"}');
-} elseif (!in_array($_GET['type'],['fabric','forge','neoforge'])) {
+} elseif (!in_array($_GET['type'], ['fabric','forge','neoforge'])) {
     die('{"status":"error","message":"type is not valid"}');
 }
 
@@ -41,7 +42,7 @@ if (strpbrk($_POST['mcversion'], '\\"\'') !== false) {
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 $download_link = $_GET['dl'];
@@ -60,13 +61,13 @@ $url = $_SERVER['REQUEST_URI'];
 if ($config->exists('protocol') && !empty($config->get('protocol'))) {
     $protocol = strtolower($config->get('protocol')).'://';
 } else {
-    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+    $protocol = strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL']))).'://';
 }
 
-$type_pretty_names=["forge"=>"Forge","neoforge"=>"Neoforge","fabric"=>"Fabric"];
-$type_links=["forge"=>"https://minecraftforge.net","neoforge"=>"https://neoforged.net","fabric"=>"https://fabricmc.net"];
-$type_authors=["forge"=>"LexManos, cpw, RainWarrior, and others","neoforge"=>"LexManos, cpw, RainWarrior, and others","fabric"=>"modmuss50, technici4n, Grondag, and others."];
-$type_descriptions=["forge"=>"Minecraft Forge is a free, open-source modding API and loader designed to simplify compatibility between community-created game mods in Minecraft: Java Edition. The end-user (player) must play the version of Minecraft that Forge was downloaded for before it can be used. For example, Forge 1.12 needs the 1.12 version of Minecraft in order to run correctly. Forge can then be used from the Play drop-down in the Minecraft launcher.","neoforge"=>"NeoForge is a free, open-source, community-oriented modding API for Minecraft. (This is a forked version of Forge, starting from Minecraft 1.20.1)","fabric"=>"Fabric is a modular, lightweight mod loader for Minecraft"];
+$type_pretty_names = ["forge" => "Forge","neoforge" => "Neoforge","fabric" => "Fabric"];
+$type_links = ["forge" => "https://minecraftforge.net","neoforge" => "https://neoforged.net","fabric" => "https://fabricmc.net"];
+$type_authors = ["forge" => "LexManos, cpw, RainWarrior, and others","neoforge" => "LexManos, cpw, RainWarrior, and others","fabric" => "modmuss50, technici4n, Grondag, and others."];
+$type_descriptions = ["forge" => "Minecraft Forge is a free, open-source modding API and loader designed to simplify compatibility between community-created game mods in Minecraft: Java Edition. The end-user (player) must play the version of Minecraft that Forge was downloaded for before it can be used. For example, Forge 1.12 needs the 1.12 version of Minecraft in order to run correctly. Forge can then be used from the Play drop-down in the Minecraft launcher.","neoforge" => "NeoForge is a free, open-source, community-oriented modding API for Minecraft. (This is a forked version of Forge, starting from Minecraft 1.20.1)","fabric" => "Fabric is a modular, lightweight mod loader for Minecraft"];
 
 $dl_content = @file_get_contents($download_link);
 if ($dl_content === false) {
@@ -89,7 +90,7 @@ if ($zip->open("../forges/{$type}-{$version}.zip", ZIPARCHIVE::CREATE) !== true)
 $path = "../forges/modpack-".$version."/modpack.jar";
 $zip->addEmptyDir('bin');
 if (is_file($path)) {
-    $zip->addFile($path, "bin/modpack.jar") or die ('{"status":"error","message":"Could not add file to archive"}');
+    $zip->addFile($path, "bin/modpack.jar") or die('{"status":"error","message":"Could not add file to archive"}');
 }
 $zip->close();
 unlink("../forges/modpack-".$version."/modpack.jar");
@@ -101,8 +102,8 @@ $url = $protocol.$config->get('host').$config->get('dir')."forges/".$type."-".$v
 
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 

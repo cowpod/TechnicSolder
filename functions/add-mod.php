@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
@@ -18,12 +19,12 @@ if (empty($_GET['bid'])) {
     die("Build not specified.");
 }
 
-if (!is_numeric($_GET['id'])||!is_numeric($_GET['id'])) {
+if (!is_numeric($_GET['id']) || !is_numeric($_GET['id'])) {
     die("Malformed id/bid");
 }
 
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect();
 
 $modsq = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$_GET['bid']);

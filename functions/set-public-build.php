@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 
@@ -29,20 +30,20 @@ if (!is_numeric($_GET['buildid'])) {
 if (!is_numeric($_GET['modpackid'])) {
     die('{"status":"error","message":"Malformed modpack id"}');
 }
-if (in_array($_GET['ispublic'],[0,1,'on','off'])) {
+if (in_array($_GET['ispublic'], [0,1,'on','off'])) {
     die('{"status":"error","message":"Malformed ispublic"}');
 }
 
-if ($_GET['ispublic']=='on') {
-    $_GET['ispublic']=1;
-} elseif ($_GET['ispublic']=='off') {
-    $_GET['ispublic']=0;
+if ($_GET['ispublic'] == 'on') {
+    $_GET['ispublic'] = 1;
+} elseif ($_GET['ispublic'] == 'off') {
+    $_GET['ispublic'] = 0;
 }
 
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 
@@ -68,7 +69,7 @@ $latestq = $db->execute("
 
 $bq = $db->query("SELECT * FROM `builds` WHERE `id` = {$_GET['buildid']}");
 if ($bq) {
-    assert(sizeof($bq)==1);
+    assert(sizeof($bq) == 1);
     $build = $bq[0];
 }
 

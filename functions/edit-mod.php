@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
@@ -41,16 +42,16 @@ if (strpbrk($_POST['author'], '\\"\'') !== false) {
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 
-$existsq=$db->query("SELECT 1 FROM mods WHERE name='{$db->sanitize($_POST['name'])}' LIMIT 1");
+$existsq = $db->query("SELECT 1 FROM mods WHERE name='{$db->sanitize($_POST['name'])}' LIMIT 1");
 if (!$existsq) {
     die("mod by that name does not exist");
 }
@@ -65,7 +66,7 @@ if (!$updateq) {
     die("could not update mod details.");
 }
 
-if ($_POST['submit']=="Save and close") {
+if ($_POST['submit'] == "Save and close") {
     header("Location: ".$config->get('dir')."lib-mods");
 } else {
     header("Location: ".$config->get('dir')."mod?id=".$_POST['name']);

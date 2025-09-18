@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
@@ -19,12 +20,12 @@ if (empty($_GET['id'])) {
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 
@@ -36,7 +37,8 @@ if (!$result) {
 $mod = $result[0];
 $url = isset($_POST['url']) ? $_POST['url'] : '';
 
-$db->execute("UPDATE `mods`
+$db->execute(
+    "UPDATE `mods`
     SET link='".    $db->sanitize($_POST['link'])."',"
     ."author ='".   $db->sanitize($_POST['author'])."',"
     ."donlink='".   $db->sanitize($_POST['donlink'])."',"
@@ -48,7 +50,7 @@ $db->execute("UPDATE `mods`
     ."WHERE id=".     $db->sanitize($_GET['id'])
 );
 
-if ($_POST['submit']=="Save and close") {
+if ($_POST['submit'] == "Save and close") {
     header("Location: ".$config->get('dir')."mod?id=".$mod['name']);
     exit();
 }

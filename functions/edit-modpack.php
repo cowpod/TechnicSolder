@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
@@ -25,24 +26,24 @@ if (empty($_POST['display_name'])) {
 if (!is_numeric($_POST['id'])) {
     die('{"status":"error","message":"Malformed id"}');
 }
-if (!preg_match('/[\w\-]+/',$_GET['name'])) {
+if (!preg_match('/[\w\-]+/', $_GET['name'])) {
     die('{"status":"error","message":"Malformed name"}');
 }
 if (strpbrk($_POST['display_name'], '\\"\'') !== false) {
     die('{"status":"error","message":"Malformed display_name"}');
 }
 
-$ispublic = (isset($_POST['ispublic']) && $_POST['ispublic']=="on") ? 1 : 0;
+$ispublic = (isset($_POST['ispublic']) && $_POST['ispublic'] == "on") ? 1 : 0;
 
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 

@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 
@@ -27,7 +28,7 @@ if (!is_numeric($_GET['modpackid'])) {
 }
 
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect();
 
 $setrecq = $db->execute("UPDATE modpacks SET recommended = {$_GET['buildid']} WHERE id = {$_GET['modpackid']}");

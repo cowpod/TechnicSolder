@@ -1,10 +1,12 @@
 <?php
+
 /*
 TODO: This is insecure.
 */
 define('CONFIG_VERSION', 1);
 
-function get_config() {
+function get_config()
+{
     global $config;
     if (file_exists("./config.php")) {
         $config = require("./config.php");
@@ -12,22 +14,23 @@ function get_config() {
         die("We're not configured, or we're not on 1.3.5.");
     }
 
-    if (!empty($config['config_version']) && $config['config_version']==CONFIG_VERSION) {
+    if (!empty($config['config_version']) && $config['config_version'] == CONFIG_VERSION) {
         $index = isset($config['dir']) ? $config['dir'] : '.';
         die("We appear to not be on 1.3.5.");
     }
 }
 
-function connect_db_and_set_db_in_config() {
+function connect_db_and_set_db_in_config()
+{
     global $config;
     global $db;
-    
+
     // write db-type to config immediately
-    $config['db-type']='mysql';
+    $config['db-type'] = 'mysql';
 
     // test db
     require_once("./db.php");
-    $db=new Db;
+    $db = new Db();
     $dbres = $db->connect();
 
     // write back old config since it didn't work.
@@ -36,7 +39,8 @@ function connect_db_and_set_db_in_config() {
     }
 }
 
-function alter_db() {
+function alter_db()
+{
     global $config;
     global $db;
 
@@ -65,13 +69,13 @@ function alter_db() {
 
     // 1.4.0: mod version ranges
     // naturally, we assume user is using mysql.
-    $addtype=$db->execute("ALTER TABLE mods ADD COLUMN loadertype VARCHAR(32);");
-    $addsize=$db->execute("ALTER TABLE mods ADD COLUMN filesize INTEGER;");
-    if (!$addtype||!$addsize) {
+    $addtype = $db->execute("ALTER TABLE mods ADD COLUMN loadertype VARCHAR(32);");
+    $addsize = $db->execute("ALTER TABLE mods ADD COLUMN filesize INTEGER;");
+    if (!$addtype || !$addsize) {
         echo "Couldn't add new columns loadertype,filesize to table mods!<br/>";
     }
 
-    $addtype=$db->execute("ALTER TABLE builds ADD COLUMN loadertype VARCHAR(32);");
+    $addtype = $db->execute("ALTER TABLE builds ADD COLUMN loadertype VARCHAR(32);");
     if (!$addtype) {
         echo "Couldn't add new columns loadertype to table builds!<br/>";
     }
@@ -83,19 +87,20 @@ function alter_db() {
     }
 }
 
-function migrate_admin_user_from_config_to_db() {
+function migrate_admin_user_from_config_to_db()
+{
     global $config;
     global $db;
 
     $icon = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB9ElEQVR4Xu2bSytEcRiHZyJRaDYWRhJilFlYKjakNOWS7OxEGCRGpAg1KykRSlHSKLkO0YyFhSiRIQmbIcVEsnCXW/EJPB/g9Jvt0/8s3t73+b3nnDnmpZWaXxP8dssRm6yL+XTc9OO1Ib+9GWCe60BuyUpEvvDYiNysAqgDNAJygCSoFPi/AoaPwbCvXnRAKKoZc/T7rA/5kasEeV1wEvlJnBf5lM+KfD16mPcAFUAdoBGQA8gSkqBSwOAxmBZ8QQdsOTIwRzsPOae7Iy/w/Op3DvLwZd4zgrYnPJ83Xcp7gAqgDtAIyAFkCUlQKWDwGKzdPeUH//ftmKPz9ePIQ6m1yANufq+QPteK58s6tpHvRZTxHqACqAM0AnIAWkISVAoYOwaf13bQAZn2WSzAQ1EB38/3FyP/9R0jz/K/I/cMxSM3VSTzHqACqAM0AnIAWUISVAoYPAbfe6/RAV07b5ijH/uFyD8Dd8jnejy8R+TwnuG8GsTzpXdJvAeoAOoAjYAcQJaQBJUCBo9B+6sDHfDSUoM5Wm1uQ34Z60YeMzOB3DJygNy5yU+sHGNNvAeoAOoAjYAcQJaQBJUCBo/B7Cr+aMrvnMEctVbx9wCVXbxINboS8Pqu0DnyFDf//2B0o4H3ABVAHaARwD1ADpAElQKGjsE/aSRgFj7BEuwAAAAASUVORK5CYII=";
     $name = $config['author'];
-    $email= $config['mail'];
+    $email = $config['mail'];
     $pass = $config['pass'];
     $perms = "1111111";
     $api_key = $config['api_key'];
 
     // hash password
-    if (empty($config['encrypted']||!$config['encrypted'])){
+    if (empty($config['encrypted'] || !$config['encrypted'])) {
         $pass = password_hash($pass, PASSWORD_DEFAULT);
     }
 
@@ -115,22 +120,25 @@ function migrate_admin_user_from_config_to_db() {
     unset($config['encrypted']);
 }
 
-function rrmdir($dir) { 
-   if (is_dir($dir)) { 
-     $objects = scandir($dir);
-     foreach ($objects as $object) { 
-       if ($object != "." && $object != "..") { 
-         if (is_dir($dir. DIRECTORY_SEPARATOR .$object) && !is_link($dir."/".$object))
-           rrmdir($dir. DIRECTORY_SEPARATOR .$object);
-         else
-           unlink($dir. DIRECTORY_SEPARATOR .$object); 
-       } 
-     }
-     rmdir($dir); 
-   } 
+function rrmdir($dir)
+{
+    if (is_dir($dir)) {
+        $objects = scandir($dir);
+        foreach ($objects as $object) {
+            if ($object != "." && $object != "..") {
+                if (is_dir($dir. DIRECTORY_SEPARATOR .$object) && !is_link($dir."/".$object)) {
+                    rrmdir($dir. DIRECTORY_SEPARATOR .$object);
+                } else {
+                    unlink($dir. DIRECTORY_SEPARATOR .$object);
+                }
+            }
+        }
+        rmdir($dir);
+    }
 }
 
-function update_mod_entries() {
+function update_mod_entries()
+{
     global $config;
     global $db;
 
@@ -139,21 +147,23 @@ function update_mod_entries() {
     require('modInfo.php');
     $mi = new modInfo();
 
-    $mods=$db->query("SELECT * FROM mods WHERE type='mod'");
+    $mods = $db->query("SELECT * FROM mods WHERE type='mod'");
 
     foreach ($mods as $mod) {
-        $zip = new ZipArchive;
-        if ($zip->open("../mods/{$mod['filename']}") === TRUE) {
-            for ($i=0; $i<$zip->numFiles; $i++) {
+        $zip = new ZipArchive();
+        if ($zip->open("../mods/{$mod['filename']}") === true) {
+            for ($i = 0; $i < $zip->numFiles; $i++) {
                 // ignore mods/ folder, get files within it
-                if ($zip->statIndex($i)['name']=='mods/') 
+                if ($zip->statIndex($i)['name'] == 'mods/') {
                     continue;
+                }
 
                 if (str_starts_with($zip->statIndex($i)['name'], 'mods/')) {
                     $filename = $zip->getNameIndex($i);
 
-                    if (pathinfo($filename, PATHINFO_EXTENSION) !== 'jar')
+                    if (pathinfo($filename, PATHINFO_EXTENSION) !== 'jar') {
                         continue;
+                    }
 
                     $zip->extractTo('../upgrade_work');
                     $jarfilename = "../upgrade_work/{$filename}";
@@ -164,7 +174,7 @@ function update_mod_entries() {
                     }
 
                     $jar_md5 = md5_file($jarfilename);
-                    
+
                     $update_jar_md5 = $db->execute("UPDATE mods SET jar_md5 = '{$jar_md5}' WHERE id = {$mod['id']} AND jar_md5 <> '{$jar_md5}'");
 
                     if ($update_jar_md5) {
@@ -222,20 +232,19 @@ function update_mod_entries() {
     rrmdir('../upgrade_work');
 }
 
-function update_modloader_entries() {
+function update_modloader_entries()
+{
     global $config;
     global $db;
 
-    $forges=$db->query("SELECT id,filename,loadertype FROM mods WHERE type='forge'");
+    $forges = $db->query("SELECT id,filename,loadertype FROM mods WHERE type='forge'");
     foreach ($forges as $forge) {
         if (empty($forge['loadertype'])) {
             if (str_starts_with($forge['filename'], 'forge-')) {
                 $db->execute("UPDATE mods SET loadertype='forge' WHERE id={$forge['id']}");
-            }
-            else if (str_starts_with($forge['filename'], 'neoforge-')) {
+            } elseif (str_starts_with($forge['filename'], 'neoforge-')) {
                 $db->execute("UPDATE mods SET loadertype='neoforge' WHERE id={$forge['id']}");
-            }
-            else if (str_starts_with($forge['filename'], 'fabric-')) {
+            } elseif (str_starts_with($forge['filename'], 'fabric-')) {
                 $db->execute("UPDATE mods SET loadertype='fabric' WHERE id={$forge['id']}");
             } else {
                 error_log("Unknown filename {$forge['filename']}");
@@ -249,29 +258,30 @@ function update_modloader_entries() {
     }
 }
 
-function update_build_entries() {
+function update_build_entries()
+{
     global $config;
     global $db;
 
-    $builds=$db->query("SELECT id,name,mods,loadertype FROM builds");
+    $builds = $db->query("SELECT id,name,mods,loadertype FROM builds");
 
     foreach ($builds as $build) {
         if (empty($build['loadertype'])) {
             // now get the mod details
-            $mod_loadertype='';
+            $mod_loadertype = '';
             foreach (explode(",", $build['mods']) as $id) {
                 $mod_loadertype = $db->query("SELECT id,loadertype FROM mods WHERE id = {$id} AND type='forge'");
-                if ($mod_loadertype===FALSE || empty($mod_loadertype) || sizeof($mod_loadertype)!==1) {
+                if ($mod_loadertype === false || empty($mod_loadertype) || sizeof($mod_loadertype) !== 1) {
                     continue;
                 }
                 // at this point we have a forge entry
-                $mod_loadertype=$mod_loadertype[0]['loadertype'];
+                $mod_loadertype = $mod_loadertype[0]['loadertype'];
                 break;
             }
             if (!empty($mod_loadertype)) {
                 $updateres = $db->execute("UPDATE builds SET loadertype = '{$mod_loadertype}' WHERE id = {$build['id']}");
 
-                if ($updateres===TRUE) {
+                if ($updateres === true) {
                     echo "Updated '{$build['name']}' = '{$mod_loadertype}'<br/>";
                 } else {
                     echo "Failed to update '{$build['name']}'<br/>";
@@ -285,7 +295,8 @@ function update_build_entries() {
     }
 }
 
-function update_modpack_rec_latest() {
+function update_modpack_rec_latest()
+{
     global $config;
     global $db;
 
@@ -294,13 +305,13 @@ function update_modpack_rec_latest() {
     foreach ($modpacks as $modpack) {
         // get latest public build
         $lpq = $db->query("SELECT id,name FROM builds WHERE public = 1 AND modpack = {$modpack['id']} AND name= '{$modpack['latest']}' ORDER BY id DESC LIMIT 1");
-        if ($lpq && sizeof($lpq)==1) {
+        if ($lpq && sizeof($lpq) == 1) {
             $db->execute("UPDATE modpacks SET latest = {$lpq[0]['id']} WHERE id = {$modpack['id']}");
             echo "{$modpack['name']}: latest={$lpq[0]['name']} ({$lpq[0]['id']})<br/>";
         }
         // get recommended public build
         $lpq = $db->query("SELECT id FROM builds WHERE public = 1 AND modpack = {$modpack['id']} AND name= '{$modpack['recommended']}' ORDER BY id DESC LIMIT 1");
-        if ($lpq && sizeof($lpq)==1) {
+        if ($lpq && sizeof($lpq) == 1) {
             $db->execute("UPDATE modpacks SET recommended = {$lpq[0]['id']} WHERE id = {$modpack['id']}");
             echo "{$modpack['name']}: recommended={$lpq[0]['name']} ({$lpq[0]['id']})<br/>";
         }
@@ -330,13 +341,12 @@ update_modpack_rec_latest();
 
 $db->disconnect();
 
-$config['config_version']=CONFIG_VERSION;
+$config['config_version'] = CONFIG_VERSION;
 // save to new config
 require_once('./configuration.php');
-$config_new=new Config();
+$config_new = new Config();
 if ($config_new->setall($config)) {
     unlink('config.php');
 }
 
 exit();
-

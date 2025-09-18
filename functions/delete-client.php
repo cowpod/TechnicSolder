@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 if (empty($_SESSION['user'])) {
@@ -21,8 +22,8 @@ if (!is_numeric($_GET['id'])) {
 }
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 

@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 if (empty($_SESSION['user'])) {
@@ -37,13 +38,13 @@ if (!preg_match('/^[\w\-\.]+$/', $_POST['new_build_name'])) {
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 
@@ -82,7 +83,7 @@ $stats = $db->query("
     FROM builds
     WHERE id={$id}
 ");
-if ($stats && sizeof($stats)==1){
+if ($stats && sizeof($stats) == 1) {
     $stats = $stats[0];
 } else {
     die('{"status":"error","message":"Could not get info for new build"}');

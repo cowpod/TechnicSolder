@@ -1,5 +1,7 @@
 <?php
-function sanitize_string_utf8(null|string $input): null|string {
+
+function sanitize_string_utf8(null|string $input): null|string
+{
     if (is_null($input)) {
         return $input;
     }

@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
@@ -16,13 +17,13 @@ if (!$perms->modpack_create()) {
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 
@@ -30,13 +31,13 @@ $url = $_SERVER['REQUEST_URI'];
 if ($config->exists('protocol') && !empty($config->get('protocol'))) {
     $protocol = strtolower($config->get('protocol')).'://';
 } else {
-    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+    $protocol = strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL']))).'://';
 }
 
 $public_modpack = 0;
 
 $mpq = $db->query("SELECT COUNT(*) AS count FROM modpacks WHERE name LIKE 'unnamed-modpack-%'");
-$mpi = ($mpq && isset($mpq[0]['count'])) ? $mpq[0]['count']+1 : 1;
+$mpi = ($mpq && isset($mpq[0]['count'])) ? $mpq[0]['count'] + 1 : 1;
 
 $db->execute("INSERT INTO modpacks (
     name,

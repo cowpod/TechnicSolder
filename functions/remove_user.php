@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
@@ -23,11 +24,11 @@ if (!is_numeric($_POST['id'])) {
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect();
 
 $removeq = $db->execute("DELETE FROM `users` WHERE `id` = {$_POST['id']}");

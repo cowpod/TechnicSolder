@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
@@ -25,7 +26,7 @@ if (!is_numeric($_GET['id']) || !is_numeric($_GET['bid'])) {
 }
 
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect();
 
 $modsq = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$db->sanitize($_GET['bid']));

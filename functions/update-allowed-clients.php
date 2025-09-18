@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 
 if (empty($_SESSION['user'])) {
@@ -49,13 +50,13 @@ assert(!empty($which_table));
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 global $db;
 require_once('db.php');
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 

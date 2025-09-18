@@ -1,4 +1,5 @@
 <?php
+
 define('ALLOWED_TYPES', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 header('content-type: text/json');
 session_start();
@@ -13,7 +14,8 @@ require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
 
-function isStrongPassword($password): bool {
+function isStrongPassword($password): bool
+{
     if (strlen($password) < 8) {
         return false;
     }
@@ -28,11 +30,13 @@ function isStrongPassword($password): bool {
     }
     return true;
 }
-function isValidName($name) {
+function isValidName($name)
+{
     return preg_match("/^[\w\-\s\.]{2,255}$/", $name);
 }
 
-function validateImage($filePath, &$type) {
+function validateImage($filePath, &$type)
+{
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $filePath);
     finfo_close($finfo);
@@ -46,100 +50,104 @@ function validateImage($filePath, &$type) {
     }
 }
 
-function update_icon($db, $target_user, $iconfile) {
-    if (empty($iconfile) ) {
-        return ["status"=>"error","message"=>"File missing"];
+function update_icon($db, $target_user, $iconfile)
+{
+    if (empty($iconfile)) {
+        return ["status" => "error","message" => "File missing"];
     }
     if (!file_exists($iconfile)) {
-        return ["status"=>"error","message"=>"File doesn't exist"];
+        return ["status" => "error","message" => "File doesn't exist"];
     }
-    if (filesize($iconfile)>4194304) {
-        return ["status"=>"error","message"=>"File size too large (max 4MB)"];
+    if (filesize($iconfile) > 4194304) {
+        return ["status" => "error","message" => "File size too large (max 4MB)"];
     }
 
     $type = "";
     if (!validateImage($iconfile, $type)) {
-        return ["status"=>"error","message"=>"Bad image"];
+        return ["status" => "error","message" => "Bad image"];
     }
 
     $contents = @file_get_contents($iconfile);
-    if ($contents===false) {
-        return ["status"=>"error","message"=>"Couldn't get image"];
+    if ($contents === false) {
+        return ["status" => "error","message" => "Couldn't get image"];
     }
-    
+
     $icon_base64 = base64_encode($contents);
 
     $updateicon = $db->execute("UPDATE users SET icon = '{$icon_base64}' WHERE name = '{$target_user}'");
     if (!$updateicon) {
-        return ["status"=>"error","message"=>"Could not set user icon"];
+        return ["status" => "error","message" => "Could not set user icon"];
     }
-    
-    return ["status"=>"succ","message"=>"Icon updated.","data"=>["type"=>$type,"data"=>$icon_base64]];
+
+    return ["status" => "succ","message" => "Icon updated.","data" => ["type" => $type,"data" => $icon_base64]];
 }
 
-function update_perms($db,$target_user,$newperms) {
+function update_perms($db, $target_user, $newperms)
+{
     global $perms;
     if (empty($newperms)) {
-        return ["status"=>"error","message"=>"Perms missing"];
+        return ["status" => "error","message" => "Perms missing"];
     }
     if (empty($target_user)) {
-        return ["status"=>"error","message"=>"User missing"];
+        return ["status" => "error","message" => "User missing"];
     }
     if (!$perms->privileged()) {
-        return ["status"=>"error","message"=>"Insufficient permission!"];
+        return ["status" => "error","message" => "Insufficient permission!"];
     }
     if (strspn($newperms, '01') != strlen($newperms)) {
-        return ["status"=>"error","message"=>"Malformed permission data"];
+        return ["status" => "error","message" => "Malformed permission data"];
     }
     if (!filter_var($target_user, FILTER_VALIDATE_EMAIL)) {
-        return ["status"=>"error","message"=>"Bad input data; name"];
+        return ["status" => "error","message" => "Bad input data; name"];
     }
 
     $setpermsx = $db->execute("UPDATE users SET perms = '{$newperms}' WHERE name = '{$target_user}'");
     if (!$setpermsx) {
-        return ["status"=>"error","message"=>"Could not update permissions"];
+        return ["status" => "error","message" => "Could not update permissions"];
     }
-    return ["status"=>"succ","message"=>"Permissions updated."];
-    
+    return ["status" => "succ","message" => "Permissions updated."];
+
 }
 
-function update_password($db,$target_user,$oldpass,$pass) {
+function update_password($db, $target_user, $oldpass, $pass)
+{
     if (empty($oldpass) || empty($pass)) {
-        return ["status"=>"error","message"=>"oldpass / pass missing"];
+        return ["status" => "error","message" => "oldpass / pass missing"];
     }
     if (!isStrongPassword($pass)) {
-        return ["status"=>"error","message"=>"Weak password"];
+        return ["status" => "error","message" => "Weak password"];
     }
 
     $verifypwdq = $db->query("SELECT pass FROM users WHERE name = '{$target_user}'");
     if (!$verifypwdq) {
-        return ["status"=>"error","message"=>"Could not verify old password"];
+        return ["status" => "error","message" => "Could not verify old password"];
     }
     $oldpasswordhash = $verifypwdq[0]['pass'];
     if (!password_verify($oldpass, $oldpasswordhash)) {
         error_log("stored password does not match old password");
-        return ["status"=>"error","message"=>"Could not verify old password"];
+        return ["status" => "error","message" => "Could not verify old password"];
     }
 
     $newpass = password_hash($pass, PASSWORD_DEFAULT);
     $setpasswordx = $db->execute("UPDATE users SET pass = '{$newpass}' WHERE name = '{$target_user}'");
     if (!$setpasswordx) {
-        return ["status"=>"error","message"=>"Could not update password"];
+        return ["status" => "error","message" => "Could not update password"];
     }
 
-    return ["status"=>"succ","message"=>"Password updated."];
+    return ["status" => "succ","message" => "Password updated."];
 }
 
-function update_display_name($db,$target_user,$display_name) {
+function update_display_name($db, $target_user, $display_name)
+{
     if (empty($display_name)) {
-        return ["status"=>"error","message"=>"display_name missing"];
+        return ["status" => "error","message" => "display_name missing"];
     }
     if (!isValidName($display_name)) {
-        return ["status"=>"error","message"=>"Bad name"];
+        return ["status" => "error","message" => "Bad name"];
     }
     $updatedisplayname = $db->execute("UPDATE users SET display_name = '{$display_name}' WHERE name = '{$target_user}'");
     if (!$updatedisplayname) {
-        return ["status"=>"error","message"=>"Could not update name"];
+        return ["status" => "error","message" => "Could not update name"];
     }
 
     // update session vars. otherwise user will need to relog.
@@ -147,21 +155,21 @@ function update_display_name($db,$target_user,$display_name) {
 
     $idq = $db->query("SELECT id FROM users WHERE name = '{$target_user}'");
     if (empty($idq[0]['id'])) {
-        return ["status"=>"error","message"=>"Couldn't get user id (database issue?)"];
+        return ["status" => "error","message" => "Couldn't get user id (database issue?)"];
     }
     $id = $idq[0]['id'];
 
-    return ["status"=>"succ","message"=>"Display name updated.","data"=>["display_name"=>$display_name,"id"=>$id]];
+    return ["status" => "succ","message" => "Display name updated.","data" => ["display_name" => $display_name,"id" => $id]];
 }
 
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 
-$return_arr=["status"=>"succ","message"=>""];
+$return_arr = ["status" => "succ","message" => ""];
 
 // prefer specific-user from _POST over self-user from _SESSION
 $target_user = isset($_POST['user']) ? $_POST['user'] : $_SESSION['user'];
@@ -173,10 +181,10 @@ if (isset($_POST['user']) && $_POST['user'] != $_SESSION['user']) {
     }
 }
 
-if (!empty($_FILES["newIcon"]["tmp_name"]) 
-    && ($ret=update_icon($db, $target_user, $_FILES["newIcon"]["tmp_name"]))) {
+if (!empty($_FILES["newIcon"]["tmp_name"])
+    && ($ret = update_icon($db, $target_user, $_FILES["newIcon"]["tmp_name"]))) {
     // only overwrite a 'succ' => so an 'error' sticks!
-    if ($return_arr['status']=='succ') {
+    if ($return_arr['status'] == 'succ') {
         $return_arr['status'] = $ret['status'];
     }
     $return_arr['message'] .= $ret['message'];
@@ -184,9 +192,9 @@ if (!empty($_FILES["newIcon"]["tmp_name"])
         $return_arr = array_merge($return_arr, $ret['data']); // append contents of data to return array
     }
 }
-if ($perms->privileged() && !empty($_POST['perms']) && !empty($_POST['user']) 
-    && ($ret=update_perms($db, $target_user, $_POST['perms']))) {
-    if ($return_arr['status']=='succ') {
+if ($perms->privileged() && !empty($_POST['perms']) && !empty($_POST['user'])
+    && ($ret = update_perms($db, $target_user, $_POST['perms']))) {
+    if ($return_arr['status'] == 'succ') {
         $return_arr['status'] = $ret['status'];
     }
     $return_arr['message'] .= $ret['message'];
@@ -194,9 +202,9 @@ if ($perms->privileged() && !empty($_POST['perms']) && !empty($_POST['user'])
         $return_arr = array_merge($return_arr, $ret['data']); // append contents of data to return array
     }
 }
-if (!empty($_POST['oldpass']) && !empty($_POST['pass']) 
-    && ($ret=update_password($db, $target_user, $_POST['oldpass'], $_POST['pass']))) {
-    if ($return_arr['status']=='succ') {
+if (!empty($_POST['oldpass']) && !empty($_POST['pass'])
+    && ($ret = update_password($db, $target_user, $_POST['oldpass'], $_POST['pass']))) {
+    if ($return_arr['status'] == 'succ') {
         $return_arr['status'] = $ret['status'];
     }
     $return_arr['message'] .= $ret['message'];
@@ -204,9 +212,9 @@ if (!empty($_POST['oldpass']) && !empty($_POST['pass'])
         $return_arr = array_merge($return_arr, $ret['data']); // append contents of data to return array
     }
 }
-if (!empty($_POST['display_name']) 
-    && ($ret=update_display_name($db, $target_user, $_POST['display_name']))) {
-    if ($return_arr['status']=='succ') {
+if (!empty($_POST['display_name'])
+    && ($ret = update_display_name($db, $target_user, $_POST['display_name']))) {
+    if ($return_arr['status'] == 'succ') {
         $return_arr['status'] = $ret['status'];
     }
     $return_arr['message'] .= $ret['message'];
@@ -218,7 +226,3 @@ if (!empty($_POST['display_name'])
 $db->disconnect();
 
 die(json_encode($return_arr, JSON_UNESCAPED_SLASHES));
-
-
-
-

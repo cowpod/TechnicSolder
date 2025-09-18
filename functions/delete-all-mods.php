@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
@@ -18,7 +19,7 @@ if (empty($_GET['confirm'])) {
 
 echo "Preparing to delete all mods<br/>";
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect();
 
 $ret = $db->execute("DELETE FROM mods WHERE type = 'mod'");
@@ -28,11 +29,11 @@ if (!$ret) {
 $db->disconnect();
 
 $files = glob('../mods/*.zip');
-foreach($files as $file){ 
-  if(is_file($file)) {
-    unlink($file);
-    echo "deleting $file<br/>";
-  }
+foreach ($files as $file) {
+    if (is_file($file)) {
+        unlink($file);
+        echo "deleting $file<br/>";
+    }
 }
 
 die("All mods deleted.");

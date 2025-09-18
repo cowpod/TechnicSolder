@@ -1,6 +1,8 @@
 <?php
+
 define('DEFAULT_PERMS', '0000000');
-function isStrongPassword($password): bool {
+function isStrongPassword($password): bool
+{
     if (strlen($password) < 8) {
         return false;
     }
@@ -33,7 +35,7 @@ if (!$perms->privileged()) {
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 if (empty($_POST['name'])) {
@@ -66,7 +68,7 @@ if (!preg_match("/^[a-zA-Z0-9\s\-\.\s]+$/", $name)) {
 // }
 
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect();
 
 $user_existsq = $db->query("SELECT 1 FROM users WHERE name='".$email."'");

@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 if (empty($_SESSION['user'])) {
@@ -9,12 +10,12 @@ if (empty($_GET['md5'])) {
     die('{"status":"error","message":"MD5 missing"}');
 }
 
-if (!ctype_alnum($_GET['md5']) || strlen($_GET['md5'])!==32) {
+if (!ctype_alnum($_GET['md5']) || strlen($_GET['md5']) !== 32) {
     die('{"status":"error","message":"Bad MD5"}');
 }
 
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect();
 
 $md5q = $db->query("SELECT 1 FROM mods WHERE jar_md5='{$_GET['md5']}' LIMIT 1");

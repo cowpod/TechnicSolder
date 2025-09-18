@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 if (empty($_SESSION['user'])) {
@@ -22,23 +23,23 @@ if (empty($_GET['bid'])) {
     die('{"status":"error","message":"Build not specified."}');
 }
 
-if (!is_numeric($_GET['bid'])||!is_numeric($_GET['id_new'])||!is_numeric($_GET['id_old'])) {
+if (!is_numeric($_GET['bid']) || !is_numeric($_GET['id_new']) || !is_numeric($_GET['id_old'])) {
     die('{"status":"error","Malformed value(s)"}');
 }
 
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 
 $modsq = $db->query("SELECT mods FROM builds WHERE id = ".$db->sanitize($_GET['bid']));
-if ($modsq && sizeof($modsq)==1 && !empty($modsq[0]['mods'])) {
+if ($modsq && sizeof($modsq) == 1 && !empty($modsq[0]['mods'])) {
     $modslist = explode(',', $modsq[0]['mods']);
     unset($modslist[array_search($_GET['id_old'], $modslist)]);
     array_push($modslist, $_GET['id_new']);
-    $modslist_string = implode(',',$modslist);
+    $modslist_string = implode(',', $modslist);
 } else {
     die('{"status":"error","message":"Build contains no mods. You need to set the version and loader."}');
 }

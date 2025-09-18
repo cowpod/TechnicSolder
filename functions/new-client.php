@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
@@ -22,18 +23,18 @@ if (empty($_GET['uuid'])) {
 if (!preg_match('/[\w\s\.\-]+/', $_GET['name'])) {
     die("Malformed name");
 }
-if ((strlen($_GET['uuid'])!==36&&strlen($_GET['uuid'])!==32) || !preg_match('/[a-fA-F0-9\-]+/', $_GET['uuid'])) {
+if ((strlen($_GET['uuid']) !== 36 && strlen($_GET['uuid']) !== 32) || !preg_match('/[a-fA-F0-9\-]+/', $_GET['uuid'])) {
     die("Malformed UUID");
 }
 
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect();
 
 $db->execute("INSERT INTO clients(`name`,`UUID`) VALUES ('".$db->sanitize($_GET['name'])."', '".$db->sanitize($_GET['uuid'])."')");

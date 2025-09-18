@@ -1,4 +1,5 @@
 <?php
+
 /*
 TODO: This is insecure.
 */
@@ -6,14 +7,14 @@ TODO: This is insecure.
 require_once('sanitize.php');
 
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 
 if ($db->test2($_POST['db-type'], $_POST['db-host'], $_POST['db-user'], $_POST['db-pass'], $_POST['db-name'])) {
-	echo 'success';
-	// return('success');
+    echo 'success';
+    // return('success');
 } else {
-	echo 'error';
-	// return('error');
+    echo 'error';
+    // return('error');
 }
 
 exit();

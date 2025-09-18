@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 if (empty($_SESSION['user'])) {
@@ -35,12 +36,12 @@ if (!file_exists("../forges/modpack-".$version)) {
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 
@@ -48,7 +49,7 @@ $url = $_SERVER['REQUEST_URI'];
 if ($config->exists('protocol') && !empty($config->get('protocol'))) {
     $protocol = strtolower($config->get('protocol')).'://';
 } else {
-    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+    $protocol = strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL']))).'://';
 }
 
 $get_data = @file_get_contents("https://meta.fabricmc.net/v2/versions/loader/".$mcversion."/".urlencode($version)."/profile/json");
@@ -66,7 +67,7 @@ if ($save_data === false) {
 }
 
 $zip = new ZipArchive();
-if ($zip->open("../forges/fabric-".$version.".zip", ZIPARCHIVE::CREATE) !== TRUE) {
+if ($zip->open("../forges/fabric-".$version.".zip", ZIPARCHIVE::CREATE) !== true) {
     echo '{"status":"error","message":"Could not open archive"}';
     exit();
 }
@@ -74,14 +75,14 @@ if ($zip->open("../forges/fabric-".$version.".zip", ZIPARCHIVE::CREATE) !== TRUE
 $path = "../forges/modpack-".$version."/version.json";
 $zip->addEmptyDir('bin');
 if (is_file($path)) {
-    $zip->addFile($path, "bin/version.json") or die ('{"status":"error","message":"Could not add file to archive"}');
+    $zip->addFile($path, "bin/version.json") or die('{"status":"error","message":"Could not add file to archive"}');
 }
 $zip->close();
 unlink("../forges/modpack-".$version."/version.json");
 rmdir("../forges/modpack-".$version);
 
 $md5 = md5_file("../forges/fabric-".$version.".zip");
-$file_size=filesize("../forges/fabric-".$version.".zip");
+$file_size = filesize("../forges/fabric-".$version.".zip");
 $url = $protocol.$config->get('host').$config->get('dir')."forges/fabric-".urlencode($version).".zip";
 
 $res = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`filesize`,`type`,`loadertype`) VALUES (

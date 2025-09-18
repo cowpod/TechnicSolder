@@ -1,4 +1,5 @@
 <?php
+
 // TODO: this is horribly outdated
 session_start();
 
@@ -26,20 +27,20 @@ if (empty($_POST['solder-orig'])) {
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
-$PROTO_STR = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+$PROTO_STR = strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL']))).'://';
 
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect(); // connect from configuration.php
 
-$db2=new Db;
-$db2->connect2($_POST['db-type'], $_POST['db-host'],$_POST['db-user'],$_POST['db-pass'],$_POST['db-name']); // connect from user-provided POST
+$db2 = new Db();
+$db2->connect2($_POST['db-type'], $_POST['db-host'], $_POST['db-user'], $_POST['db-pass'], $_POST['db-name']); // connect from user-provided POST
 if (!$db2) {
     die("error");
 }
@@ -48,7 +49,7 @@ $url = $_SERVER['REQUEST_URI'];
 if ($config->exists('protocol') && !empty($config->get('protocol'))) {
     $protocol = strtolower($config->get('protocol')).'://';
 } else {
-    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+    $protocol = strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL']))).'://';
 }
 
 $db->execute("TRUNCATE `modpacks`");
@@ -86,16 +87,16 @@ foreach ($res as $row) {
 // ----- MODS ----- \\
 $res = $db2->query("SELECT * FROM `releases`");
 foreach ($res as $row) {
-    $url = $protocol.$config->get('host').$config->get('dir')."mods/".end(explode("/",$row['path']));
+    $url = $protocol.$config->get('host').$config->get('dir')."mods/".end(explode("/", $row['path']));
     $packageres = $db2->query("SELECT * FROM `packages` WHERE `id` = ".$row['package_id']);
     if (!$packageres) {
         die("Package id does not exist");
     }
 
     $package = $packageres[0];
-    $db->execute("INSERT INTO `mods` (`type`,`url`,`version`,`md5`,`filename`,`name`,`pretty_name`,`author`,`link`,`donlink`,`description`) VALUES ('mod','".$url."','".$row['version']."','".$row['md5']."','".end(explode("/",$row['path']))."','".$package['slug']."','".$package['name']."','".$package['author']."','".$package['website_url']."','".$package['donation_url']."','".$package['description']."')");
-    copy($_POST['solder-orig']."/storage/app/public/".$row['path'], dirname(dirname(__FILE__))."/mods/".end(explode("/",$row['path'])));
-    
+    $db->execute("INSERT INTO `mods` (`type`,`url`,`version`,`md5`,`filename`,`name`,`pretty_name`,`author`,`link`,`donlink`,`description`) VALUES ('mod','".$url."','".$row['version']."','".$row['md5']."','".end(explode("/", $row['path']))."','".$package['slug']."','".$package['name']."','".$package['author']."','".$package['website_url']."','".$package['donation_url']."','".$package['description']."')");
+    copy($_POST['solder-orig']."/storage/app/public/".$row['path'], dirname(dirname(__FILE__))."/mods/".end(explode("/", $row['path'])));
+
 }
 // ----- BUILD_RELEASE ----- \\
 $res = $db2->query("SELECT * FROM `build_release`");
@@ -105,14 +106,14 @@ foreach ($res as $row) {
     if (!$mres) {
         die("Build id does not exist");
     }
-    
+
     $ma = $mres[0];
     $ml = explode(',', $ma['mods']);
-    if (count($ml)>0) {
-        array_push($mods, implode(',',$ml));
+    if (count($ml) > 0) {
+        array_push($mods, implode(',', $ml));
     }
     array_push($mods, $row['release_id']);
-    $db->execute("UPDATE `builds` SET `mods` = '". implode(',',$mods)."' WHERE `id` = ".$row['build_id']);
+    $db->execute("UPDATE `builds` SET `mods` = '". implode(',', $mods)."' WHERE `id` = ".$row['build_id']);
 }
 
 exit();

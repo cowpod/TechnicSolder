@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 
@@ -16,18 +17,18 @@ $api_key = $_POST['api_key'];
 if (!empty($api_key) && !ctype_alnum($api_key)) {
     die('{"status":"error", "message":"invalid api_key provided"}');
 }
-if (strlen($api_key)!=32 && strlen($api_key)!=0) {
+if (strlen($api_key) != 32 && strlen($api_key) != 0) {
     die('{"status":"error", "message":"invalid api_key provided"}');
 }
 
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 // set server-wide key
-if ($perms->privileged() && isset($_POST['serverwide']) && $_POST['serverwide']==1) {
+if ($perms->privileged() && isset($_POST['serverwide']) && $_POST['serverwide'] == 1) {
     $config->set('api_key', $api_key);
     die('{"status":"succ", "message":"successfuly set server-wide api_key"}');
 }
@@ -37,12 +38,12 @@ if ($config->exists('api_key') && !empty($config->get('api_key'))) {
 }
 
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect();
 
 require_once("user-settings.php");
 
-if (get_setting('api_key') && get_setting('api_key')==$api_key) {
+if (get_setting('api_key') && get_setting('api_key') == $api_key) {
     $db->disconnect();
     die('{"status":"succ", "message":"api_key is the same"}');
 }

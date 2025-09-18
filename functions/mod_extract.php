@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
@@ -12,41 +13,41 @@ if (!$_GET['id']) {
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 require_once("db.php");
 global $db;
 if (empty($db)) {
-    $db=new Db;
+    $db = new Db();
     $db->connect();
 }
-define('STREAM_CHUNK_SIZE', 1024*64); // 64KB
-define('MAX_DOWNLOAD_TIME', 60*20); // 20 minutes
+define('STREAM_CHUNK_SIZE', 1024 * 64); // 64KB
+define('MAX_DOWNLOAD_TIME', 60 * 20); // 20 minutes
 // define('ASSUMED_USER_TRANSFER_SPEED', 1024*1024); // 1MB/s
 
 $filenameq = $db->query("SELECT `filename` FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
 if ($filenameq) {
-    assert(sizeof($filenameq)==1);
-    $filenameq=$filenameq[0];
+    assert(sizeof($filenameq) == 1);
+    $filenameq = $filenameq[0];
 }
 $fileName = $filenameq['filename'];
-$file_location ='../mods/'.$fileName;
+$file_location = '../mods/'.$fileName;
 
 // todo: ensure path is safe
 
-$zip = new ZipArchive;
-$zippedJarFilePath='';
-$zippedJarFileSize=0;
+$zip = new ZipArchive();
+$zippedJarFilePath = '';
+$zippedJarFileSize = 0;
 
-if ($zip->open($file_location)===TRUE) {
+if ($zip->open($file_location) === true) {
     $totalFiles = $zip->numFiles;
-    // assert($totalFiles==2); 
+    // assert($totalFiles==2);
     for ($i = 0; $i < $totalFiles; $i++) {
         $zippedJarFileName = $zip->getNameIndex($i);
         if (str_ends_with($zippedJarFileName, '.jar')) {
-            $zippedJarFilePath=$zippedJarFileName;
-            $zippedJarFileSize=$zip->statIndex($i)['size'];
+            $zippedJarFilePath = $zippedJarFileName;
+            $zippedJarFileSize = $zip->statIndex($i)['size'];
         }
     }
 }

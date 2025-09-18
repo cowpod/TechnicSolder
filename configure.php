@@ -2,17 +2,17 @@
 define('CONFIG_VERSION', 1);
 define('ICON', "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB9ElEQVR4Xu2bSytEcRiHZyJRaDYWRhJilFlYKjakNOWS7OxEGCRGpAg1KykRSlHSKLkO0YyFhSiRIQmbIcVEsnCXW/EJPB/g9Jvt0/8s3t73+b3nnDnmpZWaXxP8dssRm6yL+XTc9OO1Ib+9GWCe60BuyUpEvvDYiNysAqgDNAJygCSoFPi/AoaPwbCvXnRAKKoZc/T7rA/5kasEeV1wEvlJnBf5lM+KfD16mPcAFUAdoBGQA8gSkqBSwOAxmBZ8QQdsOTIwRzsPOae7Iy/w/Op3DvLwZd4zgrYnPJ83Xcp7gAqgDtAIyAFkCUlQKWDwGKzdPeUH//ftmKPz9ePIQ6m1yANufq+QPteK58s6tpHvRZTxHqACqAM0AnIAWkISVAoYOwaf13bQAZn2WSzAQ1EB38/3FyP/9R0jz/K/I/cMxSM3VSTzHqACqAM0AnIAWUISVAoYPAbfe6/RAV07b5ijH/uFyD8Dd8jnejy8R+TwnuG8GsTzpXdJvAeoAOoAjYAcQJaQBJUCBo9B+6sDHfDSUoM5Wm1uQ34Z60YeMzOB3DJygNy5yU+sHGNNvAeoAOoAjYAcQJaQBJUCBo/B7Cr+aMrvnMEctVbx9wCVXbxINboS8Pqu0DnyFDf//2B0o4H3ABVAHaARwD1ADpAElQKGjsE/aSRgFj7BEuwAAAAASUVORK5CYII=");
 define('DEFAULT_PERMS', '1111111'); // and 'privileged'=>'1' makes you an admin.
-define('OVERWRITE_USER', TRUE);
+define('OVERWRITE_USER', true);
 session_start();
 
 require_once('./functions/configuration.php');
 // global $config;
 // if (empty($config)) {
-    $config=new Config();
+$config = new Config();
 // }
 
 if (!$config->exists('configured')) {
-    $config->set('configured',false);
+    $config->set('configured', false);
 }
 
 if (file_exists('./functions/settings.php')) {
@@ -38,10 +38,10 @@ if (isset($_GET['reconfig'])) {
 require_once("./functions/db.php");
 // global $db;
 // if (empty($db)) {
-    $db=new Db;
+$db = new Db();
 // }
 
-$connection_failed=FALSE;
+$connection_failed = false;
 
 if (isset($_POST['host'])) {
     // OLD HASHING METHOD (INSECURE)
@@ -49,12 +49,12 @@ if (isset($_POST['host'])) {
     $_POST['pass'] = password_hash($_POST['pass'], PASSWORD_DEFAULT);
 
     // todo: hash password client-side
-    
+
     $email = strtolower($_POST['email']);
     $name = $_POST['author'];
     $pass = $_POST['pass'];
     $api_key = $_POST['api_key'];
-    $api_key_serverwide = isset($_POST['api_key_serverwide']) ? TRUE : FALSE;
+    $api_key_serverwide = isset($_POST['api_key_serverwide']) ? true : false;
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         die('Bad input data; email');
@@ -65,7 +65,7 @@ if (isset($_POST['host'])) {
     // if (!preg_match("/^[a-zA-Z0-9+\/]+={,2}$/", $pass)) {
     //     die("Bad input data; pass");
     // }
-    if (!ctype_alnum($api_key) || strlen($api_key)!=32) {
+    if (!ctype_alnum($api_key) || strlen($api_key) != 32) {
         die("Bad input data; api_key");
     }
 
@@ -77,8 +77,8 @@ if (isset($_POST['host'])) {
     $host = strtolower($_POST['host']);
     $dir = $_POST['dir'];
 
-    if ($dbtype!="sqlite") {
-        if (!ctype_alnum($dbtype)||!ctype_alnum($dbuser)||!ctype_alnum($dbname)) {
+    if ($dbtype != "sqlite") {
+        if (!ctype_alnum($dbtype) || !ctype_alnum($dbuser) || !ctype_alnum($dbname)) {
             die("Bad input data; db type/user/name");
         }
         if (!preg_match("/^[a-z0-9\.\-]+$/", $dbhost)) {
@@ -106,40 +106,40 @@ if (isset($_POST['host'])) {
     if ($version_raw === false) {
         die("Could not get api version data");
     }
-    $version = @json_decode($version_raw,true);
+    $version = @json_decode($version_raw, true);
     if ($version === null) {
         die("Could not decode api version data");
     }
 
     $config_contents = [
-        'db-type'=>$dbtype,
-        'db-host'=>$dbhost,
-        'db-user'=>$dbuser,
-        'db-pass'=>$dbpass,
-        'db-name'=>$dbname,
-        'host'=>$host,
-        'dir'=>$dir,
-        'configured'=>true,
-        'config_version'=>CONFIG_VERSION,
-        'fabric_integration'=>'on',
-        'forge_integration'=>'on',
-        'neoforge_integration'=>'on',
-        'modrinth_integration'=>'on',
-        'use_verifier'=>'on',
-        'enable_self_updater'=>'on'
+        'db-type' => $dbtype,
+        'db-host' => $dbhost,
+        'db-user' => $dbuser,
+        'db-pass' => $dbpass,
+        'db-name' => $dbname,
+        'host' => $host,
+        'dir' => $dir,
+        'configured' => true,
+        'config_version' => CONFIG_VERSION,
+        'fabric_integration' => 'on',
+        'forge_integration' => 'on',
+        'neoforge_integration' => 'on',
+        'modrinth_integration' => 'on',
+        'use_verifier' => 'on',
+        'enable_self_updater' => 'on'
     ];
     if ($api_key_serverwide) {
         $config_contents['api_key'] = $api_key;
     }
-    if (strtolower($version['stream'])==='dev') {
+    if (strtolower($version['stream']) === 'dev') {
         $config_contents['dev_builds'] = 'on';
     }
-    
+
     $config->setall($config_contents);
 
     $conn = $db->connect();
     if ($conn) {
-        if ($_POST['db-type']=='sqlite') {
+        if ($_POST['db-type'] == 'sqlite') {
             // sqlite: bigtext,varchar => text
             // int => integer
             // unsigned doesn't exist.
@@ -300,7 +300,7 @@ if (isset($_POST['host'])) {
 
         // if user already exists, replace
         $userexistsq = $db->query("SELECT 1 FROM users WHERE name='".$db->sanitize($email)."'");
-        if ($userexistsq && sizeof($userexistsq)==1) { // `name` is unique
+        if ($userexistsq && sizeof($userexistsq) == 1) { // `name` is unique
             if (OVERWRITE_USER) {
                 $db->execute("DELETE FROM users WHERE name='".$db->sanitize($email)."'");
             } else {
@@ -323,7 +323,7 @@ if (isset($_POST['host'])) {
         header("Location: ".substr($_SERVER['REQUEST_URI'], 0, -strlen($_SERVER['REQUEST_URI']))."login");
         exit();
     } else {
-        $connection_failed=TRUE;
+        $connection_failed = true;
     }
 }
 ?>
@@ -366,10 +366,10 @@ if (isset($_POST['host'])) {
                 if (isset($_GET['reconfig'])) {
                     echo "<a href='". (isset($_GET['ret']) ? $_GET['ret'] : '/') ."'><button class='btn btn-secondary'>Cancel</button></a>";
                 }
-                if (isset($_GET['host']) && $connection_failed) {
-                    echo "<font class='text-danger'>Can't connect to database</font><br/>";
-                }
-                if (isset($_GET['reconfig'])) { ?>
+if (isset($_GET['host']) && $connection_failed) {
+    echo "<font class='text-danger'>Can't connect to database</font><br/>";
+}
+if (isset($_GET['reconfig'])) { ?>
                     <center>
                         <h1>Reconfigure</h1>
                     </center>
@@ -416,8 +416,12 @@ if (isset($_POST['host'])) {
                     <h4>Database</h4>
                     <div class="form-group">
                         <select required name="db-type" class="form-control" id="db-type">
-                            <option value="mysql" <?php if (!empty($_POST['db-type'])&&$_POST['db-type']=='mysql') echo 'selected' ?>>MySQL</option>
-                            <option value="sqlite" <?php if (!empty($_POST['db-type'])&&$_POST['db-type']=='sqlite') echo 'selected' ?>>SQLite</option>
+                            <option value="mysql" <?php if (!empty($_POST['db-type']) && $_POST['db-type'] == 'mysql') {
+                                echo 'selected';
+                            } ?>>MySQL</option>
+                            <option value="sqlite" <?php if (!empty($_POST['db-type']) && $_POST['db-type'] == 'sqlite') {
+                                echo 'selected';
+                            } ?>>SQLite</option>
                         </select>
                         <small id="sqlite-warning" style="display:none" class="form-text">
                             <b>SQLite is not recommended for large installations.</b>

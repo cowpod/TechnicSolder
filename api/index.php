@@ -1,21 +1,22 @@
 <?php
+
 header('Content-Type: application/json');
 
 require_once('../functions/configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 require_once("../functions/db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 
 $url = $_SERVER['REQUEST_URI'];
 // remove query from $url
-if (($querypos = strpos($url, "?")) !== FALSE) {
+if (($querypos = strpos($url, "?")) !== false) {
     $url = rtrim(substr($url, 0, $querypos), '/');
 }
 
@@ -23,14 +24,14 @@ if ($config->exists('protocol') && !empty($config->get('protocol'))) {
     $protocol = strtolower($config->get('protocol')).'://';
 }
 if (empty($protocol) || !in_array($protocol, ['http', 'https'])) {
-    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+    $protocol = strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL']))).'://';
 }
 
 $dir = $config->get('dir');
 
 $dev_builds = $config->exists('dev_builds') && $config->get('dev_builds') === 'on';
 
-$server_wide_api_key='';
+$server_wide_api_key = '';
 if (!empty($config->get('api_key'))) {
     $server_wide_api_key = $config->get('api_key');
 }
@@ -38,32 +39,33 @@ if (!empty($config->get('api_key'))) {
 $client_uuid = isset($_GET['cid']) ? $_GET['cid'] : '';
 
 // this key should always have access.
-$valid_client_key = FALSE;
+$valid_client_key = false;
 if (isset($_GET['k'])) {
     if ($server_wide_api_key) {
-        if ($_GET['k']==$server_wide_api_key) {
-            $valid_client_key = TRUE;
+        if ($_GET['k'] == $server_wide_api_key) {
+            $valid_client_key = true;
         }
     } else {
         $qk = $db->query("SELECT 1 FROM users WHERE api_key = '".$db->sanitize($_GET['k'])."'");
         if ($qk) {
-            $valid_client_key = TRUE;
-        } 
+            $valid_client_key = true;
+        }
     }
 }
 
 // returns TRUE on exact match, FALSE on no match, or string with arg/param.
-function endpoint_arg($url, $endpoint): string|bool {
+function endpoint_arg($url, $endpoint): string|bool
+{
     global $dir;
     // matches endpoint exactly
     if ($url === $dir.$endpoint) {
-        return TRUE;
+        return true;
     }
     $pos = strpos($url, $dir.$endpoint);
     // doesn't match endpoint
-    if ($pos === FALSE) {
-        return FALSE;
-    } 
+    if ($pos === false) {
+        return false;
+    }
     // matches endpoint
     else {
         $arg = substr($url, $pos + strlen($dir.$endpoint));
@@ -72,13 +74,11 @@ function endpoint_arg($url, $endpoint): string|bool {
 }
 
 // api => api/, as it's a directory
-if (($arg = endpoint_arg($url, 'api/')) === TRUE) {
+if (($arg = endpoint_arg($url, 'api/')) === true) {
     die('{"api":"Solder.cf","version":"v1.4.0","stream":"'.($dev_builds ? 'Dev' : 'Release').'"}');
-}
-elseif (($arg = endpoint_arg($url, 'api/verify')) === TRUE) {
+} elseif (($arg = endpoint_arg($url, 'api/verify')) === true) {
     die('{"error":"No API key provided."}');
-}
-elseif (($arg = endpoint_arg($url, 'api/verify/')) !== FALSE) {
+} elseif (($arg = endpoint_arg($url, 'api/verify/')) !== false) {
     $client_api_key = $arg;
     if ($server_wide_api_key) {
         if ($arg === $server_wide_api_key) {
@@ -92,14 +92,13 @@ elseif (($arg = endpoint_arg($url, 'api/verify/')) !== FALSE) {
         }
     }
     die('{"error":"Invalid key provided."}');
-}
-elseif (($arg = endpoint_arg($url, 'api/loader')) !== FALSE) {
-    $modslist=[];
+} elseif (($arg = endpoint_arg($url, 'api/loader')) !== false) {
+    $modslist = [];
     if (!empty($_GET['loadertype']) && ctype_alnum($_GET['loadertype'])) {
-        $loadertype=$_GET['loadertype'];
+        $loadertype = $_GET['loadertype'];
     }
     if (!empty($_GET['mcversion']) && preg_match('/^[a-zA-Z0-9\-\.]+$/', $_GET['mcversion'])) {
-        $mcversion=$_GET['mcversion'];
+        $mcversion = $_GET['mcversion'];
     }
     if (!empty($loadertype) && !empty($mcversion)) {
         $modq = $db->query("SELECT * FROM mods WHERE type='forge' AND loadertype='{$loadertype}' AND ('{$mcversion}' LIKE mcversion || '%' OR mcversion LIKE '{$mcversion}' || '%')");
@@ -114,28 +113,27 @@ elseif (($arg = endpoint_arg($url, 'api/loader')) !== FALSE) {
         foreach ($modq as $mod) {
             $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
             $modentry = [
-                'id'=>$mod['id'],
-                'pretty_name'=>$mod['pretty_name'],
-                'name'=>$mod['name'], 
-                'version'=>$mod['version'], 
-                'mcversion'=>$mod['mcversion'],
-                'md5'=>$mod['md5'], 
-                'url'=>$mod['url'], 
-                'filesize'=>$filesize
+                'id' => $mod['id'],
+                'pretty_name' => $mod['pretty_name'],
+                'name' => $mod['name'],
+                'version' => $mod['version'],
+                'mcversion' => $mod['mcversion'],
+                'md5' => $mod['md5'],
+                'url' => $mod['url'],
+                'filesize' => $filesize
             ];
 
             array_push($modslist, $modentry);
         }
     }
     die(json_encode($modslist, JSON_UNESCAPED_SLASHES));
-}
-elseif (($arg = endpoint_arg($url, 'api/mod')) === TRUE) {
-    $modslist=[];
+} elseif (($arg = endpoint_arg($url, 'api/mod')) === true) {
+    $modslist = [];
     if (!empty($_GET['loadertype']) && ctype_alnum($_GET['loadertype'])) {
-        $loadertype=$_GET['loadertype'];
+        $loadertype = $_GET['loadertype'];
     }
     if (!empty($_GET['mcversion']) && preg_match('/^[a-zA-Z0-9\-\.]+$/', $_GET['mcversion'])) {
-        $mcversion=$_GET['mcversion'];
+        $mcversion = $_GET['mcversion'];
     }
     if (!empty($loadertype) && !empty($mcversion)) {
         $modq = $db->query("SELECT * FROM mods WHERE type='mod' AND loadertype='{$loadertype}' AND ('{$mcversion}' LIKE mcversion || '%' OR mcversion LIKE '{$mcversion}' || '%')");
@@ -150,26 +148,25 @@ elseif (($arg = endpoint_arg($url, 'api/mod')) === TRUE) {
         foreach ($modq as $mod) {
             $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
             $modentry = [
-                'id'=>$mod['id'],
-                'pretty_name'=>htmlspecialchars($mod['pretty_name']),
-                'name'=>$mod['name'], 
-                'version'=>$mod['version'], 
-                'mcversion'=>$mod['mcversion'],
-                'md5'=>$mod['md5'], 
-                'url'=> !empty($mod['url']) ? $mod['url'] : $protocol.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'],
-                'filesize'=>$filesize,
-                'author'=>htmlspecialchars($mod['author']),
-                'loader'=>$mod['loadertype']
+                'id' => $mod['id'],
+                'pretty_name' => htmlspecialchars($mod['pretty_name']),
+                'name' => $mod['name'],
+                'version' => $mod['version'],
+                'mcversion' => $mod['mcversion'],
+                'md5' => $mod['md5'],
+                'url' => !empty($mod['url']) ? $mod['url'] : $protocol.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'],
+                'filesize' => $filesize,
+                'author' => htmlspecialchars($mod['author']),
+                'loader' => $mod['loadertype']
             ];
 
             array_push($modslist, $modentry);
         }
     }
     die(json_encode($modslist, JSON_UNESCAPED_SLASHES));
-}
-elseif (($arg = endpoint_arg($url, 'api/mod/')) !== FALSE) {
+} elseif (($arg = endpoint_arg($url, 'api/mod/')) !== false) {
     $modname = $arg;
-    $modslist=[];
+    $modslist = [];
     $modq = $db->query("SELECT * FROM mods WHERE name='{$modname}'");
     if (!$modq) {
         die('{"error":"Mod does not exist."}');
@@ -177,19 +174,18 @@ elseif (($arg = endpoint_arg($url, 'api/mod/')) !== FALSE) {
     foreach ($modq as $mod) {
         $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
         $modentry = [
-            'pretty_name'=>$mod['pretty_name'],
-            'name'=>$mod['name'], 
-            'version'=>$mod['version'], 
-            'mcversion'=>$mod['mcversion'],
-            'md5'=>$mod['md5'], 
-            'url'=>$mod['url'], 
-            'filesize'=>$filesize
+            'pretty_name' => $mod['pretty_name'],
+            'name' => $mod['name'],
+            'version' => $mod['version'],
+            'mcversion' => $mod['mcversion'],
+            'md5' => $mod['md5'],
+            'url' => $mod['url'],
+            'filesize' => $filesize
         ];
-        array_push($modslist,$modentry);
+        array_push($modslist, $modentry);
     }
     die(json_encode($modslist, JSON_UNESCAPED_SLASHES));
-}
-elseif (($arg = endpoint_arg($url, 'api/modpack')) === TRUE) {
+} elseif (($arg = endpoint_arg($url, 'api/modpack')) === true) {
     $modpacksq = $db->query("
     SELECT M.*, 
         B.name AS latest_name, 
@@ -203,21 +199,21 @@ elseif (($arg = endpoint_arg($url, 'api/modpack')) === TRUE) {
     $modpacks = [];
     if (isset($_GET['include']) && $_GET['include'] == "full") {
 
-        foreach($modpacksq as $modpack) {
+        foreach ($modpacksq as $modpack) {
             $builds = [];
             $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = {$modpack['id']} AND minecraft IS NOT NULL");
 
-            foreach($buildsq as $build) {
+            foreach ($buildsq as $build) {
                 if ($build['minecraft'] === null) {
                     continue;
                 }
                 $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
-                if ($build['public']==1 || $clientsq || $valid_client_key) {
+                if ($build['public'] == 1 || $clientsq || $valid_client_key) {
                     array_push($builds, $build['name']);
                 }
             }
             $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
-            if ($modpack['public']==1 || $clientsq || $valid_client_key) {
+            if ($modpack['public'] == 1 || $clientsq || $valid_client_key) {
                 $modpacks[$modpack['name']] = [
                     "name" => $modpack['name'],
                     "display_name" => $modpack['display_name'],
@@ -229,29 +225,28 @@ elseif (($arg = endpoint_arg($url, 'api/modpack')) === TRUE) {
                     "background" => $modpack['background'],
                     "background_md5" => $modpack['background_md5'],
                     "recommended" => $modpack['recommended_name'],
-                    "latest" => $modpack['latest_name'], 
+                    "latest" => $modpack['latest_name'],
                     "builds" => $builds
                 ];
             }
         }
     } else {
-        foreach($modpacksq as $modpack) {
+        foreach ($modpacksq as $modpack) {
             $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
-            if ($modpack['public']==1 || $clientsq || $valid_client_key) {
+            if ($modpack['public'] == 1 || $clientsq || $valid_client_key) {
                 $mn = $modpack['name'];
                 $mpn = $modpack['display_name'];
                 $modpacks[$mn] = $mpn;
             }
         }
     }
-    die(json_encode(["modpacks"=>$modpacks, "mirror_url"=>$protocol.$config->get('host').$config->get('dir')."mods"], JSON_UNESCAPED_SLASHES));
-} 
-elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== FALSE) {
+    die(json_encode(["modpacks" => $modpacks, "mirror_url" => $protocol.$config->get('host').$config->get('dir')."mods"], JSON_UNESCAPED_SLASHES));
+} elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== false) {
     $uri_modpack = $arg;
 
     // if a build is specified
     $position = strpos($arg, '/');
-    if ($position !== FALSE) {
+    if ($position !== false) {
         $uri_modpack = substr($arg, 0, $position);
         $uri_build = substr($arg, $position + 1);
 
@@ -261,14 +256,14 @@ elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== FALSE) {
             die('{"error":"Modpack does not exist."}');
         }
         // name isn't unique in db/modpacks
-        if (sizeof($modpacksq)>1) {
+        if (sizeof($modpacksq) > 1) {
             error_log("{$uri}: got multiple modpack results for name. Exiting.");
             die('{"error":"Got multiple modpack results for name."}');
         }
         $modpack = $modpacksq[0];
 
         $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '{$db->sanitize($client_uuid)}' AND `id` IN ({$modpack['clients']})");
-        if ($modpack['public']!=1 && !$clientsq && !$valid_client_key) {
+        if ($modpack['public'] != 1 && !$clientsq && !$valid_client_key) {
             die('{"error":"This modpack is private."}');
         }
 
@@ -277,7 +272,7 @@ elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== FALSE) {
             die('{"error":"Build does not exist."}');
         }
         // modpack name isn't unique in db/builds
-        if (sizeof($buildsq)>1) {
+        if (sizeof($buildsq) > 1) {
             error_log("{$uri}: got multiple build results for name. Exiting.");
             die('{"error":"Got multiple build results for name."}');
         }
@@ -288,18 +283,18 @@ elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== FALSE) {
         }
 
         $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '{$db->sanitize($client_uuid)}' AND `id` IN ({$build['clients']})");
-        if ($build['public']==1 || $clientsq || $valid_client_key) {
+        if ($build['public'] == 1 || $clientsq || $valid_client_key) {
             $mods = [];
             $modslist = explode(',', $build['mods']);
             $modnumber = 0;
 
-            foreach($modslist as $modid) {
+            foreach ($modslist as $modid) {
                 if (empty($modid)) {
                     error_log("API: double-comma (malformed 'mods' column) in database, skipping");
                     continue;
                 }
                 $modq = $db->query("SELECT * FROM mods WHERE id='".$modid."'");
-                if (!$modq || sizeof($modq)!=1) {
+                if (!$modq || sizeof($modq) != 1) {
                     error_log("API: failed to get mod for id='".$mod."', skipping");
                     continue;
                 }
@@ -314,7 +309,7 @@ elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== FALSE) {
                 }
 
                 $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
-                if (isset($_GET['include']) && $_GET['include']=="mods") {
+                if (isset($_GET['include']) && $_GET['include'] == "mods") {
                     $mods[$modnumber] = [
                         "name" => $mod['name'],
                         "version" => $mod['version'],
@@ -367,17 +362,17 @@ elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== FALSE) {
             die('{"error":"Modpack does not exist"}');
         }
         // name isn't unique in db/modpacks
-        if (sizeof($modpacksq)>1) {
+        if (sizeof($modpacksq) > 1) {
             error_log("{$uri}: got multiple results for modpack name. Exiting.");
             die('{"error":"Got multiple results for modpack name"}');
         }
         $modpack = $modpacksq[0];
 
         $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
-        if ($modpack['public']==1 || $clientsq || $valid_client_key) {
+        if ($modpack['public'] == 1 || $clientsq || $valid_client_key) {
             // set details of modpack
             if (isset($_GET['include']) && $_GET['include'] == "full") {
-                $modpack_info=[
+                $modpack_info = [
                     "name" => $modpack['name'],
                     "display_name" => $modpack['display_name'],
                     "url" => $modpack['url'],
@@ -392,7 +387,7 @@ elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== FALSE) {
                     "builds" => [] //set later
                 ];
             } else {
-                $modpack_info=[
+                $modpack_info = [
                     "name" => $modpack['name'],
                     "display_name" => $modpack['display_name'],
                     "recommended" => $modpack['recommended_name'],
@@ -408,7 +403,7 @@ elseif (($arg = endpoint_arg($url, 'api/modpack/')) !== FALSE) {
                     continue;
                 }
                 $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
-                if ($build['public']==1 || $clientsq || $valid_client_key) {
+                if ($build['public'] == 1 || $clientsq || $valid_client_key) {
                     array_push($modpack_info['builds'], $build['name']);
                 }
             }

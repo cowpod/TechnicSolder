@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
@@ -7,7 +8,7 @@ if (empty($_SESSION['user'])) {
 require_once('sanitize.php');
 
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect();
 
 $geticon = $db->query("SELECT icon FROM users WHERE name = '{$_SESSION['user']}'");

@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 if (empty($_SESSION['user'])) {
@@ -8,7 +9,7 @@ if (empty($_SESSION['user'])) {
 require_once('sanitize.php');
 
 $forge_data = @file_get_contents("https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json"); // can't find normal promotions.json
-if ($forge_data===false) {
+if ($forge_data === false) {
     error_log("forge-links.php: couldn't get forge data");
     die("couldn't get forge data");
 }
@@ -18,19 +19,19 @@ $versions = [];
 $id = 0;
 
 require_once("db.php");
-$db=new Db;
+$db = new Db();
 $db->connect();
 
 // this was called INSIDE the for loop before...
 $forgesq = $db->query("SELECT `version` FROM `mods` WHERE `type` = 'forge'");
-$forges_installed=[];
-if($forgesq) {
-    foreach($forgesq as $forge) {
+$forges_installed = [];
+if ($forgesq) {
+    foreach ($forgesq as $forge) {
         array_push($forges_installed, $forge['version']);
     }
 }
 
-$forges=[];
+$forges = [];
 $decode = @json_decode($forge_data, true);
 if ($decode === null || empty($decode['promos'])) {
     die('{"status":"error","message":"Could not decode forge data"}');

@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 if (empty($_SESSION['user'])) {
@@ -39,7 +40,7 @@ if (strpbrk($_POST['mcversion'], '\\"\'') !== false) {
 $fileTmpLoc = $_FILES["file"]["tmp_name"];
 if (!$fileTmpLoc) {
     header("Location: ../modloaders?errfilesize");
-   // echo '{"status":"error","message":"File is too big! Check your post_max_size
+    // echo '{"status":"error","message":"File is too big! Check your post_max_size
     //(current value '.ini_get('post_max_size').') and upload_max_filesize
     //(current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}';
     // exit();
@@ -48,13 +49,13 @@ if (!$fileTmpLoc) {
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
-    $config=new Config();
+    $config = new Config();
 }
 
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 
@@ -62,7 +63,7 @@ $url = $_SERVER['REQUEST_URI'];
 if ($config->exists('protocol') && !empty($config->get('protocol'))) {
     $protocol = strtolower($config->get('protocol')).'://';
 } else {
-    $protocol = strtolower(current(explode('/',$_SERVER['SERVER_PROTOCOL']))).'://';
+    $protocol = strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL']))).'://';
 }
 
 require('slugify.php');
@@ -88,16 +89,17 @@ if (move_uploaded_file($fileTmpLoc, "../forges/modpack-".$version."/modpack.jar"
         $zip->addFile($path, "bin/modpack.jar");
     } else {
         $zip->close();
-        die ('{"status":"error","message":"Could not find file to add to archive"}');
+        die('{"status":"error","message":"Could not find file to add to archive"}');
     }
     $zip->close();
 
     unlink("../forges/modpack-".$version."/modpack.jar");
     rmdir("../forges/modpack-".$version);
-    
+
     $md5 = md5_file("../forges/forge-".$version.".zip");
     $url = $protocol.$config->get('host').$config->get('dir')."forges/forge-".$version.".zip";
-    $insertq = $db->execute("INSERT INTO `mods`
+    $insertq = $db->execute(
+        "INSERT INTO `mods`
         (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`)
         VALUES (
             'customloader',

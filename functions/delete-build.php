@@ -1,4 +1,5 @@
 <?php
+
 header('Content-Type: application/json');
 session_start();
 if (empty($_SESSION['user'])) {
@@ -30,8 +31,8 @@ if (!is_numeric($_GET['modpackid'])) {
 
 global $db;
 require_once("db.php");
-if (!isset($db)){
-    $db=new Db;
+if (!isset($db)) {
+    $db = new Db();
     $db->connect();
 }
 
@@ -73,7 +74,7 @@ if (!$unset_recommendedx) {
 // get latest and recommended builds for modpack
 // can be empty!
 
-$response = ["latest"=>null, "recommended"=>null];
+$response = ["latest" => null, "recommended" => null];
 
 $getq = $db->query("
     SELECT id,name,minecraft AS mcversion
