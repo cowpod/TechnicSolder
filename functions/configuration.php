@@ -85,7 +85,7 @@ final class Config
         return $this->data[$key];
     }
 
-    public function set(string $key, array|string|false $value): void
+    public function set(string $key, array|string|bool $value): void
     {
         $this->data[$key] = $value;
         $this->write();
