@@ -32,10 +32,10 @@ if (!isset($_GET['type'])) {
 if (!filter_var($_GET['dl'], FILTER_VALIDATE_URL)) {
     die('{"status":"error","message":"Malformed dl"}');
 }
-if (strpbrk($_POST['version'], '\\"\'') !== false) {
+if (strpbrk($_GET['version'], '\\"\'') !== false) {
     die('{"status":"error","message":"Malformed version"}');
 }
-if (strpbrk($_POST['mcversion'], '\\"\'') !== false) {
+if (strpbrk($_GET['mcversion'], '\\"\'') !== false) {
     die('{"status":"error","message":"Malformed mcversion"}');
 }
 

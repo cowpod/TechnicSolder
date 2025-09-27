@@ -26,7 +26,7 @@ if (empty($_POST['display_name'])) {
 if (!is_numeric($_POST['id'])) {
     die('{"status":"error","message":"Malformed id"}');
 }
-if (!preg_match('/[\w\-]+/', $_GET['name'])) {
+if (!preg_match('/[\w\-]+/', $_POST['name'])) {
     die('{"status":"error","message":"Malformed name"}');
 }
 if (strpbrk($_POST['display_name'], '\\"\'') !== false) {
