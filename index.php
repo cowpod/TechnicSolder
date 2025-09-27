@@ -682,11 +682,15 @@ if (!uri("/login")) {
                 $metric = $modpack_metrics[$modpack['name']];
 
                 if (isset($metric['error'])) { ?>
-                <div class="card alert-danger">
+                <div class="card alert-warning">
                     Error getting metrics from Technic API: <?php echo $metric['error'] ?><br/>
                     <?php
+                    // warn about technic not knowing about this modpack
+                    if ($metric['error'] == 'Modpack does not exist') { ?>
+                        Make sure the slug below matches what is on <a href="https://www.technicpack.net/" target=_blank>technicpack.net</a>
+                    <?php
                     // for non-known errors (anything but modpack does not exist)
-                    if ($metric['error'] != 'Modpack does not exist') {
+                    } else {
                         // server-wide key is set
                         if ($config->exists('api_key') && $config->get('api_key')) { ?>
                             Verify the unique ID (slug) is set in modpack details.
