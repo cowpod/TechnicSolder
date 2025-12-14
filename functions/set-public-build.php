@@ -30,7 +30,7 @@ if (!is_numeric($_GET['buildid'])) {
 if (!is_numeric($_GET['modpackid'])) {
     die('{"status":"error","message":"Malformed modpack id"}');
 }
-if (in_array($_GET['ispublic'], [0,1,'on','off'])) {
+if (!in_array($_GET['ispublic'], [0,1,'on','off'])) {
     die('{"status":"error","message":"Malformed ispublic"}');
 }
 
