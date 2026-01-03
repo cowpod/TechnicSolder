@@ -1,16 +1,13 @@
-// var builds = "<?php echo addslashes(json_encode($mpab)) ?>";
-// var sbn = "<?php echo addslashes(json_encode($sbn)) ?>";
-var bd = (builds && builds.length>=0) ? JSON.parse(builds).reverse() : '{}';
-var sbna =(sbn && sbn.length>=0) ? JSON.parse(sbn) : '{}';
+var builds = (builds && builds.length>=0) ? JSON.parse(builds).reverse() : '{}';
 
 async function fillBuildlist() {
     $("#buildlist").children().each(function(){ 
         this.remove()
     })
 
-    for (let element of bd) {
-        if ($("#mplist").val() == element['mpid']) {
-            $("#buildlist").append("<option value='"+element['id']+"'>"+element['mpname']+" - "+element['name']+"</option>")
+    for (let element of builds) {
+        if ($("#mplist").val() == element['modpack']) {
+            $("#buildlist").append("<option value='"+element['id']+"'>"+element['display_name']+" - "+element['name']+"</option>")
         }
     }
 }
@@ -19,7 +16,8 @@ $("#mplist").change(async function() {
 });
 
 $("#newbname").on("keyup",function(){
-    if (sbna.includes($("#newbname").val())) {
+    let build_name = $("#newbname").val()
+    if (builds.find(o => o.name === build_name)) {
         $("#newbname").addClass("is-invalid");
         $("#warn_newbname").show();
         $("#create1").prop("disabled",true);
@@ -32,7 +30,8 @@ $("#newbname").on("keyup",function(){
     }
 });
 $("#newname").on("keyup",function(){
-    if (sbna.includes($("#newname").val())) {
+    let build_name = $("#newname").val()
+    if (builds.find(o => o.name === build_name)) {
         $("#newname").addClass("is-invalid");
         $("#warn_newname").show();
         $("#copybutton").prop("disabled",true);
@@ -110,6 +109,12 @@ function remove(id) {
                 $("#rec-mc").text(response['data']['recommended']['mcversion']);
             }
 
+            for (let element of builds) {
+                if ($("#mplist").val() == element['modpack']) {
+                    $("#buildlist").append("<option value='"+element['id']+"'>"+element['display_name']+" - "+element['name']+"</option>")
+                }
+            }
+
             // mark new recommended
             if (response['data']['recommended'] != null && 'id' in response['data']['recommended']) {
                 $(['rec']).each(function() {
@@ -136,32 +141,7 @@ function remove(id) {
                 });
             }
 
-            // if ($("#b-"+id).attr("rec")=="true") {
-            //     $("#rec-v-li").hide();
-            //     $("#rec-mc-li").hide();
-            // }
-            // if (response['exists']==true) {
-            //     $("#latest-v-li").show();
-            //     $("#latest-mc-li").show();
-            //     $("#latest-name").text(response['name']);
-            //     $("#latest-mc").text(response['mc']);
-            //     if (response['name']==null) {
-            //         $("#latest-v-li").hide();
-            //         $("#latest-mc-li").hide();
-            //     }
-            // } else {
-            //     $("#latest-v-li").hide();
-            //     $("#latest-mc-li").hide();
-            // }
-
-            // for (let b of bd) {
-            //     if (b['id']==id) {
-            //         let name=b['name'];
-            //         bd.splice(bd.indexOf(b),1);
-            //         sbna.splice(sbna.indexOf(name),1);
-            //     }
-            // }
-
+            builds = builds.filter(item => item.id !== id)
         }
     }
     request.open("GET", `./functions/delete-build.php?buildid=${id}&modpackid=${getQueryVariable('id')}`);

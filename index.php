@@ -820,38 +820,10 @@ if (!uri("/login")) {
             }
 
             if ($perms->build_create()) {
-                $sbn = array();
-                $allbuildnames = $db->query("SELECT `name` FROM `builds` WHERE `modpack` = {$modpack['id']}");
-                foreach ($allbuildnames as $bn) {
-                    array_push($sbn, $bn['name']);
-                }
-                $mpab = array();
-                $allbuilds = $db->query("SELECT `id`,`name`,`modpack` FROM `builds`");
-                foreach ($allbuilds as $b) {
-                    $display_nameq = $db->query("SELECT `display_name` FROM `modpacks` WHERE `id` = {$b['modpack']}");
-                    if ($display_nameq) {
-                        assert(sizeof($display_nameq) == 1);
-                        $display_name = $display_nameq[0]['display_name'];
-                    }
-                    $ba = array(
-                        "id" => $b['id'],
-                        "name" => $b['name'],
-                        "mpid" =>  $b['modpack'],
-                        "mpname" => $display_name
-                    );
-                    array_push($mpab, $ba);
-                }
-                $mps = array();
-                $allmps = $db->query("SELECT `id`,`display_name` FROM `modpacks`");
-                foreach ($allmps as $mp) {
-                    $mpa = array(
-                        "id" => $mp['id'],
-                        "name" => $mp['display_name']
-                    );
-                    array_push($mps, $mpa);
-                }
+                // all modpacks
+                $mps = $db->query("SELECT `id`,`display_name` FROM `modpacks`");
 
-
+                // all builds for current modpack
                 $builds = $db->query("SELECT * FROM `builds` WHERE `modpack` = {$modpack['id']} ORDER BY `id` DESC");
                 ?>
                 <div class="card">
@@ -876,8 +848,8 @@ if (!uri("/login")) {
                         <select id="mplist" class="form-control" required> <!-- Not passed to API -->
                             <option value=null>Please select a modpack..</option>
                             <?php
-                            foreach ($mps as $pack) {
-                                echo "<option value='{$pack['id']}'>{$pack['name']}</option>";
+                            foreach ($mps as $mp) {
+                                echo "<option value='{$mp['id']}'>{$mp['display_name']}</option>";
                             }
                 ?>
                         </select>
@@ -886,7 +858,7 @@ if (!uri("/login")) {
                         </select>
                         <br />
                         <input id="newname" class="form-control" type="text" name="new_build_name" pattern="^[a-zA-Z0-9.-]+$" placeholder="New Build Name" required>
-                        <span id="warn_newname" class="text-danger" hidden>Build with this name already exists.</span>
+                        <span id="warn_newname" style="display: none" class="text-danger">Build with this name already exists.</span>
                         <br />
                         <button id="copybutton" type="submit" class="btn btn-primary">Copy</button> 
                         <button id="copylatestbutton" type="submit" class="btn btn-secondary">Latest</button>
@@ -1001,28 +973,13 @@ if (!uri("/login")) {
                 </div>
                 <script>
                     var builds = '<?php
-                    if (isset($mpab)) {
-                        $mpab_json = @json_encode($mpab);
-                        if ($mpab_json === false) {
-                            error_log('index.php: mpab could not be encoded to json');
-                            echo '[]';
-                        } else {
-                            echo addslashes($mpab_json);
-                        }
-                    } else {
+                    // encode our array-dict as json.
+                    $builds_json = @json_encode($builds);
+                    if ($builds_json === false) {
+                        error_log('index.php: builds could not be encoded to json');
                         echo '[]';
-                    } ?>'
-                    var sbn = '<?php
-                    if (isset($sbn)) {
-                        $sbn_json = @json_encode($sbn);
-                        if ($sbn_json === false) {
-                            error_log('index.php: sbn could not be encoded to json');
-                            echo '[]';
-                        } else {
-                            echo addslashes($sbn_json);
-                        }
                     } else {
-                        echo '[]';
+                        echo addslashes($builds_json);
                     } ?>'
                 </script>
                 <script src="./resources/js/page_modpack.js"></script>
@@ -1091,7 +1048,7 @@ if (!uri("/login")) {
                     <h2>Build details - <?php echo $build['name'] ?></h2>
                     <hr>
                     <?php if (empty($build['minecraft'])) { ?>
-                        <h3>Details must be set before mods can be added.</h3>
+                        <h3 class="text-danger">Details must be set before mods can be added.</h3>
                     <?php } ?>
                     <form method="POST" id="build-details">
                         <input type="hidden" name="id" value="<?php echo $_GET['id'] ?>">
