@@ -264,6 +264,12 @@ foreach ($modinfos as $modinfo) {
         error_log('{"status":"error","message":"Unable to add mod to database (empty)."}');
         // die('{"status":"error","message":"Unable to add mod to database (empty).", "name": "'.$file_name.'"}');
         continue;
+    } elseif (empty($modinfo['modid'])) {
+        $num_mods_to_add -= 1;
+        error_log('{"status":"error","message":"Unable to add mod to database (empty modid)."}');
+        error_log(@json_encode($modinfo));
+        // die('{"status":"error","message":"Unable to add mod to database (empty modid).", "name": "'.$file_name.'"}');
+        continue;
     }
     // if we have another mod of same name, version, mcversion, type, loadertype
     $query_mod_exists = $db->query("SELECT id,name FROM mods 
@@ -324,7 +330,7 @@ if (!empty($warn) && sizeof($warn) > 0) {
     foreach ($warn as $w) {
         $acc_message .= $w.' ';
     }
-    echo '{"status":"warn","message":"'.$acc_message.'Issue(s) must be addressed before using this mod.", '.$moredata.'}';
+    echo '{"status":"warn","message":"'.$acc_message.'", '.$moredata.'}';
 } else {
     // get the last one added. we don't support displaying multiple..
     // todo: support displaying multiple in index.php

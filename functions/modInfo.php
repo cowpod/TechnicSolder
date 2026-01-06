@@ -394,6 +394,9 @@ final class modInfo
                 if ($parsed_obj === null) {
                     error_log("Fabric: got null from json_decode '{$cleaned}'");
                     $parsed = [];
+                } elseif (isset($parsed_obj['id'])) {
+                    // sometimes it's a "flat" array....
+                    $parsed = $parsed_obj;
                 } else {
                     $parsed = $parsed_obj[0];
                 }

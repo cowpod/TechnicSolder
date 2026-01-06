@@ -94,7 +94,7 @@ final class Toml
                 $json_str = trim($json_str, ',');
                 $json_str .= ']';
                 $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
-                $parsedjson = preg_replace('/\'([^\']*)\'/', '"$1"', $parsedjson);
+                $parsedjson = preg_replace('/\'([^\']*)\'([^\w])/', '"$1"$2', $parsedjson);
                 // error_log('got complete json: '.$json_key.'='.$parsedjson);
                 $ret[$json_key] = @json_decode($parsedjson, true);
                 if ($ret[$json_key] === null) {
@@ -105,7 +105,7 @@ final class Toml
             } elseif ($json_key && trim($element)[strlen($element) - 1] == ']') { // also non-danging ]
                 $json_str .= trim($element);
                 $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
-                $parsedjson = preg_replace('/\'([^\']*)\'/', '"$1"', $parsedjson);
+                $parsedjson = preg_replace('/\'([^\']*)\'([^\w])/', '"$1"$2', $parsedjson);
                 // error_log('got complete json: '.$json_key.'='.$parsedjson);
                 $ret[$json_key] = @json_decode($parsedjson, true);
                 if ($ret[$json_key] === null) {
@@ -169,8 +169,8 @@ final class Toml
                         $json_str = trim($json_str, ',');
                         $json_str .= ']';
                         // technically not json. so needs some work.
-                        $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
-                        $parsedjson = preg_replace('/\'([^\']+)\'/', '"$1"', $parsedjson);
+                        $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str); // fix =
+                        $parsedjson = preg_replace('/\'([^\']+)\'([^\w])/', '"$1"$2', $parsedjson); // fix '
                         // error_log('got complete json: '.$json_key.'='.$parsedjson);
                         $ret[$json_key] = @json_decode($parsedjson, true);
                         if ($ret[$json_key] === null) {
@@ -182,7 +182,7 @@ final class Toml
                         $json_str .= $value_r;
                         // technically not json. so needs some work.
                         $parsedjson = preg_replace('/([,{])\s*([\w$]+)\s*=\s*/', '$1 "$2": ', $json_str);
-                        $parsedjson = preg_replace('/\'([^\']+)\'/', '"$1"', $parsedjson);
+                        $parsedjson = preg_replace('/\'([^\']+)\'([^\w])/', '"$1"$2', $parsedjson);
                         // error_log('got complete json: '.$json_key.'='.$parsedjson);
                         $ret[$json_key] = @json_decode($parsedjson, true);
                         if ($ret[$json_key] === null) {
