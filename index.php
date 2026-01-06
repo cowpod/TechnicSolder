@@ -912,15 +912,14 @@ if (!uri("/login")) {
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Publish-actions">
                                     <?php
                             }
-                            if (!empty($build['minecraft'])) {
-                                if ($perms->build_publish()) {
-                                    // if public is null then MC version and loader hasn't been set yet
-                                    if (isset($build['minecraft']) && $build['public'] != '1') { ?>
+                            if ($perms->build_publish()) {
+                                if (!empty($build['minecraft'])) {
+                                    if ($build['public'] != '1') { ?>
                                             <button bid="<?php echo $build['id'] ?>" id="pub-<?php echo $build['id']?>" class="btn btn-success" onclick="set_public(<?php echo $build['id'] ?>)">Publish</button>
-                                            <?php } ?>
-                                            <button bid="<?php echo $build['id'] ?>" id="rec-<?php echo $build['id']?>" class="btn btn-success" onclick="set_recommended(<?php echo $build['id'] ?>)" style="display:<?php echo ($packdata['recommended'] != $build['id'] && $build['public'] == '1') ? 'block' : 'none' ?>">Recommend</button>
-                                            <button bid="<?php echo $build['id'] ?>" id="recd-<?php echo $build['id']?>" class="btn btn-success" style="display:<?php echo ($packdata['recommended'] == $build['id'] && $build['public'] == '1') ? 'block' : 'none' ?>" disabled>Recommended</button>
-                                        <?php
+                                    <?php } ?>
+                                            <button bid="<?php echo $build['id'] ?>" id="rec-<?php echo $build['id']?>" class="btn btn-success" onclick="set_recommended(<?php echo $build['id'] ?>)" style="display: <?php echo ($packdata['recommended'] != $build['id']) ? 'block' : 'none' ?>">Recommend</button>
+                                            <button bid="<?php echo $build['id'] ?>" id="recd-<?php echo $build['id']?>" class="btn btn-success" style="display: <?php echo ($packdata['recommended'] == $build['id']) ? 'block' : 'none' ?>" disabled>Recommended</button>
+                                    <?php
                                 }
                             }
                             ?>

@@ -55,23 +55,18 @@ function set_public(id) {
     $("#cog-"+id).show();
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-            console.log(this.response);
-            response = JSON.parse(this.response);
-            $("#cog-"+id).hide();
-            if (response['status']=="succ") {
-                $("#pub-"+id).hide();
-                if (response['recommended']==id) {
-                    $("#recd-"+id).show();
-                } else {
-                    $("#rec-"+id).show();
-                }
-                // $("#rec-name").text(response['name']);
-                // $("#rec-mc").text(response['mc']);
-                $("#latest-name").text(response['latestname']);
-                $("#latest-mc").text(response['latestmc']);
-            } else {
+        if (this.readyState == 4) {
+            if (this.status == 200) {
+                response = JSON.parse(this.response)
                 console.log(response);
+                $("#cog-"+id).hide();
+                if (response['status']=="succ") {
+                    $("#pub-"+id).hide()
+                    $("#latest-name").text($("#b-"+id).children('td').eq(0).text())
+                    $("#latest-mc").text($("#b-"+id).children('td').eq(1).text())
+                }
+            } else {
+                console.log(response)
             }
         }
     };
@@ -155,35 +150,28 @@ function set_recommended(id) {
             console.log(this.response)
             response = JSON.parse(this.response);
 
-            $("#recd-"+id).show();
-            $("#rec-"+id).hide();
+            $("#cog-"+id).hide();
 
+            // recommend this
+            $("#recd-"+id).show()
+            $("#rec-"+id).hide()
+            $("#b-"+id).attr('rec','true')
+
+            // unrecommend all others
             $('[bid]').each(function() {
-                let bid = $(this).attr('bid');
-
-                // skip builds which aren't public
-                if (!$('#pub-'+bid).is(":hidden")) {
-                    return
-                }
-
-                if (bid != id) {
-                    $("#rec-"+bid).show();
-                    $("#recd-"+bid).hide();
+                let other_id = $(this).attr('bid')
+                if (other_id != id) {
+                    $("#recd-"+other_id).hide()
+                    $("#rec-"+other_id).show()
+                    $("#b-"+other_id).attr('rec','false')
                 }
             });
 
+            // update latest/recommended status text at top
             $("#rec-v-li").show();
             $("#rec-mc-li").show();
-            $("#cog-"+id).hide();
-            // $("#rec-"+id).attr('disabled', true);
-            var bid = $("#rec-disabled").attr('bid');
-            // $("#rec-disabled").attr('disabled', false);
-            // $("#rec-disabled").attr('id', 'rec-'+bid);
-            // $("#rec-"+id).attr('id', 'rec-disabled');
             $("#rec-name").text(response['name']);
             $("#rec-mc").text(response['mc']);
-            $("#table-builds tr").attr('rec','false');
-            $("#b-"+id).attr('rec','true');
         }
     };
     request.open("GET", `./functions/set-recommended.php?buildid=${id}&modpackid=${getQueryVariable('id')}`);

@@ -54,23 +54,6 @@ if (!$hasminecraft) {
 
 $db->execute("UPDATE builds SET public = {$_GET['ispublic']} WHERE id = {$_GET['buildid']}");
 
-$latestq = $db->execute("
-    UPDATE modpacks 
-    SET latest = (
-        SELECT id 
-        FROM builds 
-        WHERE public=1
-        AND modpack = {$db->sanitize($_GET['modpackid'])}
-        ORDER BY id DESC
-        LIMIT 1
-    )
-    WHERE id = {$_GET['modpackid']}
-");
+$db->execute("UPDATE modpacks SET latest = {$_GET['buildid']} WHERE id = {$_GET['modpackid']}");
 
-$bq = $db->query("SELECT * FROM `builds` WHERE `id` = {$_GET['buildid']}");
-if ($bq) {
-    assert(sizeof($bq) == 1);
-    $build = $bq[0];
-}
-
-die('{"status": "succ", "latestname": "'.$build['name'].'", "latestmc": "'.$build['minecraft'].'"}');
+die('{"status": "succ"}');

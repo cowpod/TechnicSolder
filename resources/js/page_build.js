@@ -358,6 +358,7 @@ $('#build-details').on('submit', function(e) {
             if (json['status']==='succ') {
                 saveAllowedClients();
                 $('#build-details-save').attr('disabled', true);
+                $('#latest-v-li').show()
                 if ($('#build-details-save').attr('custom_reload') !== undefined && $('#build-details-save').attr('custom_reload')) {
                     setTimeout(function() {
                         window.location.reload();

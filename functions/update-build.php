@@ -95,7 +95,6 @@ if ($minecraft) {
 $ispublic = $_POST['ispublic'] == "on" ? 1 : 0;
 
 $publicq = $db->query("SELECT public FROM builds WHERE id = ".$db->sanitize($_POST['id']));
-error_log('PUBLIC: '.json_encode($publicq));
 if ($publicq && sizeof($publicq) == 1 && array_key_exists('public', $publicq[0])) {
     if ($publicq[0]['public'] != $ispublic) {
         if (!$perms->build_publish()) {
