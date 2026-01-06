@@ -695,9 +695,9 @@ if (!uri("/login")) {
                             Verify the unique ID (slug) is set in modpack details.
                         <?php }
                         // user api key is not set
-                        elseif (!get_setting('api_key')) { ?>
-                            Verify your API key is valid and set in <a href="/account">Account Settings</a>.
-                        <?php }
+                        // elseif (!get_setting('api_key')) { ?>
+                            <!-- Verify your API key is valid and set in <a href="/account">Account Settings</a>. -->
+                        <?php //}
                         } ?>
                 </div>
                 <?php } else {
@@ -2427,28 +2427,27 @@ if (!uri("/login")) {
                      <font id="change-password-message" style="display: none;"></font>
                      </form>
                 </div>
-                <div class="card">
+                <!-- <div class="card">
                     <h3>Technic Solder integration</h3>
-                <?php if ($config->exists('api_key') && !empty($config->get('api_key'))) { ?>
+                <?php //if ($config->exists('api_key') && !empty($config->get('api_key'))) { ?>
                     <font class="text-danger">A server-wide API key has been set.</font>
-                    <?php if ($perms->privileged()) { ?>
+                    <?php //if ($perms->privileged()) { ?>
                     <span>You, an administrator, can update the server-wide API key in <a href="admin#solder">Server Settings</a></span>
-                    <?php } else { ?>
+                    <?php //} else { ?>
                     As such, you cannot set your own API key. Contact your server administrator if you think this is a mistake.
-                    <?php }
-                    } else { ?>
-                    <p>To integrate with the Technic API, you will need your API key from <a href="https://technicpack.net/" target="_blank">technicpack.net</a>; Sign in (or register), "Edit [My] Profile" in the top right account menu, "Solder Configuration", and copy the API key and paste it in the text box below.</p>
+                    <?php //}
+                    //} else { ?>
+                    <p>To integrate with the Technic API, you will need your API key from <a href="https://technicpack.net/" target="_blank">technicpack.net</a>; Sign in (or register), "Edit [My] Profile" in the top right account menu, "Solder Configuration", and copy-paste API key below.</p>
+                    <p>Then, copy <?php //echo $protocol.$config->get('host').$config->get('dir').'api' ?> into "Solder URL" text box on your Technic profile, and click "Link Solder". You will also need to link each individual modpacks. </p>
                     <form>
-                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if (get_setting('api_key')) {
-                            echo 'value="'.get_setting('api_key').'"';
-                        } ?>/>
+                        <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php //if (get_setting('api_key')) {
+                            //echo 'value="'.get_setting('api_key').'"';
+                        //} ?>/>
                         <br/>
                         <input class="btn btn-success" type="button" id="save_api_key" value="Save" disabled />
                     </form>
-                    <br/>
-                    <p>Then, copy <?php echo $protocol.$config->get('host').$config->get('dir').'api' ?> into "Solder URL" text box, and click "Link Solder".</p>
-                <?php } ?>
-                </div>
+                <?php //} ?>
+                </div> -->
             </div>
             <script src="./resources/js/page_account.js"></script>
         <?php
@@ -2578,8 +2577,9 @@ if (!uri("/login")) {
                 </div>
                 <div class="card">
                     <a name="solder"/>
-                    <h3>Server-wide Technic Solder integration</h3>
-                    <p>To integrate with the Technic API, you will need your API key from <a href="https://technicpack.net/" target="_blank">technicpack.net</a>; Sign in (or register), "Edit [My] Profile" in the top right account menu, "Solder Configuration", and copy the API key and paste it in the text box below.</p>
+                    <h3>Technic Solder integration</h3>
+                    <p>To integrate with the Technic API, you will need your API key from <a href="https://technicpack.net/" target="_blank">technicpack.net</a>; Sign in (or register), "Edit [My] Profile" in the top right account menu, "Solder Configuration", and copy-paste API key below.</p>
+                    <p>Then, copy <?php echo "{$protocol}{$config->get('host')}{$config->get('dir')}api" ?> into "Solder URL" text box, and click "Link Solder". You will also need to link each individual modpacks.</p>
                     <form>
                         <input id="api_key" class="form-control" type="text" autocomplete="off" placeholder="Technic Solder API Key" <?php if ($config->exists('api_key') && !empty($config->get('api_key'))) {
                             echo "value='{$config->get('api_key')}'";
@@ -2587,10 +2587,6 @@ if (!uri("/login")) {
                         <br/>
                         <input class="btn btn-success" type="button" id="save_api_key" value="Save" disabled />
                     </form>
-                    <br/>
-                    <p>Then, copy <?php echo "{$protocol}{$config->get('host')}{$config->get('dir')}api" ?> into "Solder URL" text box, and click "Link Solder".</p>
-                    <hr/>
-                    <b>Setting an API key here will make it available to all other users, and will prevent them from using their own key.</b>
                 </div>
 
                 <div class="card">

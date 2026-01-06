@@ -54,7 +54,7 @@ if (isset($_POST['host'])) {
     $name = $_POST['author'];
     $pass = $_POST['pass'];
     $api_key = $_POST['api_key'];
-    $api_key_serverwide = isset($_POST['api_key_serverwide']) ? true : false;
+    $api_key_serverwide = true; //isset($_POST['api_key_serverwide']) ? true : false;
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         die('Bad input data; email');
@@ -400,17 +400,17 @@ if (isset($_GET['reconfig'])) { ?>
                             Visible to other users and the public. Used for custom files you add to your modpack. 
                         </small>
                     </div>
+                    <h4>Technic Solder API Key</h4 >
                     <div class="form-group">
-                        <label for="api_key">Technic Solder API Key</label>
                         <input id="api_key" name="api_key" type="text" class="form-control" placeholder="API Key" required>
-                        <div class="form-check">
+<!--                         <div class="form-check">
                             <input id="api_key_serverwide" name="api_key_serverwide" type="checkbox" class="form-check-input" checked>
                             <label for="api_key_serverwide" class="form-check-label">Server-wide</label>
-                        </div>
+                        </div> -->
                         <small class="form-text text-muted">
                             You can find your API Key in your profile at
                             <a target="_blank" href="https://technicpack.net">technicpack.net</a>.<br/>
-                            Making your API key server-wide makes it available to all other users, and prevents them from using their own.
+                            <!-- Making your API key server-wide makes it available to all other users, and prevents them from using their own. -->
                         </small>
                     </div>
                     <h4>Database</h4>

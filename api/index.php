@@ -45,11 +45,11 @@ if (isset($_GET['k'])) {
         if ($_GET['k'] == $server_wide_api_key) {
             $valid_client_key = true;
         }
-    } else {
-        $qk = $db->query("SELECT 1 FROM users WHERE api_key = '".$db->sanitize($_GET['k'])."'");
-        if ($qk) {
-            $valid_client_key = true;
-        }
+    // } else {
+    //     $qk = $db->query("SELECT 1 FROM users WHERE api_key = '".$db->sanitize($_GET['k'])."'");
+    //     if ($qk) {
+    //         $valid_client_key = true;
+    //     }
     }
 }
 
@@ -84,12 +84,12 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
         if ($arg === $server_wide_api_key) {
             die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
         }
-    } else {
-        // query db. multiple users could use the same technic api key...
-        $apikeysq = $db->query("SELECT 1 FROM users WHERE api_key='{$client_api_key}'");
-        if ($apikeysq) {
-            die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
-        }
+    // } else {
+    //     // query db. multiple users could use the same technic api key...
+    //     $apikeysq = $db->query("SELECT 1 FROM users WHERE api_key='{$client_api_key}'");
+    //     if ($apikeysq) {
+    //         die('{"valid":"Key validated.","name":"API KEY","created_at":"A long time ago"}');
+    //     }
     }
     die('{"error":"Invalid key provided."}');
 } elseif (($arg = endpoint_arg($url, 'api/loader')) !== false) {
