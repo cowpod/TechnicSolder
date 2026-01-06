@@ -108,38 +108,38 @@ function sendFile(file, i) {
                         }
                     }
 
-                    // console.log(response['status']);
                     if (response['status']!="error") {
-                        let num_versions = response['modid'].length;
-                        let author = response['author'];
-                        if (author instanceof Array && author.length>=1) {
-                            author=author[0];
-                        }
-                        let name = response['name'];
-                        if (name instanceof Array && name.length>=1) {
-                            name=name[0];
-                        }
-                        let pretty_name = response['pretty_name'];
-                        if (pretty_name instanceof Array && pretty_name.length>=1) {
-                            pretty_name=pretty_name[0];
-                        }
                         let mcversion = response['mcversion'];
                         let version = response['version'];
-                        // console.log('add new row');
+                        let author = response['author'];
+                        let name = response['name'];
+                        let pretty_name = response['pretty_name'];
+                        let num_versions = response['modid'].length;
 
-                            $('#table-available-mods').append(`
-                                <tr id="mod-row-${name[i]}">
-                                    <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
-                                    <td data-value="${author}" class="d-none d-sm-table-cell">${author}</td>
-                                    <td id="mod-row-${name[i]}-num" data-value="${num_versions}">${num_versions}</td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                            <button onclick="window.location='./mod?id=${name}'" class="btn btn-primary">Edit</button>
-                                            <button onclick="remove_box('${name}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            `);
+                        // if we got arrays, get the first valid entry.
+                        if (author instanceof Array && author.length>=1) {
+                            author = author.find(v => v != null);
+                        }
+                        if (name instanceof Array && name.length>=1) {
+                            name = name.find(v => v != null);
+                        }
+                        if (pretty_name instanceof Array && pretty_name.length>=1) {
+                            pretty_name = pretty_name.find(v => v != null);
+                        }
+
+                        $('#table-available-mods').append(`
+                            <tr id="mod-row-${name[i]}">
+                                <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
+                                <td data-value="${author}" class="d-none d-sm-table-cell">${author}</td>
+                                <td id="mod-row-${name[i]}-num" data-value="${num_versions}">${num_versions}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                                        <button onclick="window.location='./mod?id=${name}'" class="btn btn-primary">Edit</button>
+                                        <button onclick="remove_box('${name}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `);
                     }
                 // } else {
                 //     $("#cog-" + i).hide();
@@ -913,6 +913,7 @@ $(document).ready(function() {
                 $("#" + i).addClass("bg-success");
                 $("#info-" + i).text("Mod already in database.");
                 $("#" + i).attr("id", i + "-done");
+                $("#btn-done").attr("disabled", false)
             }
         }
     });

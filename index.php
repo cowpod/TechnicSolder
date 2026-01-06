@@ -642,9 +642,6 @@ if (!uri("/login")) {
             <script>document.title = 'Modpack - <?php echo addslashes($modpack['display_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             
             <ul class="nav justify-content-end info-versions">
-                <li class="nav-item">
-                    <a class="nav-link" href="./dashboard"><em class="fas fa-arrow-left fa-lg"></em> <?php echo $modpack['display_name'] ?></a>
-                </li>
                 <li <?php if (!$latest) {
                     echo "style='display:none'";
                 } ?> id="latest-v-li" class="nav-item">
@@ -1580,19 +1577,23 @@ if (!uri("/login")) {
                     <tbody id="table-available-mods">
                         <?php
                         if (!empty($mods)) {
-                            foreach ($modsi as $mod) { ?>
+                            foreach ($modsi as $mod) { 
+                                if (empty($mod['name'])) { ?>
+                                    <tr>
+                                        <td class="table-danger">Unknown</td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                <?php } else {
+                                    $author = (!empty($mod['author'])) ? implode(", ", $mod['author']) : "Unknown";
+                                    $prettyname = (!empty($mod['pretty_name'])) ? $mod['pretty_name'] : "Unknown";
+                                    $modcount = (!empty($mod['versions'])) ? count($mod['versions']) : 0;
+                                ?>
                                 <tr id="mod-row-<?php echo $mod['name'] ?>">
-                                    <td scope="row" <?php if (empty($mod['pretty_name'])) {
-                                        echo 'class="table-danger"';
-                                    } ?>><?php echo empty($mod['pretty_name']) ? "<span class='text-danger'>Unknown</span>" : $mod['pretty_name'] ?></td>
-                                    <td <?php if (implode(", ", $mod['author']) == "") {
-                                        echo 'class="table-danger"';
-                                    } ?> class="d-none d-md-table-cell"><?php if (implode(", ", $mod['author']) !== "") {
-                                        echo implode(", ", $mod['author']);
-                                    } else {
-                                        echo "<span class='text-danger'>Unknown</span>";
-                                    } ?></td>
-                                    <td id="mod-row-<?php echo $mod['name'] ?>-num"><?php echo count($mod['versions']); ?></td>
+                                    <td scope="row"><?php echo $prettyname ?></td>
+                                    <td class="d-none d-md-table-cell"><?php echo $author ?></td>
+                                    <td id="mod-row-<?php echo $mod['name'] ?>-num"><?php echo $modcount ?></td>
                                     <td>
                                         <?php if ($perms->mods_edit()) { ?>
                                         <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
@@ -1603,7 +1604,8 @@ if (!uri("/login")) {
                                     <?php } ?>
                                     </td>
                                 </tr>
-                            <?php }
+                                <?php }
+                                }
                             } ?>
                     </tbody>
                 </table>
@@ -1946,7 +1948,12 @@ if (!uri("/login")) {
                             $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'other' ORDER BY `id` DESC");
             if ($mods) {
                 foreach ($mods as $mod) {
-                    ?>
+                    if (empty($mod['name'])) { ?>
+                        <tr>
+                            <td class="table-danger">Unknown</td>
+                            <td></td>
+                        </tr>
+                    <?php } else { ?>
                                 <tr id="mod-row-<?php echo $mod['id'] ?>">
                                     <td scope="row"><?php echo $mod['pretty_name'] ?></td>
                                     <td>
@@ -1960,6 +1967,7 @@ if (!uri("/login")) {
                                     </td>
                                 </tr>
                             <?php
+                    }
                 }
             }
             ?>
