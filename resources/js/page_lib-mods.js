@@ -286,7 +286,6 @@ async function getversions(id, versionId='', updateUi=true) {
         if (updateUi) {
             $('#installations-cancel').attr('disabled',true);
             $('#installations-button').attr('disabled',true);
-            $('#installation-message').hide();
             $('#installation-versions').empty();
             $('#installation').modal('show');
             $('#installation-title').text('Install '+id);
@@ -426,7 +425,7 @@ async function process_deps(vs) {
                     for (let v of dep_vs) {
                         if (v['game_versions'].includes(mcv) && v['loaders'].includes(loader)) {
                             dep_v = v
-                            console.log('got v', dep_v)
+                            console.log('got dep v', dep_v)
                             break
                         }
                     }
@@ -443,6 +442,12 @@ async function process_deps(vs) {
 
                 let name = dep_v['project_id'] // todo: get descriptive name
                 let version = dep_v['name']
+                for (let hit of results[$('#searchquery').val()]) {
+                    if (hit['project_id']==dep_v['project_id']){
+                        name = hit['title'];
+                        break
+                    }
+                }
 
                 if (dep_v['loaders'].includes(loader)) {
                     if (proj_version_deps[requiredByProject]==undefined) {
@@ -455,7 +460,7 @@ async function process_deps(vs) {
                         proj_version_deps[requiredByProject][requiredByProjectVersion].push(dep_v)
                     }
 
-                    $('#dependencies').append(`<div project_id="${name}" version="${version}">${name} - ${version}</div>`)
+                    $('#dependencies').append(`<li project_id="${name}" version="${version}" style='margin-left:1rem'>${name} - ${version}</li>`)
                 }
             }
         }
@@ -464,6 +469,7 @@ async function process_deps(vs) {
 
 async function showinstallation(id) {
     // show version ui for id 
+    $('#installation-message').empty();
     let firstVersion=true
     for (let vs of versions[id]) {
         let mc = '';
@@ -500,12 +506,24 @@ async function showinstallation(id) {
 
 async function installmod() {
     var installed_project_versions=[]
-    var jsons=[]
+
     async function install(project_id,version_id,mcv) {
         if (installed_project_versions.includes(String([project_id,version_id]))) {
             console.log('already installed',project_id,version_id)
             return // this returns undefined
         }
+
+
+        let slug = project_id;
+        var title = project_id;
+        for (let hit of results[$('#searchquery').val()]) {
+            if (hit['project_id']==project_id){
+                title = hit['title']
+                slug = hit['slug']
+                break
+            }
+        }
+
         return new Promise(async (resolve, reject) => {
 
             installed_project_versions.push(String([project_id,version_id]))
@@ -530,6 +548,8 @@ async function installmod() {
             let v = versions2[project_id][version_id]
             let url = v['files'][0]['url'] // get the first file
 
+            $('#installation-message').append(`<div>Installing ${title}</div>`);
+
             var request = new XMLHttpRequest();
 
             var postdata = new FormData();
@@ -544,9 +564,70 @@ async function installmod() {
                 if (request.readyState == 4 && request.status == 200) {
                     console.log(request.response);
                     let json = JSON.parse(this.response);
-                    jsons.push(json)
-                    resolve(jsons)
-                    return jsons
+
+                    $('#installation-message').append('<div>'+json['message']+"</div>");
+                    console.log(json['message']);
+
+                    if (json['status']=='succ'||json['status']=='info') {
+                        console.log('success!');
+                        $('#installation-versions option:selected').attr("disabled",true);
+                        $('#installations-button').attr('disabled',false);
+                        $('#installations-button').text('Done');
+                        $('#installations-button').attr('onclick',"$('#installation').modal('hide')");
+                        // $('#installation').modal('hide');
+                        $('#install-'+slug).attr('disabled',true);
+                        $('#install-'+slug).text('Installed');
+                        $('#install-'+slug).addClass('btn-success');
+                    } else if (json['status']=='warn') {
+                        $('#installation-versions option:selected').attr("disabled",true);
+                        $('#installations-button').attr('disabled',false);
+                        $('#installations-cancel').attr('disabled',false);
+                        $('#installations-button').attr('onclick',`window.location.replace("mod?id=${json['name'][0]}")`)
+                        $('#installations-button').text('Fix now');
+                        $('#installations-cancel').text('Ignore');
+                        $('#install-'+slug).attr('disabled',true);
+                        $('#install-'+slug).text('Issue(s)');
+                        $('#install-'+slug).attr('onclick',`window.location.replace("mod?id=${json['name'][0]}")`)
+                        $('#install-'+slug).addClass('btn-warning');
+                    }
+
+                    if (json['status']=='error') {
+                        $('#installation-versions option:selected').attr("disabled",true);
+                        $('#installations-cancel').attr('disabled',false);
+                        $('#installations-cancel').text('Cancel');
+                        $('#installations-button').text('Install');
+                    } else {
+
+                        $('#installations-versions').attr('disabled',false);
+                        $('#installations-title').text('Install '+title);
+
+                        console.log(json);
+
+                        if (json['status']=='succ') {
+                            let num_versions = json['modid'].length;
+                            let author = json['author'];
+                            let name = json['name'];
+                            let pretty_name = json['pretty_name'];
+                            let mcversion = json['mcversion'];
+                            let version = json['version'];
+                            let i = 0;
+                            $('#table-available-mods').append(`
+                                <tr id="mod-row-${name[i]}">
+                                    <td scope="row" data-value="${pretty_name[i]}">${pretty_name[i]}</td>
+                                    <td data-value="${author[i]}" class="d-none d-md-table-cell">${author[i]}</td>
+                                    <td id="num-row-${name}-version" data-value="${num_versions}">${num_versions}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                                            <button onclick="window.location='./mod?id=${name[i]}'" class="btn btn-primary">Edit</button>
+                                            <button onclick="remove_box('${name[i]}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `);
+                        }
+                    }
+
+                    resolve(true)
                 }
             }
             request.onerror = function() {
@@ -563,82 +644,15 @@ async function installmod() {
     let project_id = $('#installation-versions option:selected').attr('project_id');
     let version_id = $('#installation-versions option:selected').attr('version_id');
 
-    // let mc = $('#installation-versions option:selected').attr('mc');
-    // let url = $('#installation-versions option:selected').attr('url');
-    let slug = $('#installation-versions option:selected').attr('slug');
-    var title = '';
-    for (let hit of results[$('#searchquery').val()]) {
-        if (hit['slug']==slug){
-            title = hit['title'];
-            break
-        }
-    }
-
     $('#installations-button').text('Installing...');
     $('#installations-button').attr('disabled',true);
     $('#installations-cancel').attr('disabled',true);
-    $('#installation-message').text('Installing '+title+'...');
     $('#installation-message').show();
 
     let mcv = $('#mcv option:selected').attr('mc');
     let type = $('#mcv option:selected').attr('type');
 
-    let installed_json_results = await install(project_id,version_id,mcv)
-    for (let json of installed_json_results) {
-
-        if (json['status']=='succ'||json['status']=='info') {
-            console.log('success!');
-            $('#installation-versions option:selected').attr("disabled",true);
-            $('#installations-button').attr('disabled',true);
-            $('#installation').modal('hide');
-            $('#install-'+slug).attr('disabled',true);
-            $('#install-'+slug).text('Installed');
-            $('#install-'+slug).addClass('btn-success');
-        } else if (json['status']=='warn') {
-            $('#installation-versions option:selected').attr("disabled",true);
-            $('#installations-button').attr('disabled',false);
-            $('#installations-cancel').attr('disabled',false);
-            $('#installations-button').attr('onclick',`window.location.replace("mod?id=${json['name'][0]}")`)
-            $('#installations-button').text('Fix now');
-            $('#installations-cancel').text('Ignore');
-            $('#install-'+slug).attr('disabled',true);
-            $('#install-'+slug).text('Issue(s)');
-            $('#install-'+slug).attr('onclick',`window.location.replace("mod?id=${json['name'][0]}")`)
-            $('#install-'+slug).addClass('btn-warning');
-        }
-
-        if (json['status']=='error') {
-            $('#installation-versions option:selected').attr("disabled",true);
-            $('#installations-cancel').attr('disabled',false);
-            $('#installations-cancel').text('Cancel');
-            $('#installations-button').text('Install');
-        } else {
-            $('#installations-versions').attr('disabled',false);
-            $('#installations-title').text('Install '+title);
-            $('#installation-message').text(json['message']);
-
-            let num_versions = json['modid'].length;
-            let author = json['author'];
-            let name = json['name'];
-            let pretty_name = json['pretty_name'];
-            let mcversion = json['mcversion'];
-            let version = json['version'];
-            let i = 0;
-            $('#table-available-mods').append(`
-                <tr id="mod-row-${name[i]}">
-                    <td scope="row" data-value="${pretty_name[i]}">${pretty_name[i]}</td>
-                    <td data-value="${author[i]}" class="d-none d-md-table-cell">${author[i]}</td>
-                    <td id="num-row-${name}-version" data-value="${num_versions}">${num_versions}</td>
-                    <td>
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                            <button onclick="window.location='./mod?id=${name[i]}'" class="btn btn-primary">Edit</button>
-                            <button onclick="remove_box('${name[i]}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
-                        </div>
-                    </td>
-                </tr>
-            `);
-        }
-    }
+    await install(project_id,version_id,mcv)
 }
 
 async function fetch_installed() {

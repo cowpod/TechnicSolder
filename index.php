@@ -1495,7 +1495,7 @@ if (!uri("/login")) {
               </div>
             </div>
             <div class="modal fade" id="installation" tabindex="-1" role="dialog" aria-labelledby="installation-title" aria-hidden="true">
-              <div class="modal-dialog modal-dialog-centered modal-fullscreen" role="document">
+              <div class="modal-dialog modal-dialog-centered modal-fullscreen modal-lg" role="document">
                 <div class="modal-content">
                   <div class="modal-header">
                     <h5 class="modal-title" id="installation-title"></h5>
@@ -1506,12 +1506,13 @@ if (!uri("/login")) {
                   <div class="modal-body" id="installation-body">
                     <select id="installation-versions" class="form-control">
                     </select>
-                    <div id="installation-message" style="display:none; text-align: right;">
+                    <br/>
+                    <div id="installation-deps" class="collapse">
+                    <label for="dependencies">Dependencies (will be installed):</label>
+                    <div id="dependencies"></div>
                     </div>
                     <br/>
-                    <div id="installation-deps" style="display:none">
-                    <label for="installation-deps">Dependencies (will be installed)</label>
-                    <div id="dependencies"></div>
+                    <div id="installation-message" style="background-color:rgba(0,0,0,0.2); border-radius:3px; display:none">
                     </div>
                   </div>
                   <div class="modal-footer">
