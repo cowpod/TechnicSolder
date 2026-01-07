@@ -806,7 +806,7 @@ if (!uri("/login")) {
                             <?php } ?>
                           </div>
                           <div class="modal-footer">
-                            <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
                             <button onclick="window.location='./functions/remove-modpack.php?id=<?php echo $modpack['id'] ?>'" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                           </div>
                         </div>
@@ -942,7 +942,7 @@ if (!uri("/login")) {
                             Are you sure you want to delete build <span id="build-text"></span>?
                           </div>
                           <div class="modal-footer">
-                            <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
                             <button id="remove-button" onclick="" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                           </div>
                         </div>
@@ -1622,11 +1622,11 @@ if (!uri("/login")) {
                   </div>
                   <div class="modal-body">
                     Are you sure you want to delete mod <span id="mod-name"></span>? All the mod's files and versions will be deleted too.
+                    <div id="rm-message"></div>
                   </div>
                   <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
-                    <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
-                    <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                    <button id="remove-button" type="button" class="btn btn-danger">Delete</button>
                   </div>
                 </div>
               </div>
@@ -1854,7 +1854,7 @@ if (!uri("/login")) {
                     Are you sure you want to delete loader <span id="mod-name"></span>? Mod's file will be deleted too.
                   </div>
                   <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
                     <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                   </div>
                 </div>
@@ -1985,11 +1985,11 @@ if (!uri("/login")) {
                   </div>
                   <div class="modal-body">
                     Are you sure you want to delete file <span id="mod-name"></span>?
+                    <div id="rm-message"></div>
                   </div>
                   <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
-                    <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
-                    <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                    <button id="remove-button" type="button" data-dismiss="modal" class="btn btn-danger" data-dismiss="modal">Delete</button>
                   </div>
                 </div>
               </div>
@@ -2113,26 +2113,26 @@ if (!uri("/login")) {
             ?>
                     </tbody>
                 </table>
-                <div class="modal fade" id="removeMod" tabindex="-1" role="dialog" aria-labelledby="rm" aria-hidden="true">
-                  <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="rm">Delete file <span id="mod-name-title"></span>?</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                          <span aria-hidden="true">&times;</span>
-                        </button>
-                      </div>
-                      <div class="modal-body">
-                        Are you sure you want to delete file <span id="mod-name"></span>?
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
-                        <button id="remove-button-force" type="button" class="btn btn-danger" data-dismiss="modal">Force Delete</button>
-                        <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
-                      </div>
-                    </div>
+            </div>
+            <div class="modal fade" id="removeMod" tabindex="-1" role="dialog" aria-labelledby="rm" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="rm">Delete file <span id="mod-name-title"></span>?</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                    </button>
+                  </div>
+                  <div class="modal-body">
+                    Are you sure you want to delete file <span id="mod-name"></span>?
+                    <div id="rm-message"></div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                    <button id="remove-button" type="button" class="btn btn-danger">Delete</button>
                   </div>
                 </div>
+              </div>
             </div>
             <div class="card">
                 <h3>Details</h3><hr>
@@ -2606,7 +2606,7 @@ if (!uri("/login")) {
                         Are you sure you want to delete user <span id="user-name"></span>?
                       </div>
                       <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
                         <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">
                                 Delete
                           </button>
@@ -2761,7 +2761,7 @@ if (!uri("/login")) {
                         Are you sure you want to delete client <span id="mod-name"></span>?
                       </div>
                       <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
                         <button id="remove-button" type="button" class="btn btn-danger" data-dismiss="modal">
                             Delete
                         </button>

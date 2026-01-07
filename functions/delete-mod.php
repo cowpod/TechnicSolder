@@ -16,7 +16,7 @@ if (!$perms->mods_delete() && !$perms->modloaders_delete()) {
 }
 
 if (empty($_GET['id']) && empty($_GET['name'])) {
-    die('{"status":error","message":"Id/name not specified."}');
+    die('{"status":"error","message":"Id/name not specified."}');
 }
 if (!empty($_GET['id']) && !is_numeric($_GET['id'])) {
     die('{"status":error","message":"Malformed id"}');

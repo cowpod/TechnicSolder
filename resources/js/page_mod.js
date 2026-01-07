@@ -1,10 +1,11 @@
 function remove_box(id,version,name) {
     $("#mod-name-title").text(name+" "+version);
     $("#mod-name").text(name+" "+version);
-    $("#remove-button").attr("onclick","remove("+id+",false)");
-    $("#remove-button-force").attr("onclick","remove("+id+",true)");
+    $("#remove-button").attr("onclick","remove("+id+",'"+name+"',false)");
+    $("#remove-button").text('Delete')
+    $('#rm-message').empty()
 }
-function remove(id,force) {
+function remove(id,name,force) {
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
@@ -16,13 +17,11 @@ function remove(id,force) {
                 if ($("#table-mods tr").length==0) {
                     window.location = "./lib-mods";
                 }
+                $("#removeMod").modal('hide')
             } else {
-                // todo: use styled alert instead of this
-                // alert("Cannot delete modloader as it is used by a build.");
-                // $("#removeModWarn").show();
-                if (confirm(response['message']+" Press OK to go to '"+response['bname']+"'")) {
-                    window.location.href="/build?id="+response['bid'];
-                }
+                $('#rm-message').html(`<br/><p><b>${name} is in use!</b></p>`);
+                $("#remove-button").attr("onclick","remove("+id+",'"+name+"',true)")
+                $("#remove-button").text('Force delete')
             }
         }
     }

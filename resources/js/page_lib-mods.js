@@ -7,7 +7,8 @@ function remove_box(name) {
     $("#mod-name-title").text(name);
     $("#mod-name").text(name);
     $("#remove-button").attr("onclick","remove('"+name+"',false)");
-    $("#remove-button-force").attr("onclick","remove('"+name+"',true)");
+    $("#remove-button").text('Delete')
+    $('#rm-message').empty()
 }
 
 function remove(name,force) {
@@ -24,15 +25,13 @@ function remove(name,force) {
                     console.log('success!');
                     $("#mod-row-"+name).remove();
                 }
+                $("#removeMod").modal('hide')
             } else {
-                // todo: use styled alert instead of this
-                console.log('error!?');
-                if (confirm(response['message']+" Press OK to go to '"+response['bname']+"'")) {
-                    window.location.href="/build?id="+response['bid'];
-                }
+                $('#rm-message').html(`<br/><p><b>${name} is in use!</b></p>`);
+                $("#remove-button").attr("onclick","remove('"+name+"',true)")
+                $("#remove-button").text('Force delete')
             }
         }
-        
     }
     request.open("GET", "./functions/delete-mod.php?name="+name+"&force="+force);
     request.send();
