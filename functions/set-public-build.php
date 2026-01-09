@@ -47,13 +47,25 @@ if (!isset($db)) {
     $db->connect();
 }
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
 $hasminecraft = $db->query("SELECT 1 FROM builds WHERE minecraft IS NOT NULL AND id = {$_GET['buildid']}");
 if (!$hasminecraft) {
     die('{"status":"error","message":"Build details are empty!"}');
 }
 
-$db->execute("UPDATE builds SET public = {$_GET['ispublic']} WHERE id = {$_GET['buildid']}");
+if (!$db->execute("UPDATE builds SET public = {$_GET['ispublic']} WHERE id = {$_GET['buildid']}")){
+    die('{"status":"error","message":"Could not set public"}');
+}
 
-$db->execute("UPDATE modpacks SET latest = {$_GET['buildid']} WHERE id = {$_GET['modpackid']}");
+if (!$db->execute("UPDATE modpacks SET latest = {$_GET['buildid']} WHERE id = {$_GET['modpackid']}")){
+    die('{"status":"error","message":"Could not set latest"}');
+}
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
 
 die('{"status": "succ"}');

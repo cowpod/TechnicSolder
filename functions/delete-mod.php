@@ -60,7 +60,9 @@ function removeMod($id)
     }
 
     // remove it from db
-    $db->execute("DELETE FROM `mods` WHERE `id` = '{$id}'");
+    if (!$db->execute("DELETE FROM `mods` WHERE `id` = '{$id}'")) {
+        return ["status" => "error","message" => "Could not delete mod"];
+    }
 
     if ($mod['type'] == 'mod' && !(isset($_GET['force']) && $_GET['force'] == 'true')) {
         // check if theres any other mod entries with the same file
@@ -79,14 +81,24 @@ function removeMod($id)
     return ["status" => "succ","message" => "Mod version deleted."];
 }
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
 if (!empty($_GET['id'])) {
     $status = removeMod($_GET['id']);
     $json = @json_encode($status);
     if ($json === false) {
         error_log('delete-mod.php: could not encode status to json');
     }
+
+    if (!$db->commit()) {
+        die('{"status":"error","message":"Could not commit changes"}');
+    }
     die($json);
-} elseif (!empty($_GET['name'])) {
+} 
+
+elseif (!empty($_GET['name'])) {
     // for all mod versions (ids) associated with name
     $modq = $db->query("SELECT * FROM `mods` WHERE `name` = '{$_GET['name']}'");
 
@@ -101,7 +113,12 @@ if (!empty($_GET['id'])) {
     }
     if ($remove_failed) {
         die('{"status":"error","message":"The following mods could not be deleted; '.implode(',', $remove_failed).'"}');
-    } else {
-        die('{"status":"succ","message":"Mod \''.$_GET['name'].'\' deleted successfully."}');
     }
+
+    if (!$db->commit()) {
+        die('{"status":"error","message":"Could not commit changes"}');
+    }
+    die('{"status":"succ","message":"Mod \''.$_GET['name'].'\' deleted successfully."}');
 }
+
+

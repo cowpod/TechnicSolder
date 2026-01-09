@@ -227,6 +227,10 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
 $mi = new modInfo();
 $modinfos = $mi->getModInfo($file_tmp, $file_name);
 $warn = $mi->getWarnings();
@@ -312,7 +316,9 @@ foreach ($modinfos as $modinfo) {
     }
 }
 
-$db->disconnect();
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
 
 // error_log(json_encode($added_ids));
 
@@ -330,13 +336,12 @@ if (!empty($warn) && sizeof($warn) > 0) {
     foreach ($warn as $w) {
         $acc_message .= $w.' ';
     }
-    echo '{"status":"warn","message":"'.$acc_message.'", '.$moredata.'}';
-} else {
-    // get the last one added. we don't support displaying multiple..
-    // todo: support displaying multiple in index.php
-    // modid appears to be the id in the database, name appears to be modid...
-    error_log('{"status":"succ","message":"Mod added.", '.$moredata.'}');
-    die('{"status":"succ","message":"Mod added.", '.$moredata.'}');
+    die('{"status":"warn","message":"'.$acc_message.'", '.$moredata.'}');
 }
 
-exit();
+// get the last one added. we don't support displaying multiple..
+// todo: support displaying multiple in index.php
+// modid appears to be the id in the database, name appears to be modid...
+error_log('{"status":"succ","message":"Mod added.", '.$moredata.'}');
+die('{"status":"succ","message":"Mod added.", '.$moredata.'}');
+

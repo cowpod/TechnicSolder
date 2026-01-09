@@ -31,12 +31,8 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
-$removeq = $db->execute("DELETE FROM `users` WHERE `id` = {$_POST['id']}");
-
-$db->disconnect();
-
-if ($removeq) {
-    die('{"status":"succ","message":"User removed."}');
-} else {
+if (!$db->execute("DELETE FROM `users` WHERE `id` = {$_POST['id']}")){
     die('{"status":"succ","message":"Could not remove user."}');
 }
+
+die('{"status":"succ","message":"User removed."}');

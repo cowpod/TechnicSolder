@@ -74,8 +74,7 @@ function update_icon($db, $target_user, $iconfile)
 
     $icon_base64 = base64_encode($contents);
 
-    $updateicon = $db->execute("UPDATE users SET icon = '{$icon_base64}' WHERE name = '{$target_user}'");
-    if (!$updateicon) {
+    if (!$db->execute("UPDATE users SET icon = '{$icon_base64}' WHERE name = '{$target_user}'")) {
         return ["status" => "error","message" => "Could not set user icon"];
     }
 
@@ -101,8 +100,7 @@ function update_perms($db, $target_user, $newperms)
         return ["status" => "error","message" => "Bad input data; name"];
     }
 
-    $setpermsx = $db->execute("UPDATE users SET perms = '{$newperms}' WHERE name = '{$target_user}'");
-    if (!$setpermsx) {
+    if (!$db->execute("UPDATE users SET perms = '{$newperms}' WHERE name = '{$target_user}'")) {
         return ["status" => "error","message" => "Could not update permissions"];
     }
     return ["status" => "succ","message" => "Permissions updated."];
@@ -129,8 +127,7 @@ function update_password($db, $target_user, $oldpass, $pass)
     }
 
     $newpass = password_hash($pass, PASSWORD_DEFAULT);
-    $setpasswordx = $db->execute("UPDATE users SET pass = '{$newpass}' WHERE name = '{$target_user}'");
-    if (!$setpasswordx) {
+    if (!$db->execute("UPDATE users SET pass = '{$newpass}' WHERE name = '{$target_user}'")) {
         return ["status" => "error","message" => "Could not update password"];
     }
 
@@ -145,8 +142,7 @@ function update_display_name($db, $target_user, $display_name)
     if (!isValidName($display_name)) {
         return ["status" => "error","message" => "Bad name"];
     }
-    $updatedisplayname = $db->execute("UPDATE users SET display_name = '{$display_name}' WHERE name = '{$target_user}'");
-    if (!$updatedisplayname) {
+    if (!$db->execute("UPDATE users SET display_name = '{$display_name}' WHERE name = '{$target_user}'")) {
         return ["status" => "error","message" => "Could not update name"];
     }
 
@@ -167,6 +163,10 @@ require_once("db.php");
 if (!isset($db)) {
     $db = new Db();
     $db->connect();
+}
+
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
 }
 
 $return_arr = ["status" => "succ","message" => ""];
@@ -223,6 +223,8 @@ if (!empty($_POST['display_name'])
     }
 }
 
-$db->disconnect();
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
 
 die(json_encode($return_arr, JSON_UNESCAPED_SLASHES));

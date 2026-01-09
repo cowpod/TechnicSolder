@@ -69,4 +69,3 @@ while (!feof($content_stream)) {
 fclose($content_stream);
 $zip->close();
 
-exit();

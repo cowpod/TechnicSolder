@@ -34,12 +34,14 @@ if ($config->exists('protocol') && !empty($config->get('protocol'))) {
     $protocol = strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL']))).'://';
 }
 
-$public_modpack = 0;
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
 
 $mpq = $db->query("SELECT COUNT(*) AS count FROM modpacks WHERE name LIKE 'unnamed-modpack-%'");
 $mpi = ($mpq && isset($mpq[0]['count'])) ? $mpq[0]['count'] + 1 : 1;
 
-$db->execute("INSERT INTO modpacks (
+if (!$db->execute("INSERT INTO modpacks (
     name,
     display_name,
     icon,
@@ -59,10 +61,16 @@ VALUES (
     '70A114D55FF1FA4C5EEF7F2FDEEB7D03',
     '{$protocol}{$config->get('host')}{$config->get('dir')}resources/default/background.png',
     '88F838780B89D7C7CD10FE6C3DBCDD39',
-    {$public_modpack}
-)");
+    0
+)")){
+    die("Could not add modpack");
+}
 
 $insert_id = $db->insert_id();
 
-header("Location: ".$config->get('dir')."modpack?id=".$insert_id);
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
+
+header("Location: {$config->get('dir')}modpack?id={$insert_id}");
 exit();

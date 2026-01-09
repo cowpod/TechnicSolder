@@ -30,9 +30,20 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
-$db->execute("DELETE FROM `builds` WHERE `modpack` = '".$db->sanitize($_GET['id'])."'");
-$db->execute("DELETE FROM `modpacks` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
 
-$db->disconnect();
+if (!$db->execute("DELETE FROM `builds` WHERE `modpack` = '".$db->sanitize($_GET['id'])."'")){
+    die("Could not delete build(s)");
+}
+if (!$db->execute("DELETE FROM `modpacks` WHERE `id` = '".$db->sanitize($_GET['id'])."'")){
+    die("Could not delete modpack");
+}
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
+
 header("Location: ".$config->get('dir')."dashboard");
 exit();

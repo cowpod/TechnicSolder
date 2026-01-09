@@ -34,6 +34,10 @@ if (!isset($db)) {
     $db->connect();
 }
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
 $modsq = $db->query("SELECT mods FROM builds WHERE id = ".$db->sanitize($_GET['bid']));
 if ($modsq && sizeof($modsq) == 1 && !empty($modsq[0]['mods'])) {
     $modslist = explode(',', $modsq[0]['mods']);
@@ -44,6 +48,12 @@ if ($modsq && sizeof($modsq) == 1 && !empty($modsq[0]['mods'])) {
     die('{"status":"error","message":"Build contains no mods. You need to set the version and loader."}');
 }
 
-$db->execute("UPDATE builds SET mods = '{$modslist_string}' WHERE id = {$db->sanitize($_GET['bid'])}");
+if (!$db->execute("UPDATE builds SET mods = '{$modslist_string}' WHERE id = {$db->sanitize($_GET['bid'])}")) {
+    die('{"status":"error","message":"Could not set mods"}');
+}
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
 
 die('{"status":"succ","message":"Version changed sucessfully"');

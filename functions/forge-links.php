@@ -22,7 +22,6 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
-// this was called INSIDE the for loop before...
 $forgesq = $db->query("SELECT `version` FROM `mods` WHERE `type` = 'forge'");
 $forges_installed = [];
 if ($forgesq) {

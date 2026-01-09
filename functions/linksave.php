@@ -39,6 +39,7 @@ if (!isset($db)) {
     $db->connect();
 }
 
-$db->execute("UPDATE `mods` SET `link` = '{$_POST['value']}' WHERE `name` = '{$_POST['id']}'");
-
-exit();
+if (!$db->execute("UPDATE `mods` SET `link` = '{$_POST['value']}' WHERE `name` = '{$_POST['id']}'")) {
+    die("Could not save link");
+}
+die("Saved link");

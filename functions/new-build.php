@@ -27,6 +27,9 @@ if (!preg_match('/[\w\-\.]+/', $_GET['name'])) {
     die("Malformed name");
 }
 
+$name = strtolower($_GET['name']);
+$id = $_GET['id'];
+
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
@@ -36,20 +39,22 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
-$name = strtolower($_GET['name']);
-$id = $_GET['id'];
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
 
 $nameexistsq = $db->query("SELECT 1 FROM builds WHERE name = '{$name}' AND modpack = {$id} LIMIT 1");
 if ($nameexistsq) {
     die("Build with name {$_GET['name']} already exists");
 }
 
-$public_build = 0;
-$addbuild = $db->execute("INSERT INTO builds (name, modpack, public) VALUES ('{$name}', '{$id}', {$public_build})");
-if (!$addbuild) {
-    die("Could not add build. Possibly a constraint issue?");
+if(!$db->execute("INSERT INTO builds (name, modpack, public) VALUES ('{$name}', '{$id}', 0)")) {
+    die("Could not add build.");
 }
 
-$db->disconnect();
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
+
 header("Location: {$config->get('dir')}modpack?id={$id}");
 exit();

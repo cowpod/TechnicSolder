@@ -27,13 +27,22 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
 $modsq = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$_GET['bid']);
 if (!$modsq) {
     die("Build id does not exist");
 }
 
 $mods = $modsq[0];
-$db->execute("UPDATE `builds` SET `mods` = '".$mods['mods'].",".$_GET['id']."' WHERE `id` = ".$_GET['bid']);
+if (!$db->execute("UPDATE `builds` SET `mods` = '".$mods['mods'].",".$_GET['id']."' WHERE `id` = ".$_GET['bid'])) {
+    die('{"status":"error","message":"Could update mods for build"}');
+}
 
-echo 'Mod added';
-exit();
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
+
+die('Mod added');

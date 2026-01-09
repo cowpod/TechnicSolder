@@ -26,6 +26,10 @@ if (!isset($db)) {
     $db->connect();
 }
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
 $url = $_SERVER['REQUEST_URI'];
 if ($config->exists('protocol') && !empty($config->get('protocol'))) {
     $protocol = strtolower($config->get('protocol')).'://';
@@ -41,7 +45,7 @@ $bmemory = $db->sanitize($_POST['memory']);
 $bforge = $db->sanitize($_POST['versions']);
 $public_modpack = $perms->modpack_publish() ? 1 : 0;
 
-$addmodpackx = $db->execute("INSERT INTO modpacks (
+if (!$db->execute("INSERT INTO modpacks (
         name, 
         display_name, 
         icon, 
@@ -66,8 +70,7 @@ $addmodpackx = $db->execute("INSERT INTO modpacks (
         {$public_modpack},
         '',
         ''
-    )");
-if (!$addmodpackx) {
+    )")) {
     error_log("instant-modpack.php: could not add new modpack");
     die("Could not add new modpack");
 }
@@ -84,7 +87,7 @@ $loadertype = $loader_mod['loadertype'];
 $forgeandmods = !empty($bmods) ? $bforge.','.$bmods : $bforge;
 $public_build = $perms->build_publish() ? 1 : 0;
 
-$addbuildx = $db->execute("INSERT INTO builds (
+if (!$db->execute("INSERT INTO builds (
         name,
         modpack,
         public,
@@ -103,17 +106,19 @@ $addbuildx = $db->execute("INSERT INTO builds (
         '{$bmemory}', 
         '{$minecraft}', 
         '{$loadertype}'
-    )");
-if (!$addbuildx) {
+    )")) {
     error_log("instant-modpack.php: could not add new build");
     die("Could not add new build");
 }
 $new_build_id = $db->insert_id();
 
-$setmodpackbuildx = $db->execute("UPDATE modpacks SET latest='{$new_build_id}', recommended='{$new_build_id}' WHERE id={$mpi}");
-if (!$setmodpackbuildx) {
+if (!$db->execute("UPDATE modpacks SET latest='{$new_build_id}', recommended='{$new_build_id}' WHERE id={$mpi}")) {
     error_log("instant-modpack.php: could not set modpack build");
     die("Could not set modpack build");
+}
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
 }
 
 header("Location: ".$config->get('dir')."modpack?id=".$mpi);

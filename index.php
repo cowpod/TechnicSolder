@@ -94,7 +94,6 @@ $modslist = [];
 // todo: send hash, not plaintext!
 // currently, we're sending a plaintext password, and have no guarantee of https!
 if (!empty($_POST['email']) && !empty($_POST['password'])) {
-    // loose regex email check
     if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
         die("Malformed email");
     }
@@ -221,6 +220,10 @@ if (!uri("/login")) {
             $totalruns = 0;
             $totallikes = 0;
 
+            if (!$db->beginTransaction(true)) {
+                die('{"status":"error","message":"Could not start transaction"}');
+            }
+
             $modpacksq = $db->query("SELECT * FROM modpacks");
             $modpacks = []; // associative by id
 
@@ -307,6 +310,10 @@ if (!uri("/login")) {
                         $totallikes += empty($info['ratings']) ? 0 : $info['ratings'];
                     }
                 }
+            }
+
+            if (!$db->commit()) {
+                die('{"status":"error","message":"Could not commit changes"}');
             }
 
             $num_downloads = number_suffix_string($totaldownloads);
@@ -615,6 +622,10 @@ if (!uri("/login")) {
             $modpack = $modpacks[$db->sanitize($_GET['id'])];
             $packdata = get_modpack_latest_recommended($db, $modpack['id']);
 
+            if (!$db->beginTransaction(true)) {
+                die('{"status":"error","message":"Could not start transaction"}');
+            }
+
             $clients = $db->query("SELECT * FROM clients");
 
             $build_latest = ['id' => $modpack['id'], 'name' => 'null', 'minecraft' => 'null', 'display_name' => 'null', 'clients' => 'null', 'public' => 0];
@@ -637,6 +648,9 @@ if (!uri("/login")) {
                     $rec = true;
                     $build_recommended = $buildq[0];
                 }
+            }
+            if (!$db->commit()) {
+                die('{"status":"error","message":"Could not commit changes"}');
             }
             ?>
             <script>document.title = 'Modpack - <?php echo addslashes($modpack['display_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -984,6 +998,9 @@ if (!uri("/login")) {
             }
         } elseif (uri('/build')) {
             $buildq = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
+            if (!$db->beginTransaction(true)) {
+                die('{"status":"error","message":"Could not start transaction"}');
+            }
             if (!empty($buildq)) {
                 $build = $buildq[0];
             } else {
@@ -1018,6 +1035,10 @@ if (!uri("/login")) {
 
             $clients = $db->query("SELECT * FROM `clients`");
             $othersq = $db->query("SELECT * FROM `mods` WHERE `type` = 'other'");
+            if (!$db->commit()) {
+                die('{"status":"error","message":"Could not commit changes"}');
+            }
+            // todo: we have more queries further down...
             ?>
             <script>document.title = '<?php echo addslashes($mpack['display_name'])." ".addslashes($build['name'])  ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <ul class="nav justify-content-end info-versions">
@@ -1373,6 +1394,9 @@ if (!uri("/login")) {
             </div>
         <?php
         } elseif (uri('/lib-mods')) {
+            if (!$db->beginTransaction(true)) {
+                die('{"status":"error","message":"Could not start transaction"}');
+            }
 
             $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'mod' ORDER BY `id` DESC");
 
@@ -1406,6 +1430,9 @@ if (!uri("/login")) {
                         array_push($modsi, $modarray);
                     }
                 }
+            }
+            if (!$db->commit()) {
+                die('{"status":"error","message":"Could not commit changes"}');
             }
             ?>
         <script>document.title = 'Mod Library - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -1681,6 +1708,10 @@ if (!uri("/login")) {
 
         <?php
         } elseif (uri('/modloaders')) {
+            if (!$db->beginTransaction(true)) {
+                die('{"status":"error","message":"Could not start transaction"}');
+            }
+
             $buildsq = $db->query("SELECT id,name,mods FROM builds");
 
             $installed_loader_ids = [];
@@ -1708,6 +1739,9 @@ if (!uri("/login")) {
                 }
             }
 
+            if (!$db->commit()) {
+                die('{"status":"error","message":"Could not commit changes"}');
+            }
             ?>
         <script>document.title = 'Forge Versions - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">

@@ -26,12 +26,6 @@ if (!filter_var($_POST['value'], FILTER_VALIDATE_URL)) {
     die("Malformed value (donation link)");
 }
 
-require_once('./configuration.php');
-global $config;
-if (empty($config)) {
-    $config = new Config();
-}
-
 global $db;
 require_once("db.php");
 if (!isset($db)) {
@@ -39,6 +33,8 @@ if (!isset($db)) {
     $db->connect();
 }
 
-$db->execute("UPDATE `mods` SET `donlink` = '{$_POST['value']}' WHERE `name` = '{$_POST['id']}'");
+if (!$db->execute("UPDATE `mods` SET `donlink` = '{$_POST['value']}' WHERE `name` = '{$_POST['id']}'")) {
+    die("Could not save donation link");
+}
 
-exit();
+die("Saved donation link.");

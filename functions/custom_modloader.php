@@ -78,51 +78,49 @@ if (is_dir("../forges/modpack-".$version)) {
 
 mkdir("../forges/modpack-".$version);
 
-if (move_uploaded_file($fileTmpLoc, "../forges/modpack-".$version."/modpack.jar")) {
-    $zip = new ZipArchive();
-    if ($zip->open("../forges/forge-".$version.".zip", ZIPARCHIVE::CREATE) !== true) {
-        die('{"status":"error","message":"Could not open archive"}');
-    }
-    $path = "../forges/modpack-".$version."/modpack.jar";
-    $zip->addEmptyDir('bin');
-    if (is_file($path)) {
-        $zip->addFile($path, "bin/modpack.jar");
-    } else {
-        $zip->close();
-        die('{"status":"error","message":"Could not find file to add to archive"}');
-    }
-    $zip->close();
-
-    unlink("../forges/modpack-".$version."/modpack.jar");
-    rmdir("../forges/modpack-".$version);
-
-    $md5 = md5_file("../forges/forge-".$version.".zip");
-    $url = $protocol.$config->get('host').$config->get('dir')."forges/forge-".$version.".zip";
-    $insertq = $db->execute(
-        "INSERT INTO `mods`
-        (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`)
-        VALUES (
-            'customloader',
-            'Custom mod loader',
-            '".$md5."',
-            '".$url."',
-            '',
-            '".$_SESSION['name']."',
-            'Custom mod loader',
-            '".$version."',
-            '".$mcversion."',
-            'forge-".$version.".zip',
-            'forge',
-            '".$type."'
-        )"
-    );
-    if ($insertq) {
-        // echo '{"status":"succ","message":"Mod has been saved."}';
-        header("Location: ../modloaders?succ");
-    } else {
-        die('{"status":"error","message":"Mod could not be added to database"}');
-    }
-} else {
+if (!move_uploaded_file($fileTmpLoc, "../forges/modpack-".$version."/modpack.jar")) {
     rmdir("../forges/modpack-".$version);
     die('{"status":"error","message":"File download failed."}');
 }
+
+$zip = new ZipArchive();
+if ($zip->open("../forges/forge-".$version.".zip", ZIPARCHIVE::CREATE) !== true) {
+    die('{"status":"error","message":"Could not open archive"}');
+}
+$path = "../forges/modpack-".$version."/modpack.jar";
+$zip->addEmptyDir('bin');
+if (is_file($path)) {
+    $zip->addFile($path, "bin/modpack.jar");
+} else {
+    $zip->close();
+    die('{"status":"error","message":"Could not find file to add to archive"}');
+}
+$zip->close();
+
+unlink("../forges/modpack-".$version."/modpack.jar");
+rmdir("../forges/modpack-".$version);
+
+$md5 = md5_file("../forges/forge-".$version.".zip");
+$url = $protocol.$config->get('host').$config->get('dir')."forges/forge-".$version.".zip";
+if (!$db->execute(
+    "INSERT INTO `mods`
+    (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`)
+    VALUES (
+        'customloader',
+        'Custom mod loader',
+        '".$md5."',
+        '".$url."',
+        '',
+        '".$_SESSION['name']."',
+        'Custom mod loader',
+        '".$version."',
+        '".$mcversion."',
+        'forge-".$version.".zip',
+        'forge',
+        '".$type."'
+    )"
+)){
+    die('{"status":"error","message":"Mod could not be added to database"}');
+}
+
+header("Location: ../modloaders?succ");

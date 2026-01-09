@@ -107,7 +107,11 @@ if (!isset($db)) {
     $db->connect();
 }
 
-$res = $db->execute("
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
+if (!$db->execute("
     INSERT INTO mods (
         name,
         pretty_name,
@@ -138,12 +142,13 @@ $res = $db->execute("
         'forge',
         '{$type}'
     )
-");
-if ($res) {
-    echo '{"status":"succ","message":"Loader has been saved.", "id":"'.$db->insert_id().'"}';
-} else {
-    echo '{"status":"error","message":"Loader could not be added to database"}';
+")) {
+    die('{"status":"error","message":"Loader could not be added to database"}');
+}
+$id = $db->insert_id();
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
 }
 
-$db->disconnect();
-exit();
+die ('{"status":"succ","message":"Loader has been saved.", "id":"'.$id.'"}');

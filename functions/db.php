@@ -12,6 +12,9 @@ define('DB_SANITIZE_BACKLIST', [
 ]);
 require_once('sanitize.php');
 
+// todo on fail, check if we're in a transaction, if we are, roll back!
+// how should i return?
+
 final class Db
 {
     private $config = null;
@@ -149,11 +152,14 @@ final class Db
             foreach ($stmt->fetchAll() as $row) {
                 array_push($result_array, $row);
             }
+            return $result_array;
         } catch (PDOException $e) {
-            error_log("db.php: query(): SQL query exception: ".$e->getMessage());
+            error_log("db.php: query(): ".$e->getMessage());
+            // if ($this->conn->inTransaction()) {
+            //     $this->rollBack();
+            // }
+            return false;
         }
-        // error_log(json_encode($result_array, JSON_UNESCAPED_SLASHES));
-        return $result_array;
     }
 
     public function execute(string $querystring): bool
@@ -167,9 +173,64 @@ final class Db
             $result = $stmt->execute();
             return $result;
         } catch (PDOException $e) {
-            error_log("db.php: execute(): SQL query exception: ".$e->getMessage());
+            error_log("db.php: execute(): ".$e->getMessage());
+            // if ($this->conn->inTransaction()) {
+            //     $this->rollBack();
+            // }
             return false;
         }
+    }
+
+    public function beginTransaction(bool $tryAgain = false, int $tryMaxCount = 3) {
+        $ret = false;
+        if ($this->conn->inTransaction()) {
+            return $ret;
+        }
+        try {
+            $ret = $this->conn->beginTransaction();
+        } catch (PDOException $e) {
+            if ($tryAgain && $tryMaxCount > 0) {
+                error_log("db.php: beginTransaction(): Trying again in 1s...");
+                sleep(1);
+                return $this->beginTransaction($tryAgain, $tryMaxCount - 1);
+            } else {
+                error_log("db.php: beginTransaction(): ".$e->getMessage());
+                if ($this->conn->inTransaction()) {
+                    $this->rollBack();
+                }
+                return false;
+            }
+        }
+        return $ret;
+    }
+
+    public function commit() {
+        $ret = false;
+        if (!$this->conn->inTransaction()) {
+            return $ret;
+        }
+        try {
+           $ret = $this->conn->commit();
+        } catch (PDOException $e) {
+            error_log("db.php: commit(): ".$e->getMessage());
+            $this->rollBack();
+            return false;
+        }
+        return $ret;
+    }
+
+    public function rollBack() {
+        $ret = false;
+        if (!$this->conn->inTransaction()) {
+            return $ret;
+        }
+        try {
+            $ret = $this->conn->rollBack();
+        } catch (PDOException $e) {
+            error_log("db.php: rollBack(): ".$e->getMessage());
+            return false;
+        }
+        return $ret;
     }
 
     public function sanitize(null|string $str): null|string

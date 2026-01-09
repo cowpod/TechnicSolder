@@ -85,6 +85,10 @@ $auth = isset($_POST['author']) ? $db->sanitize($_POST['author']) : '';
 $desc = isset($_POST['description']) ? $db->sanitize($_POST['description']) : '';
 $donlink = isset($_POST['donlink']) ? $db->sanitize($_POST['donlink']) : '';
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
 // we use name (slug) and md5 to determine if its already installed.
 // since we have md5. otherwise we should check version,mcversion,name/slug,type,loadertype
 $existsq = $db->query("SELECT 1 FROM mods WHERE name='{$name}' AND md5='{$md5}'");
@@ -92,7 +96,7 @@ if ($existsq && sizeof($existsq) >= 1) {
     die('{"status":"succ","message":"Mod is already added."}');
 }
 
-$addq = $db->execute("INSERT INTO `mods`
+if (!$db->execute("INSERT INTO `mods`
     (`name`, `pretty_name`, `md5`, `filesize`, `url`, `link`, `author`, `donlink`, `description`, `version`, `mcversion`, `type`, `loadertype`) VALUES ( 
         '{$name}',
         '{$db->sanitize($_POST['pretty_name'])}',
@@ -107,9 +111,12 @@ $addq = $db->execute("INSERT INTO `mods`
         '{$db->sanitize($_POST['mcversion'])}',
         'mod',
         '{$db->sanitize($_POST['loadertype'])}'
-        )");
-if ($addq) {
-    die('{"status":"succ","message":"Mod successfully added."}');
+        )")) {
+    die('{"status":"error","message":"Could not add mod."}');
 }
 
-die('{"status":"error","message":"Could not add mod."}');
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
+
+die('{"status":"succ","message":"Mod successfully added."}');

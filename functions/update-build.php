@@ -64,33 +64,40 @@ if (!isset($db)) {
     $db->connect();
 }
 
-$user = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_POST['id']));
-if ($user) {
-    assert(sizeof($user) == 1);
-    $user = $user[0];
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
 }
+
+$userq = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_POST['id']));
+if (!$userq) {
+    die('{"status":"error","message":"Could not get build for id"}');
+}
+$user = $userq[0];
+
 $modslist = isset($user['mods']) ? explode(',', $user['mods']) : [];
 if (sizeof($modslist) == 1 && $modslist[0] == "") {
     unset($modslist[0]);
 }
 
-// todo: rewrite this. no need to write to builds twice!
 if ($_POST['forgec'] !== "none" || empty($modslist)) {
     if ($_POST['forgec'] == "wipe" || empty($modslist)) {
-        $db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize($_POST['versions'])."' WHERE `id` = ".$db->sanitize($_POST['id']));
+        if (!$db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize($_POST['versions'])."' WHERE `id` = ".$db->sanitize($_POST['id']))){
+            die('{"status":"error","message":"Could not wipe mods"}');
+        }
     } else {
         $modslist2 = $modslist;
         $modslist2[0] = $_POST['versions'];
-        $db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize(implode(',', $modslist2))."' WHERE `id` = ".$db->sanitize($_POST['id']));
+        if (!$db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize(implode(',', $modslist2))."' WHERE `id` = ".$db->sanitize($_POST['id']))){
+            die('{"status":"error","message":"Could not set mods"}');
+        }
     }
 }
 
-
-$minecraft = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_POST['versions']));
-if ($minecraft) {
-    assert(sizeof($minecraft) == 1);
-    $minecraft = $minecraft[0];
+$minecraft = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge'");
+if (!$minecraft){
+    die('{"status":"error","message":"Could not get minecraft mod"}');
 }
+$minecraft = $minecraft[0];
 
 $ispublic = $_POST['ispublic'] == "on" ? 1 : 0;
 
@@ -104,11 +111,18 @@ if ($publicq && sizeof($publicq) == 1 && array_key_exists('public', $publicq[0])
 }
 
 // actually update build
-$db->execute("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic.", `loadertype` = '".$minecraft['loadertype']."' WHERE `id` = ".$db->sanitize($_POST['id']));
+if (!$db->execute("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic.", `loadertype` = '".$minecraft['loadertype']."' WHERE `id` = ".$db->sanitize($_POST['id']))){
+        die('{"status":"error","message":"Could not update build"}');}
 
 // set latest public build.
 if ($ispublic) {
-    $db->execute("UPDATE modpacks SET latest = {$db->sanitize($_POST['id'])} WHERE id = {$user['modpack']}");
+    if (!$db->execute("UPDATE modpacks SET latest = {$db->sanitize($_POST['id'])} WHERE id = {$user['modpack']}")){
+        die('{"status":"error","message":"Could not set public"}');
+    }
+}
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
 }
 
 die('{"status":"succ","message":"Build details updated."}');

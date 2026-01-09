@@ -324,13 +324,9 @@ $db = null;
 get_config();
 connect_db_and_set_db_in_config();
 
-// require("./configuration.php");
-// $config = new Config();
-// require("./db.php");
-// $db = new Db();
-// if ($db->connect()===FALSE) {
-//     die("Couldn't connect to database!");
-// }
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
 
 alter_db();
 migrate_admin_user_from_config_to_db();
@@ -338,6 +334,10 @@ update_mod_entries();
 update_modloader_entries();
 update_build_entries();
 update_modpack_rec_latest();
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
 
 $db->disconnect();
 

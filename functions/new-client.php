@@ -37,9 +37,9 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
-$db->execute("INSERT INTO clients(`name`,`UUID`) VALUES ('".$db->sanitize($_GET['name'])."', '".$db->sanitize($_GET['uuid'])."')");
-
-$db->disconnect();
+if (!$db->execute("INSERT INTO clients(`name`,`UUID`) VALUES ('{$db->sanitize($_GET['name'])}', '{$db->sanitize($_GET['uuid'])}')")){
+    die("Could not add client");
+}
 
 header("Location: ".$config->get('dir')."clients");
 exit();

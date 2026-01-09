@@ -51,19 +51,26 @@ if (!isset($db)) {
     $db->connect();
 }
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
 $existsq = $db->query("SELECT 1 FROM mods WHERE name='{$db->sanitize($_POST['name'])}' LIMIT 1");
 if (!$existsq) {
     die("mod by that name does not exist");
 }
 
-$updateq = $db->execute("UPDATE `mods` SET 
+if (!$db->execute("UPDATE `mods` SET 
     pretty_name = '{$db->sanitize($_POST['pretty_name'])}',
     description = '{$db->sanitize($_POST['description'])}',
     author = '{$db->sanitize($_POST['author'])}'
     WHERE `name` = '{$db->sanitize($_POST['name'])}'
-");
-if (!$updateq) {
+")) {
     die("could not update mod details.");
+}
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
 }
 
 if ($_POST['submit'] == "Save and close") {
@@ -71,4 +78,5 @@ if ($_POST['submit'] == "Save and close") {
 } else {
     header("Location: ".$config->get('dir')."mod?id=".$_POST['name']);
 }
-exit();
+
+die("Mod details updated.");

@@ -47,11 +47,13 @@ if (!isset($db)) {
     $db->connect();
 }
 
-$db->execute("UPDATE modpacks
+if (!$db->execute("UPDATE modpacks
     SET name = '{$db->sanitize($_POST['name'])}',
         display_name = '{$db->sanitize($_POST['display_name'])}',
         public = {$ispublic}
     WHERE id= {$_POST['id']}
-");
+")){
+    die('{"status":"error","message":"Could not update modpack details"}');
+}
 
 die('{"status":"succ","message":"Modpack details updated."}');

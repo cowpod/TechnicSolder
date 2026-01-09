@@ -22,11 +22,9 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
-$ret = $db->execute("DELETE FROM mods WHERE type = 'mod'");
-if (!$ret) {
+if (!$db->execute("DELETE FROM mods WHERE type = 'mod'")) {
     die("Could not delete from database.");
 }
-$db->disconnect();
 
 $files = glob('../mods/*.zip');
 foreach ($files as $file) {

@@ -60,6 +60,10 @@ if (!isset($db)) {
     $db->connect();
 }
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
 // check that a client by that id (not uuid) exists.
 if ($client_ids !== '') {
     $client_id_arr = explode(',', $client_ids);
@@ -67,18 +71,19 @@ if ($client_ids !== '') {
         if (!is_numeric($client_id)) {
             die('{"status":"error","message":"Malformed client id."}');
         }
-        $client_existsx = $db->execute("SELECT 1 FROM clients where id = {$client_id}");
-        if (!$client_existsx) {
-            // yeah yeah we re-use db's sanitization function
+        if (!$db->execute("SELECT 1 FROM clients where id = {$client_id}")) {
             die('{"status":"error","message":"Invalid client id '.$client_id.'."}');
         }
     }
 }
 
-$setclientsx = $db->execute("UPDATE {$which_table} SET clients = '{$client_ids}' WHERE id = {$id}");
-if (!$setclientsx) {
+if (!$db->execute("UPDATE {$which_table} SET clients = '{$client_ids}' WHERE id = {$id}")) {
     error_log("update-allowed-clients.php: could not set allowed clients for id '{$id}'.");
     die('{"status":"error","message":"Could not set allowedclients."}');
+}
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
 }
 
 die('{"status":"succ","message":"Allowed clients updated."}');

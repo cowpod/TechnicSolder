@@ -29,6 +29,10 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
 $modsq = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$db->sanitize($_GET['bid']));
 if (!$modsq) {
     die("Build id does not exist");
@@ -38,9 +42,13 @@ $mods = $modsq[0];
 $modslist = explode(',', $mods['mods']);
 $nmodlist = array_diff($modslist, [$_GET['id']]);
 $modslist = implode(',', $nmodlist);
-$db->execute("UPDATE `builds` SET `mods` = '".$modslist."' WHERE `id` = ".$db->sanitize($_GET['bid']));
+if (!$db->execute("UPDATE `builds` SET `mods` = '".$modslist."' WHERE `id` = ".$db->sanitize($_GET['bid']))){
+    die("Could not remove mod from build");
+}
 
-$db->disconnect();
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
 
 echo 'Mod removed';
 exit();

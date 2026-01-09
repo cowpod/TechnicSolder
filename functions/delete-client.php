@@ -27,9 +27,8 @@ if (!isset($db)) {
     $db->connect();
 }
 
-$deletex = $db->execute("DELETE FROM `clients` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
-if ($deletex) {
-    die('{"status":"succ","message":"Client deleted"}');
-} else {
+if (!$db->execute("DELETE FROM `clients` WHERE `id` = '".$db->sanitize($_GET['id'])."'")) {
     die('{"status":"error","message":"Unable to delete client"}');
 }
+
+die('{"status":"succ","message":"Client deleted"}');

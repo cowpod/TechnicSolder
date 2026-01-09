@@ -39,6 +39,10 @@ require_once("db.php");
 $db = new Db();
 $db->connect(); // connect from configuration.php
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
 $db2 = new Db();
 $db2->connect2($_POST['db-type'], $_POST['db-host'], $_POST['db-user'], $_POST['db-pass'], $_POST['db-name']); // connect from user-provided POST
 if (!$db2) {
@@ -52,11 +56,12 @@ if ($config->exists('protocol') && !empty($config->get('protocol'))) {
     $protocol = strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL']))).'://';
 }
 
-$db->execute("TRUNCATE `modpacks`");
-$db->execute("TRUNCATE `builds`");
-$db->execute("TRUNCATE `clients`");
-$db->execute("TRUNCATE `mods`");
-
+if (!$db->execute("TRUNCATE `modpacks`")
+    || !$db->execute("TRUNCATE `builds`")
+    || !$db->execute("TRUNCATE `clients`")
+    || !$db->execute("TRUNCATE `mods`")) {
+    die("Could not truncate table(s)");
+}
 // ----- MODPACKS ----- \\
 $res = $db2->query("SELECT `name`,`slug`,`status`,`latest_build_id`,`recommended_build_id` FROM `modpacks`");
 foreach ($res as $row) {
@@ -67,7 +72,9 @@ foreach ($res as $row) {
     } else {
         $public = 0;
     }
-    $db->execute("INSERT INTO `modpacks` (`display_name`,`name`,`public`,`latest`,`recommended`,`icon`) VALUES ('".$row['name']."','".$row['slug']."',".$public.",'".$latest."','".$recommended."','".$PROTO_STR.$config->get('host')."/resources/default/icon.png')");
+    if (!$db->execute("INSERT INTO `modpacks` (`display_name`,`name`,`public`,`latest`,`recommended`,`icon`) VALUES ('".$row['name']."','".$row['slug']."',".$public.",'".$latest."','".$recommended."','".$PROTO_STR.$config->get('host')."/resources/default/icon.png')")){
+        die("Could not insert modpack");
+    }
 }
 // ----- BUILDS ----- \\
 $res = $db2->query("SELECT `modpack_id`,`version`,`minecraft_version`,`status`,`java_version`,`required_memory` FROM `builds`");
@@ -77,12 +84,16 @@ foreach ($res as $row) {
     } else {
         $public = 0;
     }
-    $db->execute("INSERT INTO `builds` (`modpack`,`name`,`public`,`minecraft`,`java`,`memory`) VALUES ('".$row['modpack_id']."','".$row['version']."',".$public.",'".$row['minecraft_version']."','".$row['java_version']."','".$row['memory']."')");
+    if (!$db->execute("INSERT INTO `builds` (`modpack`,`name`,`public`,`minecraft`,`java`,`memory`) VALUES ('".$row['modpack_id']."','".$row['version']."',".$public.",'".$row['minecraft_version']."','".$row['java_version']."','".$row['memory']."')")){
+        die("Could not insert build");
+    }
 }
 // ----- CLIENTS ----- \\
 $res = $db2->query("SELECT `title`,`token` FROM `clients`");
 foreach ($res as $row) {
-    $db->execute("INSERT INTO `clients` (`name`,`UUID`) VALUES ('".$row['title']."','".$row['token']."')");
+    if (!$db->execute("INSERT INTO `clients` (`name`,`UUID`) VALUES ('".$row['title']."','".$row['token']."')")){
+        die("Could not add client");
+    }
 }
 // ----- MODS ----- \\
 $res = $db2->query("SELECT * FROM `releases`");
@@ -94,7 +105,9 @@ foreach ($res as $row) {
     }
 
     $package = $packageres[0];
-    $db->execute("INSERT INTO `mods` (`type`,`url`,`version`,`md5`,`filename`,`name`,`pretty_name`,`author`,`link`,`donlink`,`description`) VALUES ('mod','".$url."','".$row['version']."','".$row['md5']."','".end(explode("/", $row['path']))."','".$package['slug']."','".$package['name']."','".$package['author']."','".$package['website_url']."','".$package['donation_url']."','".$package['description']."')");
+    if (!$db->execute("INSERT INTO `mods` (`type`,`url`,`version`,`md5`,`filename`,`name`,`pretty_name`,`author`,`link`,`donlink`,`description`) VALUES ('mod','".$url."','".$row['version']."','".$row['md5']."','".end(explode("/", $row['path']))."','".$package['slug']."','".$package['name']."','".$package['author']."','".$package['website_url']."','".$package['donation_url']."','".$package['description']."')")){
+        die("Could not add mod");
+    }
     copy($_POST['solder-orig']."/storage/app/public/".$row['path'], dirname(dirname(__FILE__))."/mods/".end(explode("/", $row['path'])));
 
 }
@@ -113,7 +126,13 @@ foreach ($res as $row) {
         array_push($mods, implode(',', $ml));
     }
     array_push($mods, $row['release_id']);
-    $db->execute("UPDATE `builds` SET `mods` = '". implode(',', $mods)."' WHERE `id` = ".$row['build_id']);
+    if (!$db->execute("UPDATE `builds` SET `mods` = '". implode(',', $mods)."' WHERE `id` = ".$row['build_id'])){
+        die("Could not set mods for build");
+    }
 }
 
-exit();
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
+
+die("Migration complete");

@@ -36,15 +36,17 @@ if (!isset($db)) {
     $db->connect();
 }
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
 
 // delete the build
-$del = $db->execute("DELETE FROM builds WHERE id = {$_GET['buildid']} AND modpack = {$_GET['modpackid']}");
-if (!$del) {
+if (!$db->execute("DELETE FROM builds WHERE id = {$_GET['buildid']} AND modpack = {$_GET['modpackid']}")) {
     die('{"status":"error","message":"Could not delete build"}');
 }
 
 // set latest public build
-$set_latestx = $db->execute("
+if (!$db->execute("
     UPDATE modpacks 
     SET latest = (
         SELECT id
@@ -55,19 +57,17 @@ $set_latestx = $db->execute("
         LIMIT 1
     )
     WHERE id = {$_GET['modpackid']}
-");
-if (!$set_latestx) {
+")) {
     die('{"status":"error","message":{"Could not set latest build"}');
 }
 
 // un-set recommended if needed for modpack
-$unset_recommendedx = $db->execute("
+if (!$db->execute("
     UPDATE modpacks 
     SET recommended = null 
     WHERE id = {$_GET['modpackid']} 
     AND recommended = {$_GET['buildid']}
-");
-if (!$unset_recommendedx) {
+")) {
     die('{"status":"error","message":"Could not un-set recommended build for modpack"}');
 }
 
@@ -90,6 +90,7 @@ if (!empty($getq)) {
     // allow null/empty values for name, mcversion
     $response["latest"] = $getq[0];
 }
+
 $getq = $db->query("
     SELECT id,name,minecraft AS mcversion
     FROM builds
@@ -103,6 +104,10 @@ $getq = $db->query("
 if (!empty($getq)) {
     // allow null/empty values for name, mcversion
     $response["recommended"] = $getq[0];
+}
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
 }
 
 die('{"status":"succ","message":"Build deleted.","data":'.json_encode($response).'}');

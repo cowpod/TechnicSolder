@@ -29,6 +29,10 @@ if (!isset($db)) {
     $db->connect();
 }
 
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
 $result = $db->query("SELECT * FROM `mods` WHERE `id` = ".$_GET['id']);
 if (!$result) {
     die("Mod id does not exist");
@@ -37,7 +41,7 @@ if (!$result) {
 $mod = $result[0];
 $url = isset($_POST['url']) ? $_POST['url'] : '';
 
-$db->execute(
+if (!$db->execute(
     "UPDATE `mods`
     SET link='".    $db->sanitize($_POST['link'])."',"
     ."author ='".   $db->sanitize($_POST['author'])."',"
@@ -48,7 +52,13 @@ $db->execute(
     ."md5='".       $db->sanitize($_POST['md5'])."',"
     ."loadertype='".$db->sanitize($_POST['loadertype'])."'"
     ."WHERE id=".     $db->sanitize($_GET['id'])
-);
+)) {
+    die("Could not update mod version details");
+}
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
 
 if ($_POST['submit'] == "Save and close") {
     header("Location: ".$config->get('dir')."mod?id=".$mod['name']);

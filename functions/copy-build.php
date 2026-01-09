@@ -48,45 +48,41 @@ if (!isset($db)) {
     $db->connect();
 }
 
-$addbuildq = $db->execute("
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
+if (!$db->execute("
     INSERT INTO builds (name,minecraft,java,mods,modpack,loadertype,memory,clients) 
         SELECT '{$_POST['new_build_name']}',minecraft,java,mods,{$_POST['dest_modpack_id']},loadertype,memory,clients
         FROM builds
         WHERE id = {$_POST['src_build_id']}
-");
-$id = $db->insert_id();
-
-if (!$addbuildq) {
+")) {
     die('{"status":"error","message":"Could not insert build with new name '.$_POST['new_build_name'].'"}');
 }
+$id = $db->insert_id();
 
-// instead of getting insert_id(), we just let the db do it.
-$latestq = $db->execute("
+if (!$db->execute("
     UPDATE modpacks 
-    SET latest = (
-        SELECT id 
-        FROM builds 
-        WHERE public=1
-        AND modpack = {$_POST['dest_modpack_id']}
-        ORDER BY id DESC
-        LIMIT 1
-    )
+    SET latest = '{$id}'
     WHERE id = {$_POST['dest_modpack_id']}
-");
-
-if (!$latestq) {
+")){
     die('{"status":"error","message":"Could not set latest build"}');
 }
 
-$stats = $db->query("
+$statsq = $db->query("
     SELECT id,name,modpack,minecraft,java,mods
     FROM builds
-    WHERE id={$id}
+    WHERE id = {$id}
 ");
-if ($stats && sizeof($stats) == 1) {
-    $stats = $stats[0];
+if ($statsq && sizeof($statsq) == 1) {
+    $stats = $statsq[0];
 } else {
     die('{"status":"error","message":"Could not get info for new build"}');
+}
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
 }
 
 $json = @json_encode($stats);

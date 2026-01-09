@@ -85,7 +85,11 @@ $md5 = md5_file("../forges/fabric-".$version.".zip");
 $file_size = filesize("../forges/fabric-".$version.".zip");
 $url = $protocol.$config->get('host').$config->get('dir')."forges/fabric-".urlencode($version).".zip";
 
-$res = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`filesize`,`type`,`loadertype`) VALUES (
+if (!$db->beginTransaction(true)) {
+    die('{"status":"error","message":"Could not start transaction"}');
+}
+
+if (!$db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`filesize`,`type`,`loadertype`) VALUES (
     'fabric',
     'Fabric (alpha)',
     '{$md5}',
@@ -99,12 +103,15 @@ $res = $db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`
     '{$file_size}',
     'forge',
     'fabric'
-)");
-if ($res) {
-    echo '{"status":"succ","message":"Loader has been saved.", "id": '.$db->insert_id().'}';
-} else {
-    echo '{"status":"error","message":"Loader could not be added to database"}';
+)")) {
+    die('{"status":"error","message":"Loader could not be added to database"}');
 }
 
-$db->disconnect();
-exit();
+$id = $db->insert_id();
+
+if (!$db->commit()) {
+    die('{"status":"error","message":"Could not commit changes"}');
+}
+
+die('{"status":"succ","message":"Loader has been saved.", "id": '.$id.'}');
+

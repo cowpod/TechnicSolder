@@ -82,41 +82,34 @@ global $db;
 if (empty($db)) {
     $db = new Db();
 }
+$db->connect();
 
-if (move_uploaded_file($fileTmpLoc, "../others/".$fileName)) {
-    $db->connect();
-
-    $pretty_name = $db->sanitize($fileName);
-    $name = slugify($pretty_name);
-    $author = $_SESSION['name'];
-    $protocol = ($config->exists('protocol') && !empty($config->get('protocol'))) ? $config->get('protocol') : strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL'])))."://";
-    $url = $protocol.$config->get('host').$config->get('dir')."others/".$fileName;
-    $md5 = md5_file("../others/".$fileName);
-    $file_size = filesize("../others/".$fileName);
-
-    $res = $db->execute("INSERT INTO mods (name,pretty_name,md5,url,author,description,filename,filesize,type,version,mcversion) VALUES (
-        '{$name}',
-        '{$pretty_name}',
-        '{$md5}',
-        '{$url}',
-        '{$author}',
-        'Custom file by {$author}',
-        '{$fileName}',
-        {$file_size},
-        'other',
-        '1.0',
-        '*'
-    )");
-
-    $db->disconnect();
-
-    if ($res) {
-        echo '{"status":"succ","message":"File has been saved."}';
-    } else {
-        echo '{"status":"error","message":"File could not be added to database"}';
-    }
-} else {
-    echo '{"status":"error","message":"Permission denied! Open SSH and run chown -R www-data '.dirname(dirname(get_included_files()[0])).'"}';
+if (!move_uploaded_file($fileTmpLoc, "../others/".$fileName)) {
+    die('{"status":"error","message":"Could not move file"}');
 }
 
-exit();
+$pretty_name = $db->sanitize($fileName);
+$name = slugify($pretty_name);
+$author = $_SESSION['name'];
+$protocol = ($config->exists('protocol') && !empty($config->get('protocol'))) ? $config->get('protocol') : strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL'])))."://";
+$url = $protocol.$config->get('host').$config->get('dir')."others/".$fileName;
+$md5 = md5_file("../others/".$fileName);
+$file_size = filesize("../others/".$fileName);
+
+if (!$db->execute("INSERT INTO mods (name,pretty_name,md5,url,author,description,filename,filesize,type,version,mcversion) VALUES (
+    '{$name}',
+    '{$pretty_name}',
+    '{$md5}',
+    '{$url}',
+    '{$author}',
+    'Custom file by {$author}',
+    '{$fileName}',
+    {$file_size},
+    'other',
+    '1.0',
+    '*'
+)")) {
+    die('{"status":"error","message":"File could not be added to database"}');
+}
+
+die('{"status":"succ","message":"File has been saved."}');
