@@ -125,7 +125,6 @@ if (isset($_POST['host'])) {
         'forge_integration' => 'on',
         'neoforge_integration' => 'on',
         'modrinth_integration' => 'on',
-        'use_verifier' => 'on',
         'enable_self_updater' => 'on'
     ];
     if ($api_key_serverwide) {

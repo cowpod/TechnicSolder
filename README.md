@@ -363,7 +363,6 @@ Here's an example of the configuration file at /config/config.json:
     "forge_integration": "on",
     "neoforge_integration": "on",
     "modrinth_integration": "on",
-    "use_verifier": "on",
     "api_key": "YOUR_TECHNICPACK_API_KEY_HERE",
     "dev_builds": "on",
     "enable_self_updater": "on"

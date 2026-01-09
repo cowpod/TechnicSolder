@@ -27,11 +27,6 @@ if (isset($_POST['dev_builds'])) {
 } else {
     $config->set('dev_builds', 'off');
 }
-if (isset($_POST['use_verifier'])) {
-    $config->set('use_verifier', 'on');
-} else {
-    $config->set('use_verifier', 'off');
-}
 if (isset($_POST['modrinth_integration'])) {
     $config->set('modrinth_integration', 'on');
 } else {

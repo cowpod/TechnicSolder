@@ -591,30 +591,6 @@ if (!uri("/login")) {
                         echo $api_version_json['warns'];
             ?>
                     </div>
-                    <br />
-                    <?php if ($config->exists('use_verifier') && $config->get('use_verifier') == "on") { ?>
-                    <button class="btn btn-secondary" data-toggle="collapse" href="#collapseVerify" role="button" aria-expanded="false" aria-controls="collapseVerify">Solder Verifier</button>
-                    <div class="collapse" id="collapseVerify">
-                        <br />
-                        <div class="input-group">
-                            <input autocomplete="off" class="form-control" type="text" id="link" placeholder="Modpack slug (same as on technicpack.net)" aria-describedby="search" />
-                            <div class="input-group-append">
-                                <button class="btn btn-primary" onclick="get();" type="button" id="search">Search</button>
-                            </div>
-                        </div>
-                        <!-- <pre class="card border-primary" style="white-space: pre-wrap;width: 100%" id="responseRaw">
-                        </pre> -->
-                        <h3 id="response-title"></h3>
-                        <div id="response" style="width: 100%">
-                            <span id="solder">
-                            </span>
-                            <div id="responseR">
-                            </div>
-                            <div id="feed">
-                            </div>
-                        </div>
-                    </div>
-                <?php } ?>
                 </div>
                 <script src="./resources/js/page_dashboard.js"></script>
             </div>
@@ -2593,14 +2569,6 @@ if (!uri("/login")) {
                             } ?> >
                             <label class="custom-control-label" for="enable_self_updater">
                                 Enable Git Self-Updater
-                            </label>
-                        </div>
-                        <div class="custom-control custom-switch">
-                            <input id="use_verifier" type="checkbox" class="custom-control-input" name="use_verifier" <?php if ($config->exists('use_verifier') && $config->get('use_verifier') == "on") {
-                                echo "checked";
-                            } ?> >
-                            <label class="custom-control-label" for="use_verifier">
-                                Enable Solder Verifier (check status of modpack on <a href="https://technicpack.net" target="_blank">technicpack.net</a>)
                             </label>
                         </div>
                         <br/>
