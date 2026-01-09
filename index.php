@@ -48,6 +48,8 @@ require('functions/format_number.php');
 
 require('functions/mp_latest_recommended.php');
 
+require('functions/slugify.php');
+
 function uri($uri): bool
 {
     global $url;
@@ -97,10 +99,10 @@ if (!empty($_POST['email']) && !empty($_POST['password'])) {
     if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
         die("Malformed email");
     }
-    $userq = $db->query("SELECT * FROM users WHERE name = '{$db->sanitize($_POST['email'])}' LIMIT 1");
+    $userq = $db->query("SELECT * FROM users WHERE name = '{$_POST['email']}' LIMIT 1");
     if ($userq && sizeof($userq) == 1) {
         $user = $userq[0];
-        if (password_verify($_POST['password'], $user['pass'])) { // should be sanitized
+        if (password_verify($_POST['password'], $user['pass'])) {
             $_SESSION['user'] = $_POST['email']; // same as $user['name']
             $_SESSION['name'] = $user['display_name'];
             $_SESSION['perms'] = $user['perms'];
@@ -430,6 +432,7 @@ if (!uri("/login")) {
 
         <?php
         if (uri("/dashboard")) {
+            $forgesq = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge'");
             ?>
             <script>document.title = 'Solder.cf - Dashboard - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <div class="main">
@@ -490,10 +493,8 @@ if (!uri("/login")) {
                             <label for="versions">Minecraft version</label>
                             <select required id="versions" name="versions" class="form-control">
                             <?php
-                            // select all forge versions
-                            $vres = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge'");
-                        if (sizeof($vres) !== 0) {
-                            foreach ($vres as $version) {
+                        if (sizeof($forgesq) !== 0) {
+                            foreach ($forgesq as $version) {
                                 ?><option <?php if (!empty($modslist) && $modslist[0] == $version['id']) {
                                     echo "selected";
                                 } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - <?php echo $version['loadertype']?> <?php echo $version['version'] ?></option><?php
@@ -619,7 +620,11 @@ if (!uri("/login")) {
             </div>
             <?php
         } elseif (uri('/modpack')) {
-            $modpack = $modpacks[$db->sanitize($_GET['id'])];
+            if (!is_numeric($_GET['id'])) {
+                die("Malformed id");
+            }
+
+            $modpack = $modpacks[$_GET['id']];
             $packdata = get_modpack_latest_recommended($db, $modpack['id']);
 
             if (!$db->beginTransaction(true)) {
@@ -634,7 +639,7 @@ if (!uri("/login")) {
             $latest = false;
             $rec = false;
 
-            if (!empty($packdata['latest'])) {
+            if (!empty($packdata['latest']) && is_numeric($packdata['latest'])) {
                 $buildq = $db->query("SELECT * FROM builds WHERE modpack = {$modpack['id']} AND id = {$packdata['latest']}");
                 if (!empty($buildq)) {
                     $latest = true;
@@ -642,13 +647,21 @@ if (!uri("/login")) {
                 }
             }
 
-            if (!empty($packdata['recommended'])) {
+            if (!empty($packdata['recommended']) && is_numeric($packdata['recommended'])) {
                 $buildq = $db->query("SELECT * FROM builds WHERE modpack = {$modpack['id']} AND id = {$packdata['recommended']}");
                 if (!empty($buildq)) {
                     $rec = true;
                     $build_recommended = $buildq[0];
                 }
             }
+
+            if ($perms->build_create()) {
+                // all modpacks
+                $mps = $db->query("SELECT `id`,`display_name` FROM `modpacks`");
+                // all builds for current modpack
+                $builds = $db->query("SELECT * FROM `builds` WHERE `modpack` = {$modpack['id']} ORDER BY `id` DESC");
+            }
+
             if (!$db->commit()) {
                 die('{"status":"error","message":"Could not commit changes"}');
             }
@@ -831,11 +844,6 @@ if (!uri("/login")) {
             }
 
             if ($perms->build_create()) {
-                // all modpacks
-                $mps = $db->query("SELECT `id`,`display_name` FROM `modpacks`");
-
-                // all builds for current modpack
-                $builds = $db->query("SELECT * FROM `builds` WHERE `modpack` = {$modpack['id']} ORDER BY `id` DESC");
                 ?>
                 <div class="card">
                     <h3>New Build</h3>
@@ -997,14 +1005,19 @@ if (!uri("/login")) {
             <?php
             }
         } elseif (uri('/build')) {
-            $buildq = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_GET['id']));
+            if (!is_numeric($_GET['id'])) {
+                die("Malformed id");
+            }
+
             if (!$db->beginTransaction(true)) {
                 die('{"status":"error","message":"Could not start transaction"}');
             }
+
+            $buildq = $db->query("SELECT * FROM `builds` WHERE `id` = {$_GET['id']}");
             if (!empty($buildq)) {
                 $build = $buildq[0];
             } else {
-                die("Build does not exist for id {$db->sanitize($_GET['id'])}");
+                die("Build does not exist for id {$_GET['id']}");
             }
 
             $modslist = isset($build['mods']) ? explode(',', $build['mods']) : [];
@@ -1020,10 +1033,14 @@ if (!uri("/login")) {
             $modslist_names = [];
 
             foreach ($modslist as $modid) {
-                $nameq = $db->query("SELECT name FROM mods WHERE id = ".$modid);
+                $nameq = $db->query("SELECT name FROM mods WHERE id = {$modid}");
                 if ($nameq && !empty($nameq[0]['name'])) {
                     array_push($modslist_names, $nameq[0]['name']);
                 }
+            }
+
+            if (!is_numeric($build['modpack'])) { //this is unlikely to fail
+                die("Malformed modpack id");
             }
 
             $mpack = $db->query("SELECT * FROM `modpacks` WHERE `id` = {$build['modpack']}");
@@ -1035,6 +1052,8 @@ if (!uri("/login")) {
 
             $clients = $db->query("SELECT * FROM `clients`");
             $othersq = $db->query("SELECT * FROM `mods` WHERE `type` = 'other'");
+            $forgesq = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge'");
+
             if (!$db->commit()) {
                 die('{"status":"error","message":"Could not commit changes"}');
             }
@@ -1060,7 +1079,7 @@ if (!uri("/login")) {
                 <div style="width:30px"></div>
             </ul>
             <div class="main">
-                <?php if ($perms->build_edit()) { ?>
+            <?php if ($perms->build_edit()) { ?>
                 <div class="card">
                     <h2>Build details - <?php echo $build['name'] ?></h2>
                     <hr>
@@ -1072,10 +1091,9 @@ if (!uri("/login")) {
                         <label for="versions">Minecraft version</label>
                         <select id="versions" name="versions" class="form-control">
                             <?php
-                            $loadertype = '';
-                    $vres = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge'");
-                    if (sizeof($vres) !== 0) {
-                        foreach ($vres as $version) {
+                    $loadertype = '';
+                    if (sizeof($forgesq) !== 0) {
+                        foreach ($forgesq as $version) {
                             ?><option <?php
                             if (sizeof($modslist) > 0 && $modslist[0] == $version['id']) {
                                 $loadertype = $version['loadertype'];
@@ -1157,9 +1175,10 @@ if (!uri("/login")) {
                       </div>
                     </div>
                 </div>
-                <?php
-                }
-            if (!empty($modslist)) { // only empty on new build before mcversion is set?>
+            <?php
+            }
+            if (!empty($modslist)) { // only empty on new build before mcversion is set
+            ?>
                     <div class="card">
                         <h3>Items in build</h3>
                         <table class="table table-striped sortable">
@@ -1172,20 +1191,22 @@ if (!uri("/login")) {
                                 </tr>
                             </thead>
                             <tbody id="mods-in-build">
-                                <?php
-                            $modsluglist = array();
+                <?php
+                $modsluglist = array();
                 $build_mod_ids = $modslist;
                 $installed_loader = "";
 
                 $i = 0;
 
                 foreach ($build_mod_ids as $build_mod_id) {
+                    if (!is_numeric($build_mod_id)) { // this is unlikely to fail
+                        die("Malformed mod id");
+                    }
 
                     $build_mod_name = $modslist_names[$i];
                     $i++;
 
-                    // now get the mod details (before we got ALL the mods...)
-                    $modq = $db->query("SELECT * FROM mods WHERE id = '".$build_mod_id."'");
+                    $modq = $db->query("SELECT * FROM mods WHERE id = {$build_mod_id}");
                     if (!$modq || sizeof($modq) != 1) {
                         $mod = [];
                     } else {
@@ -1205,8 +1226,6 @@ if (!uri("/login")) {
                             $minInclusivity = $mcvrange['min_inclusivity'];
                             $max = $mcvrange['max'];
                             $maxInclusivity = $mcvrange['max_inclusivity'];
-
-                            $modvq = $db->query("SELECT id,version FROM mods WHERE type = 'mod'");
 
                             $userModVersionOK = in_range($mod['mcversion'], $build['minecraft']);
                         } else {
@@ -1260,7 +1279,7 @@ if (!uri("/login")) {
                                             echo $mod['name'] ?>"><?php
 
                                             // get versions for mod
-                                            $modvq = $db->query("SELECT id,version,loadertype FROM mods WHERE name='{$mod['name']}'");
+                                            $modvq = $db->query("SELECT id,version,loadertype FROM mods WHERE name='{$db->sanitize($mod['name'])}'");
 
                                             if ($modvq && sizeof($modvq) > 0) {
                                                 foreach ($modvq as $mv) {
@@ -1300,14 +1319,14 @@ if (!uri("/login")) {
                         }
                     ?></td>
                                 </tr>
-                                <?php
+                <?php
                 }
                 ?>
                             </tbody>
                         </table>
                     </div>
 
-                    <?php if ($perms->build_edit()) { ?>
+                <?php if ($perms->build_edit()) { ?>
                     <div class="card">
                         <h3>Available mods <font id='mods-for-version-string'></font></h3>
                         <hr>
@@ -1364,8 +1383,10 @@ if (!uri("/login")) {
                             </tbody>
                         </table>
                     </div>
-                <?php }
-                    }
+                <?php 
+                }
+            }
+
             ?>
                 <script>
                     var INSTALLED_MODS = JSON.parse('<?php
@@ -1404,7 +1425,7 @@ if (!uri("/login")) {
                 $modsi = array();
                 $modslugs = array();
                 foreach ($mods as $mod) {
-                    $modversionsq = $db->query("SELECT `version`,`author` FROM `mods` WHERE `type` = 'mod' AND `name` = '".$mod['name']."' ORDER BY `version` DESC");
+                    $modversionsq = $db->query("SELECT `version`,`author` FROM `mods` WHERE `type` = 'mod' AND `name` = '{$db->sanitize($mod['name'])}' ORDER BY `version` DESC");
                     $modversions = array();
                     $modauthors = array();
 
@@ -1431,6 +1452,9 @@ if (!uri("/login")) {
                     }
                 }
             }
+
+            $forgesq = $db->query("SELECT * FROM mods WHERE type='forge'");
+
             if (!$db->commit()) {
                 die('{"status":"error","message":"Could not commit changes"}');
             }
@@ -1455,9 +1479,9 @@ if (!uri("/login")) {
                     <div class="col-md-12 col-12 mb-2">
                         <select class="form-control" id="mcv">
                             <?php
-                                $querymcvs = $db->query("SELECT * FROM mods WHERE type='forge'");
+                                
                     $selected = 'selected';
-                    foreach ($querymcvs as $mcv) {
+                    foreach ($forgesq as $mcv) {
                         echo "<option mc='{$mcv['mcversion']}' v={$mcv['version']} type={$mcv['loadertype']} {$selected}>{$mcv['mcversion']} - {$mcv['loadertype']}</option>";
                         if ($selected) {
                             $selected = '';
@@ -1664,7 +1688,10 @@ if (!uri("/login")) {
         <?php
         } elseif (uri('/remote-mod')) {
             if (isset($_GET['id'])) {
-                $mres = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
+                if (!is_numeric($_GET['id'])) {
+                    die("Malformed id");
+                }
+                $mres = $db->query("SELECT * FROM `mods` WHERE `id` = {$_GET['id']}");
                 if ($mres) {
                     assert(sizeof($mres) == 1);
                     $mod = $mres[0];
@@ -1926,6 +1953,7 @@ if (!uri("/login")) {
         </div>
         <?php
         } elseif (uri('/lib-others')) {
+            $modsq = $db->query("SELECT * FROM `mods` WHERE `type` = 'other' ORDER BY `id` DESC");
             ?>
         <script>document.title = 'Other Files - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
@@ -1980,9 +2008,8 @@ if (!uri("/login")) {
                     </thead>
                     <tbody id="table-mods">
                         <?php
-                            $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'other' ORDER BY `id` DESC");
-            if ($mods) {
-                foreach ($mods as $mod) {
+            if ($modsq) {
+                foreach ($modsq as $mod) {
                     if (empty($mod['name'])) { ?>
                         <tr>
                             <td class="table-danger">Unknown</td>
@@ -2033,7 +2060,10 @@ if (!uri("/login")) {
         </div>
         <?php
         } elseif (uri("/file")) {
-            $mres = $db->query("SELECT * FROM `mods` WHERE `id` = '".$db->sanitize($_GET['id'])."'");
+            if (!is_numeric($_GET['id'])) {
+                die("Malformed id");
+            }
+            $mres = $db->query("SELECT * FROM `mods` WHERE `id` = {$_GET['id']}");
             if ($mres) {
                 assert(sizeof($mres) == 1);
                 $file = $mres[0];
@@ -2076,9 +2106,11 @@ if (!uri("/login")) {
             </div>
             <?php
         } elseif (uri('/mod')) {
-            assert(!empty($_GET['id']));
+            if (!preg_match('/^[A-Za-z0-9_-]+$/', $_GET['id'])) {
+                die("Malformed id");
+            }
 
-            $mres = $db->query("SELECT * FROM mods WHERE name = '{$db->sanitize($_GET['id'])}'");
+            $mres = $db->query("SELECT * FROM mods WHERE name = '{$_GET['id']}'");
 
             $mod_slug = '';
             $mod_name = '';
@@ -2097,7 +2129,7 @@ if (!uri("/login")) {
             }
             ?>
         <div class="main">
-            <script>document.title = 'Mod - <?php echo addslashes($_GET['id']) ?> - <?php echo addslashes($_SESSION['name']) ?>';
+            <script>document.title = 'Mod - <?php echo $_GET['id'] ?> - <?php echo addslashes($_SESSION['name']) ?>';
             </script>
             <button onclick="window.location = './lib-mods'" style="width: fit-content;" class="btn btn-primary">
                 <em class="fas fa-arrow-left"></em> Back
@@ -2186,15 +2218,16 @@ if (!uri("/login")) {
         </div>
         <?php
         } elseif (uri("/modv")) {
-            ?>
-        <div class="main">
-            <?php
-                $mres = $db->query("SELECT * FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
+            if (!is_numeric($_GET['id'])) {
+                die("Malformed id");
+            }
+            $mres = $db->query("SELECT * FROM `mods` WHERE `id` = {$_GET['id']}");
             if ($mres) {
                 assert(sizeof($mres) == 1);
                 $mod = $mres[0];
             }
             ?>
+        <div class="main">
             <script>document.title = 'Solder.cf - Mod - <?php echo addslashes($mod['pretty_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <div class="card">
                 <button onclick="window.location = './mod?id=<?php echo $mod['name'] ?>'" style="width: fit-content;" class="btn btn-primary">
