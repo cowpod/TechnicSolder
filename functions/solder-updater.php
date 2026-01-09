@@ -26,6 +26,7 @@ final class Updater
     private $git_result = null;
     private $repo_path = null;
     private $version = null;
+    private $git_cli = null;
 
     public function __construct($repoPathArg = null, $configArg = null, $versionDataArg = null)
     {
@@ -94,6 +95,20 @@ final class Updater
         } else {
             $this->version = $versionDataArg;
         }
+
+        // check git cli
+
+        $whichgit = shell_exec('which git');
+        if (!empty($whichgit)) {
+            $this->git_cli = $whichgit;
+        } else {
+            $wheregit = shell_exec('where git');
+            if (!empty($wheregit)) {
+                $this->git_cli = $wheregit;
+            } else {
+                error_log("solder-updater.php: could not locate git cli.");
+            }
+        }
     }
 
     private function json($status, $message, $data = null)
@@ -112,50 +127,55 @@ final class Updater
 
     private function check_git()
     {
-        if (`which git` || `where git`) { // this is slow. so we do it here instead of at construction.
-            // Ensure it's a valid repo
-            if (!is_dir($this->repo_path . "/.git")) {
-                return UPDATE_ERROR_BAD_REPO;
-            }
-
-            // get branch
-            exec("cd $this->repo_path && git branch --show-current 2>&1", $this->git_result, $this->git_return);
-            if ($this->git_return !== 0) {
-                return UPDATE_ERROR_GET_BRANCH;
-            }
-
-            $branch = trim(strtolower(implode(' ', $this->git_result)));
-            $this->git_result = []; // clear result from checking branch
-
-            // ensure git branch matches release channel from api/version.json
-            if (trim(strtolower($this->version['stream'])) != $branch) {
-                return UPDATE_ERROR_MISMATCHED_CHANNEL;
-            }
-
-            // Fetch the latest changes from remote
-            exec("cd $this->repo_path && git fetch origin 2>&1", $this->git_result, $this->git_return);
-            if ($this->git_return !== 0) {
-                return UPDATE_ERROR_FETCH;
-            }
-
-            // Check if local is behind remote
-            exec("cd {$this->repo_path} && git rev-list --left-right --count origin/{$branch}...HEAD | awk '{if ($1 > 0) print \"true\"; else print \"false\"}' 2>&1", $this->git_result, $this->git_return);
-            if ($this->git_return !== 0) {
-                return UPDATE_ERROR;
-            }
-
-            if (trim($this->git_result[0]) == "true") {
-                return OUTDATED;
-            } else {
-                return UP_TO_DATE;
-            }
-        } else {
+        if ($this->git_cli == null) {
             return NO_GIT;
         }
+
+        // Ensure it's a valid repo
+        if (!is_dir($this->repo_path . "/.git")) {
+            return UPDATE_ERROR_BAD_REPO;
+        }
+
+        // get branch
+        exec("cd $this->repo_path && {$this->git_cli} branch --show-current 2>&1", $this->git_result, $this->git_return);
+        if ($this->git_return !== 0) {
+            return UPDATE_ERROR_GET_BRANCH;
+        }
+
+        $branch = trim(strtolower(implode(' ', $this->git_result)));
+        $this->git_result = []; // clear result from checking branch
+
+        // ensure git branch matches release channel from api/version.json
+        if (trim(strtolower($this->version['stream'])) != $branch) {
+            return UPDATE_ERROR_MISMATCHED_CHANNEL;
+        }
+
+        // Fetch the latest changes from remote
+        exec("cd $this->repo_path && {$this->git_cli} fetch origin 2>&1", $this->git_result, $this->git_return);
+        if ($this->git_return !== 0) {
+            return UPDATE_ERROR_FETCH;
+        }
+
+        // Check if local is behind remote
+        exec("cd {$this->repo_path} && {$this->git_cli} rev-list --left-right --count origin/{$branch}...HEAD | awk '{if ($1 > 0) print \"true\"; else print \"false\"}' 2>&1", $this->git_result, $this->git_return);
+        if ($this->git_return !== 0) {
+            return UPDATE_ERROR;
+        }
+
+        if (trim($this->git_result[0]) == "true") {
+            return OUTDATED;
+        } else {
+            return UP_TO_DATE;
+        }
+
     }
 
     public function update()
     {
+        if ($this->git_cli == null) {
+            return NO_GIT;
+        }
+
         if ($this->config->exists('enable_self_updater') && $this->config->get('enable_self_updater') !== 'on') { // if updates are disabled
             return UPDATES_DISABLED;
         }
@@ -171,7 +191,7 @@ final class Updater
             return UPDATE_ERROR;
         }
 
-        exec("cd {$this->repo_path} && git reset --hard HEAD && git pull --rebase 2>&1", $this->git_result, $this->git_return);
+        exec("cd {$this->repo_path} && {$this->git_cli} reset --hard HEAD && {$this->git_cli} pull --rebase 2>&1", $this->git_result, $this->git_return);
 
         if ($this->git_return !== 0) {
             error_log("solder-updater.php: update(): Couldn't pull");
@@ -186,6 +206,10 @@ final class Updater
 
     public function check()
     {
+        if ($this->git_cli == null) {
+            return NO_GIT;
+        }
+        
         if ($this->config->exists('enable_self_updater') && $this->config->get('enable_self_updater') !== 'on') { // if updates are disabled
             return UPDATES_DISABLED;
         }
