@@ -19,10 +19,10 @@ if (!$perms->modloaders_upload()) {
 $version = $_GET['loader'];
 $mcversion = $_GET['version'];
 
-if (strpbrk($_POST['loader'], '\\"\'') !== false) {
+if (strpbrk($_GET['loader'], '\\"\'') !== false) {
     die('{"status":"error","message":"Malformed loader"}');
 }
-if (strpbrk($_POST['version'], '\\"\'') !== false) {
+if (strpbrk($_GET['version'], '\\"\'') !== false) {
     die('{"status":"error","message":"Malformed version"}');
 }
 
