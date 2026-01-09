@@ -584,13 +584,6 @@ if (!uri("/login")) {
                         <hr>
                         <p>If you are using TheGameSpider TechnicSolder 1.3.4-1.3.5, click <a href="./functions/upgrade2.0.php">here</a> to upgrade your database.</p>
                     </div>
-                    <br />
-                    <button class="btn btn-secondary" data-toggle="collapse" href="#collapseAnno" role="button" aria-expanded="false" aria-controls="collapseAnno">Public Announcements</button>
-                    <div class="collapse" id="collapseAnno">
-                        <?php
-                        echo $api_version_json['warns'];
-            ?>
-                    </div>
                 </div>
                 <script src="./resources/js/page_dashboard.js"></script>
             </div>
