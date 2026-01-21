@@ -57,7 +57,7 @@ function download_url($url, $filename)
         $file_name = bin2hex(random_bytes(16)).'.jar';
         error_log("filename empty! using random name: {$file_name}");
     } else {
-        $file_name = slugify3($filename);
+        $file_name = slugify2($filename, "-");
     }
 
     $file_tmp_dir = sys_get_temp_dir().'/send_mods/'.bin2hex(random_bytes(16));
@@ -106,7 +106,7 @@ function processFile(string $filePath, string $fileName, array $modinfo): int
     global $db;
     global $config;
 
-    $slugified_mcv = !empty($modinfo['mcversion']) ? slugify2($modinfo['mcversion']) : '';
+    $slugified_mcv = !empty($modinfo['mcversion']) ? slugify2($modinfo['mcversion'], "-") : '';
 
     $mod_zip_name = $modinfo['modid'].'-'.$slugified_mcv.'-'.$modinfo['version'].'.zip';
     $mod_zip_path_tmp = '../mods/tmp/'.$mod_zip_name;
@@ -189,11 +189,10 @@ if (isset($_FILES['fiels']) && isset($_FILES["fiels"]["name"]) && isset($_FILES[
     }
 
     if (empty($_POST['url']) || !filter_var($_POST['url'], FILTER_VALIDATE_URL)) {
-        die('{"status":"error","message":"Invalid URL (not a JAR?)"}');
+        die('{"status":"error","message":"Invalid URL"}');
     }
 
     // todo: sanitize $_POST['filename']
-
     [$file_tmp, $file_name] = download_url($_POST['url'], $_POST['filename']);
 }
 
@@ -202,22 +201,20 @@ if (empty($file_tmp)) {
     die('{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}');
 }
 
-if (str_ends_with($file_name, '.jar')) {
-    // check file magic
-    // JAR files can be either java-archive or zip.
-    $filetype = mime_content_type($file_tmp);
-    if ($filetype != 'application/java-archive' && $filetype != 'application/zip') {
-        error_log('{"status":"error","message":"Not a JAR file."}');
-        die('{"status":"error","message":"Not a JAR (or renamed ZIP) file."}');
-    }
-} else {
-    error_log('{"status":"error","message":"Not a JAR file."}');
-    die('{"status":"error","message":"Not a JAR file."}');
+if (!file_exists($file_tmp)) {
+    error_log('{"status":"error","message":"Uploaded file does not exist."}');
+    die('{"status":"error","message":"Uploaded file does not exist."}');
 }
 
-if (!file_exists($file_tmp)) {
-    error_log('{"status":"error","message":"Uploaded file does not exist!?"}');
-    die('{"status":"error","message":"Uploaded file does not exist!?"}');
+if (!str_ends_with($file_name, '.jar')) {
+    error_log('{"status":"error","message":"Not a JAR file. File name: '.$file_name.'"}');
+    die('{"status":"error","message":"Not a JAR file. File name: '.$file_name.'"}');
+}
+
+$filetype = mime_content_type($file_tmp);
+if ($filetype != 'application/java-archive' && $filetype != 'application/zip') {
+    error_log('{"status":"error","message":"Not a JAR file. MIME: '.$filetype.'"}');
+    die('{"status":"error","message":"Not a JAR file. MIME: '.$filetype.'"}');
 }
 
 require_once('compareZipContents.php');

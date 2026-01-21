@@ -1,39 +1,41 @@
 <?php
+require_once('transliterate.php');
 
-require_once('sanitize.php');
+/**
+ * Transliterate string, and drop unknown chars except for regex word chars.
+ * Optionally specify $unknown_replace to a non-empty char value to replace instead of dropping.
+ * @param string $str - string to slugify.
+ * @param string $unknown_replace - default "" to drop, set to another char to replace instead.
+ * @return string - slugified string, may be blank "".
+ */
+function slugify(string $str, string $unknown_replace = ''): string|false {
+    // transliterate
+    $trl = transliterate($str);
 
-function slugify(string $text): string
-{
-    $text = preg_replace('~[^\pL\d]+~u', '-', $text);
-    //$text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
-    $text = preg_replace('~[^-\w]+~', '', $text);
-    $text = trim($text, '-');
-    $text = preg_replace('~-+~', '-', $text);
-    $text = strtolower($text);
-    if (empty($text)) {
-        return 'n-a';
-    }
-    return $text;
+    // drop chars transliterate() missed, and also 
+    return preg_replace('/[^\w_\-]/', $unknown_replace, $trl);
+}
+/**
+ * Transliterate string, and drop unknown chars except for regex word chars. Does not drop period.
+ * Optionally specify $unknown_replace to a non-empty char value to replace instead of dropping.
+ * @param string $str - string to slugify.
+ * @param string $unknown_replace - default "" to drop, set to another char to replace instead.
+ * @return string - slugified string, may be blank "".
+ */
+function slugify2(string $str, string $unknown_replace = ''): string|false {
+    // transliterate
+    $trl = transliterate($str);
+
+    // drop chars transliterate() missed, and also 
+    return preg_replace('/[^\w_\-\.]/', $unknown_replace, $trl);
 }
 
-function slugify2(string $str): string
-{
-    $ret = '';
-    $str_length = strlen($str);
-    for ($i = 0; $i < $str_length; $i++) {
-        if ($str[$i] == '.' || $str[$i] == '-' || ctype_alnum($str[$i])) {
-            $ret .= $str[$i];
-        }
-    }
-    $ret = trim($ret, '-.');
-    if (empty($ret)) {
-        return 'n-a';
-    }
-    return strtolower($ret);
-}
 
-function slugify3(string $str): string
-{
-    // meant for full filenames
-    return strtolower(preg_replace('/[^\w\-\.]/', '-', $str));
+/**
+ * Validate if string is a valid slug.
+ * @param string $str - string to validate
+ * @return bool - true if valid, false if invalid.
+ */
+function validate_slug(string $str): bool {
+    return strspn($str, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_') === strlen($str);
 }

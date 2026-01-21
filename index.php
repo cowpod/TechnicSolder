@@ -48,8 +48,6 @@ require('functions/format_number.php');
 
 require('functions/mp_latest_recommended.php');
 
-require('functions/slugify.php');
-
 function uri($uri): bool
 {
     global $url;
