@@ -629,6 +629,19 @@ if (!uri("/login")) {
                 $builds = $db->query("SELECT * FROM `builds` WHERE `modpack` = {$modpack['id']} ORDER BY `id` DESC");
             }
 
+            if ($perms->modpack_edit() && $perms->modpack_publish()) {
+                $modpack_clientsq = $db->query("
+                    SELECT *
+                    FROM modpack_clients
+                    WHERE modpack_id = {$_GET['id']} 
+                ");
+                if (!$modpack_clientsq) {
+                    $modpack_client_ids = [];
+                } else {
+                    $modpack_client_ids = array_column($modpack_clientsq, 'client_id');
+                }
+            }
+
             if (!$db->commit()) {
                 die('{"status":"error","message":"Could not commit changes"}');
             }
@@ -759,15 +772,14 @@ if (!uri("/login")) {
                         <div id="card-allowed-clients" <?php if ($modpack['public'] == 1) {
                             echo 'style="display:none"';
                         } ?>>
-                            <p>Select which clients are allowed to access this non-public modpack.</p>
+                            <p>Select which clients are allowed to access this private modpack.</p>
                             <input hidden id="modpack_id" value="<?php echo $modpack['id'] ?>">
                             <?php if (sizeof($clients) === 0) { ?>
                             <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
                             <br />
                             <?php }
-                            $clientlist = !empty($modpack['clients']) ? explode(',', $modpack['clients']) : [];
                             foreach ($clients as $client) {
-                                $client_checked = in_array($client['id'], $clientlist) ? 'checked' : ''; ?>
+                                $client_checked = in_array($client['id'], $modpack_client_ids) ? 'checked' : ''; ?>
                             <div class="custom-control custom-checkbox">
                                 <input class="custom-control-input modpackClientId" id="client-<?php echo $client['id'] ?>" type="checkbox" value="<?php echo $client['id'] ?>" <?php echo $client_checked ?>>
                                 <label class="custom-control-label" for="client-<?php echo $client['id'] ?>"><?php echo $client['name']." (".$client['UUID'].")" ?></label>
@@ -866,7 +878,24 @@ if (!uri("/login")) {
                             </tr>
                         </thead>
                         <tbody id="table-builds">
-                        <?php foreach ($builds as $build) { ?>
+                        <?php 
+                            foreach ($builds as $build) { 
+                            $build_modsq = $db->query("
+                                SELECT m.* 
+                                FROM build_mods bm
+                                JOIN mods m
+                                    ON m.id = bm.mod_id
+                                JOIN builds b
+                                    ON b.id = bm.build_id
+                                WHERE bm.build_id = {$build['id']} 
+                                AND b.minecraft IS NOT NULL
+                            ");
+                            if (!$build_modsq) {
+                                $build_mods = [];
+                            } else {
+                                $build_mods = $build_modsq;
+                            }
+                            ?>
                             <tr rec="<?php if ($packdata['recommended'] === $build['id']) {
                                 echo "true";
                             } else {
@@ -881,7 +910,7 @@ if (!uri("/login")) {
                                 } ?> d-none d-md-table-cell"><?php echo $build['java'] ?></td>
                                 <td class="<?php if (empty($build['minecraft'])) {
                                     echo 'alert-danger';
-                                } ?>"><?php echo isset($build['mods']) ? count(explode(',', $build['mods'])) : '' ?></td>
+                                } ?>"><?php echo count($build_mods) ?></td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
                                     <?php
@@ -987,25 +1016,21 @@ if (!uri("/login")) {
                 die("Build does not exist for id {$_GET['id']}");
             }
 
-            $modslist = isset($build['mods']) ? explode(',', $build['mods']) : [];
-
-            // remove empty first item..?
-            if (empty($modslist[0])) {
-                unset($modslist[0]);
+            $modslistq = $db->query("
+                SELECT m.*
+                FROM build_mods bm
+                JOIN mods m
+                    ON bm.mod_id = m.id
+                WHERE bm.build_id = {$_GET['id']}
+            ");
+            if (!$modslistq) {
+                $modslist = [];
+                $modslist_names = [];
+            } else {
+                $modslist = array_column($modslistq, 'id');
+                $modslist_names = array_column($modslistq, 'name');
             }
-
-            // this entire section is terrible,
-            // scroll down to 'Items in build'.
-
-            $modslist_names = [];
-
-            foreach ($modslist as $modid) {
-                $nameq = $db->query("SELECT name FROM mods WHERE id = {$modid}");
-                if ($nameq && !empty($nameq[0]['name'])) {
-                    array_push($modslist_names, $nameq[0]['name']);
-                }
-            }
-
+;
             if (!is_numeric($build['modpack'])) { //this is unlikely to fail
                 die("Malformed modpack id");
             }
@@ -1021,6 +1046,20 @@ if (!uri("/login")) {
             $othersq = $db->query("SELECT * FROM `mods` WHERE `type` = 'other'");
             $forgesq = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge'");
 
+
+            if ($perms->modpack_publish()) {
+                $build_clientsq = $db->query("
+                    SELECT *
+                    FROM build_clients
+                    WHERE build_id = {$_GET['id']} 
+                ");
+                if (!$build_clientsq) {
+                    $build_client_ids = [];
+                } else {
+                    $build_client_ids = array_column($build_clientsq, 'client_id');
+                }
+            }
+            
             if (!$db->commit()) {
                 die('{"status":"error","message":"Could not commit changes"}');
             }
@@ -1074,7 +1113,7 @@ if (!uri("/login")) {
                             <?php }
                     // error_log($loadertype);
                     ?>
-                            <input type="text" name="forgec" id="forgec" value="none" hidden required>
+                            <input type="text" name="forgec" id="forgec" value="<?php echo empty($build['minecraft']) ? 'wipe' : 'none'; ?>" hidden required>
                         <br />
                         <label for="java">Java version</label>
                         <select name="java" class="form-control">
@@ -1098,15 +1137,14 @@ if (!uri("/login")) {
                         <div id="card-allowed-clients" <?php if ($build['public'] == 1) {
                             echo 'style="display:none"';
                         } ?>>
-                            <p>Select which clients are allowed to access this non-public build.</p>
+                            <p>Select which clients are allowed to access this private build.</p>
                             <input hidden id="build_id" value="<?php echo $_GET['id'] ?>">
                             <?php if (sizeof($clients) === 0) { ?>
                             <span class="text-danger">There are no clients in the databse. <a href="./clients">You can add them here</a></span>
                             <br />
                             <?php }
-                            $clientlist = !empty($build['clients']) ? explode(',', $build['clients']) : [];
                             foreach ($clients as $client) {
-                                $client_checked = in_array($client['id'], $clientlist) ? 'checked' : ''; ?>
+                                $client_checked = in_array($client['id'], $build_client_ids) ? 'checked' : ''; ?>
                             <div class="custom-control custom-checkbox">
                                 <input class="custom-control-input buildClientId" id="client-<?php echo $client['id'] ?>" type="checkbox" value="<?php echo $client['id'] ?>" <?php echo $client_checked ?>>
                                 <label class="custom-control-label" for="client-<?php echo $client['id'] ?>"><?php echo $client['name']." (".$client['UUID'].")" ?></label>
@@ -1144,7 +1182,7 @@ if (!uri("/login")) {
                 </div>
             <?php
             }
-            if (!empty($modslist)) { // only empty on new build before mcversion is set
+            if (!empty($modslist) || !empty($build['minecraft'])) { // only empty on new build before mcversion is set
             ?>
                     <div class="card">
                         <h3>Items in build</h3>
@@ -1292,8 +1330,10 @@ if (!uri("/login")) {
                             </tbody>
                         </table>
                     </div>
-
-                <?php if ($perms->build_edit()) { ?>
+                <?php 
+                }
+                
+                if ($perms->build_edit()) { ?>
                     <div class="card">
                         <h3>Available mods <font id='mods-for-version-string'></font></h3>
                         <hr>
@@ -1352,7 +1392,7 @@ if (!uri("/login")) {
                     </div>
                 <?php 
                 }
-            }
+            
 
             ?>
                 <script>
@@ -1706,17 +1746,17 @@ if (!uri("/login")) {
                 die('{"status":"error","message":"Could not start transaction"}');
             }
 
-            $buildsq = $db->query("SELECT id,name,mods FROM builds");
-
-            $installed_loader_ids = [];
-            if (!empty($buildsq)) {
-                foreach ($buildsq as $build) {
-                    if (!empty($build['mods'])) {
-                        $mods_list = explode(',', $build['mods'], 2);
-                        // first item is always the mod loader
-                        array_push($installed_loader_ids, $mods_list[0]);
-                    }
-                }
+            $used_modloadersq = $db->query("
+                SELECT m.* 
+                FROM build_mods bm 
+                JOIN mods m 
+                    ON m.id = bm.mod_id 
+                WHERE m.type = 'forge'
+            ");
+            if (!$used_modloadersq) {
+                $used_modloader_ids = [];
+            } else {
+                $used_modloader_ids = array_column($used_modloadersq, 'id');
             }
 
             $used_loaders = [];
@@ -1726,7 +1766,7 @@ if (!uri("/login")) {
 
             if ($modsq) {
                 foreach ($modsq as $mod) {
-                    if (in_array($mod['id'], $installed_loader_ids)) {
+                    if (in_array($mod['id'], $used_modloader_ids)) {
                         array_push($used_loaders, $mod['loadertype'].'-'.$mod['mcversion'].'-'.$mod['version']);
                     }
                     array_push($installed_loaders, $mod['loadertype'].'-'.$mod['mcversion'].'-'.$mod['version']);

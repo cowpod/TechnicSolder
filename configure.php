@@ -138,17 +138,21 @@ if (isset($_POST['host'])) {
 
     $conn = $db->connect();
     if ($conn) {
+        if (!$db->beginTransaction(true)) {
+            die('{"status":"error","message":"Could not start transaction"}');
+        }
+        
+        $result = true;
         if ($_POST['db-type'] == 'sqlite') {
             // sqlite: bigtext,varchar => text
             // int => integer
             // unsigned doesn't exist.
-            $sql = "CREATE TABLE metrics (
+            $result &= $db->execute("CREATE TABLE metrics (
                 name TEXT PRIMARY KEY,
                 time_stamp INTEGER,
                 info TEXT
-            )";
-            $db->execute($sql);
-            $sql = "CREATE TABLE modpacks (
+            )");
+            $result &= $db->execute("CREATE TABLE modpacks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT,
                 display_name TEXT,
@@ -162,11 +166,9 @@ if (isset($_POST['host'])) {
                 latest TEXT,
                 recommended TEXT,
                 public INTEGER,
-                clients TEXT,
                 UNIQUE (name)
-            )";
-            $db->execute($sql);
-            $sql = "CREATE TABLE users (
+            )");
+            $result &= $db->execute("CREATE TABLE users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT,
                 display_name TEXT,
@@ -177,16 +179,14 @@ if (isset($_POST['host'])) {
                 api_key TEXT,
                 settings TEXT,
                 UNIQUE (name)
-            )";
-            $db->execute($sql);
-            $sql = "CREATE TABLE clients (
+            )");
+            $result &= $db->execute("CREATE TABLE clients (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT,
                 UUID TEXT,
                 UNIQUE (UUID)
-            )";
-            $db->execute($sql);
-            $sql = "CREATE TABLE builds (
+            )");
+            $result &= $db->execute("CREATE TABLE builds (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 modpack INTEGER NOT NULL,
                 name TEXT NOT NULL,
@@ -195,11 +195,9 @@ if (isset($_POST['host'])) {
                 loadertype TEXT,
                 memory TEXT,
                 mods TEXT,
-                public INTEGER,
-                clients TEXT
-            )";
-            $db->execute($sql);
-            $sql = "CREATE TABLE mods (
+                public INTEGER
+            )");
+            $result &= $db->execute("CREATE TABLE mods (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 pretty_name TEXT NOT NULL,
@@ -216,16 +214,35 @@ if (isset($_POST['host'])) {
                 filesize INTEGER,
                 type TEXT,
                 loadertype TEXT
-            )";
-            $db->execute($sql);
+            )");
+            $result &= $db->execute("CREATE TABLE build_mods (
+                build_id INTEGER NOT NULL,
+                mod_id INTEGER NOT NULL,
+                PRIMARY KEY (build_id, mod_id),
+                FOREIGN KEY (build_id) REFERENCES builds(id),
+                FOREIGN KEY (mod_id) REFERENCES mods(id)
+            )");
+            $result &= $db->execute("CREATE TABLE build_clients (
+                build_id INTEGER NOT NULL,
+                client_id INTEGER NOT NULL,
+                PRIMARY KEY (build_id, client_id),
+                FOREIGN KEY (build_id) REFERENCES builds(id),
+                FOREIGN KEY (client_id) REFERENCES clients(id)
+            )");
+            $result &= $db->execute("CREATE TABLE modpack_clients (
+                modpack_id INTEGER NOT NULL,
+                client_id INTEGER NOT NULL,
+                PRIMARY KEY (modpack_id, client_id),
+                FOREIGN KEY (modpack_id) REFERENCES modpacks(id),
+                FOREIGN KEY (client_id) REFERENCES clients(id)
+            )");
         } else {
-            $sql = "CREATE TABLE metrics (
+            $result &= $db->execute("CREATE TABLE metrics (
                 name VARCHAR(128) PRIMARY KEY,
                 time_stamp BIGINT UNSIGNED,
                 info TEXT
-            )";
-            $db->execute($sql);
-            $sql = "CREATE TABLE modpacks (
+            )");
+            $result &= $db->execute("CREATE TABLE modpacks (
                 id INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(128),
                 display_name VARCHAR(128),
@@ -239,11 +256,9 @@ if (isset($_POST['host'])) {
                 latest VARCHAR(512),
                 recommended VARCHAR(512),
                 public BOOLEAN,
-                clients LONGTEXT,
                 UNIQUE (name)
-            )";
-            $db->execute($sql);
-            $sql = "CREATE TABLE users (
+            )");
+            $result &= $db->execute("CREATE TABLE users (
                 id INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(128),
                 display_name VARCHAR(128),
@@ -254,16 +269,14 @@ if (isset($_POST['host'])) {
                 api_key VARCHAR(128),
                 settings LONGTEXT,
                 UNIQUE (name)
-            )";
-            $db->execute($sql);
-            $sql = "CREATE TABLE clients (
+            )");
+            $result &= $db->execute("CREATE TABLE clients (
                 id INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(128),
                 UUID VARCHAR(128),
                 UNIQUE (UUID)
-            )";
-            $db->execute($sql);
-            $sql = "CREATE TABLE builds (
+            )");
+            $result &= $db->execute("CREATE TABLE builds (
                 id INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 modpack INTEGER UNSIGNED NOT NULL,
                 name VARCHAR(128) NOT NULL,
@@ -272,11 +285,9 @@ if (isset($_POST['host'])) {
                 loadertype VARCHAR(32),
                 memory VARCHAR(512),
                 mods LONGTEXT,
-                public BOOLEAN,
-                clients LONGTEXT
-            )";
-            $db->execute($sql);
-            $sql = "CREATE TABLE mods (
+                public BOOLEAN
+            )");
+            $result &= $db->execute("CREATE TABLE mods (
                 id INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(128) NOT NULL,
                 pretty_name VARCHAR(128) NOT NULL,
@@ -293,8 +304,31 @@ if (isset($_POST['host'])) {
                 filesize INTEGER,
                 type VARCHAR(128),
                 loadertype VARCHAR(32)
-            )";
-            $db->execute($sql);
+            )");
+            $result &= $db->execute("CREATE TABLE build_mods (
+                build_id INTEGER UNSIGNED NOT NULL,
+                mod_id INTEGER UNSIGNED NOT NULL,
+                PRIMARY KEY (build_id, mod_id),
+                FOREIGN KEY (build_id) REFERENCES builds(id),
+                FOREIGN KEY (mod_id) REFERENCES mods(id)
+            )");
+            $result &= $db->execute("CREATE TABLE build_clients (
+                build_id INTEGER UNSIGNED NOT NULL,
+                client_id INTEGER UNSIGNED NOT NULL,
+                PRIMARY KEY (build_id, client_id),
+                FOREIGN KEY (build_id) REFERENCES builds(id),
+                FOREIGN KEY (client_id) REFERENCES clients(id)
+            )");
+            $result &= $db->execute("CREATE TABLE modpack_clients (
+                modpack_id INTEGER UNSIGNED NOT NULL,
+                client_id INTEGER UNSIGNED NOT NULL,
+                PRIMARY KEY (modpack_id, client_id),
+                FOREIGN KEY (modpack_id) REFERENCES modpacks(id),
+                FOREIGN KEY (client_id) REFERENCES clients(id)
+            )");
+        }
+        if (!$result) {
+            die("Error while creating database tables");
         }
 
         // if user already exists, replace
@@ -316,6 +350,10 @@ if (isset($_POST['host'])) {
             '".ICON."',
             '".$db->sanitize($api_key)."'
         )");
+
+        if (!$db->commit()) {
+            die('{"status":"error","message":"Could not commit changes"}');
+        }   
 
         $db->disconnect();
 

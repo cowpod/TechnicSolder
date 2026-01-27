@@ -1,9 +1,5 @@
 <?php
-
-/*
-TODO: This is insecure.
-*/
-define('CONFIG_VERSION', 1);
+define('CONFIG_VERSION', 2);
 
 function get_config()
 {
@@ -317,6 +313,232 @@ function update_modpack_rec_latest()
         }
     }
 }
+
+function upgrade_config_version() {
+    // if we're upgrading post 2.0 (aka dev channel)
+    if (file_exists("./configuration.php")) {
+        require_once('./configuration.php');
+        $config = new Config();
+        if ($config->exists('config_version')) {
+            $config_version = $config->get('config_version');
+
+            // upgrade config version 1 to 2
+            // in config_version 2, we drop column mods in table builds, 
+            // and create a new joint table build_mods.
+            if ($config_version == 1) {
+                echo "Updating config version from 1 to 2<br/>";
+
+                require_once("db.php");
+                $db = new Db();
+                if (!$db->connect()) {
+                    die("Couldn't update config version to ".CONFIG_VERSION." (db connect)");
+                }
+
+                if (!$db->beginTransaction(true)) {
+                    die('{"status":"error","message":"Could not start transaction"}');
+                }
+
+
+                echo "Adding build_mods table<br/>";
+                // add build_mods table
+                if ($config->get('db-type') === 'sqlite') {
+                    if (!$db->execute("CREATE TABLE build_mods (
+                        build_id INTEGER NOT NULL,
+                        mod_id INTEGER NOT NULL,
+                        PRIMARY KEY (build_id, mod_id),
+                        FOREIGN KEY (build_id) REFERENCES builds(id),
+                        FOREIGN KEY (mod_id) REFERENCES mods(id)
+                    )")) {
+                        die("Couldn't update config version to ".CONFIG_VERSION." (db create table build_mods)");
+                    }
+                } else {
+                    if (!$db->execute("CREATE TABLE build_mods (
+                        build_id INTEGER UNSIGNED NOT NULL,
+                        mod_id INTEGER UNSIGNED NOT NULL,
+                        PRIMARY KEY (build_id, mod_id),
+                        FOREIGN KEY (build_id) REFERENCES builds(id),
+                        FOREIGN KEY (mod_id) REFERENCES mods(id)
+                    )")) {
+                        die("Couldn't update config version to ".CONFIG_VERSION." (db create table build_mods)");
+                    }
+                }
+
+                echo "Adding build_mods entries<br/>";
+                $buildsq = $db->query("SELECT * FROM builds");
+                if (!$buildsq) {
+                    die("Couldn't update config version to ".CONFIG_VERSION." (db get all builds)");
+                }
+                foreach ($buildsq as $build) { // get each build
+                    if (empty($build['mods'])){
+                        echo "Skipping empty build id={$build['id']}<br/>";
+                        continue;
+                    }
+                    $buildid = intval($build['id']);
+                    $mod_ids = explode(",", $build['mods']);
+                    foreach($mod_ids as $modid) { // get each mod id
+                        if (empty($modid) || !is_numeric($modid)){
+                            echo "Skipping invalid mod id={$modid}<br/>";
+                            continue;
+                        }
+                        $modid = intval($modid);
+                        // insert (build id, mod id) into build_mods
+                        if (!$db->execute("INSERT INTO build_mods (build_id,mod_id) VALUES ({$buildid},{$modid})")) {
+                            die("Couldn't update config version to ".CONFIG_VERSION." (db add to table build_mods)");
+                        }
+                        $insert_id = $db->insert_id();
+                        echo "Added ({$buildid},{$modid}) to build_mods (id={$insert_id})<br/>";
+                    }
+                }
+
+                // remove column mods from builds
+                if (!$db->execute("ALTER TABLE builds DROP COLUMN mods")) {
+                    die("Couldn't update config version to ".CONFIG_VERSION." (db drop column mods from table builds)");
+                }
+
+
+                echo "Adding build_clients table<br/>";
+                // add build_clients table
+                if ($config->get('db-type') === 'sqlite') {
+                    if (!$db->execute("CREATE TABLE build_clients (
+                        build_id INTEGER NOT NULL,
+                        client_id INTEGER NOT NULL,
+                        PRIMARY KEY (build_id, client_id),
+                        FOREIGN KEY (build_id) REFERENCES builds(id),
+                        FOREIGN KEY (client_id) REFERENCES clients(id)
+                    )")) {
+                        die("Couldn't update config version to ".CONFIG_VERSION." (db create table build_clients)");
+                    }
+                } else {
+                    if (!$db->execute("CREATE TABLE build_clients (
+                        build_id INTEGER UNSIGNED NOT NULL,
+                        client_id INTEGER UNSIGNED NOT NULL,
+                        PRIMARY KEY (build_id, client_id),
+                        FOREIGN KEY (build_id) REFERENCES builds(id),
+                        FOREIGN KEY (client_id) REFERENCES clients(id)
+                    )")) {
+                        die("Couldn't update config version to ".CONFIG_VERSION." (db create table build_clients)");
+                    }
+                }
+
+                echo "Adding build_clients entries<br/>";
+                $buildsq = $db->query("SELECT * FROM builds");
+                if (!$buildsq) {
+                    die("Couldn't update config version to ".CONFIG_VERSION." (db get all builds)");
+                }
+                foreach ($buildsq as $build) { // get each build
+                    if (empty($build['clients'])){
+                        echo "Skipping empty build id={$build['id']}<br/>";
+                        continue;
+                    }
+                    $buildid = intval($build['id']);
+                    $client_ids = explode(",", $build['clients']);
+                    foreach($client_ids as $clientid) { // get each mod id
+                        if (empty($clientid) || !is_numeric($clientid)){
+                            echo "Skipping invalid mod id={$clientid}<br/>";
+                            continue;
+                        }
+                        $clientid = intval($clientid);
+                        // insert (build id, client id) into build_clients
+                        if (!$db->execute("INSERT INTO build_clients (build_id,client_id) VALUES ({$buildid},{$clientid})")) {
+                            die("Couldn't update config version to ".CONFIG_VERSION." (db add to table build_clients)");
+                        }
+                        $insert_id = $db->insert_id();
+                        echo "Added ({$buildid},{$clientid}) to build_clients (id={$insert_id})<br/>";
+                    }
+                }
+
+                // remove column clients from builds
+                if (!$db->execute("ALTER TABLE builds DROP COLUMN clients")) {
+                    die("Couldn't update config version to ".CONFIG_VERSION." (db drop column clients from table builds)");
+                }
+
+
+                echo "Adding modpack_clients table<br/>";
+                // add modpack_clients table
+                if ($config->get('db-type') === 'sqlite') {
+                    if (!$db->execute("CREATE TABLE modpack_clients (
+                        modpack_id INTEGER NOT NULL,
+                        client_id INTEGER NOT NULL,
+                        PRIMARY KEY (modpack_id, client_id),
+                        FOREIGN KEY (modpack_id) REFERENCES modpacks(id),
+                        FOREIGN KEY (client_id) REFERENCES clients(id)
+                    )")) {
+                        die("Couldn't update config version to ".CONFIG_VERSION." (db create table modpack_clients)");
+                    }
+                } else {
+                    if (!$db->execute("CREATE TABLE modpack_clients (
+                        modpack_id INTEGER UNSIGNED NOT NULL,
+                        client_id INTEGER UNSIGNED NOT NULL,
+                        PRIMARY KEY (modpack_id, client_id),
+                        FOREIGN KEY (modpack_id) REFERENCES modpacks(id),
+                        FOREIGN KEY (client_id) REFERENCES clients(id)
+                    )")) {
+                        die("Couldn't update config version to ".CONFIG_VERSION." (db create table modpack_clients)");
+                    }
+                }
+
+                echo "Adding modpack_clients entries<br/>";
+                $modpacksq = $db->query("SELECT * FROM modpacks");
+                if (!$modpacksq) {
+                    die("Couldn't update config version to ".CONFIG_VERSION." (db get all modpacks)");
+                }
+                foreach ($modpacksq as $modpack) { // get each build
+                    if (empty($modpack['clients'])){
+                        echo "Skipping empty modpack id={$modpack['id']}<br/>";
+                        continue;
+                    }
+                    $modpackid = intval($modpack['id']);
+                    $client_ids = explode(",", $modpack['clients']);
+                    foreach($client_ids as $clientid) { // get each mod id
+                        if (empty($clientid) || !is_numeric($clientid)){
+                            echo "Skipping invalid mod id={$clientid}<br/>";
+                            continue;
+                        }
+                        $clientid = intval($clientid);
+                        // insert (modpack id, mod id) into modpack_clients
+                        if (!$db->execute("INSERT INTO modpack_clients (modpack_id,client_id) VALUES ({$modpackid},{$clientid})")) {
+                            die("Couldn't update config version to ".CONFIG_VERSION." (db add to table modpack_clients)");
+                        }
+                        $insert_id = $db->insert_id();
+                        echo "Added ({$modpackid},{$clientid}) to modpack_clients (id={$insert_id})<br/>";
+                    }
+                }
+
+                // remove column clients from modpacks
+                if (!$db->execute("ALTER TABLE modpacks DROP COLUMN clients")) {
+                    die("Couldn't update config version to ".CONFIG_VERSION." (db drop column clients from table modpacks)");
+                }
+
+
+                if (!$db->commit()) {
+                    die('{"status":"error","message":"Could not commit changes"}');
+                }                
+
+                $config->set('config_version', 2);
+                echo "Updated config version to ".CONFIG_VERSION;
+            }
+
+            // other future cases...?
+            // if ($config_version) == 2) {}
+            // we don't want to do other upgrades, so stop here.
+            $dir = $config->exists('dir') ? $config->get('dir') : '/';
+            header("Location: {$dir}");
+            exit();
+        }
+    }
+}
+
+// todo: block this script if we're fully configured and don't need to upgrade
+
+//
+// do 2.0 to 2.x upgrade
+//
+
+upgrade_config_version();
+
+//
+// do 1.x to 2.0 upgrade
+//
 
 $config = null;
 $db = null;

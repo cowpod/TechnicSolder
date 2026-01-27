@@ -52,34 +52,70 @@ if (!$db->beginTransaction(true)) {
     die('{"status":"error","message":"Could not start transaction"}');
 }
 
+// copy build
 if (!$db->execute("
-    INSERT INTO builds (name,minecraft,java,mods,modpack,loadertype,memory,clients) 
-        SELECT '{$_POST['new_build_name']}',minecraft,java,mods,{$_POST['dest_modpack_id']},loadertype,memory,clients
-        FROM builds
-        WHERE id = {$_POST['src_build_id']}
+    INSERT INTO builds (
+        name,
+        minecraft,
+        java,
+        modpack,
+        loadertype,
+        memory
+    )
+    SELECT 
+        '{$_POST['new_build_name']}',
+        minecraft,
+        java,
+        {$_POST['dest_modpack_id']},
+        loadertype,
+        memory
+    FROM builds
+    WHERE id = {$_POST['src_build_id']}
 ")) {
     die('{"status":"error","message":"Could not insert build with new name '.$_POST['new_build_name'].'"}');
 }
-$id = $db->insert_id();
+$new_build_id = $db->insert_id();
 
+// copy build mods
+if (!$db->execute("
+    INSERT INTO build_mods (build_id,mod_id)
+    SELECT {$new_build_id},mod_id
+    FROM build_mods
+    WHERE build_id = {$_POST['src_build_id']}
+")) {
+    die('{"status":"error","message":"Could not copy mods over to new build"}');
+}
+
+// copy build clients
+if (!$db->execute("
+    INSERT INTO build_clients (build_id,client_id)
+    SELECT {$new_build_id},client_id
+    FROM build_clients
+    WHERE build_id = {$_POST['src_build_id']}
+")) {
+    die('{"status":"error","message":"Could not copy clients over to new build"}');
+}
+
+// set latest
 if (!$db->execute("
     UPDATE modpacks 
-    SET latest = '{$id}'
+    SET latest = {$new_build_id}
     WHERE id = {$_POST['dest_modpack_id']}
 ")){
     die('{"status":"error","message":"Could not set latest build"}');
 }
 
 $statsq = $db->query("
-    SELECT id,name,modpack,minecraft,java,mods
-    FROM builds
-    WHERE id = {$id}
+    SELECT b.id,b.name,b.modpack,b.minecraft,b.java,COUNT(bm.mod_id)
+    FROM builds b
+    JOIN build_mods bm
+        ON b.id = bm.build_id
+    WHERE b.id = {$new_build_id}
 ");
-if ($statsq && sizeof($statsq) == 1) {
-    $stats = $statsq[0];
-} else {
+if ($statsq === false) {
     die('{"status":"error","message":"Could not get info for new build"}');
 }
+$stats = $statsq[0];
 
 if (!$db->commit()) {
     die('{"status":"error","message":"Could not commit changes"}');
@@ -87,6 +123,7 @@ if (!$db->commit()) {
 
 $json = @json_encode($stats);
 if ($json === false) {
+    $json = '';
     error_log("copy-build.php: could not encode stats");
 }
 

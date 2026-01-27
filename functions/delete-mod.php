@@ -36,19 +36,21 @@ function removeMod($id)
     if (isset($_GET['force']) && $_GET['force'] == 'true') {
         error_log('force deleting mod id='.$id);
     } else {
-        $querybuilds = $db->query("SELECT id,name,mods FROM builds");
-        foreach ($querybuilds as $build) {
-            if (empty($querybuilds[0]['mods'])) {
-                continue;
-            }
-            $build_mods = explode(',', $querybuilds[0]['mods']);
-            $build_id = !empty($querybuilds[0]['id']) ? $querybuilds[0]['id'] : null;
-            $build_name = !empty($querybuilds[0]['name']) ? $querybuilds[0]['name'] : null;
-            if (in_array($id, $build_mods)) {
-                return ["status" => "error","message" => "Cannot delete as it is in use!", "bid" => $build_id, "bname" => $build_name];
-            }
+        $buildmodsq = $db->query("
+            SELECT b.id bid, b.name bname
+            FROM build_mods bm 
+            JOIN mods m 
+                ON m.id = bm.mod_id
+            JOIN builds b
+                ON b.id = bm.build_id
+            WHERE bm.mod_id = {$id}
+        ");
+
+        if ($buildmodsq) {
+            return ["status" => "error","message" => "Cannot delete as it is in use!", "bid" => $buildmodsq['bid'], "bname" => $buildmodsq['bname']];
         }
     }
+    
 
     // get filename for mod id (and if it exists)
     $modq = $db->query("SELECT type,filename FROM `mods` WHERE `id` = '{$id}'");

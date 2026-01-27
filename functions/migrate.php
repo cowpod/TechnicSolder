@@ -1,32 +1,34 @@
 <?php
 
 // TODO: this is horribly outdated
+// this likely doesn't work, as I cannot test it.
 session_start();
 
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
 
+echo "This script has not been tested. Please report any issues to <a href='https://github.com/cowpod/technicsolder/issues'>https://github.com/cowpod/technicsolder/issues</a><br/>";
+echo "While clients are migrated, this script does not preserve client access. You will need to manually update which resources they have access to.<br/>";
+
 require_once('sanitize.php');
 
 if (empty($_POST['db-pass'])) {
-    die("error");
+    die("error missing db password");
 }
 if (empty($_POST['db-name'])) {
-    die("error");
+    die("error missing db name");
 }
 if (empty($_POST['db-user'])) {
-    die("error");
+    die("error missing db user");
 }
 if (empty($_POST['db-host'])) {
-    die("error");
+    die("error missing db host");
 }
 if (empty($_POST['solder-orig'])) {
-    die("error");
+    die("error missing solder orig");
 }
-if (empty($_SESSION['user'])) {
-    die("Unauthorized request or login session has expired!");
-}
+
 $PROTO_STR = strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL']))).'://';
 
 require_once('./configuration.php');
@@ -114,20 +116,23 @@ foreach ($res as $row) {
 // ----- BUILD_RELEASE ----- \\
 $res = $db2->query("SELECT * FROM `build_release`");
 foreach ($res as $row) {
-    $mods = [];
-    $mres = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$row['build_id']);
+    $mres = $db2->query("SELECT `mods` FROM `builds` WHERE `id` = ".$row['build_id']);
     if (!$mres) {
-        die("Build id does not exist");
+        echo "Build id {$row['build_id']} mods column does not exist, skipping build<br/>";
+        continue;
     }
 
     $ma = $mres[0];
     $ml = explode(',', $ma['mods']);
-    if (count($ml) > 0) {
-        array_push($mods, implode(',', $ml));
-    }
-    array_push($mods, $row['release_id']);
-    if (!$db->execute("UPDATE `builds` SET `mods` = '". implode(',', $mods)."' WHERE `id` = ".$row['build_id'])){
-        die("Could not set mods for build");
+
+    foreach ($ml as $modid) {
+        if (empty($modid)) {
+            echo "Mod id is blank, skipping mod<br/>";
+            continue;
+        }
+        if (!$db->execute("INSERT INTO build_mods (build_id,mod_id) VALUES ({$row['build_id']},{$modid})")){
+            echo "Could not insert modid={$modid} for buildid={$row['build_id']}<br/>";
+        }
     }
 }
 

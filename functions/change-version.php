@@ -38,18 +38,31 @@ if (!$db->beginTransaction(true)) {
     die('{"status":"error","message":"Could not start transaction"}');
 }
 
-$modsq = $db->query("SELECT mods FROM builds WHERE id = ".$db->sanitize($_GET['bid']));
-if ($modsq && sizeof($modsq) == 1 && !empty($modsq[0]['mods'])) {
-    $modslist = explode(',', $modsq[0]['mods']);
-    unset($modslist[array_search($_GET['id_old'], $modslist)]);
-    array_push($modslist, $_GET['id_new']);
-    $modslist_string = implode(',', $modslist);
-} else {
-    die('{"status":"error","message":"Build contains no mods. You need to set the version and loader."}');
+$hasmodloaderq = $db->query("
+    SELECT 1
+    FROM build_mods bm
+    JOIN mods m
+        ON m.id = bm.mod_id
+    WHERE bm.build_id = {$db->sanitize($_GET['bid'])}
+    AND m.type = 'forge'
+    LIMIT 1
+");
+if (!$hasmodloaderq){
+    die('{"status":"error","message":"Build is uninitialized. You need to set the minecraft version and modloader."}');
 }
 
-if (!$db->execute("UPDATE builds SET mods = '{$modslist_string}' WHERE id = {$db->sanitize($_GET['bid'])}")) {
-    die('{"status":"error","message":"Could not set mods"}');
+if (!$db->execute("
+    DELETE FROM build_mods 
+    WHERE build_id = {$_GET['bid']}
+    AND mod_id = {$_GET['id_old']}
+")){
+    die('{"status":"error","message":"Could not delete mod from build"}');
+}
+if (!$db->execute("
+    INSERT INTO build_mods (build_id,mod_id)
+    VALUES ({$_GET['bid']}, {$_GET['id_new']})
+")){
+    die('{"status":"error","message":"Could not insert mod into build"}');
 }
 
 if (!$db->commit()) {

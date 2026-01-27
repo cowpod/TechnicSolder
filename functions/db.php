@@ -183,21 +183,27 @@ final class Db
 
     public function beginTransaction(bool $tryAgain = false, int $tryMaxCount = 3) {
         $ret = false;
-        if ($this->conn->inTransaction()) {
-            return $ret;
-        }
+        // if ($this->conn->inTransaction()) {
+        //     error_log('db.php: beginTransaction(): Already in transaction for beginTransaction!?');
+        //     return $ret;
+        // }
         try {
+            $this->conn->exec("SET autocommit=0");
+            
             $ret = $this->conn->beginTransaction();
+            // error_log("db.php: beginTransaction(): started? inTransaction=".($this->conn->inTransaction() ? "yes" : "no"));
         } catch (PDOException $e) {
+            $this->conn->exec("SET autocommit=1");
+
             if ($tryAgain && $tryMaxCount > 0) {
                 error_log("db.php: beginTransaction(): Trying again in 1s...");
                 sleep(1);
                 return $this->beginTransaction($tryAgain, $tryMaxCount - 1);
             } else {
                 error_log("db.php: beginTransaction(): ".$e->getMessage());
-                if ($this->conn->inTransaction()) {
+                // if ($this->conn->inTransaction()) {
                     $this->rollBack();
-                }
+                // }
                 return false;
             }
         }
@@ -206,14 +212,18 @@ final class Db
 
     public function commit() {
         $ret = false;
-        if (!$this->conn->inTransaction()) {
-            return $ret;
-        }
+        // if (!$this->conn->inTransaction()) {
+        //     error_log('db.php: commit(): Not in transaction for commit!?');
+        //     return $ret;
+        // }
         try {
            $ret = $this->conn->commit();
+            $this->conn->exec("SET autocommit=1");
         } catch (PDOException $e) {
             error_log("db.php: commit(): ".$e->getMessage());
-            $this->rollBack();
+            // if ($this->conn->inTransaction()) {
+                $this->rollBack();
+            // }
             return false;
         }
         return $ret;
@@ -221,11 +231,13 @@ final class Db
 
     public function rollBack() {
         $ret = false;
-        if (!$this->conn->inTransaction()) {
-            return $ret;
-        }
+        // if (!$this->conn->inTransaction()) {
+        //     error_log('db.php: rollBack(): Not in transaction for rollBack!?');
+        //     return $ret;
+        // }
         try {
             $ret = $this->conn->rollBack();
+            $this->conn->exec("SET autocommit=1");
         } catch (PDOException $e) {
             error_log("db.php: rollBack(): ".$e->getMessage());
             return false;

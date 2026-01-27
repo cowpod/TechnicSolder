@@ -68,42 +68,55 @@ if (!$db->beginTransaction(true)) {
     die('{"status":"error","message":"Could not start transaction"}');
 }
 
-$userq = $db->query("SELECT * FROM `builds` WHERE `id` = ".$db->sanitize($_POST['id']));
-if (!$userq) {
-    die('{"status":"error","message":"Could not get build for id"}');
-}
-$user = $userq[0];
-
-$modslist = isset($user['mods']) ? explode(',', $user['mods']) : [];
-if (sizeof($modslist) == 1 && $modslist[0] == "") {
-    unset($modslist[0]);
-}
-
-if ($_POST['forgec'] !== "none" || empty($modslist)) {
-    if ($_POST['forgec'] == "wipe" || empty($modslist)) {
-        if (!$db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize($_POST['versions'])."' WHERE `id` = ".$db->sanitize($_POST['id']))){
-            die('{"status":"error","message":"Could not wipe mods"}');
+// set or update modloader
+if ($_POST['forgec'] !== 'none') {
+    if ($_POST['forgec'] === 'change') {
+        // sqlite doesn't support DELETE FROM JOIN, workaround:
+        if (!$db->execute("
+            WITH mod_ids AS (
+                SELECT bm.mod_id id
+                FROM build_mods bm
+                JOIN mods m
+                ON m.id = bm.mod_id
+                WHERE bm.build_id = {$_POST['id']}
+                AND m.type = 'forge'
+            )
+            DELETE FROM build_mods
+            WHERE mod_id IN (
+                SELECT id 
+                FROM mod_ids
+            )
+        ")) {
+            die('{"status":"error","message":"Could not remove loader from build '.$_POST['id'].'"}');
         }
-    } else {
-        $modslist2 = $modslist;
-        $modslist2[0] = $_POST['versions'];
-        if (!$db->execute("UPDATE `builds` SET `mods` = '".$db->sanitize(implode(',', $modslist2))."' WHERE `id` = ".$db->sanitize($_POST['id']))){
-            die('{"status":"error","message":"Could not set mods"}');
+    } elseif ($_POST['forgec'] === 'wipe') {
+       if (!$db->execute("
+            DELETE FROM build_mods
+            WHERE build_id = {$_POST['id']}
+        ")) {
+            die('{"status":"error","message":"Could not wipe build '.$_POST['id'].'"}');
         }
+    }
+    if (!$db->execute("
+        INSERT INTO build_mods (build_id,mod_id)
+        VALUES ({$_POST['id']},{$_POST['versions']})
+    ")) {
+        die('{"status":"error","message":"Could not set forge version in build '.$_POST['id'].'"}');
     }
 }
 
-$minecraft = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge'");
-if (!$minecraft){
-    die('{"status":"error","message":"Could not get minecraft mod"}');
-}
-$minecraft = $minecraft[0];
+// $minecraft = $db->query("SELECT * FROM mods WHERE type = 'forge'");
+// if (!$minecraft){
+//     die('{"status":"error","message":"Could not get minecraft mod"}');
+// }
+// $minecraft = $minecraft[0];
 
 $ispublic = $_POST['ispublic'] == "on" ? 1 : 0;
 
+// check if user has permission to change public
 $publicq = $db->query("SELECT public FROM builds WHERE id = ".$db->sanitize($_POST['id']));
-if ($publicq && sizeof($publicq) == 1 && array_key_exists('public', $publicq[0])) {
-    if ($publicq[0]['public'] != $ispublic) {
+if ($publicq && sizeof($publicq) == 1 && !empty($publicq[0])) {
+    if (!empty($publicq[0]['public']) && $publicq[0]['public'] != $ispublic) {
         if (!$perms->build_publish()) {
             die('{"status":"error","message":"Insufficient permission!"}');
         }
@@ -111,12 +124,40 @@ if ($publicq && sizeof($publicq) == 1 && array_key_exists('public', $publicq[0])
 }
 
 // actually update build
-if (!$db->execute("UPDATE `builds` SET `minecraft` = '".$minecraft['mcversion']."', `java` = '".$db->sanitize($_POST['java'])."', `memory` = '".$db->sanitize($_POST['memory'])."', `public` = ".$ispublic.", `loadertype` = '".$minecraft['loadertype']."' WHERE `id` = ".$db->sanitize($_POST['id']))){
-        die('{"status":"error","message":"Could not update build"}');}
+if (!$db->execute("
+    WITH loader_mod AS (
+        SELECT m.mcversion,m.loadertype
+        FROM build_mods bm
+        JOIN mods m
+        ON m.id = bm.mod_id
+        WHERE bm.build_id = {$_POST['id']}
+        AND m.type = 'forge'
+        LIMIT 1 -- i guess it's possible to have multiple type='forge' mods...
+    )
+    UPDATE builds 
+    SET
+        minecraft = (SELECT mcversion FROM loader_mod),
+        java = '{$_POST['java']}',
+        memory = '{$_POST['memory']}',
+        public = {$ispublic},
+        loadertype = (SELECT loadertype FROM loader_mod)
+    WHERE id = {$_POST['id']}
+")){
+    die('{"status":"error","message":"Could not update build"}');
+}
 
-// set latest public build.
+// set latest public build to this one
+// sqlite does not support update join
 if ($ispublic) {
-    if (!$db->execute("UPDATE modpacks SET latest = {$db->sanitize($_POST['id'])} WHERE id = {$user['modpack']}")){
+    if (!$db->execute("
+        UPDATE modpacks
+        SET latest = {$_POST['id']}
+        WHERE id = (
+            SELECT modpack id
+            FROM builds
+            WHERE id = {$_POST['id']}
+        )
+    ")){
         die('{"status":"error","message":"Could not set public"}');
     }
 }

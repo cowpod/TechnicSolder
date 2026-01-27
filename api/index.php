@@ -73,6 +73,28 @@ function endpoint_arg($url, $endpoint): string|bool
     }
 }
 
+// todo: rewrite the code to eliminate these functions
+function modpack_clientq(Db $db, int $modpack_id, string $client_uuid){
+    return $db->query("
+        SELECT 1 
+        FROM modpack_clients mc 
+        JOIN clients c
+        ON c.id = mc.client_id
+        WHERE mc.modpack_id = {$modpack_id}
+        AND c.UUID = '{$db->sanitize($client_uuid)}'
+    ");
+}
+function build_clientq(Db $db, int $build_id, string $client_uuid){
+    return $db->query("
+        SELECT 1 
+        FROM build_clients bc 
+        JOIN clients c
+        ON c.id = bc.client_id
+        WHERE bc.build_id = {$build_id}
+        AND c.UUID = '{$db->sanitize($client_uuid)}'
+    ");
+}
+
 // api => api/, as it's a directory
 if (($arg = endpoint_arg($url, 'api/')) === true) {
     die('{"api":"Solder.cf","version":"v1.4.0","stream":"'.($dev_builds ? 'Dev' : 'Release').'"}');
@@ -204,16 +226,11 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
             $buildsq = $db->query("SELECT * FROM `builds` WHERE `modpack` = {$modpack['id']} AND minecraft IS NOT NULL");
 
             foreach ($buildsq as $build) {
-                if ($build['minecraft'] === null) {
-                    continue;
-                }
-                $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
-                if ($build['public'] == 1 || $clientsq || $valid_client_key) {
+                if ($build['public'] == 1 || $valid_client_key || build_clientq($db, $build['id'], $client_uuid)) {
                     array_push($builds, $build['name']);
                 }
             }
-            $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
-            if ($modpack['public'] == 1 || $clientsq || $valid_client_key) {
+            if ($modpack['public'] == 1 || $valid_client_key || modpack_clientq($db, $modpack['id'], $client_uuid)) {
                 $modpacks[$modpack['name']] = [
                     "name" => $modpack['name'],
                     "display_name" => $modpack['display_name'],
@@ -232,8 +249,7 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
         }
     } else {
         foreach ($modpacksq as $modpack) {
-            $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
-            if ($modpack['public'] == 1 || $clientsq || $valid_client_key) {
+            if ($modpack['public'] == 1 || $valid_client_key || modpack_clientq($db, $modpack['id'], $client_uuid)) {
                 $mn = $modpack['name'];
                 $mpn = $modpack['display_name'];
                 $modpacks[$mn] = $mpn;
@@ -262,8 +278,7 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
         }
         $modpack = $modpacksq[0];
 
-        $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '{$db->sanitize($client_uuid)}' AND `id` IN ({$modpack['clients']})");
-        if ($modpack['public'] != 1 && !$clientsq && !$valid_client_key) {
+        if ($modpack['public'] != 1 && !$valid_client_key && !modpack_clientq($db, $modpack['id'], $client_uuid)) {
             die('{"error":"This modpack is private."}');
         }
 
@@ -282,12 +297,12 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
             die('{"error":"Build does not exist"}');
         }
 
-        $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '{$db->sanitize($client_uuid)}' AND `id` IN ({$build['clients']})");
-        if ($build['public'] == 1 || $clientsq || $valid_client_key) {
+        if ($build['public'] == 1 || $valid_client_key || build_clientq($db, $build['id'], $client_uuid)) {
             $mods = [];
-            $modslist = explode(',', $build['mods']);
+            $modslist = $db->query("SELECT * FROM build_mods WHERE build_id = {$build['id']} AND minecraft IS NOT NULL");
             $modnumber = 0;
 
+            if ($modslist) {
             foreach ($modslist as $modid) {
                 if (empty($modid)) {
                     error_log("API: double-comma (malformed 'mods' column) in database, skipping");
@@ -333,6 +348,7 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
                 }
                 $modnumber++;
             }
+            }
             die(json_encode([
                 "minecraft" => str_replace("f", "", $build['minecraft']),
                 "forge" => null, // todo: is this a bool? or a forge version? or are there more keys for fabric/etc?
@@ -368,8 +384,7 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
         }
         $modpack = $modpacksq[0];
 
-        $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$modpack['clients'].")");
-        if ($modpack['public'] == 1 || $clientsq || $valid_client_key) {
+        if ($modpack['public'] == 1 || $valid_client_key || modpack_clientq($db, $modpack['id'], $client_uuid)) {
             // set details of modpack
             if (isset($_GET['include']) && $_GET['include'] == "full") {
                 $modpack_info = [
@@ -402,8 +417,8 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
                 if ($build['minecraft'] === null) {
                     continue;
                 }
-                $clientsq = $db->query("SELECT 1 FROM `clients` WHERE `UUID` = '".$db->sanitize($client_uuid)."' AND `id` IN (".$build['clients'].")");
-                if ($build['public'] == 1 || $clientsq || $valid_client_key) {
+
+                if ($build['public'] == 1 || $valid_client_key || build_clientq($db, $build['id'], $client_uuid)) {
                     array_push($modpack_info['builds'], $build['name']);
                 }
             }
