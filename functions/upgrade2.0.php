@@ -1,5 +1,5 @@
 <?php
-define('CONFIG_VERSION', 2);
+require_once('../constants.php');
 
 function get_config()
 {
@@ -365,7 +365,7 @@ function upgrade_config_version() {
 
                 echo "Adding build_mods entries<br/>";
                 $buildsq = $db->query("SELECT * FROM builds");
-                if (!$buildsq) {
+                if ($buildsq === false) {
                     die("Couldn't update config version to ".CONFIG_VERSION." (db get all builds)");
                 }
                 foreach ($buildsq as $build) { // get each build
@@ -422,7 +422,7 @@ function upgrade_config_version() {
 
                 echo "Adding build_clients entries<br/>";
                 $buildsq = $db->query("SELECT * FROM builds");
-                if (!$buildsq) {
+                if ($buildsq === false) {
                     die("Couldn't update config version to ".CONFIG_VERSION." (db get all builds)");
                 }
                 foreach ($buildsq as $build) { // get each build
@@ -479,7 +479,7 @@ function upgrade_config_version() {
 
                 echo "Adding modpack_clients entries<br/>";
                 $modpacksq = $db->query("SELECT * FROM modpacks");
-                if (!$modpacksq) {
+                if ($modpacksq === false) {
                     die("Couldn't update config version to ".CONFIG_VERSION." (db get all modpacks)");
                 }
                 foreach ($modpacksq as $modpack) { // get each build
@@ -519,10 +519,13 @@ function upgrade_config_version() {
             }
 
             // other future cases...?
-            // if ($config_version) == 2) {}
+            if ($config_version == 2) {
+                die("Nothing to do.");
+            }
+
             // we don't want to do other upgrades, so stop here.
             $dir = $config->exists('dir') ? $config->get('dir') : '/';
-            header("Location: {$dir}");
+            die("Update complete. <a href='{$dir}'>press here to continue</a>.");
             exit();
         }
     }

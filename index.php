@@ -1,28 +1,22 @@
 <?php
 session_start();
 
-error_reporting(E_ALL & ~E_WARNING & ~E_NOTICE & ~E_DEPRECATED);
+require('./constants.php');
 
-define('SUPPORTED_JAVA_VERSIONS', [21,20,19,18,17,16,15,14,13,12,11,1.8,1.7,1.6]);
-define('SOLDER_BUILD', '999');
-define('METRICS_CACHE_TIME', 3600);
 require_once('./functions/configuration.php');
 // global $config;
 // if (empty($config)) {
 $config = new Config();
 // }
 
-// regardless of configuration.php existing, configured=>false forces a re-configure.
-if (!$config->exists('configured') || $config->get('configured') !== true) {
-    // we're from an old version!
-    if (file_exists('./functions/config.php')) {
-        header("Location: ./functions/upgrade2.0.php");
-        exit();
-    } else {
-        header("Location: ".($config->exists('dir') ? $config->get('dir') : '/')."configure.php");
-        exit();
-    }
+// if configured doesn't exist
+// or if configured is falsey
+if (!$config->exists('configured') 
+    || !$config->get('configured')) {
+    header("Location: ".($config->exists('dir') ? $config->get('dir') : '/')."configure.php");
+    exit();
 }
+
 $public_dir = $config->exists('dir') ? $config->get('dir') : '/';
 
 require_once("./functions/db.php");
@@ -165,9 +159,12 @@ if (!uri("/login")) {
     </head>
     <body>
         <?php
-        // prompt to upgrade
-        // you'll want to check config_version value to determine what to do.
-        if (!$config->exists('config_version')) { ?>
+        // if config.php exists (from 1.4.x)
+        // or if config_version doesn't exist
+        // or if config_version is old
+        if (file_exists('./functions/config.php')
+            || !$config->exists('config_version')
+            || $config->get('config_version') < CONFIG_VERSION) { ?>
         <div class="container">
             <div class="alert alert-danger text-center">
                 <h3>Upgrade required.</h3>

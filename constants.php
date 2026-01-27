@@ -1,0 +1,6 @@
+<?php
+define('CONFIG_VERSION', 2);
+define('SUPPORTED_JAVA_VERSIONS', [21,20,19,18,17,16,15,14,13,12,11,1.8,1.7,1.6]);
+define('SOLDER_BUILD', '999');
+define('METRICS_CACHE_TIME', 3600);
+?>

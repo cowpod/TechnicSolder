@@ -1,4 +1,4 @@
-FROM php:apache-bullseye
+FROM php:8.4-apache-trixie
 
 RUN a2enmod rewrite
 RUN apt update
