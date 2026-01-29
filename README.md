@@ -64,7 +64,7 @@ You can now visit the hostname or ip of wherever you hosted it, on port 80 unles
 changed it earlier.
 
 By default, the MySQL login details are:
-- host: docker-db-1
+- host: docker-db-1 (or just db)
 - database: solder
 - username: solder
 - password: solder (which you changed previously)
