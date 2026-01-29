@@ -52,7 +52,7 @@ if (!$db->execute("
         SELECT id
         FROM builds
         WHERE modpack = {$_GET['modpackid']}
-        AND public = 1
+        AND `public` = 1
         ORDER BY id DESC 
         LIMIT 1
     )
@@ -83,7 +83,7 @@ $getq = $db->query("
         SELECT latest
         FROM modpacks 
         WHERE id = {$_GET['modpackid']}
-        AND public = 1
+        AND `public` = 1
     )
 ");
 if (!empty($getq)) {
@@ -98,7 +98,7 @@ $getq = $db->query("
         SELECT recommended
         FROM modpacks 
         WHERE id = {$_GET['modpackid']}
-        AND public = 1
+        AND `public` = 1
     )
 ");
 if (!empty($getq)) {

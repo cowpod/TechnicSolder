@@ -71,23 +71,35 @@ if (!$db->beginTransaction(true)) {
 // set or update modloader
 if ($_POST['forgec'] !== 'none') {
     if ($_POST['forgec'] === 'change') {
-        // sqlite doesn't support DELETE FROM JOIN, workaround:
-        if (!$db->execute("
-            WITH mod_ids AS (
-                SELECT bm.mod_id id
+        if ($config->get('db-type') === 'sqlite') {
+            if (!$db->execute("
+                WITH mod_ids AS (
+                    SELECT bm.mod_id id
+                    FROM build_mods bm
+                    JOIN mods m
+                        ON m.id = bm.mod_id
+                    WHERE bm.build_id = {$_POST['id']}
+                        AND m.type = 'forge'
+                )
+                DELETE FROM build_mods
+                WHERE mod_id IN (
+                    SELECT id 
+                    FROM mod_ids
+                )
+            ")) {
+                die('{"status":"error","message":"Could not remove loader from build '.$_POST['id'].'"}');
+            }
+        } else {
+            if (!$db->execute("
+                DELETE bm
                 FROM build_mods bm
-                JOIN mods m
-                ON m.id = bm.mod_id
+                JOIN mods m 
+                    ON m.id = bm.mod_id
                 WHERE bm.build_id = {$_POST['id']}
-                AND m.type = 'forge'
-            )
-            DELETE FROM build_mods
-            WHERE mod_id IN (
-                SELECT id 
-                FROM mod_ids
-            )
-        ")) {
-            die('{"status":"error","message":"Could not remove loader from build '.$_POST['id'].'"}');
+                  AND m.type = 'forge';
+            ")) {
+                die('{"status":"error","message":"Could not remove loader from build '.$_POST['id'].'"}');
+            }
         }
     } elseif ($_POST['forgec'] === 'wipe') {
        if (!$db->execute("
@@ -124,26 +136,50 @@ if ($publicq && sizeof($publicq) == 1 && !empty($publicq[0])) {
 }
 
 // actually update build
-if (!$db->execute("
-    WITH loader_mod AS (
-        SELECT m.mcversion,m.loadertype
-        FROM build_mods bm
-        JOIN mods m
-        ON m.id = bm.mod_id
-        WHERE bm.build_id = {$_POST['id']}
-        AND m.type = 'forge'
-        LIMIT 1 -- i guess it's possible to have multiple type='forge' mods...
-    )
-    UPDATE builds 
-    SET
-        minecraft = (SELECT mcversion FROM loader_mod),
-        java = '{$_POST['java']}',
-        memory = '{$_POST['memory']}',
-        public = {$ispublic},
-        loadertype = (SELECT loadertype FROM loader_mod)
-    WHERE id = {$_POST['id']}
-")){
-    die('{"status":"error","message":"Could not update build"}');
+if ($config->get('db-type') === 'sqlite') {
+    if (!$db->execute("
+        WITH loader_mod AS (
+            SELECT m.mcversion,m.loadertype
+            FROM build_mods bm
+            JOIN mods m
+            ON m.id = bm.mod_id
+            WHERE bm.build_id = {$_POST['id']}
+                AND m.type = 'forge'
+            LIMIT 1 -- i guess it's possible to have multiple type='forge' mods...
+        )
+        UPDATE builds 
+        SET
+            minecraft = (SELECT mcversion FROM loader_mod),
+            java = '{$_POST['java']}',
+            memory = '{$_POST['memory']}',
+            `public` = {$ispublic},
+            loadertype = (SELECT loadertype FROM loader_mod)
+        WHERE id = {$_POST['id']}
+    ")){
+        die('{"status":"error","message":"Could not update build"}');
+    }
+} else {
+    if (!$db->execute("
+        UPDATE builds b
+        LEFT JOIN (
+            SELECT bm.build_id, m.mcversion, m.loadertype
+            FROM build_mods bm
+            JOIN mods m ON m.id = bm.mod_id
+            WHERE bm.build_id = {$_POST['id']}
+                AND m.type = 'forge'
+            LIMIT 1
+        ) lm 
+            ON lm.build_id = b.id
+        SET
+            b.minecraft = lm.mcversion,
+            b.java = '{$_POST['java']}',
+            b.memory = '{$_POST['memory']}',
+            b.`public` = {$ispublic},
+            b.loadertype = lm.loadertype
+        WHERE b.id = {$_POST['id']};
+    ")){
+        die('{"status":"error","message":"Could not update build"}');
+    }
 }
 
 // set latest public build to this one

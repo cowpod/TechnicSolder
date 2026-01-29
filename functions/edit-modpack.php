@@ -50,7 +50,7 @@ if (!isset($db)) {
 if (!$db->execute("UPDATE modpacks
     SET name = '{$db->sanitize($_POST['name'])}',
         display_name = '{$db->sanitize($_POST['display_name'])}',
-        public = {$ispublic}
+        `public` = {$ispublic}
     WHERE id= {$_POST['id']}
 ")){
     die('{"status":"error","message":"Could not update modpack details"}');

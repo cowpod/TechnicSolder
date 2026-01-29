@@ -56,7 +56,7 @@ if (!$hasminecraft) {
     die('{"status":"error","message":"Build details are empty!"}');
 }
 
-if (!$db->execute("UPDATE builds SET public = {$_GET['ispublic']} WHERE id = {$_GET['buildid']}")){
+if (!$db->execute("UPDATE builds SET `public` = {$_GET['ispublic']} WHERE id = {$_GET['buildid']}")){
     die('{"status":"error","message":"Could not set public"}');
 }
 
