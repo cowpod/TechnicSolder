@@ -25,7 +25,7 @@ runs on pure PHP with zip and MySQL extensions and it's very easy to use. To ins
 just need to install zip extension, setup MySQL database and download Solder to your server 
 (No composer needed). And the usage is even easier! Just Drag n' Drop your mods.
 
-# Docker installation (requires Docker + Docker Compose and SSH access)
+## Docker installation (requires Docker + Docker Compose and SSH access)
 
 Easiest method, but requires ssh, docker, and docker-compose on the host machine.
 Also allows using the built-in updater if you're on the `dev` channel
@@ -34,7 +34,7 @@ Also allows using the built-in updater if you're on the `dev` channel
 Note this container image puts Technic Solder at `/var/www/html`, and not 
 `/var/www/TechnicSolder`, as written later in this file.
 
-On the remote machine, as root (or prefix everything with sudo)
+On the remote machine,
 Clone repository to a location of your choice (likely in your home folder)
 ```bash
 git clone https://github.com/TheGameSpider/TechnicSolder TechnicSolder
@@ -60,8 +60,13 @@ terminal window)
 docker-compose up --build -d
 ```
 
-You can now visit the hostname or ip of wherever you hosted it, on port 80 unless you 
-changed it earlier.
+Now open your server address, ie. ``http://localhost`` if running on a your local machine, 
+and follow the set-up prompt there. 
+- If using MySQL, set the user of the database to ``solder``, database name to ``solder``, 
+host to ``db`` (or the hostname/ip of the database container), and the ```MYSQL_PASSWORD``` you created earlier. 
+- If using SQLite, simply set the type to SQLite.
+- For the Solder API key, go to [https://technicpack.net](https://technicpack.net), log 
+in/create an account, go to my settings/profile, and click on "solder" on the left menu.
 
 By default, the MySQL login details are:
 - host: docker-db-1 (or just db)
@@ -69,18 +74,18 @@ By default, the MySQL login details are:
 - username: solder
 - password: solder (which you changed previously)
 
-# Generic installation and configuration (without SSH/CLI access)
+## Installation overview (shared host)
 If you are using a shared host, or for some reason don't have access to the command-line 
-interface, the general set-up is as follows. This assumes you'll be using something like cPanel.
+interface.
 
-- Set PHP version to 8.3. 
-- Install the PHP ZIP, PDO, PDO_MYSQL extensions.
+Requires some sort of configuration tool like cPanel.
+
+- Set PHP version to 8.4. 
+- Install the PHP ZIP, PDO, PDO_MYSQL extensions (requires at least SQLite version 3.45).
     - Enable one or both of pdo_mysql, pdo_sqlite 
-- In Apache2 settings, enable rewriteengine, and the PHP module.
+- In Apache2 settings, enable RewriteEngine, and the PHP 8.4 module.
 - Upload the contents of this git to your document root, such that index.php is directly in 
-your document root folder. This is usually in ``/var/www/html``
-    - Alternatively, you can modify the document root in cPanel to point to the folder 
-    containing this repository. Ie. ``/var/www/html/TechnicSolder``
+your document root folder. This is usually ``/var/www/html/index.php``
 - Using phpMyAdmin, or any built-in cPanel MySQL editor, Create a new user ``solder``, 
 database ``solder``, and grant the user access to the database. Make sure you write down your password.
 
@@ -88,112 +93,27 @@ Now open your server address, ie. ``http://localhost`` if running on a your loca
 and follow the set-up prompt there. 
 - If using MySQL, set the user of the database to ``solder``, database name to ``solder``, 
 host to either ``localhost`` (if the database is on the same machine and network as the web 
-server) or the IP address of your database, and the password you created earlier. 
+server) or the IP address of your database, and the MySQL password you created earlier. 
 - If using SQLite, simply set the type to SQLite.
-- For the Solder API key, go to [https://technicpack.net](https://technicpack.net), log 
-in/create an account, go to my settings/profile, and click on "solder" on the left menu.
 
-# Detailed Installation (SSH/CLI access required)
-> ***Note: If you already have a working web server with PDO and ZIP extensions and enabled
-rewrite mod, you can [skip to step 6.](#cloning-technicsolder-repository)***
+## Detailed Installation (SSH/CLI access required)
+Manually install TechnicSolder and it's requirements.
 
-**1. Install Ubuntu Server (https://www.ubuntu.com/download/server)** <br />
-**2. Login to Ubuntu with credentials you set.** <br />
-**3. Become root**
-Root is basically the "god account" that controls everything on the system.
-You should never, _EVER_ use root to do simple tasks, unless you want your computer to be 
-destroyed.
-```bash
-sudo su -
-``` 
+**1. Install Debian Trixie (https://www.debian.org/), or any other distribution which has a recent (2025 as of writing) version of SQLite, PHP, and MariaDB. Log in to your admin user.** <br/>
 
-**4. Install Prerequisites (Apache-based)**<br />
-This command installs what's known as a LAMP Stack, which includes Apache2, MariaDB, and PHP.\
-Note: the name of packages may vary depending on your Linux distribution.
+**2. Install Apache2 and PHP stack**<br />
 ```bash
-apt update
-```
-Then install the packages
-```bash
-apt -y install mariadb-server apache2 libapache2-mod-php php8.3 php8.3-pdo php8.3-zip libzip-dev
-```
-...Or the following if you intend to only use sqlite
-```bash
-apt -y install apache2 libapache2-mod-php php8.3 php8.3-pdo php8.3-zip libzip-dev
+apt -y install apache2 libapache2-mod-php php8.4 php8.4-pdo php8.4-zip libzip-dev mariadb-server
 ```
 
-Then, restart apache.
-```bash
-service apache2 restart
-```
-
-We're now going to test that Apache and PHP are working together. Open up a blank file:
-```bash
-nano /var/www/html/index.php
-```
-and put the following text, inside:
-```php
-<?php
-phpinfo();
-?>
-```
-Save and close the file. (``Ctrl-X, y, Enter``)
-
-Now we can test whether our web server can correctly display content generated by a PHP 
-script. To try this out, we just have to visit this page in our web browser. You'll need 
-your server's public IP address. If you haven't already, and need to, remember to port 
-forward port 80 (TCP).
-```bash
-curl http://icanhazip.com
-```
-Open in your web browser: `http://your_server_IP_address` \
-This page basically gives you information about your PHP Compiler. It is useful for debugging
-and to ensure that your settings are being applied correctly. 
-
-Now look for the following to enable PHP extensions
-
-1. Look for 'PDO Drivers' under **PDO**. If you don't have sqlite, mysql, you will also need to 
-enable extensions ``pdo_mysql``, ``pdo_sqlite`` (or just one of the sql extensions depending on 
-your use) in your php.ini file.
-2. Look for 'Zip' under **zip**. It should be enabled. If it isn't you'll need to enable the 
-``zip`` extension in your php.ini file.
-3. Also look for 'Loaded Configuration File'. It should look something like ``/usr/local/etc/php/php.ini``. 
-
-If you don't have a file here and it's instead blank, look for 'Configuration File (php.ini) 
-Path', and append ``/php.ini`` to that path.
-- For example, ``/usr/local/etc/php`` would become ``/usr/local/etc/php/php.ini``
-
-Now that you have your php.ini path, open it in your editor
-```bash
-nano /usr/local/etc/php/php.ini
-```
-And uncomment (remove ``;`` at the beginning of the line) the following, or add (without the 
-comments) if a blank file:
+**3. Enable the following extensions in php.ini**<br/>
 ```php
 ;extension=zip
 ;extension=pdo_sqlite
 ;extension=pdo_mysql
 ```
-Save and close the file. (``Ctrl-X, y, Enter``)
 
-(max_execution_time, post_max_size, and upload_max_file_size are already set in .user.ini 
-and .htaccess.)
-
-Save and close the file. (``Ctrl-X, y, Enter``)
-
-Now restart apache2.
-```
-service apache2 restart
-```
-
-Reload your site. The PHP info page should now display ``Zip enabled``, and ``PDO drivers sqlite,mysql``.
-
-You probably want to remove this file after this test because it could actually give information 
-about your server to unauthorized users. To do this, you can type
-```bash
-rm /var/www/html/index.php
-```
-**5. Enable RewriteEngine, Configure Apache**<br />
+**4. Enable RewriteEngine, Configure Apache**<br />
 ```bash
 a2enmod rewrite
 cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/TechnicSolder.conf
@@ -231,20 +151,61 @@ Save and close the file and restart Apache:
 service apache2 restart
 ```
 
-**6. Clone TechnicSolder repository** 
+**5. Clone TechnicSolder repository** <br/>
 ```bash
 cd /var/www/
 git clone https://github.com/TheGameSpider/TechnicSolder.git TechnicSolder
 ```
-Installation is complete. Now you need to configure TechnicSolder before using it
 
-### If you are using nginx
+Make sure it's owned by www-data (or nginx for nginx)
+```bash
+chmod -R www-data /var/www/TechnicSolder
+```
+
+**6. MySQL configuration** <br/>
+
+Login to mysql
+```bash
+mysql
+```
+
+Create new user
+```sql
+CREATE USER 'solder'@'localhost' IDENTIFIED BY 'YOUR MYSQL PASSWORD HERE';
+```
+
+<br />
+
+Create database solder and grant user *solder* access to it.
+```sql
+CREATE DATABASE solder;
+GRANT ALL ON solder.* TO 'solder'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+```sql
+EXIT;
+```
+
+**7. Configure TechnicSolder** <br />
+
+Configure the installation at `http://your_server_IP_address`.
+
+The MySQL database password is whatever you set earlier, and the user/database is `solder`.
+
+That's it. You have successfully installed and configured TechnicSolder. It's ready to use!
+
+
+## If you are using Nginx instead of Apache
 
 Here is an incomplete example for nginx configuration. 
 
 For a complete (but unrelated) example, see [https://nginx.org/en/docs/example.html](https://nginx.org/en/docs/example.html).
 
 For https/SSL, see [https://nginx.org/en/docs/http/configuring_https_servers.html](https://nginx.org/en/docs/http/configuring_https_servers.html).
+
+You will also need to configure a PHP server seperately, eg. PHP-FPM, and make it available 
+at `/run/php/php8.4-fpm.sock` or update the nginx configuration accordingly.
 
  ```nginx
     listen 80; 
@@ -255,14 +216,14 @@ For https/SSL, see [https://nginx.org/en/docs/http/configuring_https_servers.htm
 
     location / {
         try_files   $uri $uri/ /index.php?$query_string;
-        }
+    }
 
     location /api/ {
         try_files   $uri $uri/ /api/index.php?$query_string;
     }
 
     location ~* \.php$ {
-        fastcgi_pass                    unix:/run/php/php8.3-fpm.sock;
+        fastcgi_pass                    unix:/run/php/php8.4-fpm.sock;
         fastcgi_index                   index.php;
         fastcgi_split_path_info         ^(.+\.php)(.*)$;
         include                         fcgi.conf;
@@ -284,7 +245,10 @@ For https/SSL, see [https://nginx.org/en/docs/http/configuring_https_servers.htm
     location ~ /\.ht {
         deny all;
     }
-    location = ~* /db\.sqlite$ {
+    location = /config/db\.sqlite$ {
+                deny all;
+    }
+    location = /config/config\.json$ {
                 deny all;
     }
     location ~ .*/\. {
@@ -293,60 +257,10 @@ For https/SSL, see [https://nginx.org/en/docs/http/configuring_https_servers.htm
 
     error_page 403 /403.html;
 
-    location ~* \.(?:ico|css|js|jpe?g|JPG|png|svg|woff)$ {
-            expires 365d;
-    }
-
  ```
 
-**You will also need to configure a PHP server seperately, eg. PHP-FPM, and make it available 
-at `/run/php/php8.3-fpm.sock` or update the nginx configuration accordingly.**
-
-## Configuration
-
-**MySQL** <br/>
-
-Not applicable if you are using SQLite or are using the docker image.
-
-```bash
-mysql
-```
-Login with your password you set earlier. <br />
-Create new user
-```sql
-CREATE USER 'solder'@'localhost' IDENTIFIED BY 'secret';
-```
-> **NOTE: By writing *IDENTIFIED BY 'secret'* you set your password. Dont use *secret***
-
-<br />
-
-Create database solder and grant user *solder* access to it.
-
-```sql
-CREATE DATABASE solder;
-GRANT ALL ON solder.* TO 'solder'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
-```
-
-**Configure TechnicSolder** <br />
-
-```bash
-chown -R www-data TechnicSolder
-```
-
-Go to `http://your_server_IP_address` and fill out the form. If you followed these instructions,
- database name and username is `solder` <br />
-
-The final step is to set your Solder URL in Solder Configuration (In your https://technicpack.net 
-profile)
-
-That's it. You have successfully installed and configured TechnicSolder. It's ready to use!
-
-## Detailed configuration
-
-Here's an example of the configuration file at /config/config.json:
-
+## Configuration file `config/config.json`
+May not be up-to-date.
 ```
 {
     "configured": true,
@@ -358,7 +272,7 @@ Here's an example of the configuration file at /config/config.json:
     "host": "localhost",
     "protocol": "http",
     "dir": "/",
-    "config_version": 1,
+    "config_version": 2,
     "fabric_integration": "on",
     "forge_integration": "on",
     "neoforge_integration": "on",
@@ -370,38 +284,29 @@ Here's an example of the configuration file at /config/config.json:
 ```
 
 Settings which are not exposed in the GUI:
-- `protocol`: Override which of `http` or `https` protocol is used, primarily by the `/api` endpoint, determined by the client's requests.
 - `configured`: Determine if the server has been configured. Don't change.
+- `protocol`: Override which of `http` or `https` protocol is used.
 - `config_version`: What version the config file is. Don't change.
 
 
-# Updating
+## Updating
 
-If you used the docker image, and are on the `dev` channel, you can use the built-in updater. Make sure that that the
-self-updater is enabled in server settings.
+If you used the docker image, and are on the `dev` channel, you can use the built-in updater.
 
-Otherwise, manual updating is as follows.
+** If you come from version 1.4.0 **
 
-1. PHP
-- Install/update PHP8.3, and install+enable PHP8.3-PDO PHP8.3-PDO_MYSQL and PHP8.3-ZIP. See manual installation steps above for details.
+Upgrade instructions
+    1. Install new Technic Solder version. Either `git pull` over SSH, or re-upload the TechnicSolder folder and files; Make sure to preserve your mods, others, forges folders, as well as file functions/config.php
+    2. Upgrade/switch to PHP8.3 and install and enable the PHP8.4-PDO, PHP8.4_PDO-MYSQL or/and PHP8.4-PDO_SQLITE, and PHP8.4-ZIP extensions.
+    3. You will then need to run /functions/upgrade2.0.php to modify your existing database.
 
-2. Files/folders
+** If you come from version 1.3.4 **
+Visit `/functions/upgrade2.0.php`
 
-- If you originally used `git clone` to get these files:
-    - Simply run `git pull` in the cloned directory.
-- Or if you used some other method like FTP:
-    - Copy `/var/www/TechnicSolder/functions/config.php`, `/var/www/TechnicSolder/forges`, 
-    `/var/www/TechnicSolder/mods`,`/var/www/TechnicSolder/others` to a safe location.
-    - Delete folder (and contents) `/var/www/TechnicSolder`
-    - Re-upload new `TechnicSolder` folder to `/var/www/`
-    - Then move config.php back to `/var/www/TechnicSolder/functions/`
+** If you come from a version before 1.3.4 **
+Upgrade to 1.3.4 as per the [1.3.4 release notes](https://raw.githubusercontent.com/cowpod/TechnicSolder/refs/heads/master/api/version.json).
 
-3. Database
-- If you were previously on v1.3.4, open `http[s]://[your host name]/functions/upgrade2.0.php`
-in your web browser. 
-- If you are on a version before 1.3.4, first update to v1.3.4, and then 1.4.0.
-
-# Upload larger files > 1GB
+## Upload larger files > 1GB
 
 Nextcloud has a great guide on this [here](https://docs.nextcloud.com/server/stable/admin_manual/configuration_files/big_file_upload_configuration.html).
 
