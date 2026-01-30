@@ -1,5 +1,4 @@
 <?php
-
 header('Content-Type: application/json');
 session_start();
 if (empty($_SESSION['user'])) {
@@ -41,12 +40,27 @@ if (!$db->beginTransaction(true)) {
 }
 
 // delete mods for build
-if (!$db->execute("DELETE FROM build_mods WHERE build_id = {$_GET['buildid']}")) {
+if (!$db->execute("
+    DELETE FROM build_mods 
+    WHERE build_id = {$_GET['buildid']}
+")) {
+    die('{"status":"error","message":"Could not delete build mods"}');
+}
+
+// delete clients for build
+if (!$db->execute("
+    DELETE FROM build_clients 
+    WHERE build_id = {$_GET['buildid']}
+")) {
     die('{"status":"error","message":"Could not delete build mods"}');
 }
 
 // delete the build
-if (!$db->execute("DELETE FROM builds WHERE id = {$_GET['buildid']} AND modpack = {$_GET['modpackid']}")) {
+if (!$db->execute("
+    DELETE FROM builds 
+    WHERE id = {$_GET['buildid']} 
+        AND modpack = {$_GET['modpackid']}
+")) {
     die('{"status":"error","message":"Could not delete build"}');
 }
 
@@ -57,7 +71,7 @@ if (!$db->execute("
         SELECT id
         FROM builds
         WHERE modpack = {$_GET['modpackid']}
-        AND `public` = 1
+            AND `public` = 1
         ORDER BY id DESC 
         LIMIT 1
     )
@@ -66,48 +80,44 @@ if (!$db->execute("
     die('{"status":"error","message":{"Could not set latest build"}');
 }
 
-// un-set recommended if needed for modpack
+// un-recommend modpack build (if recommended)
 if (!$db->execute("
     UPDATE modpacks 
     SET recommended = null 
     WHERE id = {$_GET['modpackid']} 
-    AND recommended = {$_GET['buildid']}
+        AND recommended = {$_GET['buildid']}
 ")) {
     die('{"status":"error","message":"Could not un-set recommended build for modpack"}');
 }
 
 // get latest and recommended builds for modpack
-// can be empty!
+// can be null!
 
 $response = ["latest" => null, "recommended" => null];
 
 $getq = $db->query("
-    SELECT id,name,minecraft AS mcversion
-    FROM builds
-    WHERE id = (
-        SELECT latest
-        FROM modpacks 
-        WHERE id = {$_GET['modpackid']}
-        AND `public` = 1
-    )
+    SELECT b.id,b.name,b.minecraft
+    FROM builds b
+    JOIN modpacks m
+        ON m.latest = b.id
+    WHERE m.id = {$_GET['modpackid']}
+        AND m.public = 1
+        AND b.public = 1
 ");
 if (!empty($getq)) {
-    // allow null/empty values for name, mcversion
     $response["latest"] = $getq[0];
 }
 
 $getq = $db->query("
-    SELECT id,name,minecraft AS mcversion
-    FROM builds
-    WHERE id = (
-        SELECT recommended
-        FROM modpacks 
-        WHERE id = {$_GET['modpackid']}
-        AND `public` = 1
-    )
+    SELECT b.id,b.name,b.minecraft
+    FROM builds b
+    JOIN modpacks m
+        ON m.recommended = b.id
+    WHERE m.id = {$_GET['modpackid']}
+        AND m.public = 1
+        AND b.public = 1
 ");
 if (!empty($getq)) {
-    // allow null/empty values for name, mcversion
     $response["recommended"] = $getq[0];
 }
 

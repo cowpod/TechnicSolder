@@ -1,11 +1,8 @@
 <?php
-
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
-
-require_once('sanitize.php');
 
 require_once('./permissions.php');
 global $perms;
@@ -13,6 +10,7 @@ $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
 if (!$perms->mods_delete()) {
     die("Insufficient permission!");
 }
+
 if (empty($_GET['confirm'])) {
     die("This is destructive, please confirm!");
 }
@@ -22,8 +20,19 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
+
+if (!$db->execute("
+    DELETE build_mods
+    FROM build_mods
+    JOIN mods
+        ON mods.id = build_mods.mod_id
+    WHERE mods.type = 'mod'
+")) {
+    die("Could not delete from build_mods.");
+}
+
 if (!$db->execute("DELETE FROM mods WHERE type = 'mod'")) {
-    die("Could not delete from database.");
+    die("Could not delete from mods.");
 }
 
 $files = glob('../mods/*.zip');

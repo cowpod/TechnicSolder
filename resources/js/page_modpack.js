@@ -92,7 +92,7 @@ function remove(id) {
                 $("#latest-v-li").show();
                 $("#latest-mc-li").show();
                 $("#latest-name").text(response['data']['latest']['name']);
-                $("#latest-mc").text(response['data']['latest']['mcversion']);
+                $("#latest-mc").text(response['data']['latest']['minecraft']);
             }
             if (response['data']['recommended']==null) {
                 $("#rec-v-li").hide();
@@ -101,7 +101,7 @@ function remove(id) {
                 $("#rec-v-li").show();
                 $("#rec-mc-li").show();
                 $("#rec-name").text(response['data']['recommended']['name']);
-                $("#rec-mc").text(response['data']['recommended']['mcversion']);
+                $("#rec-mc").text(response['data']['recommended']['minecraft']);
             }
 
             for (let element of builds) {
