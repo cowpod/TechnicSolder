@@ -505,8 +505,8 @@ if (!uri("/login")) {
                             <select name="java" class="form-control">
                                 <?php
                             foreach (SUPPORTED_JAVA_VERSIONS as $jv) {
-                                $selected = isset($user['java']) && $user['java'] == $jv ? "selected" : "";
-                                echo "<option value=".$jv." ".$selected.">".$jv."</option>";
+                                $selected = ($jv == DEFAULT_JAVA_VERSION) ? 'selected' : '';
+                                echo "<option value='{$jv}' {$selected}>{$jv}</option>";
                             }
                         ?>
                             </select> <br />
@@ -1116,8 +1116,12 @@ if (!uri("/login")) {
                         <select name="java" class="form-control">
                                 <?php
                         foreach (SUPPORTED_JAVA_VERSIONS as $jv) {
-                            $selected = isset($build['java']) && $build['java'] == $jv ? "selected" : "";
-                            echo "<option value=".$jv." ".$selected.">".$jv."</option>";
+                            if (empty($build['java'])) {
+                                $selected = ($jv == DEFAULT_JAVA_VERSION) ? 'selected' : '';
+                            } else {
+                                $selected = ($jv == $build['java']) ? 'selected' : '';
+                            }
+                            echo "<option value='{$jv}' {$selected}>{$jv}</option>";
                         }
                     ?>
                         </select> <br />
