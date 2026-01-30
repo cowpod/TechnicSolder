@@ -40,6 +40,11 @@ if (!$db->beginTransaction(true)) {
     die('{"status":"error","message":"Could not start transaction"}');
 }
 
+// delete mods for build
+if (!$db->execute("DELETE FROM build_mods WHERE build_id = {$_GET['buildid']}")) {
+    die('{"status":"error","message":"Could not delete build mods"}');
+}
+
 // delete the build
 if (!$db->execute("DELETE FROM builds WHERE id = {$_GET['buildid']} AND modpack = {$_GET['modpackid']}")) {
     die('{"status":"error","message":"Could not delete build"}');

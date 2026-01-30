@@ -33,16 +33,11 @@ if (!$db->beginTransaction(true)) {
     die('{"status":"error","message":"Could not start transaction"}');
 }
 
-$modsq = $db->query("SELECT `mods` FROM `builds` WHERE `id` = ".$db->sanitize($_GET['bid']));
-if (!$modsq) {
-    die("Build id does not exist");
-}
-
-$mods = $modsq[0];
-$modslist = explode(',', $mods['mods']);
-$nmodlist = array_diff($modslist, [$_GET['id']]);
-$modslist = implode(',', $nmodlist);
-if (!$db->execute("UPDATE `builds` SET `mods` = '".$modslist."' WHERE `id` = ".$db->sanitize($_GET['bid']))){
+if (!$db->execute("
+    DELETE FROM build_mods 
+    WHERE build_id = {$_GET['bid']}
+        AND mod_id = {$_GET['id']}
+")) {
     die("Could not remove mod from build");
 }
 
