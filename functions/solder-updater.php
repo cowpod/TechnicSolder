@@ -97,17 +97,14 @@ final class Updater
         }
 
         // check git cli
-
-        $whichgit = shell_exec('which git');
-        if (!empty($whichgit)) {
-            $this->git_cli = $whichgit;
+        if (file_exists('/usr/bin/git')) {
+            $this->git_cli = '/usr/bin/git';
+        } else if ($gitpath = @shell_exec('which git')) {
+            $this->git_cli = trim($gitpath);
+        } else if ($gitpath = @shell_exec('where git')) {
+            $this->git_cli = trim($gitpath);
         } else {
-            $wheregit = shell_exec('where git');
-            if (!empty($wheregit)) {
-                $this->git_cli = $wheregit;
-            } else {
-                error_log("solder-updater.php: could not locate git cli.");
-            }
+            error_log("solder-updater.php: could not locate git cli.");
         }
     }
 
@@ -137,6 +134,7 @@ final class Updater
         }
 
         // get branch
+        error_log("EXECUTING: "."cd $this->repo_path && {$this->git_cli} branch --show-current 2>&1");
         exec("cd $this->repo_path && {$this->git_cli} branch --show-current 2>&1", $this->git_result, $this->git_return);
         if ($this->git_return !== 0) {
             return UPDATE_ERROR_GET_BRANCH;
@@ -151,12 +149,14 @@ final class Updater
         }
 
         // Fetch the latest changes from remote
+        error_log("EXECUTING: "."cd $this->repo_path && {$this->git_cli} fetch origin 2>&1");
         exec("cd $this->repo_path && {$this->git_cli} fetch origin 2>&1", $this->git_result, $this->git_return);
         if ($this->git_return !== 0) {
             return UPDATE_ERROR_FETCH;
         }
 
         // Check if local is behind remote
+        error_log("EXECUTING: "."cd {$this->repo_path} && {$this->git_cli} rev-list --left-right --count origin/{$branch}...HEAD | awk '{if ($1 > 0) print \"true\"; else print \"false\"}' 2>&1");
         exec("cd {$this->repo_path} && {$this->git_cli} rev-list --left-right --count origin/{$branch}...HEAD | awk '{if ($1 > 0) print \"true\"; else print \"false\"}' 2>&1", $this->git_result, $this->git_return);
         if ($this->git_return !== 0) {
             return UPDATE_ERROR;
@@ -191,6 +191,7 @@ final class Updater
             return UPDATE_ERROR;
         }
 
+        error_log("EXECUTING: "."cd {$this->repo_path} && {$this->git_cli} reset --hard HEAD && {$this->git_cli} pull --rebase 2>&1");
         exec("cd {$this->repo_path} && {$this->git_cli} reset --hard HEAD && {$this->git_cli} pull --rebase 2>&1", $this->git_result, $this->git_return);
 
         if ($this->git_return !== 0) {
