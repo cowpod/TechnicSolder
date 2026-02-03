@@ -369,7 +369,7 @@ if (!uri("/login")) {
                         </a>
                         <?php }
                             if ($perms->modpack_create()) { ?>
-                        <a href="./functions/new-modpack.php"><div class="modpack">
+                        <a href="./functions/add-modpack.php"><div class="modpack">
                             <p><em style="height:25px" class="d-inline-block align-top fas fa-plus-circle"></em> Add Modpack</p>
                         </div></a>
                     <?php } ?>
@@ -810,7 +810,7 @@ if (!uri("/login")) {
                           </div>
                           <div class="modal-footer">
                             <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
-                            <button onclick="window.location='./functions/remove-modpack.php?id=<?php echo $modpack['id'] ?>'" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
+                            <button onclick="window.location='./functions/delete-modpack.php?id=<?php echo $modpack['id'] ?>'" type="button" class="btn btn-danger" data-dismiss="modal">Delete</button>
                           </div>
                         </div>
                       </div>
@@ -824,7 +824,7 @@ if (!uri("/login")) {
                 <div class="card">
                     <h3>New Build</h3>
                     <hr>
-                    <form action="./functions/new-build.php" method="">
+                    <form action="./functions/add-build.php" method="">
                         <input pattern="^[a-zA-Z0-9.-]+$" required id="newbname" autocomplete="off" class="form-control" type="text" name="name" placeholder="Build name (e.g. 1.0) (a-z, A-Z, 0-9, dot and dash)" />
                         <span id="warn_newbname" style="display: none" class="text-danger">Build with this name already exists.</span>
                         <input hidden type="text" name="id" value="<?php echo $modpack['id'] ?>">
@@ -1710,7 +1710,7 @@ if (!uri("/login")) {
             <div class="card">
                 <button onclick="window.location = './lib-mods'" style="width: fit-content;" class="btn btn-primary"><em class="fas fa-arrow-left"></em> Back</button><br />
                 <h2>Add Mod</h2>
-                <form method="POST" action="./functions/add-modv.php">
+                <form method="POST" action="./functions/add-mod-remote.php">
                     <input id="pn" required class="form-control" type="text" name="pretty_name" placeholder="Mod name" />
                     <br />
                     <input id="slug" required pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Mod slug" /><br />
@@ -1841,7 +1841,7 @@ if (!uri("/login")) {
             <?php } ?>
             <div class="card">
                 <h3>Upload</h3>
-                <form action="./functions/custom_modloader.php" method="POST" enctype="multipart/form-data">
+                <form action="./functions/add-modloader-custom.php" method="POST" enctype="multipart/form-data">
                     <div class="form-group">
                         <input class="form-control" type="text" name="version" placeholder="Loader version" required="">
                         <br />
@@ -2211,7 +2211,7 @@ if (!uri("/login")) {
             </div>
             <div class="card">
                 <h3>Details</h3><hr>
-                <form method="POST" action="./functions/edit-mod.php">
+                <form method="POST" action="./functions/edit-mods.php">
                     <input id="pn" required class="form-control" type="text" name="pretty_name" placeholder="Mod name" value="<?php echo $mod_name ?>" />
                     <br />
                     <input type="hidden" name="name" value="<?php echo $mod_slug ?>"/>
@@ -2242,7 +2242,7 @@ if (!uri("/login")) {
                     <em class="fas fa-arrow-left"></em> Back
                 </button><br />
                 <h3>Edit <?php echo $mod['pretty_name']." ".$mod['version']; ?></h3>
-                <form method="POST" action="./functions/edit-modv.php?id=<?php echo $_GET['id'] ?>">
+                <form method="POST" action="./functions/edit-mod.php?id=<?php echo $_GET['id'] ?>">
                         <input required class="form-control" type="text" name="version" placeholder="Mod Version" value="<?php echo $mod['version'] ?>"><br />
                         <div class="input-group">
                             <input class="form-control" type="text" name="author" id="author-input" placeholder="Mod Author" value="<?php echo $mod['author'] ?>">
@@ -2780,7 +2780,7 @@ if (!uri("/login")) {
             </div>
             <div class="card">
                 <h3>Add Client</h3>
-                <form class="needs-validation" novalidate action="./functions/new-client.php">
+                <form class="needs-validation" novalidate action="./functions/add-client.php">
                     <div class="form-row">
                         <div class="col">
                             <input type="text" name="name" class="form-control" required placeholder="Name">

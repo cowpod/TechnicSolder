@@ -80,7 +80,7 @@ $("#newIcon").change(function(){
     var request = new XMLHttpRequest();
     icon = document.getElementById('newIcon');
     formData.set('newIcon', icon.files[0]);
-    request.open('POST', './functions/update-user.php');
+    request.open('POST', './functions/edit-user.php');
     request.onreadystatechange = function() {
         if (request.readyState == 4 && request.status == 200) {
             console.log(request.responseText);
@@ -184,7 +184,7 @@ $("#change-name").on("submit", function(event) {
         let formData = new FormData();
         let request = new XMLHttpRequest();
         formData.set('display_name', $("#newname").val());
-        request.open('POST', './functions/update-user.php');
+        request.open('POST', './functions/edit-user.php');
         request.onreadystatechange = function() {
             if (request.readyState == 4 && request.status == 200) {
                 console.log(request.responseText);
@@ -215,7 +215,7 @@ $("#change-password").on("submit", function(event) {
         let request = new XMLHttpRequest();
         formData.set('oldpass', $("#oldpass").val());
         formData.set('pass', $("#pass1").val());
-        request.open('POST', './functions/update-user.php');
+        request.open('POST', './functions/edit-user.php');
         request.onreadystatechange = function() {
             if (request.readyState == 4 && request.status == 200) {
                 console.log(request.responseText);

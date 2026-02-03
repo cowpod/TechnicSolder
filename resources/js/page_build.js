@@ -20,7 +20,7 @@ function remove_mod(id, name, pretty_name, v, mcv, type) {
     // assert(type=='mod'||type=='other')
     $('#remove-mod-'+id).prop('disabled',true);
     var request = new XMLHttpRequest();
-    request.open("GET", "./functions/remove-mod.php?bid="+BUILD_ID+"&id="+id);
+    request.open("GET", "./functions/delete-build-mod.php?bid="+BUILD_ID+"&id="+id);
     request.onreadystatechange = function() {
         if (request.readyState == 4 && request.status == 200) {
             if (request.responseText=='Mod removed') {
@@ -60,7 +60,7 @@ function changeversion(id_new, id_old, name, compatible) {
     $("#bmversions-"+name).attr("onchange","changeversion(this.value,"+id_new+",'"+name+"',true)");
     $("#spinner-"+name).show();
     var request = new XMLHttpRequest();
-    request.open("GET", "./functions/change-version.php?bid="+BUILD_ID+"&id_new="+id_new+"&id_old="+id_old);
+    request.open("GET", "./functions/edit-build-mod-version.php?bid="+BUILD_ID+"&id_new="+id_new+"&id_old="+id_old);
     request.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             $("#spinner-"+name).hide();
@@ -112,7 +112,7 @@ function add_o(id, name, pretty_name, v, mcv) {
             add_mods_in_build(id, name, pretty_name, v, mcv, 'other')
         }
     };
-    request.open("GET", "./functions/add-mod.php?bid="+BUILD_ID+"&id="+id);
+    request.open("GET", "./functions/edit-build-mods.php?bid="+BUILD_ID+"&id="+id);
     request.send();
 }
 // add mod
@@ -151,8 +151,8 @@ function add(name, pretty_name, id, mcv) {
             }
         }
     };
-    console.log("./functions/add-mod.php?bid="+BUILD_ID+"&id="+id)
-    request.open("GET", "./functions/add-mod.php?bid="+BUILD_ID+"&id="+id);
+    console.log("./functions/edit-build-mods.php?bid="+BUILD_ID+"&id="+id)
+    request.open("GET", "./functions/edit-build-mods.php?bid="+BUILD_ID+"&id="+id);
     request.send();
 }
 
@@ -331,7 +331,7 @@ function saveAllowedClients() {
     request.onerror = function() {
         console.log('could not set build clients');
     }
-    request.open('POST', 'functions/update-allowed-clients.php');
+    request.open('POST', 'functions/edit-build-modpack-clients.php');
     request.send(formData);
 }
 
@@ -370,7 +370,7 @@ $('#build-details').on('submit', function(e) {
     request.onerror = function() {
         console.log('could not set build clients');
     }
-    request.open('POST', 'functions/update-build.php');
+    request.open('POST', 'functions/edit-build.php');
     request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     request.send(formData);
 

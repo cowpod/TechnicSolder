@@ -20,7 +20,7 @@ $(document).ready(function(){
 function authorsave() {
     $("#author-save").html("<em class='fas fa-cog fa-spin'></em>").attr("disabled",true);
     var request = new XMLHttpRequest();
-    request.open('POST', './functions/authorsave.php');
+    request.open('POST', './functions/edit-mod-author.php');
     request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     request.onreadystatechange = function() {
         if (request.readyState == 4) {
@@ -33,7 +33,7 @@ function authorsave() {
 function linksave() {
     $("#link-save").html("<em class='fas fa-cog fa-spin'></em>").attr("disabled",true);
     var request = new XMLHttpRequest();
-    request.open('POST', './functions/linksave.php');
+    request.open('POST', './functions/edit-mod-link.php');
     request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     request.onreadystatechange = function() {
         if (request.readyState == 4) {
@@ -47,7 +47,7 @@ function donlinksave() {
     $("#donlink-save").html("<em class='fas fa-cog fa-spin'></em>").attr("disabled",true);
     var request = new XMLHttpRequest();
 
-    request.open('POST', './functions/donlinksave.php');
+    request.open('POST', './functions/donedit-mod-link.php');
     request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     request.onreadystatechange = function() {
         if (request.readyState == 4) {

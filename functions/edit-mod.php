@@ -13,30 +13,8 @@ $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
 if (!$perms->mods_edit()) {
     die('Insufficient permission!');
 }
-if (empty($_POST['name'])) {
-    die("name not specified.");
-}
-if (empty($_POST['pretty_name'])) {
-    die("pretty_name not specified.");
-}
-if (empty($_POST['description'])) {
-    die("description not specified.");
-}
-if (empty($_POST['author'])) {
-    die("author not specified.");
-}
-
-if (strpbrk($_POST['name'], '\\"\'') !== false) {
-    die('{"status":"error","message":"Malformed name"}');
-}
-if (strpbrk($_POST['pretty_name'], '\\"\'') !== false) {
-    die('{"status":"error","message":"Malformed pretty_name"}');
-}
-if (strpbrk($_POST['description'], '\\"\'') !== false) {
-    die('{"status":"error","message":"Malformed description"}');
-}
-if (strpbrk($_POST['author'], '\\"\'') !== false) {
-    die('{"status":"error","message":"Malformed author"}');
+if (empty($_GET['id'])) {
+    die("Mod not specified.");
 }
 
 require_once('./configuration.php');
@@ -55,18 +33,27 @@ if (!$db->beginTransaction(true)) {
     die('{"status":"error","message":"Could not start transaction"}');
 }
 
-$existsq = $db->query("SELECT 1 FROM mods WHERE name='{$db->sanitize($_POST['name'])}' LIMIT 1");
-if (!$existsq) {
-    die("mod by that name does not exist");
+$result = $db->query("SELECT * FROM `mods` WHERE `id` = ".$_GET['id']);
+if (!$result) {
+    die("Mod id does not exist");
 }
 
-if (!$db->execute("UPDATE `mods` SET 
-    pretty_name = '{$db->sanitize($_POST['pretty_name'])}',
-    description = '{$db->sanitize($_POST['description'])}',
-    author = '{$db->sanitize($_POST['author'])}'
-    WHERE `name` = '{$db->sanitize($_POST['name'])}'
-")) {
-    die("could not update mod details.");
+$mod = $result[0];
+$url = isset($_POST['url']) ? $_POST['url'] : '';
+
+if (!$db->execute(
+    "UPDATE `mods`
+    SET link='".    $db->sanitize($_POST['link'])."',"
+    ."author ='".   $db->sanitize($_POST['author'])."',"
+    ."donlink='".   $db->sanitize($_POST['donlink'])."',"
+    ."version='".   $db->sanitize($_POST['version'])."',"
+    ."mcversion='". $db->sanitize($_POST['mcversion'])."',"
+    ."url='".       $db->sanitize($url)."',"
+    ."md5='".       $db->sanitize($_POST['md5'])."',"
+    ."loadertype='".$db->sanitize($_POST['loadertype'])."'"
+    ."WHERE id=".     $db->sanitize($_GET['id'])
+)) {
+    die("Could not update mod version details");
 }
 
 if (!$db->commit()) {
@@ -74,9 +61,8 @@ if (!$db->commit()) {
 }
 
 if ($_POST['submit'] == "Save and close") {
-    header("Location: ".$config->get('dir')."lib-mods");
-} else {
-    header("Location: ".$config->get('dir')."mod?id=".$_POST['name']);
+    header("Location: ".$config->get('dir')."mod?id=".$mod['name']);
+    exit();
 }
-
-die("Mod details updated.");
+header("Location: ".$config->get('dir')."modv?id=".$_GET['id']);
+exit();

@@ -70,7 +70,7 @@ function set_public(id) {
             }
         }
     };
-    request.open("GET", `./functions/set-public-build.php?buildid=${id}&modpackid=${getQueryVariable('id')}&ispublic=1`);
+    request.open("GET", `./functions/edit-build-public.php?buildid=${id}&modpackid=${getQueryVariable('id')}&ispublic=1`);
     request.send();
 
 }
@@ -174,7 +174,7 @@ function set_recommended(id) {
             $("#rec-mc").text(response['mc']);
         }
     };
-    request.open("GET", `./functions/set-recommended.php?buildid=${id}&modpackid=${getQueryVariable('id')}`);
+    request.open("GET", `./functions/edit-modpack-recommended.php?buildid=${id}&modpackid=${getQueryVariable('id')}`);
     request.send();
 }
 
@@ -259,7 +259,7 @@ $('#copybuild').on('submit', async function(event){
             console.log('request error')
             // reject(new Error("Request error"))
         }
-        request.open("POST", `./functions/copy-build.php`);
+        request.open("POST", `./functions/add-build-copy.php`);
         request.send(formData);
     // })
     
@@ -294,7 +294,7 @@ function saveAllowedClients() {
     request.onerror = function() {
         console.log('could not set modpack clients');
     }
-    request.open('POST', 'functions/update-allowed-clients.php');
+    request.open('POST', 'functions/edit-build-modpack-clients.php');
     request.send(formData);
 }
 

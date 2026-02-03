@@ -124,7 +124,7 @@ if (!$db->commit()) {
 $json = @json_encode($stats);
 if ($json === false) {
     $json = '';
-    error_log("copy-build.php: could not encode stats");
+    error_log("add-build-copy.php: could not encode stats");
 }
 
 // header("Location: ".$config->get('dir')."modpack?id=".$_POST['dest_modpack_id']);

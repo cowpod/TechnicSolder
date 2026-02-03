@@ -17,7 +17,7 @@ function sendFile(file, i) {
     var formData = new FormData();
     var request = new XMLHttpRequest();
     formData.set('fiels', file);
-    request.open('POST', './functions/send_other.php');
+    request.open('POST', './functions/add-other.php');
     request.upload.addEventListener("progress", function(evt) {
         if (evt.lengthComputable) {
             var percentage = evt.loaded / evt.total * 100;

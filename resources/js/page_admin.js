@@ -16,7 +16,7 @@ function validatePassword(password) {
 
 function remove(id) {
     var request = new XMLHttpRequest();
-    request.open('POST', './functions/remove_user.php');
+    request.open('POST', './functions/delete-user.php');
     request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     request.onreadystatechange = function() {
         if (request.readyState==4 && request.status==200) {
@@ -93,7 +93,7 @@ function edit_user(mail,name,perms) {
     // email is unique in db, but an email can't be used as an html id.
     // so we use the user id here.
     var request = new XMLHttpRequest();
-    request.open('POST', './functions/update-user.php');
+    request.open('POST', './functions/edit-user.php');
     request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     request.onreadystatechange = function() {
         if (request.readyState == 4 && request.status == 200) {
@@ -118,7 +118,7 @@ function edit_user(mail,name,perms) {
 
 function new_user(email,name,pass) {
     var request = new XMLHttpRequest();
-    request.open('POST', './functions/new_user.php');
+    request.open('POST', './functions/add-user.php');
     request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     request.onreadystatechange = function() {
         if (request.readyState == 4) {

@@ -36,7 +36,7 @@ if (str_ends_with($fileName, '.zip')) {
     die('{"status":"error","message":"Not a ZIP file."}');
 }
 
-// unlike send_mods.php, we don't have any metadata to go off of.
+// unlike add-mod.php, we don't have any metadata to go off of.
 // and as we don't create a zip, we can simply check the files' md5s.
 // this means a user can upload multiple timestamp variations of the exact same file, in a zip.
 // we will allow this.

@@ -49,7 +49,7 @@ function sendFile(file, i) {
     }
 
     formData.set('fallback_mcversion', modloader_mcv)
-    request.open('POST', './functions/send_mods.php');
+    request.open('POST', './functions/add-mod.php');
     request.upload.addEventListener("progress", function(evt) {
         if (evt.lengthComputable) {
             var percentage = evt.loaded / evt.total * 100;
@@ -559,7 +559,7 @@ async function installmod() {
             }
             postdata.append('fallback_mcversion', mcv);
 
-            request.open("POST", "./functions/send_mods.php", true);
+            request.open("POST", "./functions/add-mod.php", true);
             request.onreadystatechange = function() {
                 if (request.readyState == 4 && request.status == 200) {
                     console.log(request.response);
