@@ -40,8 +40,6 @@ if ($config->exists('protocol') && !empty($config->get('protocol'))) {
 require('functions/interval_range_utils.php');
 require('functions/format_number.php');
 
-require('functions/mp_latest_recommended.php');
-
 function uri($uri): bool
 {
     global $url;
@@ -589,7 +587,11 @@ if (!uri("/login")) {
             }
 
             $modpack = $modpacks[$_GET['id']];
-            $packdata = get_modpack_latest_recommended($db, $modpack['id']);
+            $packdataq = $db->query("SELECT latest,recommended FROM modpacks WHERE id = {$modpack['id']}");
+            if (empty($packdataq)) {
+                $packdata = ["recommended" => null, "latest" => null];
+            }
+            $packdata = $packdataq[0];
 
             if (!$db->beginTransaction(true)) {
                 die('{"status":"error","message":"Could not start transaction"}');
