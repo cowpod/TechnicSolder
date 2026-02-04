@@ -6,8 +6,6 @@ if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 
-require_once('sanitize.php');
-
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -29,57 +27,55 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
-function removeMod($id)
-{
+function removeMod($id) {
     global $db;
 
-    if (isset($_GET['force']) && $_GET['force'] == 'true') {
-        error_log('force deleting mod id='.$id);
-    } else {
-        $buildmodsq = $db->query("
-            SELECT b.id bid, b.name bname
-            FROM build_mods bm 
-            JOIN mods m 
-                ON m.id = bm.mod_id
-            JOIN builds b
-                ON b.id = bm.build_id
-            WHERE bm.mod_id = {$id}
-        ");
+    // get filename for mod id (and if it exists)
+    $modq = $db->query("SELECT type,filename FROM mods WHERE id = '{$id}'");
+    if (!$modq) {
+        return ["status" => "error","message" => "Specified id does not exist."];
+    }
+    $mod = $modq[0];
 
-        if ($buildmodsq) {
-            return ["status" => "error","message" => "Cannot delete as it is in use!", "bid" => $buildmodsq['bid'], "bname" => $buildmodsq['bname']];
+    // check if its in use by a build.
+    // todo: not just the first build!
+    $modinuseq = $db->query("
+        SELECT 1
+        FROM build_mods
+        WHERE mod_id = {$id}
+        LIMIT 1
+    ");
+    if ($modinuseq) {
+        if (isset($_GET['force']) && $_GET['force'] == 'true') {
+            if (!$db->execute("DELETE FROM build_mods WHERE mod_id = {$id}")) {
+                return ["status" => "error","message" => "Cannot delete from build!"];
+            }
+        } else {
+            return ["status" => "error","message" => "Cannot delete as it is in use!"];
         }
     }
     
-
-    // get filename for mod id (and if it exists)
-    $modq = $db->query("SELECT type,filename FROM `mods` WHERE `id` = '{$id}'");
-    if ($modq) {
-        if (sizeof($modq) == 0) {
-            return ["status" => "error","message" => "Specified id does not exist."];
-        }
-        $mod = $modq[0];
-    }
-
-    // remove it from db
-    if (!$db->execute("DELETE FROM `mods` WHERE `id` = '{$id}'")) {
+    // remove mod from db
+    if (!$db->execute("DELETE FROM mods WHERE id = '{$id}'")) {
         return ["status" => "error","message" => "Could not delete mod"];
     }
 
-    if ($mod['type'] == 'mod' && !(isset($_GET['force']) && $_GET['force'] == 'true')) {
-        // check if theres any other mod entries with the same file
-        $mod2q = $db->query("SELECT 1 FROM `mods` WHERE `filename` = '{$mod['filename']}' LIMIT 1");
-        if ($mod2q && sizeof($mod2q) == 1) {
-            error_log('delete-mod.php: mod file is still in use, not removing');
-            return ["status" => "succ","message" => "Mod version deleted from database, but file is still in use by other mod version."]; // leave file on disk
-        }
+    // check if theres any other mod entries with the same file
+    $fileinuseq = $db->query("
+        SELECT 1 
+        FROM mods 
+        WHERE type = 'mod' 
+        AND filename = '{$mod['filename']}' 
+        LIMIT 1
+    ");
+    if ($fileinuseq) {
+        return ["status" => "succ","message" => "Mod version deleted from database, but file is still in use by other mod version."]; // leave file on disk   
     }
+
     if (file_exists("../".$mod['type']."s/".$mod['filename'])) {
-        error_log('delete-mod.php: removing mod file');
         unlink("../".$mod['type']."s/".$mod['filename']);
-    } else {
-        error_log("delete-mod.php: couldn't find file!");
     }
+
     return ["status" => "succ","message" => "Mod version deleted."];
 }
 
@@ -87,29 +83,29 @@ if (!$db->beginTransaction(true)) {
     die('{"status":"error","message":"Could not start transaction"}');
 }
 
+// delete by id
 if (!empty($_GET['id'])) {
     $status = removeMod($_GET['id']);
     $json = @json_encode($status);
     if ($json === false) {
-        error_log('delete-mod.php: could not encode status to json');
+        die('{"status":"error","message":"Could not encode status"}');
     }
 
     if (!$db->commit()) {
         die('{"status":"error","message":"Could not commit changes"}');
     }
     die($json);
-} 
+}
 
+// delete by name
 elseif (!empty($_GET['name'])) {
     // for all mod versions (ids) associated with name
-    $modq = $db->query("SELECT * FROM `mods` WHERE `name` = '{$_GET['name']}'");
+    $modq = $db->query("SELECT * FROM mods WHERE name = '{$_GET['name']}'");
 
     $remove_failed = [];
     foreach ($modq as $mod) {
-        error_log("removing name='{$_GET['name']}', id={$mod['id']}");
         $status = removeMod($mod['id']);
-        if ($status['status'] != 'succ') {
-            error_log('failed to remove, result='.json_encode($status));
+        if ($status['status'] === 'error') {
             array_push($remove_failed, "{$mod['name']}-{$mod['version']}");
         }
     }
@@ -122,5 +118,3 @@ elseif (!empty($_GET['name'])) {
     }
     die('{"status":"succ","message":"Mod \''.$_GET['name'].'\' deleted successfully."}');
 }
-
-
