@@ -188,12 +188,16 @@ final class Db
         //     return $ret;
         // }
         try {
-            $this->conn->exec("SET autocommit=0");
+            if ($this->config->get('db-type')!='sqlite') {
+                $this->conn->exec("SET autocommit=0");
+            }
             
             $ret = $this->conn->beginTransaction();
             // error_log("db.php: beginTransaction(): started? inTransaction=".($this->conn->inTransaction() ? "yes" : "no"));
         } catch (PDOException $e) {
-            $this->conn->exec("SET autocommit=1");
+            if ($this->config->get('db-type')!='sqlite') {
+                $this->conn->exec("SET autocommit=1");
+            }
 
             if ($tryAgain && $tryMaxCount > 0) {
                 error_log("db.php: beginTransaction(): Trying again in 1s...");
@@ -217,8 +221,10 @@ final class Db
         //     return $ret;
         // }
         try {
-           $ret = $this->conn->commit();
-            $this->conn->exec("SET autocommit=1");
+            $ret = $this->conn->commit();
+            if ($this->config->get('db-type')!='sqlite') {
+                $this->conn->exec("SET autocommit=1");
+            }
         } catch (PDOException $e) {
             error_log("db.php: commit(): ".$e->getMessage());
             // if ($this->conn->inTransaction()) {
@@ -237,24 +243,33 @@ final class Db
         // }
         try {
             $ret = $this->conn->rollBack();
-            $this->conn->exec("SET autocommit=1");
+            if ($this->config->get('db-type')!='sqlite') {
+                $this->conn->exec("SET autocommit=1");
+            }
         } catch (PDOException $e) {
             error_log("db.php: rollBack(): ".$e->getMessage());
             return false;
         }
         return $ret;
     }
-
-    public function sanitize(null|string $str): null|string
+    public function quote(string $str): string {
+        if (empty($str)) {
+            return "''";
+        }
+        return $this->conn->quote($str);
+    }
+    /*
+    todo: use prepared statements
+    */
+    public function sanitize(string $str): string
     {
-        if (is_null($str)) {
-            return $str;
+        if (empty($str)) {
+            return '';
         }
         $utf8_str = sanitize_string_utf8($str);
         $sql_str = str_replace(DB_SANITIZE_BACKLIST, '', $utf8_str);
         return $sql_str;
     }
-
     public function insert_id(): int
     {
         // error_log("db.php: insert_id(): ".$this->conn->lastInsertId());
