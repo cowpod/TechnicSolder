@@ -1,140 +1,67 @@
-var formdisabled = true;
-$('#modsform').submit(function() {
-    if (formDisabled) {
-        return false;
+async function send_mod(file) {
+    let response = undefined;
+    if ($('#versions option').length > 0) {
+        response = await sendFile(file, $('#versions option:selected').attr('mc')) // here we await actually getting a response
     } else {
-        return true;
+        response = await sendFile(file) // here we await actually getting a response
     }
-});
-var addedmodslist = [];
-var addedmodsliststr = [];
-mn = 1;
-function againMods() {
-    $("#btn-done").attr("disabled",true);
-    $("#table-mods").html("");
-    $("#upload-card").show();
-    $("#u-mods").hide();
-    addedmodslist = [];
-    addedmodsliststr= [];
-    mn = 1;
-}
-function sendFile(file, i) {
-    formdisabled = true;
-    $("#submit").attr("disabled",true);
-    var formData = new FormData();
-    var request = new XMLHttpRequest();
-    formData.set('fiels', file);
-    request.open('POST', './functions/add-mod.php');
-    request.upload.addEventListener("progress", function(evt) {
-        if (evt.lengthComputable) {
-            var percentage = evt.loaded / evt.total * 100;
-            $("#" + i).attr('aria-valuenow', percentage + '%');
-            $("#" + i).css('width', percentage + '%');
-            request.onreadystatechange = function() {
-                if (request.readyState == 4) {
-                    if (request.status == 200) {
-                        console.log(request.response);
-                        response = JSON.parse(request.response);
-                        if (response.modid) {
-                            if (!addedmodslist.includes(response.modid)) {
-                                addedmodslist.push(response.modid);
-                                addedmodsliststr.push(response.name);
-                            }
-                        }
-                        if ( mn == modcount ) {
-                            if (addedmodslist.length > 0) {
-                                if ($('#modliststr').val().length > 0) {
-                                    $('#modliststr').val($('#modliststr').val() + "," + addedmodsliststr);
-                                    $('#modlist').val($('#modlist').val() + "," + addedmodslist);
-                                } else {
-                                    $('#modliststr').val($('#modliststr').val() + addedmodsliststr);
-                                    $('#modlist').val($('#modlist').val() + addedmodslist);
-                                }
-                            }
-                            if ($('#modlist').val().length > 0) {
-                                console.log($('#modlist').val().length);
-                                $("#submit").attr("disabled",false);
-                                formdisabled = false;
-                            }
-                            $("#btn-done").attr("disabled",false);
-                        } else {
-                            mn = mn + 1;
-                        }
+    
+    if (response.status != "error") {
+        let filename = file.name.replace(/[^\w\-]/g, '_')
+        $('#name-'+filename).text(response['name'])
 
-                        switch(response.status) {
-                            case "succ":
-                            {
-                                $("#cog-" + i).hide();
-                                $("#check-" + i).show();
-                                $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                $("#" + i).addClass("bg-success");
-                                $("#info-" + i).text(response.message);
-                                $("#" + i).attr("id", i + "-done");
-                                break;
-                            }
-                            case "error":
-                            {
-                                $("#cog-" + i).hide();
-                                $("#times-" + i).show();
-                                $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                $("#" + i).addClass("bg-danger");
-                                $("#info-" + i).text(response.message);
-                                $("#" + i).attr("id", i + "-done");
-                                break;
-                            }
-                            case "warn":
-                            {
-                                $("#cog-" + i).hide();
-                                $("#exc-" + i).show();
-                                $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                $("#" + i).addClass("bg-warning");
-                                $("#info-" + i).text(response.message);
-                                $("#" + i).attr("id", i + "-done");
-                                break;
-                            }
-                            case "info":
-                            {
-                                $("#cog-" + i).hide();
-                                $("#inf-" + i).show();
-                                $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                                $("#" + i).addClass("bg-info");
-                                $("#info-" + i).text(response.message);
-                                $("#" + i).attr("id", i + "-done");
-                                break;
-                            }
-                        }
-                    } else {
-                        $("#cog-" + i).hide();
-                        $("#times-" + i).show();
-                        $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                        $("#" + i).addClass("bg-danger");
-                        $("#info-" + i).text("An error occured: " + request.status);
-                        $("#" + i).attr("id", i + "-done");
-                    }
-                }
-            }
+        if ($('#modliststr').val() == "") {
+            $('#modlist').val(response.modid);
+            $('#modliststr').val(response.name);
+        } else {
+            $('#modlist').val($('#modlist').val() + "," + response.modid);
+            $('#modliststr').val($('#modliststr').val() + "," + response.name);
         }
-    }, false);
-    request.send(formData);
+    }
 }
 
 function showFile(file, i) {
-    $("#table-mods").append('<tr><td scope="row">' + file.name + '</td> <td><em id="cog-' + i + '" class="fas fa-cog fa-spin"></em><em id="check-' + i + '" style="display:none" class="text-success fas fa-check"></em><em id="times-' + i + '" style="display:none" class="text-danger fas fa-times"></em><em id="exc-' + i + '" style="display:none" class="text-warning fas fa-exclamation"></em><em id="inf-' + i + '" style="display:none" class="text-info fas fa-info"></em> <small class="text-muted" id="info-' + i + '"></small></h4><div class="progress"><div id="' + i + '" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div></div></td></tr>');
+    return new Promise((resolve, reject) => {
+        let filename = file.name.replace(/[^\w\-]/g, '_')
+        $("#table-mods").append(`<tr>
+            <td id="name-${filename}" scope="row">${file.name}</td> 
+            <td>
+                <em id="cog-${filename}" class="fas fa-cog fa-spin"></em>
+                <em id="check-${filename}" style="display:none" class="text-success fas fa-check"></em>
+                <em id="inf-${filename}" style="display:none" class="text-info fas fa-info"></em>
+                <em id="exc-${filename}" style="display:none" class="text-warning fas fa-exclamation"></em>
+                <em id="times-${filename}" style="display:none" class="text-danger fas fa-times"></em>
+                <small id="info-${filename}" class="text-muted"></small>
+                <div class="progress">
+                    <div id="prog-${filename}" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+                </div>
+            </td>
+        </tr>`)
+        resolve(true)
+    })
 }
-$(document).ready(function() {
-    $(':file').change(function() {
-        $("#upload-card").hide();
-        $("#u-mods").show();
-        modcount = this.files.length;
-        for (var i = 0; i < this.files.length; i++) {
-            var file = this.files[i];
-            showFile(file, i);
-        }
-        for (var i = 0; i < this.files.length; i++) {
-            var file = this.files[i];
-            sendFile(file, i);
-        }
-    });
+
+function againMods() {
+    $("#upload-card").show();
+    $("#u-mods").hide();
+}
+
+$(':file').change(async function() {
+    $("#btn-done").attr("disabled", true);
+    $("#submit").attr("disabled", true);
+
+    $("#upload-card").hide();
+    $("#u-mods").show();
+
+    for (var i = 0; i < this.files.length; i++) {
+        await showFile(this.files[i], i); // await that the rows are created
+    }
+    for (var i = 0; i < this.files.length; i++) {
+        send_mod(this.files[i]); // no need to await the uploads
+    }
+
+    $("#btn-done").attr("disabled", false);
+    $("#submit").attr("disabled", false);
 });
 
 $("#submitmigration").click(function(){
@@ -187,14 +114,6 @@ $("#submitdbform").click(function() {
         }
     }
     http.send(params);
-});
-
-document.getElementById("link").addEventListener("keyup", function(event) {
-    if (event.keyCode === 13) {
-        document.getElementById("search").click();
-        document.getElementById("responseRaw").innerHTML = "Loading...";
-
-    }
 });
 
 $("#dn").on("keyup", function(){

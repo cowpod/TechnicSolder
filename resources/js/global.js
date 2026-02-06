@@ -207,3 +207,64 @@ async function getData(url, cacheoptions=null) {
 function insertAfter(referenceNode, newNode) {
     referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
 }
+
+function sendFile(file, fallback_mcv = "") {
+    return new Promise((resolve, reject) => {
+        let filename = file.name.replace(/[^\w\-]/g, '_')
+        var formData = new FormData();
+        var request = new XMLHttpRequest();
+
+        if (fallback_mcv !== "") {
+            formData.set('fallback_mcversion', fallback_mcv)
+        }
+
+        formData.set('fiels', file);
+        request.open('POST', './functions/add-mod.php');
+        request.upload.addEventListener("progress", function(evt) {
+            if (evt.lengthComputable) {
+                var percentage = evt.loaded / evt.total * 100;
+                $("#prog-"+filename).attr('aria-valuenow', percentage + '%');
+                $("#prog-"+filename).css('width', percentage + '%');
+                request.onreadystatechange = function() {
+                    if (request.readyState == 4 && request.status == 200) {
+                        console.log(request.response);
+                        response = JSON.parse(request.response);
+
+                        $("#cog-"+filename).hide();
+                        $("#prog-"+filename).removeClass("progress-bar-striped progress-bar-animated");
+                        $("#info-"+filename).text(response.message);
+
+                        switch(response.status) {
+                            case "succ":
+                            {
+                                $("#check-"+filename).show();
+                                $("#prog-"+filename).addClass("bg-success");
+                                break;
+                            }
+                            case "info":
+                            {
+                                $("#inf-"+filename).show();
+                                $("#prog-"+filename).addClass("bg-info");
+                                break;
+                            }
+                            case "warn":
+                            {
+                                $("#exc-"+filename).show();
+                                $("#prog-"+filename).addClass("bg-warning");
+                                break;
+                            }
+                            case "error":
+                            {
+                                $("#times-"+filename).show();
+                                $("#prog-"+filename).addClass("bg-danger");
+                                break;
+                            }
+                        }
+                        resolve(response)
+                    }
+                }
+            }
+        }, false);
+        request.send(formData);
+    })
+}

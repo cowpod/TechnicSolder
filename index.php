@@ -488,16 +488,14 @@ if (!uri("/login")) {
                             <?php
                         if (sizeof($forgesq) !== 0) {
                             foreach ($forgesq as $version) {
-                                ?><option <?php if (!empty($modslist) && $modslist[0] == $version['id']) {
-                                    echo "selected";
-                                } ?> value="<?php echo $version['id']?>"><?php echo $version['mcversion'] ?> - <?php echo $version['loadertype']?> <?php echo $version['version'] ?></option><?php
+                                $selected = (!empty($modslist) && $modslist[0]==$version['id']) ? 'selected' : '';
+                                echo "<option {$selected} value='{$version['id']}' mc='{$version['mcversion']}'>{$version['mcversion']} - {$version['loadertype']} {$version['version']}</option>";
                             }
-                            echo "</select>";
+                            ?></select><?php
                         } else {
-                            echo "</select>";
-                            echo "<div style='display:block' class='invalid-feedback'>There are no versions available. Please fetch versions in the <a href='./modloaders'>Forge Library</a></div>";
-                        }
-                        ?>
+                            ?></select>
+                            <div style='display:block' class='invalid-feedback'>There are no versions available. Please fetch versions in the <a href='./modloaders'>Forge Library</a></div>
+                        <?php } ?>
                             <br />
                             <label for="java">Java version</label>
                             <select name="java" class="form-control">
@@ -696,15 +694,10 @@ if (!uri("/login")) {
                     <?php
                     // for non-known errors (anything but modpack does not exist)
                     } else {
-                        // server-wide key is set
                         if ($config->exists('api_key') && $config->get('api_key')) { ?>
                             Verify the unique ID (slug) is set in modpack details.
-                        <?php }
-                        // user api key is not set
-                        // elseif (!get_setting('api_key')) { ?>
-                            <!-- Verify your API key is valid and set in <a href="/account">Account Settings</a>. -->
-                        <?php //}
-                        } ?>
+                    <?php }
+                    } ?>
                 </div>
                 <?php } else {
                     $num_downloads2 = number_suffix_string($metric['installs']);

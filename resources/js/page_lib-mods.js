@@ -37,121 +37,50 @@ function remove(name,force) {
     request.send();
 }
 
-mn = 1;
-function sendFile(file, i) {
-    var formData = new FormData();
-    var request = new XMLHttpRequest();
-    formData.set('fiels', file);
-
-    var modloader_mcv = "";
+async function send_mod(file) {
+    let response = undefined;
     if ($('#mcv option').length > 0) {
-        modloader_mcv = $('#mcv option:selected').attr('mc');
+        response = await sendFile(file, $('#mcv option:selected').attr('mc')) // here we await actually getting a response
+    } else {
+        response = await sendFile(file) // here we await actually getting a response
     }
+    
+    if (response.status != "error") {
+        let filename = file.name.replace(/[^\w\-]/g, '_')
+        $('#name-'+filename).text(response['name'])
 
-    formData.set('fallback_mcversion', modloader_mcv)
-    request.open('POST', './functions/add-mod.php');
-    request.upload.addEventListener("progress", function(evt) {
-        if (evt.lengthComputable) {
-            var percentage = evt.loaded / evt.total * 100;
-            $("#" + i).attr('aria-valuenow', percentage + '%');
-            $("#" + i).css('width', percentage + '%');
-            request.onreadystatechange = function() {
-                if (request.readyState == 4 && request.status == 200) {
-                    if ( mn == modcount ) {
-                        $("#btn-done").attr("disabled",false);
-                    } else {
-                        mn = mn + 1;
-                    }
-                    console.log(request.response);
-                    response = JSON.parse(request.response);
-                    switch(response.status) {
-                        case "succ":
-                        {
-                            $("#cog-" + i).hide();
-                            $("#check-" + i).show();
-                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                            $("#" + i).addClass("bg-success");
-                            $("#info-" + i).text(response.message);
-                            $("#" + i).attr("id", i + "-done");
-                            break;
-                        }
-                        case "info":
-                        {
-                            $("#cog-" + i).hide();
-                            $("#inf-" + i).show();
-                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                            $("#" + i).addClass("bg-success");
-                            $("#info-" + i).text(response.message);
-                            $("#" + i).attr("id", i + "-done");
-                            break;
-                        }
-                        case "warn":
-                        {
-                            $("#cog-" + i).hide();
-                            $("#exc-" + i).show();
-                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                            $("#" + i).addClass("bg-warning");
-                            $("#info-" + i).text(response.message);
-                            $("#" + i).attr("id", i + "-done");
-                            break;
-                        }
-                        case "error":
-                        {
-                            $("#cog-" + i).hide();
-                            $("#times-" + i).show();
-                            $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                            $("#" + i).addClass("bg-danger");
-                            $("#info-" + i).text(response.message);
-                            $("#" + i).attr("id", i + "-done");
-                            break;
-                        }
-                    }
+        let mcversion = response['mcversion'];
+        let version = response['version'];
+        let author = response['author'];
+        let name = response['name'];
+        let pretty_name = response['pretty_name'];
+        let num_versions = response['modid'].length;
 
-                    if (response['status']!="error") {
-                        let mcversion = response['mcversion'];
-                        let version = response['version'];
-                        let author = response['author'];
-                        let name = response['name'];
-                        let pretty_name = response['pretty_name'];
-                        let num_versions = response['modid'].length;
-
-                        // if we got arrays, get the first valid entry.
-                        if (author instanceof Array && author.length>=1) {
-                            author = author.find(v => v != null);
-                        }
-                        if (name instanceof Array && name.length>=1) {
-                            name = name.find(v => v != null);
-                        }
-                        if (pretty_name instanceof Array && pretty_name.length>=1) {
-                            pretty_name = pretty_name.find(v => v != null);
-                        }
-
-                        $('#table-available-mods').append(`
-                            <tr id="mod-row-${name[i]}">
-                                <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
-                                <td data-value="${author}" class="d-none d-sm-table-cell">${author}</td>
-                                <td id="mod-row-${name[i]}-num" data-value="${num_versions}">${num_versions}</td>
-                                <td>
-                                    <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
-                                        <button onclick="window.location='./mod?id=${name}'" class="btn btn-primary">Edit</button>
-                                        <button onclick="remove_box('${name}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        `);
-                    }
-                // } else {
-                //     $("#cog-" + i).hide();
-                //     $("#times-" + i).show();
-                //     $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                //     $("#" + i).addClass("bg-danger");
-                //     $("#info-" + i).text("An error occured: " + request.status);
-                //     $("#" + i).attr("id", i + "-done");
-                }
-            }
+        // if we got arrays, get the first valid entry.
+        if (author instanceof Array && author.length>=1) {
+            author = author.find(v => v != null);
         }
-    }, false);
-    request.send(formData);
+        if (name instanceof Array && name.length>=1) {
+            name = name.find(v => v != null);
+        }
+        if (pretty_name instanceof Array && pretty_name.length>=1) {
+            pretty_name = pretty_name.find(v => v != null);
+        }
+
+        $('#table-available-mods').append(`
+            <tr id="mod-row-${name[i]}">
+                <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
+                <td data-value="${author}" class="d-none d-sm-table-cell">${author}</td>
+                <td id="mod-row-${name[i]}-num" data-value="${num_versions}">${num_versions}</td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Actions">
+                        <button onclick="window.location='./mod?id=${name}'" class="btn btn-primary">Edit</button>
+                        <button onclick="remove_box('${name}')" data-toggle="modal" data-target="#removeMod" class="btn btn-danger">Remove</button>
+                    </div>
+                </td>
+            </tr>
+        `)                   
+    }
 }
 
 $("#search").on('keyup',function(){
@@ -173,8 +102,25 @@ $("#search").on('keyup',function(){
     }
 });
 
-async function showFile(file, i) {
-    $("#table-mods").append('<tr><td scope="row">' + file.name + '</td> <td><em id="cog-' + i + '" class="fas fa-cog fa-spin"></em><em id="check-' + i + '" style="display:none" class="text-success fas fa-check"></em><em id="times-' + i + '" style="display:none" class="text-danger fas fa-times"></em><em id="exc-' + i + '" style="display:none" class="text-warning fas fa-exclamation"></em><em id="inf-' + i + '" style="display:none" class="text-info fas fa-info"></em> <small class="text-muted" id="info-' + i + '"></small></h4><div class="progress"><div id="' + i + '" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div></div></td></tr>');
+function showFile(file, i) {
+    return new Promise((resolve, reject) => {
+        let filename = file.name.replace(/[^\w\-]/g, '_')
+        $("#table-mods").append(`<tr>
+            <td id="name-${filename}"scope="row">${file.name}</td> 
+            <td>
+                <em id="cog-${filename}" class="fas fa-cog fa-spin"></em>
+                <em id="check-${filename}" style="display:none" class="text-success fas fa-check"></em>
+                <em id="inf-${filename}" style="display:none" class="text-info fas fa-info"></em>
+                <em id="exc-${filename}" style="display:none" class="text-warning fas fa-exclamation"></em>
+                <em id="times-${filename}" style="display:none" class="text-danger fas fa-times"></em>
+                <small id="info-${filename}" class="text-muted"></small>
+                <div class="progress">
+                    <div id="prog-${filename}" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+                </div>
+            </td>
+        </tr>`)
+        resolve(true)
+    })
 }
 
 
@@ -851,10 +797,11 @@ $('#searchbutton').on('click', async function() {
 });
 
 async function hashFile(file, i) {
+    let filename = file.name.replace(/[^\w\-]/g, '_')
     return new Promise((resolve, reject) => {
         if (!file) {
             console.log('hashFile: File does not exist.')
-            $("#info-" + i).text('File does not exist.');
+            $("#info-"+filename).text('File does not exist.');
             reject(false);
         }
 
@@ -875,14 +822,14 @@ async function hashFile(file, i) {
                 readNextChunk();
             } else {
                 const md5Hash = spark.end();
-                $("#info-" + i).text(`MD5: ${md5Hash}`);
+                $("#info-"+filename).text(`MD5: ${md5Hash}`);
                 resolve(md5Hash);
             }
         }
 
         fileReader.onerror = function () {
             console.log('hashFile: Error reading file.')
-            $("#info-" + i).text('Error reading file.');
+            $("#info-"+filename).text('Error reading file.');
             reject(false);
         }
 
@@ -890,46 +837,50 @@ async function hashFile(file, i) {
     })
 }
 
+    
+$(':file').change(async function() {
+    $("#btn-done").attr("disabled", true);
+
+    $("#upload-card").hide();
+    $("#u-mods").show();
+
+    // show them
+    for (var i = 0; i < this.files.length; i++) {
+        await showFile(this.files[i], i);
+    }
+    // calculate hash
+
+    var hashes = [];
+    for (var i = 0; i < this.files.length; i++) {
+        let hash = await hashFile(this.files[i], i);
+        hashes.push(hash);
+    }
+
+    // upload them
+    for (var i = 0; i < this.files.length; i++) {
+        let file = this.files[i];
+        let response = await getData('functions/check_mod_exists.php?md5='+hashes[i])
+        if (response['status']=='succ') {
+            console.log(`mod ${file} not in database, uploading`)
+            send_mod(file); // no await for this
+        } else {
+            let filename = file.name.replace(/[^\w\-]/g, '_')
+            let name = response['name']
+            console.log(`mod ${file} in database, skipping`)
+            $('#name-'+filename).text(filename)
+            $("#cog-"+filename).hide();
+            $("#inf-"+filename).show();
+            $("#prog-"+filename).removeClass("progress-bar-striped progress-bar-animated");
+            $("#prog-"+filename).addClass("bg-success");
+            $("#info-"+filename).text("Mod already in database.");
+            $("#prog-"+filename).attr("id", i + "-done");
+            $("#btn-done").attr("disabled", false)
+        }
+    }
+});
+
 $(document).ready(function() {
     $("#nav-mods").trigger('click');
-    
-    $(':file').change(async function() {
-        $("#upload-card").hide();
-        $("#u-mods").show();
-        modcount = this.files.length;
-        // show them
-        for (var i = 0; i < this.files.length; i++) {
-            var file = this.files[i];
-            await showFile(file, i);
-        }
-        // calculate hash
-
-        var hashes = [];
-        for (var i = 0; i < this.files.length; i++) {
-            var file = this.files[i];
-            let hash = await hashFile(file, i);
-            hashes.push(hash);
-        }
-
-        // upload them
-        for (var i = 0; i < this.files.length; i++) {
-            var file = this.files[i];
-            let api_response = await getData('functions/check_mod_exists.php?md5='+hashes[i])
-            if (api_response['status']=='succ') {
-                console.log(`mod ${file} not in database, uploading`)
-                sendFile(file, i);
-            } else {
-                console.log(`mod ${file} in database, skipping`)
-                $("#cog-" + i).hide();
-                $("#inf-" + i).show();
-                $("#" + i).removeClass("progress-bar-striped progress-bar-animated");
-                $("#" + i).addClass("bg-success");
-                $("#info-" + i).text("Mod already in database.");
-                $("#" + i).attr("id", i + "-done");
-                $("#btn-done").attr("disabled", false)
-            }
-        }
-    });
 
     let loop_count=0;
     while (installed==null && loop_count < 3) {
