@@ -1422,39 +1422,14 @@ if (!uri("/login")) {
                 die('{"status":"error","message":"Could not start transaction"}');
             }
 
-            $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'mod' ORDER BY `id` DESC");
-
-            if (!empty($mods)) {
-                $modsi = array();
-                $modslugs = array();
-                foreach ($mods as $mod) {
-                    $modversionsq = $db->query("SELECT `version`,`author` FROM `mods` WHERE `type` = 'mod' AND `name` = '{$db->sanitize($mod['name'])}' ORDER BY `version` DESC");
-                    $modversions = array();
-                    $modauthors = array();
-
-                    foreach ($modversionsq as $modversionsa) {
-                        array_push($modversions, $modversionsa['version']);
-                        foreach (explode(", ", $modversionsa['author']) as $a) {
-                            if (!in_array($a, $modauthors)) {
-                                array_push($modauthors, $a);
-                            }
-                        }
-                    }
-                    $modarray = array(
-                        "id" => $mod['id'],
-                        "name" => $mod['name'],
-                        "pretty_name" => $mod['pretty_name'],
-                        "versions" => $modversions,
-                        "author" => $modauthors,
-                        "mcversion" => $mod['mcversion']
-                    );
-
-                    if (!in_array($mod['name'], $modslugs)) {
-                        array_push($modslugs, $mod['name']);
-                        array_push($modsi, $modarray);
-                    }
-                }
-            }
+            // can do GROUP_CONCAT instead of count if we need the actual versions or ids
+            $mods = $db->query("
+                SELECT id,name,pretty_name,author,mcversion,COUNT(version) versions
+                FROM mods
+                WHERE type = 'mod'
+                GROUP BY name
+                ORDER BY id
+            ") ?: [];
 
             $forgesq = $db->query("SELECT * FROM mods WHERE type='forge'");
 
@@ -1632,7 +1607,7 @@ if (!uri("/login")) {
                     <tbody id="table-available-mods">
                         <?php
                         if (!empty($mods)) {
-                            foreach ($modsi as $mod) { 
+                            foreach ($mods as $mod) { 
                                 if (empty($mod['name'])) { ?>
                                     <tr>
                                         <td class="table-danger">Unknown</td>
@@ -1641,9 +1616,9 @@ if (!uri("/login")) {
                                         <td></td>
                                     </tr>
                                 <?php } else {
-                                    $author = (!empty($mod['author'])) ? implode(", ", $mod['author']) : "Unknown";
+                                    $author = (!empty($mod['author'])) ? $mod['author'] : "Unknown";
                                     $prettyname = (!empty($mod['pretty_name'])) ? $mod['pretty_name'] : "Unknown";
-                                    $modcount = (!empty($mod['versions'])) ? count($mod['versions']) : 0;
+                                    $modcount = (!empty($mod['versions'])) ? $mod['versions'] : 0;
                                 ?>
                                 <tr id="mod-row-<?php echo $mod['name'] ?>">
                                     <td scope="row"><?php echo $prettyname ?></td>
@@ -1694,11 +1669,12 @@ if (!uri("/login")) {
                 if (!is_numeric($_GET['id'])) {
                     die("Malformed id");
                 }
-                $mres = $db->query("SELECT * FROM `mods` WHERE `id` = {$_GET['id']}");
-                if ($mres) {
-                    assert(sizeof($mres) == 1);
-                    $mod = $mres[0];
+                $mods = $db->query("SELECT * FROM `mods` WHERE `id` = {$_GET['id']}") ?: [];
+                if (!$mods) {
+                    die("Invalid entry");
                 }
+                $mod = $mods[0];
+                
             } ?>
         <div class="main">
             <script>document.title = 'Add Mod - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -1758,16 +1734,15 @@ if (!uri("/login")) {
             $used_loaders = [];
             $installed_loaders = [];
 
-            $modsq = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge' ORDER BY `id` DESC");
+            $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'forge' ORDER BY `id` DESC") ?: [];
 
-            if ($modsq) {
-                foreach ($modsq as $mod) {
-                    if (in_array($mod['id'], $used_modloader_ids)) {
-                        array_push($used_loaders, $mod['loadertype'].'-'.$mod['mcversion'].'-'.$mod['version']);
-                    }
-                    array_push($installed_loaders, $mod['loadertype'].'-'.$mod['mcversion'].'-'.$mod['version']);
+            foreach ($mods as $mod) {
+                if (in_array($mod['id'], $used_modloader_ids)) {
+                    array_push($used_loaders, $mod['loadertype'].'-'.$mod['mcversion'].'-'.$mod['version']);
                 }
+                array_push($installed_loaders, $mod['loadertype'].'-'.$mod['mcversion'].'-'.$mod['version']);
             }
+            
 
             if (!$db->commit()) {
                 die('{"status":"error","message":"Could not commit changes"}');
@@ -1883,10 +1858,9 @@ if (!uri("/login")) {
                     </thead>
                     <tbody id="forge-available">
                         <?php
-                        if ($modsq) {
-                            foreach ($modsq as $mod) {
-                                $remove_box_str = "remove_box({$mod['id']}, '{$mod['loadertype']}', '{$mod['mcversion']}', '{$mod['version']}')";
-                                ?>
+                        foreach ($mods as $mod) {
+                            $remove_box_str = "remove_box({$mod['id']}, '{$mod['loadertype']}', '{$mod['mcversion']}', '{$mod['version']}')";
+                            ?>
                             <tr id="mod-row-<?php echo $mod['id'] ?>">
                                 <td scope="row"><?php echo $mod['mcversion'] ?></td>
                                 <td><?php echo $mod['version'] ?></td>
@@ -1898,10 +1872,10 @@ if (!uri("/login")) {
                                 </td>
                                 <td><em style="display: none" class="fas fa-cog fa-spin fa-sm"></em></td>
                             </tr>
-                            <?php
-                            }
+                        <?php
                         }
-            ?>
+                        
+                        ?>
                     </tbody>
                 </table>
             </div>
@@ -1956,7 +1930,10 @@ if (!uri("/login")) {
         </div>
         <?php
         } elseif (uri('/lib-others')) {
-            $modsq = $db->query("SELECT * FROM `mods` WHERE `type` = 'other' ORDER BY `id` DESC");
+            $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'other' ORDER BY `id` DESC") ?: [];
+            if (!$mods) {
+                die("Invalid entry");
+            }
             ?>
         <script>document.title = 'Other Files - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
@@ -2011,8 +1988,7 @@ if (!uri("/login")) {
                     </thead>
                     <tbody id="table-mods">
                         <?php
-            if ($modsq) {
-                foreach ($modsq as $mod) {
+                foreach ($mods as $mod) {
                     if (empty($mod['name'])) { ?>
                         <tr>
                             <td class="table-danger">Unknown</td>
@@ -2034,7 +2010,6 @@ if (!uri("/login")) {
                             <?php
                     }
                 }
-            }
             ?>
                     </tbody>
                 </table>
@@ -2066,11 +2041,11 @@ if (!uri("/login")) {
             if (!is_numeric($_GET['id'])) {
                 die("Malformed id");
             }
-            $mres = $db->query("SELECT * FROM `mods` WHERE `id` = {$_GET['id']}");
-            if ($mres) {
-                assert(sizeof($mres) == 1);
-                $file = $mres[0];
+            $mods = $db->query("SELECT * FROM `mods` WHERE `id` = {$_GET['id']}") ?: [];
+            if (!$mods) {
+                die("Invalid entry");
             }
+            $file = $mods[0];
 
             $zip = new ZipArchive();
             $paths = [];
@@ -2113,15 +2088,18 @@ if (!uri("/login")) {
                 die("Malformed id");
             }
 
-            $mres = $db->query("SELECT * FROM mods WHERE name = '{$_GET['id']}'");
-
+            $mods = $db->query("SELECT * FROM mods WHERE name = '{$_GET['id']}'") ?: [];
+            if (!$mods) {
+                die("Invalid entry");
+            }
+            
             $mod_slug = '';
             $mod_name = '';
             $mod_description = '';
             $mod_author = '';
 
             // get details from first mod version
-            foreach ($mres as $mod) {
+            foreach ($mods as $mod) {
                 $mod_slug = $mod['name'];
                 $mod_name = $mod['pretty_name'];
                 $mod_description = $mod['description'];
@@ -2153,7 +2131,7 @@ if (!uri("/login")) {
                         </tr>
                     </thead>
                     <tbody id="table-mods">
-                    <?php foreach ($mres as $mod) { ?>
+                    <?php foreach ($mods as $mod) { ?>
                         <tr id="mod-row-<?php echo $mod['id'] ?>">
                             <td <?php if (empty($mod['version'])) {
                                 echo 'class="table-danger"';
@@ -2224,11 +2202,11 @@ if (!uri("/login")) {
             if (!is_numeric($_GET['id'])) {
                 die("Malformed id");
             }
-            $mres = $db->query("SELECT * FROM `mods` WHERE `id` = {$_GET['id']}");
-            if ($mres) {
-                assert(sizeof($mres) == 1);
-                $mod = $mres[0];
+            $mods = $db->query("SELECT * FROM `mods` WHERE `id` = {$_GET['id']}") ?: [];
+            if (!$mods) {
+                die("Invalid entry");
             }
+            $mod = $mods[0];
             ?>
         <div class="main">
             <script>document.title = 'Solder.cf - Mod - <?php echo addslashes($mod['pretty_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
@@ -2237,7 +2215,7 @@ if (!uri("/login")) {
                     <em class="fas fa-arrow-left"></em> Back
                 </button><br />
                 <h3>Edit <?php echo $mod['pretty_name']." ".$mod['version']; ?></h3>
-                <form method="POST" action="./functions/edit-mod.php?id=<?php echo $_GET['id'] ?>">
+                <form method="POST" action="./functions/edit-mod.php">
                         <input required class="form-control" type="text" name="version" placeholder="Mod Version" value="<?php echo $mod['version'] ?>"><br />
                         <div class="input-group">
                             <input class="form-control" type="text" name="author" id="author-input" placeholder="Mod Author" value="<?php echo $mod['author'] ?>">
@@ -2265,6 +2243,7 @@ if (!uri("/login")) {
                         <input required class="form-control" type="text" name="md5" placeholder="File md5 Hash" value="<?php echo $mod['md5'] ?>"><br />
                         <input required class="form-control" required type="text" name="mcversion" placeholder="Minecraft Version" value="<?php echo $mod['mcversion'] ?>"><br />
                         <input required class="form-control" required type="text" name="loadertype" placeholder="forge/fabric/etc." value="<?php echo $mod['loadertype'] ?>"><br />
+                        <input type="hidden" name="id" value="<?php echo $_GET['id'] ?>">
                         <input type="submit" name="submit" value="Save" class="btn btn-success">
                         <input type="submit" name="submit" value="Save and close" class="btn btn-success">
                 </form>
@@ -2392,7 +2371,7 @@ if (!uri("/login")) {
                         ?></pre><?php
                     }
                 }
-            ?></p>
+                ?></p>
                     </div>
 
                     <?php if ($update_status === OUTDATED) { ?>
