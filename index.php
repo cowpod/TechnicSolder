@@ -2206,7 +2206,7 @@ if (!uri("/login")) {
             </div>
             <div class="card">
                 <h3>Details</h3><hr>
-                <form method="POST" action="./functions/edit-mods.php">
+                <form method="POST" action="./functions/edit-mod.php">
                     <input id="pn" required class="form-control" type="text" name="pretty_name" placeholder="Mod name" value="<?php echo $mod_name ?>" />
                     <br />
                     <input type="hidden" name="name" value="<?php echo $mod_slug ?>"/>
