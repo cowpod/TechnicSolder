@@ -149,7 +149,7 @@ final class modInfo
                             $mod_info['neoforge']['authors'] = $mod['authors'];
                         }
                         if (!empty($mod['description'])) {
-                            $mod_info['neoforge']['description'] = $mod['description'];
+                            $mod_info['neoforge']['description'] = trim($mod['description']);
                         }
                         break;
                     }
@@ -249,7 +249,7 @@ final class modInfo
                             $mod_info['forge']['authors'] = $mod['authors'];
                         }
                         if (!empty($mod['description'])) {
-                            $mod_info['forge']['description'] = $mod['description'];
+                            $mod_info['forge']['description'] = trim($mod['description']);
                         }
                         break;
                     }
@@ -351,7 +351,7 @@ final class modInfo
                     $mod_info['forge_old']['authors'] = implode(', ', $parsed['authorList']);
                 }
                 if (!empty($parsed['description'])) {
-                    $mod_info['forge_old']['description'] = $parsed['description'];
+                    $mod_info['forge_old']['description'] = trim($parsed['description']);
                 }
                 if (!empty($parsed['mcversion'])) {
                     $mod_info['forge_old']['mcversion'] = $parsed['mcversion'];
@@ -428,7 +428,7 @@ final class modInfo
                     $mod_info['fabric']['authors'] = implode(', ', $parsed['authors']);
                 }
                 if (!empty($parsed['description'])) {
-                    $mod_info['fabric']['description'] = $parsed['description'];
+                    $mod_info['fabric']['description'] = trim($parsed['description']);
                 }
 
                 // each dependency is a key=value entry.
