@@ -143,9 +143,9 @@ function update_mod_entries()
     require('modInfo.php');
     $mi = new modInfo();
 
-    $mods = $db->query("SELECT * FROM mods WHERE type='mod'");
+    $modsq = $db->query("SELECT * FROM mods WHERE type='mod'") ?: [];
 
-    foreach ($mods as $mod) {
+    foreach ($modsq as $mod) {
         $zip = new ZipArchive();
         if ($zip->open("../mods/{$mod['filename']}") === true) {
             for ($i = 0; $i < $zip->numFiles; $i++) {
@@ -223,6 +223,30 @@ function update_mod_entries()
             }
         }
         $zip->close();
+    }
+
+    // set filesize
+    $modsq = $db->query("
+        SELECT *
+        FROM mods
+        WHERE type = 'mod'
+        AND (
+            filesize = ''
+            OR filesize IS NULL
+        )
+    ") ?: [];
+    foreach ($modsq as $mod) {
+        $mod_zip_path = '../mods/'.$mod['filename'];
+        if (!file_exists($mod_zip_path)) {
+            echo "File doesn't exist! Skipping. (mod id = {$mod['id']} filename = {$mod['filename']}<br/>";
+            continue;
+        }
+        $zip_size = filesize($mod_zip_path);
+        $db->execute("
+            UPDATE mods 
+            SET filesize = {$zip_size} 
+            WHERE id = {$mod['id']}
+        ");
     }
 
     rrmdir('../upgrade_work');
@@ -509,17 +533,69 @@ function upgrade_config_version() {
                     die("Couldn't update config version to ".CONFIG_VERSION." (db drop column clients from table modpacks)");
                 }
 
-
                 if (!$db->commit()) {
                     die('{"status":"error","message":"Could not commit changes"}');
                 }                
 
                 $config->set('config_version', 2);
-                echo "Updated config version to ".CONFIG_VERSION;
+                echo "Updated config version from 1 to 2<br/>";
+            }
+
+            if ($config_version == 2) {
+                echo 'Updating config version from 2 to 3<br/>';
+
+                require_once("db.php");
+                $db = new Db();
+                if (!$db->connect()) {
+                    die("Couldn't update config version to ".CONFIG_VERSION." (db connect)");
+                }
+
+                if (!$db->beginTransaction(true)) {
+                    die('{"status":"error","message":"Could not start transaction"}');
+                }
+
+                echo 'Setting missing filesizes<br/>';
+                // set filesize
+                $modsq = $db->query("
+                    SELECT *
+                    FROM mods
+                    WHERE type = 'mod'
+                    AND (
+                        filesize = ''
+                        OR filesize IS NULL
+                    )
+                ") ?: [];
+                foreach ($modsq as $mod) {
+                    echo "mod id = {$mod['id']} filename = {$mod['filename']}<br/>";
+                    $mod_zip_path = '../mods/'.$mod['filename'];
+                    if (!file_exists($mod_zip_path)) {
+                        echo "File doesn't exist. Skipping.<br/>";
+                        continue;
+                    }
+                    $zip_size = filesize($mod_zip_path);
+                    if ($filesize === false) {
+                        echo "Couldn't calculate file size. Skipping.<br/>";
+                        continue;
+                    }
+                    if (!$db->execute("
+                        UPDATE mods 
+                        SET filesize = {$zip_size} 
+                        WHERE id = {$mod['id']}
+                    ")) {
+                        echo 'SQL UPDATE error. Skipping.<br/>';
+                    }
+                }
+
+                if (!$db->commit()) {
+                    die('{"status":"error","message":"Could not commit changes"}');
+                }                
+
+                $config->set('config_version', 3);
+                echo "Updated config version from 2 to 3<br/>";
             }
 
             // other future cases...?
-            if ($config_version == 2) {
+            if ($config_version == 3) {
                 die("Nothing to do.");
             }
 

@@ -133,7 +133,6 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
     }
     if ($modq) {
         foreach ($modq as $mod) {
-            $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
             $modentry = [
                 'id' => $mod['id'],
                 'pretty_name' => $mod['pretty_name'],
@@ -142,7 +141,7 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
                 'mcversion' => $mod['mcversion'],
                 'md5' => $mod['md5'],
                 'url' => $mod['url'],
-                'filesize' => $filesize
+                'filesize' => $mod['filesize']
             ];
 
             array_push($modslist, $modentry);
@@ -168,7 +167,6 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
     }
     if ($modq) {
         foreach ($modq as $mod) {
-            $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
             $modentry = [
                 'id' => $mod['id'],
                 'pretty_name' => htmlspecialchars($mod['pretty_name']),
@@ -177,7 +175,7 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
                 'mcversion' => $mod['mcversion'],
                 'md5' => $mod['md5'],
                 'url' => !empty($mod['url']) ? $mod['url'] : $protocol.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'],
-                'filesize' => $filesize,
+                'filesize' => $mod['filesize'],
                 'author' => htmlspecialchars($mod['author']),
                 'loader' => $mod['loadertype']
             ];
@@ -194,7 +192,6 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
         die('{"error":"Mod does not exist."}');
     }
     foreach ($modq as $mod) {
-        $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
         $modentry = [
             'pretty_name' => $mod['pretty_name'],
             'name' => $mod['name'],
@@ -202,7 +199,7 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
             'mcversion' => $mod['mcversion'],
             'md5' => $mod['md5'],
             'url' => $mod['url'],
-            'filesize' => $filesize
+            'filesize' => $mod['filesize']
         ];
         array_push($modslist, $modentry);
     }
@@ -323,7 +320,6 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
                     continue;
                 }
 
-                $filesize = isset($mod['filesize']) ? $mod['filesize'] : 0;
                 if (isset($_GET['include']) && $_GET['include'] == "mods") {
                     $mods[$modnumber] = [
                         "name" => $mod['name'],
@@ -335,7 +331,7 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
                         "description" => $mod['description'],
                         "link" => $mod['link'],
                         "donate" => $mod['donlink'],
-                        "filesize" => $filesize
+                        "filesize" => $mod['filesize']
                     ];
                 } else {
                     $mods[$modnumber] = [
@@ -343,7 +339,7 @@ if (($arg = endpoint_arg($url, 'api/')) === true) {
                         "version" => $mod['version'],
                         "md5" => $mod['md5'],
                         "url" => !empty($mod['url']) ? $mod['url'] : $protocol.$config->get('host').$config->get('dir').$mod['type']."s/".$mod['filename'],
-                        "filesize" => $filesize
+                        "filesize" => $mod['filesize']
                     ];
                 }
                 $modnumber++;
