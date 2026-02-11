@@ -140,60 +140,39 @@ final class Db
      */
     public function query(string $querystring): array|false
     {
-        // error_log("db->query: '{$querystring}'");
         if (empty($querystring)) {
             return false;
         }
-        $result_array = [];
         try {
-            $stmt = $this->conn->prepare($querystring);
-            $stmt->execute();
-            $stmt->setFetchMode(PDO::FETCH_ASSOC);
-            foreach ($stmt->fetchAll() as $row) {
-                array_push($result_array, $row);
-            }
-            return $result_array;
+            $stmt = $this->conn->query($querystring);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("db.php: query(): ".$e->getMessage());
-            // if ($this->conn->inTransaction()) {
-            //     $this->rollBack();
-            // }
             return false;
         }
     }
 
     public function execute(string $querystring): bool
     {
-        // error_log("db->execute: '{$querystring}'");
         if (empty($querystring)) {
             return false;
         }
         try {
-            $stmt = $this->conn->prepare($querystring);
-            $result = $stmt->execute();
-            return $result;
+            return $this->conn->exec($querystring);
         } catch (PDOException $e) {
             error_log("db.php: execute(): ".$e->getMessage());
-            // if ($this->conn->inTransaction()) {
-            //     $this->rollBack();
-            // }
             return false;
         }
     }
 
     public function beginTransaction(bool $tryAgain = false, int $tryMaxCount = 3) {
         $ret = false;
-        // if ($this->conn->inTransaction()) {
-        //     error_log('db.php: beginTransaction(): Already in transaction for beginTransaction!?');
-        //     return $ret;
-        // }
         try {
             if ($this->config->get('db-type')!='sqlite') {
                 $this->conn->exec("SET autocommit=0");
             }
             
             $ret = $this->conn->beginTransaction();
-            // error_log("db.php: beginTransaction(): started? inTransaction=".($this->conn->inTransaction() ? "yes" : "no"));
         } catch (PDOException $e) {
             if ($this->config->get('db-type')!='sqlite') {
                 $this->conn->exec("SET autocommit=1");
@@ -205,9 +184,7 @@ final class Db
                 return $this->beginTransaction($tryAgain, $tryMaxCount - 1);
             } else {
                 error_log("db.php: beginTransaction(): ".$e->getMessage());
-                // if ($this->conn->inTransaction()) {
-                    $this->rollBack();
-                // }
+                $this->rollBack();
                 return false;
             }
         }
@@ -216,10 +193,6 @@ final class Db
 
     public function commit() {
         $ret = false;
-        // if (!$this->conn->inTransaction()) {
-        //     error_log('db.php: commit(): Not in transaction for commit!?');
-        //     return $ret;
-        // }
         try {
             $ret = $this->conn->commit();
             if ($this->config->get('db-type')!='sqlite') {
@@ -227,9 +200,7 @@ final class Db
             }
         } catch (PDOException $e) {
             error_log("db.php: commit(): ".$e->getMessage());
-            // if ($this->conn->inTransaction()) {
-                $this->rollBack();
-            // }
+            $this->rollBack();
             return false;
         }
         return $ret;
@@ -237,10 +208,6 @@ final class Db
 
     public function rollBack() {
         $ret = false;
-        // if (!$this->conn->inTransaction()) {
-        //     error_log('db.php: rollBack(): Not in transaction for rollBack!?');
-        //     return $ret;
-        // }
         try {
             $ret = $this->conn->rollBack();
             if ($this->config->get('db-type')!='sqlite') {
@@ -272,13 +239,11 @@ final class Db
     }
     public function insert_id(): int
     {
-        // error_log("db.php: insert_id(): ".$this->conn->lastInsertId());
         return $this->conn->lastInsertId();
     }
 
     public function error(): string
     {
-        // error_log("db.php: error(): ".$this->conn->errorInfo());
         return $this->conn->errorInfo();
     }
 }
