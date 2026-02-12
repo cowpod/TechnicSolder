@@ -47,8 +47,8 @@ $connection_failed = false;
 if (isset($_POST['host'])) {
     $api_key = $_POST['api_key'] ?: getenv('SOLDER_API_KEY') ?: '';
 
-    $host = strtolower($_POST['host'] ?: getenv('HOST') ?: '');
-    $dir = $_POST['dir'] ?: getenv('DIR') ?: '/';
+    $host = strtolower($_POST['host'] ?: getenv('HOST') ?: $_SERVER['HTTP_HOST']);
+    $dir = $_POST['dir'] ?: getenv('DIR') ?: preg_replace('#/configure/?$#', '', $_SERVER['REQUEST_URI']);
 
     $email = strtolower($_POST['email'] ?: getenv('ADMIN_EMAIL') ?: '');
     $pass = password_hash($_POST['pass'] ?: GETENV('ADMIN_PASSWORD') ?: '', PASSWORD_DEFAULT);
@@ -451,10 +451,10 @@ if (isset($_GET['reconfig'])) { ?>
                     <h4>Database</h4>
                     <div class="form-group">
                         <select required name="db-type" class="form-control" id="db-type">
+                            <option value="sqlite" <?php if (getenv('DB_TYPE') !== 'mysql') echo 'selected' ?>>SQLite</option>
                             <option value="mysql" <?php if (getenv('DB_TYPE') === 'mysql') echo 'selected' ?>>MySQL</option>
-                            <option value="sqlite" <?php if (getenv('DB_TYPE') === 'sqlite') echo 'selected' ?>>SQLite</option>
                         </select>
-                        <div id="mysql-options">
+                        <div id="mysql-options" <?php if (getenv('DB_TYPE') !== 'mysql') echo 'style="display:none;"' ?>>
                             <br/>
                             <input <?php if (strtolower(getenv('DB_TYPE')) === 'mysql') echo 'required' ?> name="db-host" type="text" class="form-control" id="db-host" placeholder="Database host" <?php if (!empty(getenv('MYSQL_HOST'))) echo 'value="'.getenv('MYSQL_HOST').'"' ?>><br />
                             <input <?php if (strtolower(getenv('DB_TYPE')) === 'mysql') echo 'required' ?> name="db-name" type="text" class="form-control" id="db-name" placeholder="Database name" <?php if (!empty(getenv('MYSQL_NAME'))) echo 'value="'.getenv('MYSQL_NAME').'"' ?>><br />
@@ -491,7 +491,7 @@ if (isset($_GET['reconfig'])) { ?>
                         <input required id="dir" class="form-control" type="text" name="dir" placeholder="Install Directory" <?php if (getenv('DIR')) echo 'value="'.getenv('DIR').'"' ?>>
                         <small class="form-text text-muted">Must be '/', or start and end with a '/'.</small><br/>
                     </div>
-                    <button id="save" type="submit" class="btn btn-success btn-block btn-lg" disabled>Save</button>
+                    <button id="save" type="submit" class="btn btn-success btn-block btn-lg">Continue</button>
                 </form>
                 <script type="text/javascript">
                     function validatePassword(password) {
@@ -524,39 +524,33 @@ if (isset($_GET['reconfig'])) { ?>
                         } else {
                             $("#pass").addClass("is-invalid");
                             $("#pass").removeClass("is-valid");
-                            $("#save").attr("disabled", true);
                         }
                         if ($("#pass2").val()==$("#pass").val() && validatePassword($("#pass2").val())) {
                             $("#pass2").addClass("is-valid");
                             $("#pass2").removeClass("is-invalid");
                             $("#pass").addClass("is-valid");
                             $("#pass").removeClass("is-invalid");
-                            $("#save").attr("disabled", false);
                         } else if($("#pass2").val()!="") {
                             $("#pass2").addClass("is-invalid");
                             $("#pass2").removeClass("is-valid");
-                            $("#save").attr("disabled", true);
                         }
                     });
                     $("#pass2").on("keyup", function() {
                         if ($("#pass2").val()==$("#pass").val() && validatePassword($("#pass2").val())) {
                             $("#pass2").addClass("is-valid");
                             $("#pass2").removeClass("is-invalid");
-                            $("#save").attr("disabled", false);
                         } else {
                             $("#pass2").addClass("is-invalid");
                             $("#pass2").removeClass("is-valid");
-                            $("#save").attr("disabled", true);
                         }
                     });
                     $('#db-type').change(function() {
-                        if ($(this).val()=="sqlite") {
+                        if ($(this).val()==="sqlite") {
                             $("#db-host").removeAttr('required');
                             $("#db-user").removeAttr('required');
                             $("#db-name").removeAttr('required');
                             $("#db-pass").removeAttr('required');
                             $("#mysql-options").hide();
-                            $("#save").attr("disabled", false);
                             $("#errtext").hide();
                         } else {
                             $("#db-host").attr('required','required');
@@ -579,12 +573,10 @@ if (isset($_GET['reconfig'])) { ?>
                                     $("#errtext").text("Can't connect to database");
                                     $("#errtext").removeClass("text-muted text-success");
                                     $("#errtext").addClass("text-danger");
-                                    $("#save").attr("disabled", true);
                                 } else {
                                     $("#errtext").text("Connected to database");
                                     $("#errtext").removeClass("text-muted text-danger");
                                     $("#errtext").addClass("text-success");
-                                    $("#save").attr("disabled", false);
                                 }
                             }
                         }
@@ -609,11 +601,9 @@ if (isset($_GET['reconfig'])) { ?>
                         if ($("#api_key").val().length==32 && /^[a-zA-Z0-9]+$/.test($('#api_key').val())) {
                             $("#api_key").addClass("is-valid");
                             $("#api_key").removeClass("is-invalid");
-                            $("#save").attr("disabled", false);
                         } else {
                             $("#api_key").removeClass("is-valid");
                             $("#api_key").addClass("is-invalid");
-                            $("#save").attr("disabled", true);
                         }
                     });
 
