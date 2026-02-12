@@ -25,9 +25,9 @@ services:
       - db:/var/lib/mysql:Z
     environment:
       - MYSQL_RANDOM_ROOT_PASSWORD=1
-      - MYSQL_PASSWORD=solder
       - MYSQL_DATABASE=solder
       - MYSQL_USER=solder
+      - MYSQL_PASSWORD=solder
     networks:
       - default
     container_name: solder-db
@@ -38,6 +38,17 @@ services:
     ports:
       - 80:80
     environment:
+      - SOLDER_API_KEY=
+      - ADMIN_EMAIL=
+      - ADMIN_PASSWORD=
+      - ADMIN_NAME=
+      - HOST=
+      - DIR=/
+      - DB_TYPE=mysql
+      - MYSQL_HOST=db
+      - MYSQL_NAME=solder
+      - MYSQL_USER=solder
+      - MYSQL_PASSWORD=solder
       - CACHE=redis
       - REDIS_HOST=redis
       - REDIS_PORT=6379

@@ -45,17 +45,14 @@ $db = new Db();
 $connection_failed = false;
 
 if (isset($_POST['host'])) {
-    // OLD HASHING METHOD (INSECURE)
-    // $_POST['pass'] = hash("sha256",$_POST['pass']."Solder.cf");
-    $_POST['pass'] = password_hash($_POST['pass'], PASSWORD_DEFAULT);
+    $api_key = $_POST['api_key'] ?: getenv('SOLDER_API_KEY') ?: '';
 
-    // todo: hash password client-side
+    $host = strtolower($_POST['host'] ?: getenv('HOST') ?: '');
+    $dir = $_POST['dir'] ?: getenv('DIR') ?: '/';
 
-    $email = strtolower($_POST['email']);
-    $name = $_POST['author'];
-    $pass = $_POST['pass'];
-    $api_key = $_POST['api_key'];
-    $api_key_serverwide = true; //isset($_POST['api_key_serverwide']) ? true : false;
+    $email = strtolower($_POST['email'] ?: getenv('ADMIN_EMAIL') ?: '');
+    $pass = password_hash($_POST['pass'] ?: GETENV('ADMIN_PASSWORD') ?: '', PASSWORD_DEFAULT);
+    $name = $_POST['author'] ?: getenv('ADMIN_NAME') ?: '';
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         die('Bad input data; email');
@@ -63,42 +60,34 @@ if (isset($_POST['host'])) {
     if (!preg_match("/^[a-zA-Z\s\-\.\s]+$/", $name)) {
         die("Bad input data; name");
     }
-    // if (!preg_match("/^[a-zA-Z0-9+\/]+={,2}$/", $pass)) {
-    //     die("Bad input data; pass");
-    // }
     if (!ctype_alnum($api_key) || strlen($api_key) != 32) {
         die("Bad input data; api_key");
     }
 
-    $dbtype = strtolower($_POST['db-type']);
-    $dbhost = strtolower($_POST['db-host']);
-    $dbuser = $_POST['db-user'];
-    $dbpass = $_POST['db-pass'];
-    $dbname = $_POST['db-name'];
-    $host = strtolower($_POST['host']);
-    $dir = $_POST['dir'];
+    // default to whatever works 'sqlite'
+    $dbtype = $_POST['db-type'] ?: getenv('DB_TYPE') ?: 'sqlite';
+    $dbhost = $_POST['db-host'] ?: getenv('DB_HOST') ?: '';
+    $dbname = $_POST['db-name'] ?: getenv('DB_NAME') ?: '';
+    $dbuser = $_POST['db-user'] ?: getenv('DB_USER') ?: '';
+    $dbpass = $_POST['db-pass'] ?: getenv('DB_PASS') ?: '';
 
-    // first try the provided _POST values.
-    // then try environment values.
-    // then default values.
-    $cache = !empty($_POST['cache']) ? $_POST['cache'] : (getenv('CACHE') ?: 'none');
-    $redishost = !empty($_POST['redis-host']) ? $_POST['redis-host'] : (getenv('REDIS_HOST') ?: '');
-    $redisport = !empty($_POST['redis-port']) ? $_POST['redis-port'] : (getenv('REDIS_PORT') ?: '');
-    $redispassword = !empty($_POST['redis-password']) ? $_POST['redis-password'] : (getenv('REDIS_PASSWORD') ?: '');
-
-    if ($dbtype != "sqlite") {
-        if (!ctype_alnum($dbtype) || !ctype_alnum($dbuser) || !ctype_alnum($dbname)) {
-            die("Bad input data; db type/user/name");
-        }
-        if (!preg_match("/^[a-z0-9\.\-]+$/", $dbhost)) {
-            die("Bad input data; db host");
-        }
-    } else {
-        // sqlite doesn't need these
+    if ($dbtype === 'sqlite') {
         $dbhost = '';
         $dbuser = '';
         $dbpass = '';
         $dbname = '';
+    }
+
+    // default to whatever works 'none'
+    $cache         = $_POST['cache']          ?: getenv('CACHE')          ?: 'none';
+    $redishost     = $_POST['redis-host']     ?: getenv('REDIS_HOST')     ?: '';
+    $redisport     = $_POST['redis-port']     ?: getenv('REDIS_PORT')     ?: '';
+    $redispassword = $_POST['redis-password'] ?: getenv('REDIS_PASSWORD') ?: '';
+
+    if ($cache === 'none') {
+        $redishost = '';
+        $redisport = '';
+        $redispassword = '';
     }
 
     if (!preg_match("/^[a-z0-9\.\-]+$/", $host)) {
@@ -140,9 +129,9 @@ if (isset($_POST['host'])) {
         'modrinth_integration' => 'on',
         'enable_self_updater' => 'on'
     ];
-    if ($api_key_serverwide) {
-        $config_contents['api_key'] = $api_key;
-    }
+
+    $config_contents['api_key'] = $api_key;
+
     if (strtolower($version['stream']) === 'dev') {
         $config_contents['dev_builds'] = 'on';
     }
@@ -156,7 +145,7 @@ if (isset($_POST['host'])) {
         }
         
         $result = true;
-        if ($_POST['db-type'] == 'sqlite') {
+        if ($dbtype == 'sqlite') {
             // sqlite: bigtext,varchar => text
             // int => integer
             // unsigned doesn't exist.
@@ -434,29 +423,25 @@ if (isset($_GET['reconfig'])) { ?>
                     <div class="form-group">
                         <label for="email">Login credentials</label>
                         <input required type="text" class="form-control" name="email" aria-describedby="emailHelp"
-                               placeholder="Your Email"><br />
+                               placeholder="Your Email" <?php if (getenv('ADMIN_EMAIL')) echo 'value="'.getenv('ADMIN_EMAIL').'"' ?>><br />
                         <input required type="password" class="form-control" id="pass" name="pass"
-                               placeholder="Your new password"><br />
+                               placeholder="Your new password" <?php if (getenv('ADMIN_PASSWORD')) echo 'value="'.getenv('ADMIN_PASSWORD').'"' ?>><br />
                         <input required type="password" class="form-control" id="pass2"
-                               placeholder="Confirm your password">
+                               placeholder="Confirm your password" <?php if (getenv('ADMIN_PASSWORD')) echo 'value="'.getenv('ADMIN_PASSWORD').'"' ?>>
                         <small id="emailHelp" class="form-text text-muted">
                         </small>
                     </div>
                     <div class="form-group">
                         <label for="name">Authoring name</label>
                         <input required type="text" class="form-control" name="author" id="name"
-                               aria-describedby="nameHelp" placeholder="Your Name">
+                               aria-describedby="nameHelp" placeholder="Your Name" <?php if (getenv('ADMIN_NAME')) echo 'value="'.getenv('ADMIN_NAME').'"' ?>>
                         <small id="nameHelp" class="form-text text-muted">
                             Visible to other users and the public. Used for custom files you add to your modpack. 
                         </small><br/>
                     </div>
                     <h4>Technic Solder API Key</h4 >
                     <div class="form-group">
-                        <input id="api_key" name="api_key" type="text" class="form-control" placeholder="API Key" required>
-<!--                         <div class="form-check">
-                            <input id="api_key_serverwide" name="api_key_serverwide" type="checkbox" class="form-check-input" checked>
-                            <label for="api_key_serverwide" class="form-check-label">Server-wide</label>
-                        </div> -->
+                        <input required id="api_key" name="api_key" type="text" class="form-control" placeholder="API Key" <?php if (getenv('SOLDER_API_KEY')) echo 'value="'.getenv('SOLDER_API_KEY').'"' ?>>
                         <small class="form-text text-muted">
                             You can find your API Key in your profile at
                             <a target="_blank" href="https://technicpack.net">technicpack.net</a>.<br/>
@@ -466,29 +451,18 @@ if (isset($_GET['reconfig'])) { ?>
                     <h4>Database</h4>
                     <div class="form-group">
                         <select required name="db-type" class="form-control" id="db-type">
-                            <option value="mysql" <?php if (!empty($_POST['db-type']) && $_POST['db-type'] == 'mysql') {
-                                echo 'selected';
-                            } ?>>MySQL</option>
-                            <option value="sqlite" <?php if (!empty($_POST['db-type']) && $_POST['db-type'] == 'sqlite') {
-                                echo 'selected';
-                            } ?>>SQLite</option>
+                            <option value="mysql" <?php if (getenv('DB_TYPE') === 'mysql') echo 'selected' ?>>MySQL</option>
+                            <option value="sqlite" <?php if (getenv('DB_TYPE') === 'sqlite') echo 'selected' ?>>SQLite</option>
                         </select>
-                        <small id="sqlite-warning" style="display:none" class="form-text">
-                            <b>SQLite is not recommended for large installations.</b>
-                        </small>
                         <div id="mysql-options">
                             <br/>
-                            <input required name="db-host" type="text" class="form-control" id="db-host"
-                                   placeholder="Database IP" value="127.0.0.1"><br />
-                            <input required name="db-user" type="text" class="form-control" id="db-user"
-                                   placeholder="Database username"><br />
-                            <input required name="db-name" type="text" class="form-control" id="db-name"
-                                   placeholder="Database name"><br />
-                            <input name="db-pass" type="password" class="form-control" id="db-pass"
-                                   placeholder="Database password">
+                            <input <?php if (strtolower(getenv('DB_TYPE')) === 'mysql') echo 'required' ?> name="db-host" type="text" class="form-control" id="db-host" placeholder="Database host" <?php if (!empty(getenv('MYSQL_HOST'))) echo 'value="'.getenv('MYSQL_HOST').'"' ?>><br />
+                            <input <?php if (strtolower(getenv('DB_TYPE')) === 'mysql') echo 'required' ?> name="db-name" type="text" class="form-control" id="db-name" placeholder="Database name" <?php if (!empty(getenv('MYSQL_NAME'))) echo 'value="'.getenv('MYSQL_NAME').'"' ?>><br />
+                            <input <?php if (strtolower(getenv('DB_TYPE')) === 'mysql') echo 'required' ?> name="db-user" type="text" class="form-control" id="db-user" placeholder="Database username" <?php if (!empty(getenv('MYSQL_USER'))) echo 'value="'.getenv('MYSQL_USER').'"' ?>><br />
+                            <input <?php if (strtolower(getenv('DB_TYPE')) === 'mysql') echo 'required' ?> name="db-pass" type="password" class="form-control" id="db-pass" placeholder="Database password" <?php if (!empty(getenv('MYSQL_PASSWORD'))) echo 'value="'.getenv('MYSQL_PASSWORD').'"' ?>>
                         </div><br/>
                         <small class="form-text text-muted">
-                            MySQL is highly recommended.<br/>
+                            <b>MySQL is highly recommended.</b><br/>
                             <li>If migrating from original solder, <b>use a new database.</b></li>
                             <li>If MySQL was previously used, your data will not be transferred to SQLite, and vice-versa.</li>
                         </small><br/>
@@ -499,22 +473,22 @@ if (isset($_GET['reconfig'])) { ?>
                             <option value="none" <?php if (getenv('CACHE') !== 'redis') echo 'selected' ?>>none</option>
                             <option value="redis" <?php if (getenv('CACHE') === 'redis') echo 'selected' ?>>redis</option>
                         </select><br/>
-                        <input <?php if (getenv('CACHE') === 'redis') echo 'required' ?> name="redis-host" type="text" class="form-control" id="redis-host"  placeholder="Redis host" <?php if (getenv('REDIS_HOST')) echo 'value="'.getenv('REDIS_HOST').'"' ?>><br/>
-                        <input name="redis-port" type="text" class="form-control" id="redis-port" placeholder="Redis port" <?php if (getenv('REDIS_PORT')) echo 'value="'.getenv('REDIS_PORT').'"' ?>><br/>
-                        <input name="redis-password" type="password" class="form-control" id="redis-password" placeholder="Redis password" <?php if (getenv('REDIS_PASSWORD')) echo 'value="'.getenv('REDIS_PASSWORD').'"' ?>><br/>
+                        <div id="redis-options" <?php if (getenv('CACHE') !== 'redis') echo "style='display:none;'" ?>>
+                            <input <?php if (getenv('CACHE') === 'redis') echo 'required' ?> name="redis-host" type="text" class="form-control" id="redis-host"  placeholder="Redis host" <?php if (getenv('REDIS_HOST')) echo 'value="'.getenv('REDIS_HOST').'"' ?>><br/>
+                            <input name="redis-port" type="text" class="form-control" id="redis-port" placeholder="Redis port" <?php if (getenv('REDIS_PORT')) echo 'value="'.getenv('REDIS_PORT').'"' ?>><br/>
+                            <input name="redis-password" type="password" class="form-control" id="redis-password" placeholder="Redis password (optional)" <?php if (getenv('REDIS_PASSWORD')) echo 'value="'.getenv('REDIS_PASSWORD').'"' ?>><br/>
+                        </div>
                         <small class="form-text text-muted">
-                            Redis is highly recommended.
+                            <b>Redis is highly recommended.</b>
                         </small><br/>
                     </div>
                     <h4>Server</h4>
                     <div class="form-group">
-                        <input id="host" name="host" type="text" class="form-control"
-                               placeholder="Webserver IP or hostname" value="<?php echo $_SERVER['HTTP_HOST'] ?>" required>
+                        <input required id="host" name="host" type="text" class="form-control" placeholder="Webserver IP or hostname" value="<?php echo $_SERVER['HTTP_HOST'] ?>" <?php if (getenv('HOST')) echo 'value="'.getenv('HOST').'"' ?>>
                         <small id="host-warning" class="form-text" style="display:none;">
                             IP/hostname should NOT start with http[s]://!
                         </small><br />
-                        <input id="dir" class="form-control" type="text" name="dir"
-                               placeholder="Install Directory" value="/" required>
+                        <input required id="dir" class="form-control" type="text" name="dir" placeholder="Install Directory" <?php if (getenv('DIR')) echo 'value="'.getenv('DIR').'"' ?>>
                         <small class="form-text text-muted">Must be '/', or start and end with a '/'.</small><br/>
                     </div>
                     <button id="save" type="submit" class="btn btn-success btn-block btn-lg" disabled>Save</button>
@@ -582,7 +556,6 @@ if (isset($_GET['reconfig'])) { ?>
                             $("#db-name").removeAttr('required');
                             $("#db-pass").removeAttr('required');
                             $("#mysql-options").hide();
-                            $("#sqlite-warning").show();
                             $("#save").attr("disabled", false);
                             $("#errtext").hide();
                         } else {
@@ -591,7 +564,6 @@ if (isset($_GET['reconfig'])) { ?>
                             $("#db-name").attr('required','required');
                             $("#db-pass").attr('required','required');
                             $("#mysql-options").show();
-                            $("#sqlite-warning").hide();
                         }
                     });
                     $("#db-pass").on("keyup", function() {
@@ -618,6 +590,21 @@ if (isset($_GET['reconfig'])) { ?>
                         }
                         http.send(params);
                     });
+
+                    $('#cache').change(function() {
+                        if ($(this).val() === "redis") {
+                            $("#redis-host").attr('required','required')
+                            $("#redis-port").attr('required','required')
+                            $("#redis-password").attr('required','required')
+                            $('#redis-options').show()
+                        } else {
+                            $("#redis-host").removeAttr('required')
+                            $("#redis-port").removeAttr('required')
+                            $("#redis-password").removeAttr('required')
+                            $('#redis-options').hide()
+                        }
+                    })
+
                     $("#api_key").on("keyup", function() {
                         if ($("#api_key").val().length==32 && /^[a-zA-Z0-9]+$/.test($('#api_key').val())) {
                             $("#api_key").addClass("is-valid");
