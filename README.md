@@ -62,19 +62,7 @@ terminal window)
 docker-compose up --build -d
 ```
 
-Now open your server address, ie. ``http://localhost`` if running on a your local machine, 
-and follow the set-up prompt there. 
-- If using MySQL, set the user of the database to ``solder``, database name to ``solder``, 
-host to ``db`` (or the hostname/ip of the database container), and the ```MYSQL_PASSWORD``` you created earlier. 
-- If using SQLite, simply set the type to SQLite.
-- For the Solder API key, go to [https://technicpack.net](https://technicpack.net), log 
-in/create an account, go to my settings/profile, and click on "solder" on the left menu.
-
-By default, the MySQL login details are:
-- host: docker-db-1 (or just db)
-- database: solder
-- username: solder
-- password: solder (which you changed previously)
+Finally, proceed to the Configuration section below. After that, you have successfully installed and configured TechnicSolder. It's ready to use!
 
 ## Detailed Installation (SSH/CLI access required)
 Manually install TechnicSolder and it's requirements.
@@ -83,8 +71,31 @@ Manually install TechnicSolder and it's requirements.
 
 **2. Install Apache2 and PHP stack**
 
+PHP package names may differ, ie. `php-pdo` or `php8-pdo` instead of `php8.4-pdo`.
+
 ```bash
 apt -y install apache2 libapache2-mod-php php8.4 php8.4-pdo php8.4-zip libzip-dev mariadb-server
+```
+
+You may also want to install Redis.
+```bash
+apt install -y redis-server
+```
+
+And the appropriate PHP Redis extension.
+```bash
+apt install -y php8.4-pear
+pecl install --onlyreqdeps redis
+```
+
+If it's publicly accessible you should also set a Redis password.
+```bash
+nano /etc/redis/redis.conf
+```
+
+And set
+```
+requirepass YOUR_REDIS_PASSWORD_HERE
 ```
 
 **3. Enable the following extensions in php.ini**
@@ -93,10 +104,10 @@ apt -y install apache2 libapache2-mod-php php8.4 php8.4-pdo php8.4-zip libzip-de
 ;extension=zip
 ;extension=pdo_sqlite
 ;extension=pdo_mysql
-;extension=redis
 ;extension=opcache
+;extension=redis ; if you installed redis before
 ```
-The lines may differ slightly (eg. `.so`). Some may already be enabled.
+The lines may differ slightly in order or name (like `.so`). Some may already be enabled.
 
 **4. Enable RewriteEngine, Configure Apache**
 
@@ -132,10 +143,7 @@ Add this before `</VirtualHost>` close tag:
         Require all granted
     </Directory>
 ```
-Save and close the file and restart Apache:
-```bash
-service apache2 restart
-```
+Save and close the file.
 
 **5. Clone TechnicSolder repository** 
 
@@ -149,11 +157,26 @@ Make sure it's owned by www-data (or nginx for nginx)
 chmod -R www-data /var/www/TechnicSolder
 ```
 
-**6. MySQL configuration**
+**6. Start services**
+
+First enable them
+```bash
+systemctl enable apache2
+systemctl enable mariadb
+systemctl enable redis-server # if you installed redis earlier
+```
+Then start them
+```bash
+systemctl start apache2
+systemctl start mariadb
+systemctl start redis-server # if you installed redis earlier
+```
+
+**7. MySQL configuration**
 
 Login to mysql
 ```bash
-mysql
+mysql # or mariadb
 ```
 
 Create new user
@@ -161,30 +184,32 @@ Create new user
 CREATE USER 'solder'@'localhost' IDENTIFIED BY 'YOUR MYSQL PASSWORD HERE';
 ```
 
-Create database solder and grant user *solder* access to it.
+Create database solder and grant user `solder` access to it.
 ```sql
 CREATE DATABASE solder;
 GRANT ALL ON solder.* TO 'solder'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
+Exit.
 ```sql
 EXIT;
 ```
 
-**7. Configure TechnicSolder**
+Finally, proceed to Configuration section below. After that, you have successfully installed and configured TechnicSolder. It's ready to use!
 
-Configure the installation at `http://your_server_IP_address`.
+## Configuration
 
-The MySQL database password is what you set earlier, and the user/database is `solder`.
+Configure at `http://your_server_IP_address/configure`.
 
-That's it. You have successfully installed and configured TechnicSolder. It's ready to use!
+If you used docker, and filled in all the settings in `compose.yml`, you will just need to click Save.
 
-## Caching
-
-If you used docker, redis caching is already set up.
-
-You can manually set up redis by installing and starting a redis server, and then setting the appropriate environment variables or configuration variables.
+- Fill in your new admin account credentials and name.
+- The Solder API key needs to be retrieved from your [technicpack.net](https://technicpack.net) profile (click Edit Profile, then Solder Configuration).
+- The database password is what you set earlier, and the user/database name is `solder`. You can also choose `SQLite` for smaller instances.
+- Redis caching is recommended, but isn't necessary. If you installed it earlier, set the host to `localhost`, port to `6379`, and the password to what you set earlier.
+- Set the hostname to your public server hostname (accessed by clients/users).
+- Set the install directory to the path inside `/var/www/html` or `/var/www/TechnicSolder`. Likely `/`.
 
 ## Configuration file `config/config.json`
 May not be up-to-date.
