@@ -230,7 +230,7 @@ final class Db
         // invalidate all cached values.
         // todo: do a better table checking
         // or even better, manually invalidate...
-        if ($this->cache !== NULL) {
+        if ($this->cache !== null) {
             $iterator = null;
             do {
                 $keys = $this->cache->scan($iterator, 'sqlcache:*');
@@ -241,7 +241,7 @@ final class Db
         }
 
         try {
-            return $this->conn->exec($querystring);
+            return $this->conn->exec($querystring) !== false;
         } catch (PDOException $e) {
             error_log("db.php: execute(): ".$e->getMessage());
             return false;
