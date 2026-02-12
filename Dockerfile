@@ -24,6 +24,9 @@ ADD . /var/www/html
 RUN rm -f /var/www/html/Dockerfile /var/www/html/compose*.yaml /var/www/html/entrypoint.sh
 RUN chown -R www-data:www-data /var/www/html
 
+# disable access log
+RUN ln -sf /dev/null /var/log/apache2/access.log
+
 COPY entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
