@@ -1,5 +1,5 @@
 <?php
-
+define('CACHE_TTL', 86400); // one day. if we no longer purge keys on any execution, this should be lowered.
 define('DB_SANITIZE_BACKLIST', [
     "'",    // single quote
     '"',    // double quote
@@ -19,6 +19,7 @@ final class Db
 {
     private $config = null;
     private $conn = null;
+    private $cache = null;
 
     public function __construct()
     {
@@ -46,6 +47,34 @@ final class Db
         } elseif (!$this->config->exists('db-host') || !$this->config->exists('db-user') || !$this->config->exists('db-name')) {
             error_log("db.php: __construct(): Configuration is missing some database information!");
         }
+
+        if ($this->config->get('cache') === 'redis') {
+            try {
+                $this->cache = new Redis();
+
+                $redishost = $this->config->get('redis-host');
+                $redisport = $this->config->get('redis-port');
+                $redispassword = $this->config->get('redis-password');
+
+                if ($redishost) {
+                    if ($redisport) {
+                        $this->cache->connect($redishost, $redisport);
+                    } else {
+                        $this->cache->connect($redishost);
+                    }
+                } else {
+                    error_log("db.php: cache set to redis, but no host specified.");
+                }
+                if ($redispassword) {
+                    $this->cache->auth($redispassword);
+                }
+                
+            } catch (RedisException $e) {
+                error_log("db.php: redis connection failed: {$ex->getMessage()}");
+                $this->cache = null;
+            }
+        }
+
         return true; // can provide arguments later, bypassing config!
     }
 
@@ -143,9 +172,49 @@ final class Db
         if (empty($querystring)) {
             return false;
         }
+
+        $key = '';
+        if ($this->cache !== null) {
+            $key = 'sqlcache:'.md5($querystring);
+
+            $jsondata = '';
+            try {
+                $jsondata = @$this->cache->get($key);
+            } catch (RedisException $e) {
+                error_log("db.php: query(): redis get exception {$e->getMessage()}");
+            }
+
+            if ($jsondata === false) {
+                error_log("db.php: query(): got false from redis get. first query?");
+            } else {
+                $data = @json_decode($jsondata, true);
+                if ($data === null) {
+                    error_log("db.php: query(): could not decode redis json data");
+                } else {
+                    return $data;
+                }
+            }
+        }
+
         try {
             $stmt = $this->conn->query($querystring);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if ($this->cache !== null) {
+                $json = @json_encode($result);
+                if ($json === null) {
+                    error_log('db.php: query(): could not encode obj to json data');
+                } else {
+                    // error_log('db.php: query(): got json data: '.$json);
+                    try {
+                        $this->cache->setex($key, CACHE_TTL, $json); // 5min
+                    } catch (RedisException $e) {
+                        error_log("db.php: query(): redis setEx exception {$e->getMessage()}");
+                    }
+                }
+            }
+
+            return $result;
         } catch (PDOException $e) {
             error_log("db.php: query(): ".$e->getMessage());
             return false;
@@ -157,6 +226,20 @@ final class Db
         if (empty($querystring)) {
             return false;
         }
+
+        // invalidate all cached values.
+        // todo: do a better table checking
+        // or even better, manually invalidate...
+        if ($this->cache !== NULL) {
+            $iterator = null;
+            do {
+                $keys = $this->cache->scan($iterator, 'sqlcache:*');
+                if ($keys !== false) {
+                    $this->cache->del($keys);
+                }
+            } while ($iterator != 0);
+        }
+
         try {
             return $this->conn->exec($querystring);
         } catch (PDOException $e) {

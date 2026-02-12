@@ -8,6 +8,10 @@ RUN docker-php-ext-install pdo
 RUN docker-php-ext-install pdo_mysql
 RUN docker-php-ext-install opcache
 
+RUN pecl install --onlyreqdeps redis \
+&& rm -rf /tmp/pear \
+&& docker-php-ext-enable redis
+
 # jit isn't particularly useful for our use case.
 #RUN echo "opcache.enable=1\n" \
 #         "opcache.jit_buffer_size=128M\n" \

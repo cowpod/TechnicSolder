@@ -79,7 +79,6 @@ final class Config
     public function get(string $key)
     {
         if (!$this->exists($key)) {
-            trigger_error("configuration.php: get(): '{$key}'does not exist, called from '{$this->get_including_file()}'", E_USER_WARNING);
             return null;
         }
         return $this->data[$key];

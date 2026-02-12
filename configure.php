@@ -4,7 +4,6 @@ session_start();
 require('./constants.php');
 
 define('ICON', "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB9ElEQVR4Xu2bSytEcRiHZyJRaDYWRhJilFlYKjakNOWS7OxEGCRGpAg1KykRSlHSKLkO0YyFhSiRIQmbIcVEsnCXW/EJPB/g9Jvt0/8s3t73+b3nnDnmpZWaXxP8dssRm6yL+XTc9OO1Ib+9GWCe60BuyUpEvvDYiNysAqgDNAJygCSoFPi/AoaPwbCvXnRAKKoZc/T7rA/5kasEeV1wEvlJnBf5lM+KfD16mPcAFUAdoBGQA8gSkqBSwOAxmBZ8QQdsOTIwRzsPOae7Iy/w/Op3DvLwZd4zgrYnPJ83Xcp7gAqgDtAIyAFkCUlQKWDwGKzdPeUH//ftmKPz9ePIQ6m1yANufq+QPteK58s6tpHvRZTxHqACqAM0AnIAWkISVAoYOwaf13bQAZn2WSzAQ1EB38/3FyP/9R0jz/K/I/cMxSM3VSTzHqACqAM0AnIAWUISVAoYPAbfe6/RAV07b5ijH/uFyD8Dd8jnejy8R+TwnuG8GsTzpXdJvAeoAOoAjYAcQJaQBJUCBo9B+6sDHfDSUoM5Wm1uQ34Z60YeMzOB3DJygNy5yU+sHGNNvAeoAOoAjYAcQJaQBJUCBo/B7Cr+aMrvnMEctVbx9wCVXbxINboS8Pqu0DnyFDf//2B0o4H3ABVAHaARwD1ADpAElQKGjsE/aSRgFj7BEuwAAAAASUVORK5CYII=");
-define('DEFAULT_PERMS', '1111111'); // and 'privileged'=>'1' makes you an admin.
 define('OVERWRITE_USER', true);
 
 require_once('./functions/configuration.php');
@@ -79,6 +78,14 @@ if (isset($_POST['host'])) {
     $host = strtolower($_POST['host']);
     $dir = $_POST['dir'];
 
+    // first try the provided _POST values.
+    // then try environment values.
+    // then default values.
+    $cache = !empty($_POST['cache']) ? $_POST['cache'] : (getenv('CACHE') ?: 'none');
+    $redishost = !empty($_POST['redis-host']) ? $_POST['redis-host'] : (getenv('REDIS_HOST') ?: '');
+    $redisport = !empty($_POST['redis-port']) ? $_POST['redis-port'] : (getenv('REDIS_PORT') ?: '');
+    $redispassword = !empty($_POST['redis-password']) ? $_POST['redis-password'] : (getenv('REDIS_PASSWORD') ?: '');
+
     if ($dbtype != "sqlite") {
         if (!ctype_alnum($dbtype) || !ctype_alnum($dbuser) || !ctype_alnum($dbname)) {
             die("Bad input data; db type/user/name");
@@ -119,6 +126,10 @@ if (isset($_POST['host'])) {
         'db-user' => $dbuser,
         'db-pass' => $dbpass,
         'db-name' => $dbname,
+        'cache' => $cache,
+        'redis-host' => $redishost,
+        'redis-port' => $redisport,
+        'redis-password' => $redispassword,
         'host' => $host,
         'dir' => $dir,
         'configured' => true,
@@ -437,7 +448,7 @@ if (isset($_GET['reconfig'])) { ?>
                                aria-describedby="nameHelp" placeholder="Your Name">
                         <small id="nameHelp" class="form-text text-muted">
                             Visible to other users and the public. Used for custom files you add to your modpack. 
-                        </small>
+                        </small><br/>
                     </div>
                     <h4>Technic Solder API Key</h4 >
                     <div class="form-group">
@@ -450,7 +461,7 @@ if (isset($_GET['reconfig'])) { ?>
                             You can find your API Key in your profile at
                             <a target="_blank" href="https://technicpack.net">technicpack.net</a>.<br/>
                             <!-- Making your API key server-wide makes it available to all other users, and prevents them from using their own. -->
-                        </small>
+                        </small><br/>
                     </div>
                     <h4>Database</h4>
                     <div class="form-group">
@@ -475,14 +486,25 @@ if (isset($_GET['reconfig'])) { ?>
                                    placeholder="Database name"><br />
                             <input name="db-pass" type="password" class="form-control" id="db-pass"
                                    placeholder="Database password">
-                        </div>
+                        </div><br/>
                         <small class="form-text text-muted">
+                            MySQL is highly recommended.<br/>
                             <li>If migrating from original solder, <b>use a new database.</b></li>
                             <li>If MySQL was previously used, your data will not be transferred to SQLite, and vice-versa.</li>
-                        </small>
-                        <small id="errtext" class="form-text text-muted">
-                            Six tables will be created: users, clients, modpacks, builds, mods, metrics.
-                        </small>
+                        </small><br/>
+                    </div>
+                    <h4>Caching</h4>
+                    <div class="form-group">
+                        <select required name="cache" class="form-control" id="cache">
+                            <option value="none" <?php if (getenv('CACHE') !== 'redis') echo 'selected' ?>>none</option>
+                            <option value="redis" <?php if (getenv('CACHE') === 'redis') echo 'selected' ?>>redis</option>
+                        </select><br/>
+                        <input <?php if (getenv('CACHE') === 'redis') echo 'required' ?> name="redis-host" type="text" class="form-control" id="redis-host"  placeholder="Redis host" <?php if (getenv('REDIS_HOST')) echo 'value="'.getenv('REDIS_HOST').'"' ?>><br/>
+                        <input name="redis-port" type="text" class="form-control" id="redis-port" placeholder="Redis port" <?php if (getenv('REDIS_PORT')) echo 'value="'.getenv('REDIS_PORT').'"' ?>><br/>
+                        <input name="redis-password" type="password" class="form-control" id="redis-password" placeholder="Redis password" <?php if (getenv('REDIS_PASSWORD')) echo 'value="'.getenv('REDIS_PASSWORD').'"' ?>><br/>
+                        <small class="form-text text-muted">
+                            Redis is highly recommended.
+                        </small><br/>
                     </div>
                     <h4>Server</h4>
                     <div class="form-group">
@@ -493,7 +515,7 @@ if (isset($_GET['reconfig'])) { ?>
                         </small><br />
                         <input id="dir" class="form-control" type="text" name="dir"
                                placeholder="Install Directory" value="/" required>
-                        <small class="form-text text-muted">Must be '/', or start and end with a '/'.</small>
+                        <small class="form-text text-muted">Must be '/', or start and end with a '/'.</small><br/>
                     </div>
                     <button id="save" type="submit" class="btn btn-success btn-block btn-lg" disabled>Save</button>
                 </form>

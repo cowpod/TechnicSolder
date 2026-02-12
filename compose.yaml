@@ -4,8 +4,20 @@ volumes:
   mods:
   forges:
   others:
+  redis_data:
+
+networks:
+  default:
 
 services:
+  redis:
+    image: redis:8-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - default
+    container_name: solder-redis
   db:
     image: mariadb:lts
     restart: always
@@ -25,6 +37,10 @@ services:
     restart: always
     ports:
       - 80:80
+    environment:
+      - CACHE=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - config:/var/www/html/config
       - mods:/var/www/html/mods
@@ -32,4 +48,7 @@ services:
       - others:/var/www/html/others
     depends_on:
       - db
+      - redis
+    networks:
+      - default
     container_name: solder-app

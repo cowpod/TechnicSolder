@@ -259,16 +259,26 @@ at `/run/php/php8.4-fpm.sock` or update the nginx configuration accordingly.
 
  ```
 
+## Caching
+
+The docker containers in compose.yaml has redis already set up.
+
+You can manually set up redis by installing and starting the redis server, and then setting the appropriate environment variables or configuration variables.
+
 ## Configuration file `config/config.json`
 May not be up-to-date.
-```
+```json
 {
     "configured": true,
     "db-type": "sqlite",
-    "db-host": "",
-    "db-user": "",
-    "db-pass": "",
-    "db-name": "",
+    "db-host": "db",
+    "db-user": "solder",
+    "db-pass": "solder",
+    "db-name": "solder",
+    "cache": "redis",
+    "redis-host": "redis",
+    "redis-port": 6379, 
+    "redis-password": "",
     "host": "localhost",
     "protocol": "http",
     "dir": "/",
@@ -288,6 +298,14 @@ Settings which are not exposed in the GUI:
 - `protocol`: Override which of `http` or `https` protocol is used.
 - `config_version`: What version the config file is. Don't change.
 
+## Environment variables
+
+```
+CACHE: "redis|none"
+REDIS_HOST: "ip|hostname|path"
+REDIS_PORT: port
+REDIS_PASSWORD: "password"
+```
 
 ## Updating
 
