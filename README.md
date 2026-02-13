@@ -1,7 +1,9 @@
 # TechnicSolder
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![Latest Stable Version](https://img.shields.io/badge/dynamic/json.svg?label=Latest%20Stable%20Version&url=https%3A%2F%2Fraw.githubusercontent.com%2FTheGameSpider%2FTechnicSolder%2Fmaster%2Fapi%2Fversion.json&query=version&colorB=brightgreen)
-![Latest Dev Version](https://img.shields.io/badge/dynamic/json.svg?label=Latest%20Dev%20Version&url=https%3A%2F%2Fraw.githubusercontent.com%2FTheGameSpider%2FTechnicSolder%2FDev%2Fapi%2Fversion.json&query=version&colorB=orange)
+[![License: MIT*](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Latest Stable Version](https://img.shields.io/badge/dynamic/json.svg?label=Latest%20Stable%20Version&url=https%3A%2F%2Fraw.githubusercontent.com%2Fcowpod%2FTechnicSolder%2Fmaster%2Fapi%2Fversion.json&query=version&colorB=brightgreen)
+![Latest Dev Version](https://img.shields.io/badge/dynamic/json.svg?label=Latest%20Dev%20Version&url=https%3A%2F%2Fraw.githubusercontent.com%2Fcowpod%2FTechnicSolder%2Fdev%2Fapi%2Fversion.json&query=version&colorB=orange)
+
+\* Modified MIT. See the [LICENSE](?tab=License-1-ov-file) file in this repository.
 
 >TechnicSolder is an API that sits between a modpack repository and the Technic Launcher. 
 It allows you to easily manage multiple modpacks in one single location.
@@ -19,15 +21,16 @@ your Platform page! (assuming you have the respective data filled out in Solder)
 
 -- Technic
 
-TechnicSolder was originaly developed by Technic using the Laravel Framework. However, 
-the application is difficult to install and use. Technic Solder - Solder.cf by TheGameSpider 
-runs on pure PHP with zip and MySQL extensions and it's very easy to use. To install, you 
-just need to install zip extension, setup MySQL database and download Solder to your server 
-(No composer needed). And the usage is even easier! Just Drag n' Drop your mods.
+TechnicSolder was originaly developed by Technic using the Laravel Framework. However, the application is difficult to install and use. Technic Solder runs on pure PHP with Zip and PDO-SQLite extensions.
 
-## Docker installation (requires Docker + Docker Compose and SSH access)
+If you already have a webserver set up with PHP and ZIP/PDO extensions, simply upload the contents of this repository (eg. Download as ZIP and then extract) to the webserver document root, and then skip to the Configuration section below. This will give you a basic functional installation.
 
-Easiest method, but requires ssh, docker, and docker-compose on the host machine.
+Additional extensions such as Redis, Opcache, and PDO-MySQL are highly recommended for better performance.
+
+## Docker container
+
+Requires Docker and Docker Compose on the host machine.
+
 Also allows using the built-in updater if you're on the `dev` channel
 (it will check and pull the newest changes for you using `git`).
 
@@ -37,7 +40,7 @@ Note this container image puts Technic Solder at `/var/www/html`, and not
 On the remote machine,
 Clone repository to a location of your choice (likely in your home folder)
 ```bash
-git clone https://github.com/TheGameSpider/TechnicSolder TechnicSolder
+git clone https://github.com/cowpod/TechnicSolder TechnicSolder
 ```
 change-directory to cloned folder
 ```bash
@@ -64,20 +67,26 @@ docker-compose up --build -d
 
 Finally, proceed to the Configuration section below. After that, you have successfully installed and configured TechnicSolder. It's ready to use!
 
-## Detailed Installation (SSH/CLI access required)
-Manually install TechnicSolder and it's requirements.
+## Manual Installation (SSH/CLI access required)
 
-**1. Install Debian Trixie (https://www.debian.org/), or any other distribution which has a recent (2025 as of writing) version of SQLite, PHP, and MariaDB. Log in to your admin user.**
+Manually install TechnicSolder and its requirements.
+
+**1. Install Debian Trixie (https://www.debian.org/), or any other distribution which has a recent (2025 as of writing) version of PHP, SQLite (or MariaDB). Log in to your admin user.**
 
 **2. Install Apache2 and PHP stack**
 
 PHP package names may differ, ie. `php-pdo` or `php8-pdo` instead of `php8.4-pdo`.
 
 ```bash
-apt -y install apache2 libapache2-mod-php php8.4 php8.4-pdo php8.4-zip libzip-dev mariadb-server
+apt -y install apache2 libapache2-mod-php php8.4 php8.4-pdo php8.4-zip libzip-dev
 ```
 
-You may also want to install Redis.
+You may also want to install MySQL (MariaDB) instead of using SQLite, for better performance.
+```bash
+apt install -y mariadb-server
+```
+
+You may also want to install Redis, for better performance.
 ```bash
 apt install -y redis-server
 ```
@@ -102,10 +111,10 @@ requirepass YOUR_REDIS_PASSWORD_HERE
 
 ```php
 ;extension=zip
-;extension=pdo_sqlite
-;extension=pdo_mysql
+;extension=pdo_sqlites
+;extension=pdo_mysql ; if you installed MySQL before.
 ;extension=opcache
-;extension=redis ; if you installed redis before
+;extension=redis ; if you installed Redis before
 ```
 The lines may differ slightly in order or name (like `.so`). Some may already be enabled.
 
@@ -149,7 +158,7 @@ Save and close the file.
 
 ```bash
 cd /var/www/
-git clone https://github.com/TheGameSpider/TechnicSolder.git TechnicSolder
+git clone https://github.com/cowpod/TechnicSolder.git TechnicSolder
 ```
 
 Make sure it's owned by www-data (or nginx for nginx)
@@ -263,20 +272,21 @@ Settings which are not exposed in the GUI:
 
 ## Updating
 
-If you used the docker image, and are on the `dev` channel, you can use the built-in updater.
+If you used the docker image, and are on the `dev` channel, you can use the built-in updater. And if necessary, you will then be prompted to upgrade on the web page.
 
-** If you come from version 1.4.0 **
+**If you come from version 1.4.0**
 
-Upgrade instructions
-    1. Install new Technic Solder version. Either `git pull` over SSH, or re-upload the TechnicSolder folder and files; Make sure to preserve your mods, others, forges folders, as well as file functions/config.php
-    2. Upgrade/switch to PHP8.3 and install and enable the PHP8.4-PDO, PHP8.4_PDO-MYSQL or/and PHP8.4-PDO_SQLITE, and PHP8.4-ZIP extensions.
-    3. You will then need to run /functions/upgrade2.0.php to modify your existing database.
+1. Install new Technic Solder version. Either `git pull` over SSH, or re-upload the TechnicSolder folder and files; Make sure to preserve your mods, others, forges folders, as well as file functions/config.php
+2. Upgrade/switch to PHP8.3 and install and enable the PHP8.4-PDO, PHP8.4_PDO-MYSQL or/and PHP8.4-PDO_SQLITE, and PHP8.4-ZIP extensions.
+3. You will then need to visit `/functions/upgrade2.0.php` to modify your existing database.
 
-** If you come from version 1.3.4 **
+**If you come from version 1.3.4**
+
 Visit `/functions/upgrade2.0.php`
 
-** If you come from a version before 1.3.4 **
-Upgrade to 1.3.4 as per the [1.3.4 release notes](https://raw.githubusercontent.com/cowpod/TechnicSolder/refs/heads/master/api/version.json).
+**If you come from a version before 1.3.4**
+
+See the [1.3.4 release notes](https://raw.githubusercontent.com/cowpod/TheGameSpider/refs/heads/master/api/version.json).
 
 ## Upload larger files > 1GB
 

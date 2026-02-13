@@ -556,7 +556,7 @@ if (!uri("/login")) {
                     <br />
                     <?php } ?>
                 <?php } ?>
-                    <a target="_blank" href="https://github.com/TheGameSpider/TechnicSolder/wiki/"><button class="btn btn-secondary btn-block" >Documentation</button></a>
+                    <a target="_blank" href="https://github.com/cowpod/TechnicSolder/wiki/"><button class="btn btn-secondary btn-block" >Documentation</button></a>
                     <br />
                     <button id="collapseMigrButton" class="btn btn-secondary" data-toggle="collapse" href="#collapseMigr" role="button" aria-expanded="false" aria-controls="collapseMigr">Database migration</button>
                     <div class="collapse" id="collapseMigr">
@@ -2284,8 +2284,7 @@ if (!uri("/login")) {
                     <p>
                         TechnicSolder was originaly developed by <a href="https://github.com/TechnicPack">Technic</a>
                         using the Laravel Framework. However, the application is difficult to install and use.
-                        <a href="https://github.com/TheGameSpider/TechnicSolder">Technic Solder - Solder.cf</a> by
-                        <a href="https://github.com/TheGameSpider">TheGameSpider</a> runs on pure PHP with zip and MySQL
+                        <a href="https://github.com/cowpod/TechnicSolder">Technic Solder</a> runs on pure PHP with zip and MySQL
                         extensions and it's very easy to use. To install, you just need to install zip and MySQL and
                         extract Solder to your root folder. And the usage is even easier! Just Drag n' Drop your mods.
                     </p>
@@ -2754,6 +2753,7 @@ if (!uri("/login")) {
         <div class="main">
             <div class="card">
                 <h2>Clients</h2>
+                <p>To give a specific user access to a private build/modpack, you must first add their Client ID here.</p>
             </div>
             <div class="card">
                 <h3>Add Client</h3>

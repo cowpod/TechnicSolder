@@ -298,7 +298,7 @@ async function getversions(id, versionId='', updateUi=true) {
             request.onerror = function () {
               reject(new Error('Network error'));
             };
-            request.setRequestHeader('User-Agent','TheGameSpider/TechnicSolder/1.4.0');
+            request.setRequestHeader('User-Agent','cowpod/TechnicSolder/2.0');
             request.onreadystatechange = function() {
                 if (request.readyState == 4 && request.status == 200) {
                     let obj = JSON.parse(request.responseText);
@@ -769,7 +769,7 @@ $('#searchbutton').on('click', async function() {
             let url = `https://api.modrinth.com/v2/search?query=${searchquery}&facets=${encodeURIComponent(facets)}&limit=${search_len}&offset=${search_offset}`;
 
             request.open('GET', url, true);
-            request.setRequestHeader('User-Agent','TheGameSpider/TechnicSolder/1.4.0');
+            request.setRequestHeader('User-Agent','cowpod/TechnicSolder/1.4.0');
             request.onreadystatechange = async function() {
                 if (request.readyState == 4 && request.status == 200) {
                     // console.log(request.responseText);
