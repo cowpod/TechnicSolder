@@ -268,3 +268,18 @@ function sendFile(file, fallback_mcv = "") {
         request.send(formData);
     })
 }
+
+function validatePassword(password) {
+    const minLength = password.length >= 8;
+    const hasNumber = /[0-9]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasUpperCase = /[A-Z]/.test(password);
+
+    if (!minLength) {
+        return false;
+    }
+    if (!hasNumber || !hasUpperCase || !hasLowerCase) {
+        return false;
+    }
+    return true;
+}

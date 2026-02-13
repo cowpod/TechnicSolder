@@ -4,13 +4,9 @@ session_start();
 require('./constants.php');
 
 define('ICON', "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB9ElEQVR4Xu2bSytEcRiHZyJRaDYWRhJilFlYKjakNOWS7OxEGCRGpAg1KykRSlHSKLkO0YyFhSiRIQmbIcVEsnCXW/EJPB/g9Jvt0/8s3t73+b3nnDnmpZWaXxP8dssRm6yL+XTc9OO1Ib+9GWCe60BuyUpEvvDYiNysAqgDNAJygCSoFPi/AoaPwbCvXnRAKKoZc/T7rA/5kasEeV1wEvlJnBf5lM+KfD16mPcAFUAdoBGQA8gSkqBSwOAxmBZ8QQdsOTIwRzsPOae7Iy/w/Op3DvLwZd4zgrYnPJ83Xcp7gAqgDtAIyAFkCUlQKWDwGKzdPeUH//ftmKPz9ePIQ6m1yANufq+QPteK58s6tpHvRZTxHqACqAM0AnIAWkISVAoYOwaf13bQAZn2WSzAQ1EB38/3FyP/9R0jz/K/I/cMxSM3VSTzHqACqAM0AnIAWUISVAoYPAbfe6/RAV07b5ijH/uFyD8Dd8jnejy8R+TwnuG8GsTzpXdJvAeoAOoAjYAcQJaQBJUCBo9B+6sDHfDSUoM5Wm1uQ34Z60YeMzOB3DJygNy5yU+sHGNNvAeoAOoAjYAcQJaQBJUCBo/B7Cr+aMrvnMEctVbx9wCVXbxINboS8Pqu0DnyFDf//2B0o4H3ABVAHaARwD1ADpAElQKGjsE/aSRgFj7BEuwAAAAASUVORK5CYII=");
-define('OVERWRITE_USER', true);
 
 require_once('./functions/configuration.php');
-// global $config;
-// if (empty($config)) {
 $config = new Config();
-// }
 
 if (!$config->exists('configured')) {
     $config->set('configured', false);
@@ -37,12 +33,10 @@ if (isset($_GET['reconfig'])) {
 }
 
 require_once("./functions/db.php");
-// global $db;
-// if (empty($db)) {
 $db = new Db();
-// }
 
 $connection_failed = false;
+$user_exists = false;
 
 if (isset($_POST['host'])) {
     $api_key = $_POST['api_key'] ?: getenv('SOLDER_API_KEY') ?: '';
@@ -138,17 +132,18 @@ if (isset($_POST['host'])) {
 
     $config->setall($config_contents);
 
+    // connect to db and create tables
+
     $conn = $db->connect();
-    if ($conn) {
+    if (!$conn) {
+        $connection_failed = true;
+    } else {
         if (!$db->beginTransaction(true)) {
             die('{"status":"error","message":"Could not start transaction"}');
         }
         
         $result = true;
         if ($dbtype == 'sqlite') {
-            // sqlite: bigtext,varchar => text
-            // int => integer
-            // unsigned doesn't exist.
             $result &= $db->execute("CREATE TABLE metrics (
                 name TEXT PRIMARY KEY,
                 time_stamp INTEGER,
@@ -334,24 +329,42 @@ if (isset($_POST['host'])) {
         }
 
         // if user already exists, replace
-        $userexistsq = $db->query("SELECT 1 FROM users WHERE name='".$db->sanitize($email)."'");
-        if ($userexistsq && sizeof($userexistsq) == 1) { // `name` is unique
-            if (OVERWRITE_USER) {
-                $db->execute("DELETE FROM users WHERE name='".$db->sanitize($email)."'");
+        $userexistsq = $db->query("
+            SELECT 1 
+            FROM users 
+            WHERE name = {$db->quote($email)}
+        ") ?: [];
+        if ($userexistsq) {
+            if (isset($_GET['reconfig'])) {
+                $db->execute("
+                    DELETE FROM users 
+                    WHERE name = {$db->quote($email)}
+                ");
             } else {
-                die("User with that email exists. Please go back and try again with different information.");
+                $user_exists = true;
             }
         }
-
-        $db->execute("INSERT INTO users (name,display_name,perms,privileged,pass,icon,api_key) VALUES(
-            '".$db->sanitize($email)."',
-            '".$db->sanitize($name)."',
-            '".DEFAULT_PERMS."',
-            1,
-            '".$pass."',
-            '".ICON."',
-            '".$db->sanitize($api_key)."'
-        )");
+            
+        $db->execute("
+            INSERT INTO users (
+                name,
+                display_name,
+                perms,
+                privileged,
+                pass,
+                icon,
+                api_key
+            ) 
+            VALUES (
+                {$db->quote($email)},
+                {$db->quote($name)},
+                {$db->quote(DEFAULT_PERMS)},
+                1,
+                {$db->quote($pass)},
+                {$db->quote(ICON)},
+                {$db->quote($api_key)}
+            )
+        ");
 
         if (!$db->commit()) {
             die('{"status":"error","message":"Could not commit changes"}');
@@ -361,8 +374,6 @@ if (isset($_POST['host'])) {
 
         header("Location: ".substr($_SERVER['REQUEST_URI'], 0, -strlen($_SERVER['REQUEST_URI']))."login");
         exit();
-    } else {
-        $connection_failed = true;
     }
 }
 ?>
@@ -373,63 +384,37 @@ if (isset($_POST['host'])) {
         <title>Configure Solder</title>
         <link rel="stylesheet" href="./resources/bootstrap/bootstrap.min.css">
         <link rel="stylesheet" href="./resources/bootstrap/dark/bootstrap.min.css" media="(prefers-color-scheme: dark)">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
-                integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
-                crossorigin="anonymous"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
-                integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
-                crossorigin="anonymous"></script>
-        <script defer src="https://use.fontawesome.com/releases/v5.2.0/js/all.js"
-                integrity="sha384-4oV5EgaV02iISL2ban6c/RmotsABqE4yZxZLcYMAdG7FAPsyHYAPpywE9PJo+Khy"
-                crossorigin="anonymous"></script>
-        <style>
-            .card {
-                 padding: 2em;
-                 margin: 2em 0;
-            }
-            body {
-                background-color: #f0f4f9;
-            }
-            @media (prefers-color-scheme: dark) {
-                body {
-                    background-color: #202429;
-                }
-            }
-        </style>
+        <link rel="stylesheet" href="./resources/css/configure.css">
+        <script src="./resources/js/jquery.min.js"></script>
+        <script src="./resources/js/popper.min.js"></script>
+        <script src="./resources/js/fontawesome.js"></script>
+        <script src="./resources/bootstrap/bootstrap.min.js"></script>
+        <script src="./resources/js/global.js"></script>
     </head>
     <body>
         <div class="container">
             <div class="card">
-                <?php
-                if (isset($_GET['reconfig'])) {
-                    echo "<a href='". (isset($_GET['ret']) ? $_GET['ret'] : '/') ."'><button class='btn btn-secondary'>Cancel</button></a>";
-                }
-if (isset($_GET['host']) && $connection_failed) {
-    echo "<font class='text-danger'>Can't connect to database</font><br/>";
-}
-if (isset($_GET['reconfig'])) { ?>
-                    <center>
-                        <h1>Reconfigure</h1>
-                    </center>
-                <?php } else { ?>
                 <center>
+                <?php if (isset($_GET['reconfig'])) { 
+                    echo "<a href='". (isset($_GET['ret']) ? $_GET['ret'] : '/') ."'><button class='btn btn-secondary'>Cancel</button></a>";
+                    ?>
+                    <h1>Reconfigure</h1>
+                <?php } else { ?>
                     <h1>Before you start</h1>
                     <h3>You need configure Technic Solder.</h3>
-                </center>
                 <?php } ?>
+                </center>
+
                 <form method="POST">
                     <h4>Your Account</h4>
                     <div class="form-group">
                         <label for="email">Login credentials</label>
-                        <input required type="text" class="form-control" name="email" aria-describedby="emailHelp"
-                               placeholder="Your Email" <?php if (getenv('ADMIN_EMAIL')) echo 'value="'.getenv('ADMIN_EMAIL').'"' ?>><br />
-                        <input required type="password" class="form-control" id="pass" name="pass"
-                               placeholder="Your new password" <?php if (getenv('ADMIN_PASSWORD')) echo 'value="'.getenv('ADMIN_PASSWORD').'"' ?>><br />
-                        <input required type="password" class="form-control" id="pass2"
-                               placeholder="Confirm your password" <?php if (getenv('ADMIN_PASSWORD')) echo 'value="'.getenv('ADMIN_PASSWORD').'"' ?>>
-                        <small id="emailHelp" class="form-text text-muted">
-                        </small>
+                        <input required type="text" class="form-control" name="email" placeholder="Your Email" <?php if (getenv('ADMIN_EMAIL')) echo 'value="'.getenv('ADMIN_EMAIL').'"' ?>><br />
+                        <input required type="password" class="form-control" id="pass" name="pass" placeholder="Your new password" <?php if (getenv('ADMIN_PASSWORD')) echo 'value="'.getenv('ADMIN_PASSWORD').'"' ?>><br />
+                        <input required type="password" class="form-control" id="pass2" placeholder="Confirm your password" <?php if (getenv('ADMIN_PASSWORD')) echo 'value="'.getenv('ADMIN_PASSWORD').'"' ?>>
+                        <p id="errtext-account" class="form-text text-danger">
+                            <?php if ($user_exists) echo 'That user already exists' ?>
+                        </p>
                     </div>
                     <div class="form-group">
                         <label for="name">Authoring name</label>
@@ -466,6 +451,7 @@ if (isset($_GET['reconfig'])) { ?>
                             <li>If migrating from original solder, <b>use a new database.</b></li>
                             <li>If MySQL was previously used, your data will not be transferred to SQLite, and vice-versa.</li>
                         </small><br/>
+                        <p class="form-text text-danger" id="errtext"><?php if ($connection_failed) echo "Can't connect to database" ?></p>
                     </div>
                     <h4>Caching</h4>
                     <div class="form-group">
@@ -493,129 +479,7 @@ if (isset($_GET['reconfig'])) { ?>
                     </div>
                     <button id="save" type="submit" class="btn btn-success btn-block btn-lg">Continue</button>
                 </form>
-                <script type="text/javascript">
-                    function validatePassword(password) {
-                        const minLength = password.length >= 8;
-                        const hasNumber = /[0-9]/.test(password);
-                        const hasLowerCase = /[a-z]/.test(password);
-                        const hasUpperCase = /[A-Z]/.test(password);
-
-                        if (!minLength) {
-                            return false;
-                        }
-                        if (!hasNumber || !hasUpperCase || !hasLowerCase) {
-                            return false;
-                        }
-                        return true;
-                    }
-
-                    $("#host").on("keyup", function() {
-                        let hostval = $("#host").val();
-                        if (hostval.startsWith("https://") || hostval.startsWith("http://")) {
-                            $("#host-warning").show();
-                        } else if ($("#host-warning").is(":visible")) {
-                            $("#host-warning").hide();
-                        }
-                    });
-                    $("#pass").on("keyup", function() {
-                        if (validatePassword($("#pass").val())) {
-                            $("#pass").addClass("is-valid");
-                            $("#pass").removeClass("is-invalid");
-                        } else {
-                            $("#pass").addClass("is-invalid");
-                            $("#pass").removeClass("is-valid");
-                        }
-                        if ($("#pass2").val()==$("#pass").val() && validatePassword($("#pass2").val())) {
-                            $("#pass2").addClass("is-valid");
-                            $("#pass2").removeClass("is-invalid");
-                            $("#pass").addClass("is-valid");
-                            $("#pass").removeClass("is-invalid");
-                        } else if($("#pass2").val()!="") {
-                            $("#pass2").addClass("is-invalid");
-                            $("#pass2").removeClass("is-valid");
-                        }
-                    });
-                    $("#pass2").on("keyup", function() {
-                        if ($("#pass2").val()==$("#pass").val() && validatePassword($("#pass2").val())) {
-                            $("#pass2").addClass("is-valid");
-                            $("#pass2").removeClass("is-invalid");
-                        } else {
-                            $("#pass2").addClass("is-invalid");
-                            $("#pass2").removeClass("is-valid");
-                        }
-                    });
-                    $('#db-type').change(function() {
-                        if ($(this).val()==="sqlite") {
-                            $("#db-host").removeAttr('required');
-                            $("#db-user").removeAttr('required');
-                            $("#db-name").removeAttr('required');
-                            $("#db-pass").removeAttr('required');
-                            $("#mysql-options").hide();
-                            $("#errtext").hide();
-                        } else {
-                            $("#db-host").attr('required','required');
-                            $("#db-user").attr('required','required');
-                            $("#db-name").attr('required','required');
-                            $("#db-pass").attr('required','required');
-                            $("#mysql-options").show();
-                        }
-                    });
-                    $("#db-pass").on("keyup", function() {
-                        let http = new XMLHttpRequest();
-                        let params = 'db-type='+$("#db-type").val() +'&db-pass='+ $("#db-pass").val() +'&db-name='+ $("#db-name").val() +'&db-user='+
-                            $("#db-user").val() +'&db-host='+ $("#db-host").val();
-                        http.open('POST', './functions/conntest.php');
-                        http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                        http.onreadystatechange = function() {
-                            if (http.readyState == 4 && http.status == 200) {
-                                // console.log('got response from conntest: "'+http.responseText+'"');
-                                if (http.responseText == "error") {
-                                    $("#errtext").text("Can't connect to database");
-                                    $("#errtext").removeClass("text-muted text-success");
-                                    $("#errtext").addClass("text-danger");
-                                } else {
-                                    $("#errtext").text("Connected to database");
-                                    $("#errtext").removeClass("text-muted text-danger");
-                                    $("#errtext").addClass("text-success");
-                                }
-                            }
-                        }
-                        http.send(params);
-                    });
-
-                    $('#cache').change(function() {
-                        if ($(this).val() === "redis") {
-                            $("#redis-host").attr('required','required')
-                            $("#redis-port").attr('required','required')
-                            $("#redis-password").attr('required','required')
-                            $('#redis-options').show()
-                        } else {
-                            $("#redis-host").removeAttr('required')
-                            $("#redis-port").removeAttr('required')
-                            $("#redis-password").removeAttr('required')
-                            $('#redis-options').hide()
-                        }
-                    })
-
-                    $("#api_key").on("keyup", function() {
-                        if ($("#api_key").val().length==32 && /^[a-zA-Z0-9]+$/.test($('#api_key').val())) {
-                            $("#api_key").addClass("is-valid");
-                            $("#api_key").removeClass("is-invalid");
-                        } else {
-                            $("#api_key").removeClass("is-valid");
-                            $("#api_key").addClass("is-invalid");
-                        }
-                    });
-
-                    $(document).ready(function() {
-                        var loc = window.location.pathname;
-                        var dir = loc.substring(0, loc.lastIndexOf('/'));
-                        $("#dir").val(dir + "/");
-                        if ($("#dir").val()=="//") {
-                            $("#dir").val("/");
-                        }
-                    });
-                </script>
+                <script src="./resources/js/configure.js"></script>
             </div>
         </div>
     </body>
