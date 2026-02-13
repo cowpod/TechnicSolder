@@ -83,25 +83,19 @@ final class Db
         return $this->conn !== null;
     }
 
-    public function test2(string $dbtype, string $host, string $user, string $pass, string $name): bool // Arg
-    {try {
-        if ($dbtype == 'sqlite') {
-            if (is_dir('./config')) {
-                $testconn = new PDO('sqlite:./config/db.sqlite');
-            } elseif (is_dir('../config')) {
-                $testconn = new PDO('sqlite:../config/db.sqlite');
-            } else {
-                die('could not find config folder');
-            }
-        } else {
-            $testconn = new PDO("$dbtype:host=$host;dbname=$name;charset=utf8", $user, $pass);
+    public function test(string $dbtype, string $host, string $user, string $pass, string $name): bool // Arg
+    {
+        if (empty($dbtype) || empty($host)) {
+            return false;
         }
-        $testconn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    } catch (PDOException $e) {
-        error_log("db.php: test(): Connection test failed: ".$e->getMessage());
-        return false;
-    }
-        return true;
+        try {
+            $testconn = new PDO("$dbtype:host=$host;dbname=$name;charset=utf8", $user, $pass);
+            $testconn = null;
+            return true;
+        } catch (PDOException $e) {
+            error_log("db.php: test(): Connection test failed: ".$e->getMessage());
+            return false;
+        }
     }
 
     public function connect(): bool // config

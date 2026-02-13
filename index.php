@@ -477,8 +477,9 @@ if (!uri("/login")) {
                     <?php if ($perms->modpack_create() && $perms->build_create()) { ?>
                     <button class="btn btn-success" data-toggle="collapse" href="#collapseMp" role="button" aria-expanded="false" aria-controls="collapseMp">Instant Modpack</button>
                     <div class="collapse" id="collapseMp">
-                        <form method="POST" action="./functions/instant-modpack.php">
-                            <br>
+                        <br/>
+                        <p>Upload mods and create a modpack quickly</p>
+                        <form id="instant-modpack" method="POST">
                             <input autocomplete="off" required id="dn" class="form-control" type="text" name="display_name" placeholder="Modpack name" />
                             <br />
                             <input autocomplete="off" required id="slug" pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$" class="form-control" type="text" name="name" placeholder="Modpack slug (same as on technicpack.net)" />
@@ -498,7 +499,7 @@ if (!uri("/login")) {
                         <?php } ?>
                             <br />
                             <label for="java">Java version</label>
-                            <select name="java" class="form-control">
+                            <select name="java" id="java" class="form-control">
                                 <?php
                             foreach (SUPPORTED_JAVA_VERSIONS as $jv) {
                                 $selected = ($jv == DEFAULT_JAVA_VERSION) ? 'selected' : '';
@@ -510,10 +511,12 @@ if (!uri("/login")) {
                             <input required class="form-control" type="number" id="memory" name="memory" value="2048" min="1024" max="65536" placeholder="2048" step="512">
                             <br />
                             <input id="modlist" class="form-control" type="hidden" name="modlist" />
-                            <input autocomplete="off" id="modliststr" required readonly class="form-control" type="text" name="modliststr" placeholder="Mods to add" />
+                            <input autocomplete="off" id="modliststr" required readonly class="form-control" type="text" placeholder="Mods to add" />
                             <br />
                             <input type="submit" id="submit" disabled class="btn btn-primary btn-block" value="Create">
                         </form>
+
+                        <p id="instant-modpack-message" class="text-danger"></p>
 
                         <?php
                         if ($perms->mods_upload()) { ?>
@@ -555,25 +558,25 @@ if (!uri("/login")) {
                 <?php } ?>
                     <a target="_blank" href="https://github.com/TheGameSpider/TechnicSolder/wiki/"><button class="btn btn-secondary btn-block" >Documentation</button></a>
                     <br />
-                    <button class="btn btn-secondary" data-toggle="collapse" href="#collapseMigr" role="button" aria-expanded="false" aria-controls="collapseMigr">Database migration</button>
+                    <button id="collapseMigrButton" class="btn btn-secondary" data-toggle="collapse" href="#collapseMigr" role="button" aria-expanded="false" aria-controls="collapseMigr">Database migration</button>
                     <div class="collapse" id="collapseMigr">
                         <br>
-                        <p>Fill out this form to migrate data from an existing local original solder v0.8 installation to this installation.</p>
-                        <div id="dbform">
-                            <input type="text" class="form-control" id="orighost" placeholder="Address of the database you want to migrate from (e.g. 127.0.0.1)"><br>
-                            <input type="text" class="form-control" id="origdatabase" placeholder="Name of the database"><br>
-                            <input autocomplete="off" type="text" class="form-control" id="origname" placeholder="Username for the database"><br>
-                            <input autocomplete="off" type="password" class="form-control" id="origpass" placeholder="Password for the database"><br>
-                            <p class="text-danger"><strong>WARNING!</strong> This will rewrite your current Solder.cf database!</p>
-                            <button class="btn btn-primary" id="submitdbform">Migrate</button>
-                        </div>
-                        <p id="errtext"></p>
-                        <div id="migrating" style="display:none">
-                            <input type="text" class="form-control" id="origdir" placeholder="Path to original solder install directory (ex. /var/www/solder)"><br>
-                            <button class="btn btn-primary" id="submitmigration">Start Migration</button>
-                        </div>
+                        <p>Migrate data from an original solder v0.8 to this installation</p>
+                        <p>This tool is untested. Please report any issues <a href="https://github.com/cowpod/TechnicSolder/issues" target="_blank">here</a>.</p>
+                        <form id="dbform" method="POST">
+                            <input type="hidden" name="db-type" value="mysql">
+                            <input id="dbform-host" type="text" class="form-control" name="db-host" placeholder="Address of the database you want to migrate from (e.g. 127.0.0.1)"><br>
+                            <input id="dbform-user" autocomplete="off" type="text" class="form-control" name="db-user" placeholder="Username for the database"><br>
+                            <input id="dbform-pass" autocomplete="off" type="password" class="form-control" name="db-pass" placeholder="Password for the database"><br>
+                            <input id="dbform-name" type="text" class="form-control" name="db-name" placeholder="Name of the database"><br>
+                            <input type="submit" id="dbform-submit" class="btn btn-primary" value="Connect">
+                        </form>
+                        <form id="dbform2" method="POST" style="display:none;">
+                            <input autocomplete="off" type="text" id="solder-orig" class="form-control" name="solder-orig" placeholder="Path to original solder install directory (ex. /var/www/solder)" style="display:none"><br>
+                            <input type="submit" class="btn btn-primary" id="dbform2-submit" value="Migrate">
+                        </form>
+                        <p id="dbform-message" class="text-muted"></p>
                         <hr>
-                        <p>If you are using TheGameSpider TechnicSolder 1.3.4-1.3.5, click <a href="./functions/upgrade2.0.php">here</a> to upgrade your database.</p>
                     </div>
                 </div>
                 <script src="./resources/js/page_dashboard.js"></script>

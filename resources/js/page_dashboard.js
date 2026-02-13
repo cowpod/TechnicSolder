@@ -64,56 +64,130 @@ $(':file').change(async function() {
     $("#submit").attr("disabled", false);
 });
 
-$("#submitmigration").click(function(){
-    $("#submitmigration").attr('disabled',true);
-    $("#submitmigration").text('Migrating...');
-    var http = new XMLHttpRequest();
-    var params = 'db-pass='+ $("#origpass").val() +'&db-name='+ $("#origdatabase").val() +'&db-user='+ $("#origname").val() +'&db-host='+ $("#orighost").val() +'&solder-orig='+$("#origdir").val() ;
-    http.open('POST', './functions/migrate.php');
-    http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    http.onreadystatechange = function() {
-        if (http.readyState == 4 && http.status == 200) {
-            if (http.responseText == "error") {
-                $("#errtext").text("Migration failed!");
-                $("#errtext").removeClass("text-muted text-success");
-                $("#errtext").addClass("text-danger");
-                $("#submitmigration").attr('disabled',false);
-                $("#submitmigration").text('Start Migration');
-            } else {
-                $("#errtext").text("Migration was successful!");
-                $("#errtext").removeClass("text-muted text-danger");
-                $("#errtext").addClass("text-success");
-                $("#submitmigration").text("Done");
-            }
-        }
-    }
-    http.send(params);
+// mods list can be empty! so we ignore modslist/str
+const imp_fields = $('#dn, #slug, #versions, #java, #memory')
+$('#collapseMp').on('shown.bs.collapse', function () {
+    imp_fields.prop('required', true)
+
 });
-$("#submitdbform").click(function() {
-    $("#submitdbform").attr("disabled", true);
-    $("#submitdbform").text("Connecting...");
-    var http = new XMLHttpRequest();
-    var params = 'db-pass='+ $("#origpass").val() +'&db-name='+ $("#origdatabase").val() +'&db-user='+ $("#origname").val() +'&db-host='+ $("#orighost").val() ;
-    http.open('POST', './functions/conntest.php');
-    http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+$('#collapseMp').on('hidden.bs.collapse', function () {
+    imp_fields.prop('required', false)
+});
+$('#instant-modpack').on('submit', function(event){
+    event.preventDefault()
+
+    $("#submit").attr("disabled", true)
+    $("#submit").text("Creating...")
+
+    var formData = new FormData($("#instant-modpack")[0])
+
+    var http = new XMLHttpRequest()
+    http.open('POST', './functions/instant-modpack.php')
     http.onreadystatechange = function() {
         if (http.readyState == 4 && http.status == 200) {
-            if (http.responseText == "error") {
-                $("#errtext").text("Cannot connect to database");
-                $("#errtext").removeClass("text-muted text-success");
-                $("#errtext").addClass("text-danger");
-                $("#submitdbform").attr("disabled", false);
-                $("#submitdbform").text("Connect");
+            let json = JSON.parse(http.responseText)
+            $("#instant-modpack-message").text(json.message)
+
+            if (json.status == "error") {
+                $("#instant-modpack-message").addClass("text-danger")
+
+                $("#submit").attr("disabled", false)
+                $("#submit").text("Create")
             } else {
-                $("#errtext").text("Connected to database");
-                $("#errtext").removeClass("text-muted text-danger");
-                $("#errtext").addClass("text-success");
-                $("#dbform").hide();
-                $("#migrating").show();
+                $("#instant-modpack-message").addClass("text-success")
+
+                $("#submit").text("Created")
+                
+                window.location.href = `modpack?id=${json.id}`
             }
         }
     }
-    http.send(params);
+    http.send(formData)
+})
+
+const dbform_fields = $('#dbform-host, #dbform-user, #dbform-pass, #dbform-name')
+$('#collapseMigr').on('shown.bs.collapse', function () {
+    dbform_fields.prop('required', true)
+    // we don't make the solder-orig required yet
+});
+$('#collapseMigr').on('hidden.bs.collapse', function () {
+    dbform_fields.prop('required', false)
+    $('#solder-orig').prop('required',false)
+});
+
+// handle first form connection
+$("#dbform").on('submit', function(event) {
+    event.preventDefault()
+
+    $('#dbform-message').text('')
+    $("#dbform-message").removeClass("text-success text-danger")
+
+    $("#dbform-submit").attr("disabled", true)
+    $("#dbform-submit").text("Connecting...")
+
+    var formData = new FormData($("#dbform")[0])
+
+    var http = new XMLHttpRequest()
+    http.open('POST', './functions/conntest.php')
+    http.onreadystatechange = function() {
+        if (http.readyState == 4 && http.status == 200) {
+            let json = JSON.parse(http.responseText)
+            $("#dbform-message").text(json.message)
+
+            if (json.status == "error") {
+                $("#dbform-message").addClass("text-danger")
+
+                $("#dbform-submit").attr("disabled", false)
+                $("#dbform-submit").text("Connect")
+            } else {
+                $("#dbform-message").addClass("text-success")
+
+                $("#dbform").hide()
+                $("#dbform2").show()
+
+                // now make solder-orig required
+                $('#solder-orig').prop('required',true)
+            }
+        }
+    }
+    http.send(formData)
+});
+
+// handle second form actual migration
+$("#dbform2").on('submit', function(event){
+    event.preventDefault();
+
+    $('#dbform-message').text('')
+    $("#dbform-message").removeClass("text-success text-danger")
+
+    $("#dbform2-submit").attr('disabled',true)
+    $("#dbform2-submit").text('Migrating...')
+
+    // get db credentials from previous form
+    var formData = new FormData($("#dbform")[0]);
+    formData.set('solder-orig', $('#solder-orig').val())
+
+    var http = new XMLHttpRequest();
+    http.open('POST', './functions/migrate.php');
+    http.onreadystatechange = function() {
+        if (http.readyState == 4 && http.status == 200) {
+            let json = JSON.parse(http.responseText)
+            $("#dbform-message").text(json.message)
+
+            if (json.status == "error") {
+                $("#dbform-message").addClass("text-danger")
+
+                $("#dbform2-submit").attr('disabled',false)
+                $("#dbform2-submit").text('Migrate')
+            } else {
+                $("#dbform-message").addClass("text-success")
+
+                $("#dbform2-submit").text("Done")
+                $('#dbform2').hide()
+            }
+        }
+    }
+    http.send(formData)
 });
 
 $("#dn").on("keyup", function(){
