@@ -6,7 +6,6 @@ define('NEOFORGE_INFO_PATH', 'META-INF/neoforge.mods.toml');
 define('FORGE_OLD_INFO_PATH', 'mcmod.info');
 require_once('toml.php');
 require_once('interval_range_utils.php');
-require_once('sanitize.php');
 
 final class modInfo
 {

@@ -6,7 +6,6 @@ O(n(m+t)), where n = number of lines in file, m = chars in line, t = number of n
 todo: make static?
 */
 
-require_once('sanitize.php');
 
 final class Toml
 {

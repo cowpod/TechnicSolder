@@ -5,7 +5,6 @@
 assert(array_key_exists('db', $GLOBALS) || array_key_exists('db', get_defined_vars()));
 assert($db->status());
 
-require_once('sanitize.php');
 
 function write_settings($settings, $user): bool
 {

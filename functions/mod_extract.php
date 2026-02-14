@@ -5,8 +5,6 @@ if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
 
-require_once('sanitize.php');
-
 if (!$_GET['id']) {
     die('ID not provided');
 }

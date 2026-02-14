@@ -6,7 +6,6 @@ if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 
-require_once('sanitize.php');
 
 $forge_data = @file_get_contents("https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json"); // can't find normal promotions.json
 if ($forge_data === false) {

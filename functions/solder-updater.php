@@ -17,7 +17,6 @@ define('UPDATE_ERROR', "GIT UPDATE ERROR");
 define('UPDATES_DISABLED', "GIT UPDATES ARE DISABLED");
 define('UPDATE_IN_PROGRESS', "UPDATE IN PROGRESS");
 
-require_once('sanitize.php');
 
 final class Updater
 {

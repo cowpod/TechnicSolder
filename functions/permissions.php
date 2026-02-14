@@ -13,7 +13,6 @@ define('ADD_AND_DELETE_CLIENTS', 0b00000001); // 6
 
 // todo: make this also handle setting permissions. currently it just parses/gets.
 
-require_once('sanitize.php');
 
 final class Permissions
 {
