@@ -28,7 +28,8 @@ function authorsave() {
         }
     }
     var value = encodeURIComponent($("#author-input").val());
-    request.send("id=<?php echo $mod['name'] ?>&value="+value);
+    let modvid = $('#modv-id').val()
+    request.send(`id=${modvid}&value=${value}`);
 }
 function linksave() {
     $("#link-save").html("<em class='fas fa-cog fa-spin'></em>").attr("disabled",true);
@@ -41,13 +42,14 @@ function linksave() {
         }
     }
     var value = encodeURIComponent($("#link-input").val());
-    request.send("id=<?php echo $mod['name'] ?>&value="+value);
+    let modvid = $('#modv-id').val()
+    request.send(`id=${modvid}&value=${value}`);
 }
 function donlinksave() {
     $("#donlink-save").html("<em class='fas fa-cog fa-spin'></em>").attr("disabled",true);
     var request = new XMLHttpRequest();
 
-    request.open('POST', './functions/donedit-mod-link.php');
+    request.open('POST', './functions/edit-mod-donlink.php');
     request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     request.onreadystatechange = function() {
         if (request.readyState == 4) {
@@ -55,5 +57,6 @@ function donlinksave() {
         }
     }
     var value = encodeURIComponent($("#donlink-input").val());
-    request.send("id=<?php echo $mod['name'] ?>&value="+value);
+    let modvid = $('#modv-id').val()
+    request.send(`id=${modvid}&value=${value}`);
 }

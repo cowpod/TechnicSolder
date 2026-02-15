@@ -2246,7 +2246,7 @@ if (!uri("/login")) {
                         <input required class="form-control" type="text" name="md5" placeholder="File md5 Hash" value="<?php echo $mod['md5'] ?>"><br />
                         <input required class="form-control" required type="text" name="mcversion" placeholder="Minecraft Version" value="<?php echo $mod['mcversion'] ?>"><br />
                         <input required class="form-control" required type="text" name="loadertype" placeholder="forge/fabric/etc." value="<?php echo $mod['loadertype'] ?>"><br />
-                        <input type="hidden" name="id" value="<?php echo $_GET['id'] ?>">
+                        <input type="hidden" id="modv-id" name="id" value="<?php echo $_GET['id'] ?>">
                         <input type="submit" name="submit" value="Save" class="btn btn-success">
                         <input type="submit" name="submit" value="Save and close" class="btn btn-success">
                 </form>
