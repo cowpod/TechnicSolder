@@ -42,12 +42,29 @@ if (!$db->beginTransaction(true)) {
     die('{"status":"error","message":"Could not start transaction"}');
 }
 
-$nameexistsq = $db->query("SELECT 1 FROM builds WHERE name = '{$name}' AND modpack = {$id} LIMIT 1");
+$nameexistsq = $db->query("
+    SELECT 1 
+    FROM builds 
+    WHERE name = {$db->quote($name)} 
+    AND modpack = {$id} 
+    LIMIT 1
+");
 if ($nameexistsq) {
     die("Build with name {$_GET['name']} already exists");
 }
 
-if(!$db->execute("INSERT INTO builds (name, modpack, public) VALUES ('{$name}', '{$id}', 0)")) {
+if(!$db->execute("
+    INSERT INTO builds (
+        name, 
+        modpack, 
+        public
+    ) 
+    VALUES (
+        {$db->quote($name)}, 
+        {$id}, 
+        0
+    )
+")) {
     die("Could not add build.");
 }
 

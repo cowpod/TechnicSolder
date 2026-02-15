@@ -73,7 +73,7 @@ function update_icon($db, $target_user, $iconfile)
 
     $icon_base64 = base64_encode($contents);
 
-    if (!$db->execute("UPDATE users SET icon = '{$icon_base64}' WHERE name = '{$target_user}'")) {
+    if (!$db->execute("UPDATE users SET icon = {$db->quote($icon_base64)} WHERE name = {$db->quote($target_user)}")) {
         return ["status" => "error","message" => "Could not set user icon"];
     }
 
@@ -99,7 +99,7 @@ function update_perms($db, $target_user, $newperms)
         return ["status" => "error","message" => "Bad input data; name"];
     }
 
-    if (!$db->execute("UPDATE users SET perms = '{$newperms}' WHERE name = '{$target_user}'")) {
+    if (!$db->execute("UPDATE users SET perms = {$db->quote($newperms)} WHERE name = {$db->quote($target_user)}")) {
         return ["status" => "error","message" => "Could not update permissions"];
     }
     return ["status" => "succ","message" => "Permissions updated."];
@@ -115,7 +115,7 @@ function update_password($db, $target_user, $oldpass, $pass)
         return ["status" => "error","message" => "Weak password"];
     }
 
-    $verifypwdq = $db->query("SELECT pass FROM users WHERE name = '{$target_user}'");
+    $verifypwdq = $db->query("SELECT pass FROM users WHERE name = {$db->quote($target_user)}");
     if (!$verifypwdq) {
         return ["status" => "error","message" => "Could not verify old password"];
     }
@@ -126,7 +126,7 @@ function update_password($db, $target_user, $oldpass, $pass)
     }
 
     $newpass = password_hash($pass, PASSWORD_DEFAULT);
-    if (!$db->execute("UPDATE users SET pass = '{$newpass}' WHERE name = '{$target_user}'")) {
+    if (!$db->execute("UPDATE users SET pass = {$db->quote($newpass)} WHERE name = {$db->quote($target_user)}")) {
         return ["status" => "error","message" => "Could not update password"];
     }
 
@@ -141,14 +141,14 @@ function update_display_name($db, $target_user, $display_name)
     if (!isValidName($display_name)) {
         return ["status" => "error","message" => "Bad name"];
     }
-    if (!$db->execute("UPDATE users SET display_name = '{$display_name}' WHERE name = '{$target_user}'")) {
+    if (!$db->execute("UPDATE users SET display_name = {$db->quote($display_name)} WHERE name = {$db->quote($target_user)}")) {
         return ["status" => "error","message" => "Could not update name"];
     }
 
     // update session vars. otherwise user will need to relog.
     $_SESSION['name'] = $display_name;
 
-    $idq = $db->query("SELECT id FROM users WHERE name = '{$target_user}'");
+    $idq = $db->query("SELECT id FROM users WHERE name = {$db->quote($target_user)}");
     if (empty($idq[0]['id'])) {
         return ["status" => "error","message" => "Couldn't get user id (database issue?)"];
     }

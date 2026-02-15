@@ -30,10 +30,10 @@ if (!isset($_GET['type'])) {
 if (!filter_var($_GET['dl'], FILTER_VALIDATE_URL)) {
     die('{"status":"error","message":"Malformed dl"}');
 }
-if (strpbrk($_GET['version'], '\\"\'') !== false) {
+if (!preg_match('/^[\w\-\.\+]+$/', $_POST['version'])) {
     die('{"status":"error","message":"Malformed version"}');
 }
-if (strpbrk($_GET['mcversion'], '\\"\'') !== false) {
+if (!preg_match('/^[\w\-\.\+]+$/', $_POST['mcversion'])) {
     die('{"status":"error","message":"Malformed mcversion"}');
 }
 
@@ -94,7 +94,8 @@ $zip->close();
 unlink("../forges/modpack-".$version."/modpack.jar");
 rmdir("../forges/modpack-".$version);
 
-$md5 = md5_file("../forges/{$type}-{$version}.zip");
+$filename = "{$type}-{$version}.zip";
+$md5 = md5_file("../forges/{$filename}");
 $file_size = filesize("../forges/{$type}-{$version}.zip");
 $url = $protocol.$config->get('host').$config->get('dir')."forges/".$type."-".$version.".zip";
 
@@ -126,19 +127,19 @@ if (!$db->execute("
         loadertype
     ) 
     VALUES (
-        '{$type}', 
-        '{$type_pretty_names[$type]}', 
-        '{$md5}', 
-        '{$url}', 
-        '{$type_links[$type]}', 
-        '{$type_authors[$type]}', 
-        '{$type_descriptions[$type]}', 
-        '{$version}', 
-        '{$mcversion}', 
-        '{$type}-{$version}.zip',
+        {$db->quote($type)}, 
+        {$db->quote($type_pretty_names[$type])}, 
+        {$db->quote($md5)}, 
+        {$db->quote($url)}, 
+        {$db->quote($type_links[$type])}, 
+        {$db->quote($type_authors[$type])}, 
+        {$db->quote($type_descriptions[$type])}, 
+        {$db->quote($version)}, 
+        {$db->quote($mcversion)}, 
+        {$db->quote($filename)},
         {$file_size},
         'forge',
-        '{$type}'
+        {$db->quote($type)}
     )
 ")) {
     die('{"status":"error","message":"Loader could not be added to database"}');

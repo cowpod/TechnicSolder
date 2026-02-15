@@ -18,11 +18,17 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
-$md5q = $db->query("SELECT id,name FROM mods WHERE jar_md5='{$_GET['md5']}' LIMIT 1");
-if ($md5q) {
-    $modid = empty($md5q[0]['id']) ? null : $md5q[0]['id'];
-    $name = empty($md5q[0]['name']) ? null : $md5q[0]['name'];
-    die('{"status":"info","message":"Mod already in database.","modid":'.$modid.',"name":"'.$name.'"}');
-} else {
+$checksumq = $db->query("
+    SELECT id,name 
+    FROM mods
+    WHERE jar_md5 = {$db->quote($_GET['md5'])}
+    LIMIT 1
+") ?: [];
+if (!$checksumq) {
     die('{"status":"succ","message":"Mod not in database."}');
 }
+$checksum = $checksumq[0];
+
+$modid = empty($checksum['id']) ? null : $checksum['id'];
+$name = empty($checksum['name']) ? null : $checksum['name'];
+die('{"status":"info","message":"Mod already in database.","modid":'.$modid.',"name":"'.$name.'"}');

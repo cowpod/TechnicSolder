@@ -80,8 +80,13 @@ if (!empty($_POST['modpack_id'])) {
                 die('{"status":"error","message":"Could not add client (empty)."}');
             }
             if (!$db->execute("
-                INSERT INTO modpack_clients (modpack_id,client_id) 
-                VALUES ({$_POST['modpack_id']},{$client_id})
+                INSERT INTO modpack_clients (
+                    modpack_id,
+                    client_id
+                ) 
+                VALUES (
+                    {$_POST['modpack_id']},
+                    {$client_id})
             ")) {
                 die('{"status":"error","message":"Could not add client."}');
             }

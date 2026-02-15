@@ -141,22 +141,40 @@ function processFile(string $filePath, string $fileName, array $modinfo): int
             $zip_size = filesize($mod_zip_path);
 
             // error_log('adding mod of loadertype='.$modinfo['loadertype']);
-            $addq = $db->execute("INSERT INTO mods (name,pretty_name,md5,jar_md5,url,link,author,description,version,mcversion,filename,type,loadertype,filesize) VALUES (
-                '{$db->sanitize($modinfo['modid'])}',
-                '{$db->sanitize($modinfo['name'])}',
-                '{$db->sanitize($mod_zip_md5)}',
-                '{$db->sanitize($jar_md5)}',
-                '',
-                '{$db->sanitize($modinfo['url'])}',
-                '{$db->sanitize($modinfo['authors'])}',
-                '{$db->sanitize($modinfo['description'])}',
-                '{$db->sanitize($modinfo['version'])}',
-                '{$db->sanitize($modinfo['mcversion'])}',
-                '{$db->sanitize(basename($mod_zip_path))}',
-                'mod',
-                '{$db->sanitize($modinfo['loadertype'])}',
-                {$zip_size}
-                );");
+            $addq = $db->execute("
+                INSERT INTO mods (
+                    name,
+                    pretty_name,
+                    md5,
+                    jar_md5,
+                    url,
+                    link,
+                    author,
+                    description,
+                    version,
+                    mcversion,
+                    filename,
+                    type,
+                    loadertype,
+                    filesize
+                ) 
+                VALUES (
+                    {$db->quote($modinfo['modid'])},
+                    {$db->quote($modinfo['name'])},
+                    {$db->quote($mod_zip_md5)},
+                    {$db->quote($jar_md5)},
+                    '',
+                    {$db->quote($modinfo['url'])},
+                    {$db->quote($modinfo['authors'])},
+                    {$db->quote($modinfo['description'])},
+                    {$db->quote($modinfo['version'])},
+                    {$db->quote($modinfo['mcversion'])},
+                    {$db->quote(basename($mod_zip_path))},
+                    'mod',
+                    {$db->quote($modinfo['loadertype'])},
+                    {$zip_size}
+                )
+            ");
 
             if ($addq) {
                 assert(!empty($db->insert_id()));
@@ -189,6 +207,7 @@ if (isset($_FILES['fiels']) && isset($_FILES["fiels"]["name"]) && isset($_FILES[
     if (empty($_POST['url']) || !filter_var($_POST['url'], FILTER_VALIDATE_URL)) {
         die('{"status":"error","message":"Invalid URL"}');
     }
+    // we check filename in download_url
 
     // todo: sanitize $_POST['filename']
     [$file_tmp, $file_name] = download_url($_POST['url'], $_POST['filename']);
@@ -234,9 +253,11 @@ $warn = $mi->getWarnings();
 // note if we don't have a fallback (no modloaders installed),
 // this will be empty.
 
-$fallback_mcversion = '';
-if (!empty($_POST['fallback_mcversion'])) {
-    $fallback_mcversion = $db->sanitize($_POST['fallback_mcversion']);
+$fallback_mcversion = !empty($_POST['fallback_mcversion']) ? $_POST['fallback_mcversion'] : '';
+
+// just blank it if its invalid.
+if (!empty($fallback_mcversion) && !preg_match('/^[\w\-\+\.]+$/', $fallback_mcversion)) {
+    die('{"status":"error","message":"Malformed mcversion"}');
 }
 
 foreach ($modinfos as $type => $mod) {
@@ -271,12 +292,15 @@ foreach ($modinfos as $modinfo) {
         continue;
     }
     // if we have another mod of same name, version, mcversion, type, loadertype
-    $query_mod_exists = $db->query("SELECT id,name FROM mods 
-        WHERE name = '{$db->sanitize($modinfo['modid'])}' 
-        AND version = '{$db->sanitize($modinfo['version'])}' 
-        AND mcversion = '{$db->sanitize($modinfo['mcversion'])}' 
+    $query_mod_exists = $db->query("
+        SELECT id, name 
+        FROM mods 
+        WHERE name = {$db->quote($modinfo['modid'])}
+        AND version = {$db->quote($modinfo['version'])}
+        AND mcversion = {$db->quote($modinfo['mcversion'])} 
         AND type = 'mod' 
-        AND loadertype = '{$db->sanitize($modinfo['loadertype'])}'");
+        AND loadertype = {$db->quote($modinfo['loadertype'])}
+    ");
 
     if ($query_mod_exists && sizeof($query_mod_exists) > 0) {
         error_log('{"status": "info","message":"Mod already in database!","modid":"'.$query_mod_exists[0]['id'].'","name":"'.$query_mod_exists[0]['name'].'"}');

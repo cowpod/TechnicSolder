@@ -14,7 +14,11 @@ function write_settings($settings, $user): bool
     assert(!empty($settings));
     // api_key is stored in a seperate field
     if (isset($settings['api_key'])) {
-        $usersettingsq = $db->execute("UPDATE users SET api_key='".$settings['api_key']."' WHERE name='".$db->sanitize($user)."'");
+        $usersettingsq = $db->execute("
+            UPDATE users 
+                SET api_key = {$db->quote($settings['api_key'])}
+                WHERE name = {$db->quote($user)}
+            ");
         if (!$usersettingsq) {
             error_log("set_settings(): Failed to write settings=>api_key");
             return false;
@@ -28,7 +32,11 @@ function write_settings($settings, $user): bool
     }
     $encoded_b64 = base64_encode($encoded_json);
 
-    $usersettingsq = $db->execute("UPDATE users SET settings='{$encoded_b64}' WHERE name='{$db->sanitize($user)}'");
+    $usersettingsq = $db->execute("
+        UPDATE users 
+        SET settings = {$db->quote($encoded_b64)}
+        WHERE name = {$db->quote($user)}
+    ");
     if ($usersettingsq) {
         return true;
     }
@@ -40,7 +48,11 @@ function read_settings($user): void
     // read settings for a user
     global $db;
     assert(!empty($user));
-    $usersettingsq = $db->query("SELECT settings FROM users WHERE name='".$db->sanitize($user)."'");
+    $usersettingsq = $db->query("
+        SELECT settings 
+        FROM users 
+        WHERE name = {$db->quote($user)}
+    ");
     if ($usersettingsq && sizeof($usersettingsq) == 1 && isset($usersettingsq[0]['settings'])) {
         $settings_json = @base64_decode($usersettingsq[0]['settings']);
         if ($settings_json === false) {
@@ -56,8 +68,12 @@ function read_settings($user): void
         error_log("unable to get user settings");
     }
     // for normal users, api_key is seperate from settings.
-    $userapikeyq = $db->query("SELECT api_key FROM users WHERE name='".$db->sanitize($user)."'");
-    if ($userapikeyq && sizeof($userapikeyq) == 1) {
+    $userapikeyq = $db->query("
+        SELECT api_key 
+        FROM users 
+        WHERE name = {$db->quote($user)}
+    ") ?: [];
+    if ($userapikeyq) {
         $_SESSION['user-settings']['api_key'] = $userapikeyq[0]['api_key'];
         error_log("got api key from database");
     }

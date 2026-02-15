@@ -32,7 +32,11 @@ if (!isset($db)) {
     $db->connect();
 }
 
-if (!$db->execute("UPDATE `mods` SET `author` = '{$_POST['value']}' WHERE `name` = '{$_POST['id']}'")){
+if (!$db->execute("
+    UPDATE mods 
+    SET author = {$db->quote($_POST['value'])}
+    WHERE name = {$db->quote($_POST['id'])}
+")){
     die("Could not save author");
 }
 

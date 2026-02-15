@@ -75,16 +75,30 @@ if (!$db->beginTransaction(true)) {
     die('{"status":"error","message":"Could not start transaction"}');
 }
 
-if($db->query("SELECT 1 FROM users WHERE name='".$email."'")) {
+if($db->query("
+    SELECT 1 
+    FROM users 
+    WHERE name = {$db->quote($email)}
+")) {
     die('{"status":"error","message":"User with that email already exists"}');
 }
 
-if (!$db->execute("INSERT INTO users(`name`,`display_name`,`perms`,`pass`,`icon`) VALUES(
-    '".$email."',
-    '".$name."',
-    '".DEFAULT_PERMS."',
-    '".$pass."',
-    '".ICON_DATA."')")) {
+if (!$db->execute("
+    INSERT INTO users(
+        name,
+        display_name,
+        perms,
+        pass,
+        icon
+    ) 
+    VALUES (
+        {$db->quote($email)},
+        {$db->quote($name)},
+        {$db->quote(DEFAULT_PERMS)},
+        {$db->quote($pass)},
+        {$db->quote(ICON_DATA)}
+    )
+")) {
     die('{"status":"error","message":"An error has occured"}');
 }
 $id = $db->insert_id();

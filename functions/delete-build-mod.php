@@ -35,7 +35,7 @@ if (!$db->beginTransaction(true)) {
 if (!$db->execute("
     DELETE FROM build_mods 
     WHERE build_id = {$_GET['bid']}
-        AND mod_id = {$_GET['id']}
+    AND mod_id = {$_GET['id']}
 ")) {
     die("Could not remove mod from build");
 }

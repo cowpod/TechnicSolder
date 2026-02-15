@@ -13,7 +13,7 @@ function slugify(string $str, string $unknown_replace = ''): string|false {
     $trl = transliterate($str);
 
     // drop chars transliterate() missed, and also 
-    return preg_replace('/[^\w_\-]/', $unknown_replace, $trl);
+    return preg_replace('/[^\w\-]/', $unknown_replace, $trl);
 }
 /**
  * Transliterate string, and drop unknown chars except for regex word chars. Does not drop period.
@@ -27,7 +27,7 @@ function slugify2(string $str, string $unknown_replace = ''): string|false {
     $trl = transliterate($str);
 
     // drop chars transliterate() missed, and also 
-    return preg_replace('/[^\w_\-\.]/', $unknown_replace, $trl);
+    return preg_replace('/[^\w\-\.]/', $unknown_replace, $trl);
 }
 
 

@@ -35,7 +35,16 @@ require_once("db.php");
 $db = new Db();
 $db->connect();
 
-if (!$db->execute("INSERT INTO clients(`name`,`UUID`) VALUES ('{$db->sanitize($_GET['name'])}', '{$db->sanitize($_GET['uuid'])}')")){
+if (!$db->execute("
+    INSERT INTO clients(
+        `name`,
+        `UUID`
+    ) 
+    VALUES (
+        {$db->quote($_GET['name'])}, 
+        {$db->quote($_GET['uuid'])}
+    )
+")){
     die("Could not add client");
 }
 

@@ -14,9 +14,11 @@ if (!$perms->files_upload()) {
     die('{"status":"error","message":"Insufficient permission!"}');
 }
 
+require('slugify.php');
 
-$fileName = $_FILES["fiels"]["name"];
+$fileName = slugify2($_FILES["fiels"]["name"], '-'); // only allow \w\-\.
 $fileTmpLoc = $_FILES["fiels"]["tmp_name"];
+
 if (!$fileTmpLoc) {
     echo '{"status":"error","message":"File is too big! Check your post_max_size (current value '.ini_get('post_max_size').') and upload_max_filesize (current value '.ini_get('upload_max_filesize').') values in '.php_ini_loaded_file().'"}';
     exit();
@@ -68,8 +70,6 @@ if (file_exists("../others/".$fileName)) {
     }
 }
 
-require('slugify.php');
-
 require_once('./configuration.php');
 global $config;
 if (empty($config)) {
@@ -82,11 +82,11 @@ if (empty($db)) {
 }
 $db->connect();
 
-if (!move_uploaded_file($fileTmpLoc, "../others/".$fileName)) {
+if (!move_uploaded_file($fileTmpLoc, "../others/{$fileName}")) {
     die('{"status":"error","message":"Could not move file"}');
 }
 
-$pretty_name = $db->sanitize($fileName);
+$pretty_name = $fileName;
 $name = slugify($pretty_name);
 $author = $_SESSION['name'];
 $protocol = ($config->exists('protocol') && !empty($config->get('protocol'))) ? $config->get('protocol') : strtolower(current(explode('/', $_SERVER['SERVER_PROTOCOL'])))."://";
@@ -94,19 +94,33 @@ $url = $protocol.$config->get('host').$config->get('dir')."others/".$fileName;
 $md5 = md5_file("../others/".$fileName);
 $file_size = filesize("../others/".$fileName);
 
-if (!$db->execute("INSERT INTO mods (name,pretty_name,md5,url,author,description,filename,filesize,type,version,mcversion) VALUES (
-    '{$name}',
-    '{$pretty_name}',
-    '{$md5}',
-    '{$url}',
-    '{$author}',
-    'Custom file by {$author}',
-    '{$fileName}',
-    {$file_size},
-    'other',
-    '1.0',
-    '*'
-)")) {
+if (!$db->execute("
+    INSERT INTO mods (
+        name,
+        pretty_name,
+        md5,
+        url,
+        author,
+        description,
+        filename,
+        filesize,
+        type,
+        version,
+        mcversion
+    ) VALUES (
+        {$db->quote($name)},
+        {$db->quote($pretty_name)},
+        {$db->quote($md5)},
+        {$db->quote($url)},
+        {$db->quote($author)},
+        'Custom file',
+        {$db->quote($fileName)},
+        {$file_size},
+        'other',
+        '1.0',
+        '*'
+    )
+")) {
     die('{"status":"error","message":"File could not be added to database"}');
 }
 

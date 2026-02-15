@@ -68,41 +68,41 @@ if (!isset($db)) {
 // build massive sql statement
 $sql = 'UPDATE mods SET';
 if (array_key_exists('pretty_name',$_POST)) {
-    $sql .= " pretty_name = '{$db->sanitize($_POST['pretty_name'])}',";
+    $sql .= " pretty_name = {$db->quote($_POST['pretty_name'])},";
 }
 if (array_key_exists('description',$_POST)) {
-    $sql .= " description = '{$db->sanitize($_POST['description'])}',";
+    $sql .= " description = {$db->quote($_POST['description'])},";
 }
 if (array_key_exists('author',$_POST)) {
-    $sql .= " author = '{$db->sanitize($_POST['author'])}',";
+    $sql .= " author = {$db->quote($_POST['author'])},";
 }
 if (array_key_exists('version', $_POST)) {
-    $sql .= " version = '{$db->sanitize($_POST['version'])}',";
+    $sql .= " version = {$db->quote($_POST['version'])},";
 }
 if (array_key_exists('mcversion',$_POST)) {
-    $sql .= " mcversion = '{$db->sanitize($_POST['mcversion'])}',";
+    $sql .= " mcversion = {$db->quote($_POST['mcversion'])},";
 }
 if (array_key_exists('link',$_POST)) {
-    $sql .= " link = '{$db->sanitize($_POST['link'])}',";
+    $sql .= " link = {$db->quote($_POST['link'])},";
 }
 if (array_key_exists('donlink',$_POST)) {
-    $sql .= " donlink = '{$db->sanitize($_POST['donlink'])}',";
+    $sql .= " donlink = {$db->quote($_POST['donlink'])},";
 }
 if (array_key_exists('url',$_POST)) {
-    $sql .= " url = '{$db->sanitize($_POST['url'])}',";
+    $sql .= " url = {$db->quote($_POST['url'])},";
 }
 if (array_key_exists('md5',$_POST)) {
-    $sql .= " md5 = '{$db->sanitize($_POST['md5'])}',";
+    $sql .= " md5 = {$db->quote($_POST['md5'])},";
 }
 if (array_key_exists('loadertype',$_POST)) {
-    $sql .= " loadertype = '{$db->sanitize($_POST['loadertype'])}',";
+    $sql .= " loadertype = {$db->quote($_POST['loadertype'])},";
 }
 $sql = rtrim($sql, ',');
 
 if (!empty($_POST['id'])) {
-    $sql .= " WHERE id = {$db->sanitize($_POST['id'])}";
+    $sql .= " WHERE id = {$_POST['id']}";
 } else {
-    $sql .= " WHERE name = {$db->sanitize($_POST['name'])}";
+    $sql .= " WHERE name = {$db->quote($_POST['name'])}";
 } // else: we already check that one exists
 
 if (!$db->execute($sql)) {

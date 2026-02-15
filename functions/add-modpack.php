@@ -40,6 +40,11 @@ if (!$db->beginTransaction(true)) {
 $mpq = $db->query("SELECT COUNT(*) AS count FROM modpacks WHERE name LIKE 'unnamed-modpack-%'");
 $mpi = ($mpq && isset($mpq[0]['count'])) ? $mpq[0]['count'] + 1 : 1;
 
+$base_url = "{$protocol}{$config->get('host')}{$config->get('dir')}";
+$iconurl = "{$base_url}resources/default/icon.png";
+$logourl = "{$base_url}resources/default/logo.png";
+$backgroundurl = "{$base_url}resources/default/background.png";
+
 if (!$db->execute("INSERT INTO modpacks (
     name,
     display_name,
@@ -54,11 +59,11 @@ if (!$db->execute("INSERT INTO modpacks (
 VALUES (
     'unnamed-modpack-{$mpi}',
     'Unnamed modpack',
-    '{$protocol}{$config->get('host')}{$config->get('dir')}resources/default/icon.png',
+    {$db->quote($iconurl)},
     'A5EA4C8FA53984C911A1B52CA31BC008',
-    '{$protocol}{$config->get('host')}{$config->get('dir')}resources/default/logo.png',
+    {$db->quote($logourl)},
     '70A114D55FF1FA4C5EEF7F2FDEEB7D03',
-    '{$protocol}{$config->get('host')}{$config->get('dir')}resources/default/background.png',
+    {$db->quote($backgroundurl)},
     '88F838780B89D7C7CD10FE6C3DBCDD39',
     0
 )")){

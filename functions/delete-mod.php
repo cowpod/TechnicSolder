@@ -31,7 +31,7 @@ function removeMod($id) {
     global $db;
 
     // get filename for mod id (and if it exists)
-    $modq = $db->query("SELECT type,filename FROM mods WHERE id = '{$id}'");
+    $modq = $db->query("SELECT type,filename FROM mods WHERE id = {$id}");
     if (!$modq) {
         return ["status" => "error","message" => "Specified id does not exist."];
     }
@@ -56,7 +56,7 @@ function removeMod($id) {
     }
     
     // remove mod from db
-    if (!$db->execute("DELETE FROM mods WHERE id = '{$id}'")) {
+    if (!$db->execute("DELETE FROM mods WHERE id = {$id}")) {
         return ["status" => "error","message" => "Could not delete mod"];
     }
 
@@ -65,7 +65,7 @@ function removeMod($id) {
         SELECT 1 
         FROM mods 
         WHERE type = 'mod' 
-        AND filename = '{$mod['filename']}' 
+        AND filename = {$db->quote($mod['filename'])}
         LIMIT 1
     ");
     if ($fileinuseq) {
@@ -100,7 +100,7 @@ if (!empty($_GET['id'])) {
 // delete by name
 elseif (!empty($_GET['name'])) {
     // for all mod versions (ids) associated with name
-    $modq = $db->query("SELECT * FROM mods WHERE name = '{$_GET['name']}'");
+    $modq = $db->query("SELECT * FROM mods WHERE name = {$db->quote($_GET['name'])}");
 
     $remove_failed = [];
     foreach ($modq as $mod) {

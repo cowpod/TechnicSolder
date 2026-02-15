@@ -43,7 +43,7 @@ $hasmodloaderq = $db->query("
     FROM build_mods bm
     JOIN mods m
         ON m.id = bm.mod_id
-    WHERE bm.build_id = {$db->sanitize($_GET['bid'])}
+    WHERE bm.build_id = {$_GET['bid']}
     AND m.type = 'forge'
     LIMIT 1
 ");

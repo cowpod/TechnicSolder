@@ -1,17 +1,18 @@
 <?php
+define('STREAM_CHUNK_SIZE', 1024 * 64); // 64KB
+define('MAX_DOWNLOAD_TIME', 60 * 20); // 20 minutes
+// define('ASSUMED_USER_TRANSFER_SPEED', 1024*1024); // 1MB/s
 
 session_start();
 if (empty($_SESSION['user'])) {
     die("Unauthorized request or login session has expired!");
 }
 
-if (!$_GET['id']) {
-    die('ID not provided');
+if (empty($_GET['id'])) {
+    die('Missing id');
 }
-require_once('./configuration.php');
-global $config;
-if (empty($config)) {
-    $config = new Config();
+if (!is_numeric($_GET['id'])) {
+    die("Malformed id");
 }
 
 require_once("db.php");
@@ -20,19 +21,23 @@ if (empty($db)) {
     $db = new Db();
     $db->connect();
 }
-define('STREAM_CHUNK_SIZE', 1024 * 64); // 64KB
-define('MAX_DOWNLOAD_TIME', 60 * 20); // 20 minutes
-// define('ASSUMED_USER_TRANSFER_SPEED', 1024*1024); // 1MB/s
 
-$filenameq = $db->query("SELECT `filename` FROM `mods` WHERE `id` = ".$db->sanitize($_GET['id']));
-if ($filenameq) {
-    assert(sizeof($filenameq) == 1);
-    $filenameq = $filenameq[0];
+$filenameq = $db->query("
+    SELECT filename 
+    FROM mods 
+    WHERE id = {$_GET['id']}
+") ?: [];
+if (!$filenameq) {
+    die("Mod has no filename");
 }
-$fileName = $filenameq['filename'];
-$file_location = '../mods/'.$fileName;
+$fileName = $filenameq[0]['filename'];
 
-// todo: ensure path is safe
+$baseDir = realpath(__DIR__ . '/../mods');
+$file_location = realpath($baseDir . '/' . $fileName);
+
+if ($file_location === false || strpos($file_location, $baseDir) !== 0) {
+    die('Access denied');
+}
 
 $zip = new ZipArchive();
 $zippedJarFilePath = '';

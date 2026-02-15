@@ -6,7 +6,6 @@ if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
 
-
 require_once('./permissions.php');
 global $perms;
 $perms = new Permissions($_SESSION['perms'], $_SESSION['privileged']);
@@ -62,7 +61,7 @@ if (!$db->execute("
         memory
     )
     SELECT 
-        '{$_POST['new_build_name']}',
+        {$db->quote($_POST['new_build_name'])},
         minecraft,
         java,
         {$_POST['dest_modpack_id']},

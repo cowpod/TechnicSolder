@@ -39,13 +39,13 @@ if (!is_numeric($_POST['id'])) {
 if (!is_numeric($_POST['memory'])) {
     die('{"status":"error","message":"Malformed memory"}');
 }
-if (strpbrk($_POST['versions'], '\\"\'') !== false) {
+if (!preg_match('/^[\w\-\.\+]+$/',$_POST['versions'])) {
     die('{"status":"error","message":"Malformed versions"}');
 }
-if (strpbrk($_POST['forgec'], '\\"\'') !== false) {
-    die('{"status":"error","message":"Malformed forgec"}');
-}
-if (strpbrk($_POST['java'], '\\"\'') !== false) {
+// if (strpbrk($_POST['forgec'], '\\"\'') !== false) {
+//     die('{"status":"error","message":"Malformed forgec"}');
+// }
+if (!preg_match('/^[\w\-\.\+]+$/',$_POST['java'])) {
     die('{"status":"error","message":"Malformed java"}');
 }
 
@@ -108,8 +108,14 @@ if ($_POST['forgec'] !== 'none') {
         }
     }
     if (!$db->execute("
-        INSERT INTO build_mods (build_id,mod_id)
-        VALUES ({$_POST['id']},{$_POST['versions']})
+        INSERT INTO build_mods (
+            build_id,
+            mod_id
+        )
+        VALUES (
+            {$_POST['id']},
+            {$_POST['versions']}
+        )
     ")) {
         die('{"status":"error","message":"Could not set forge version in build '.$_POST['id'].'"}');
     }
@@ -124,7 +130,11 @@ if ($_POST['forgec'] !== 'none') {
 $ispublic = $_POST['ispublic'] == "on" ? 1 : 0;
 
 // check if user has permission to change public
-$publicq = $db->query("SELECT public FROM builds WHERE id = ".$db->sanitize($_POST['id']));
+$publicq = $db->query("
+    SELECT public 
+    FROM builds 
+    WHERE id = {$_POST['id']}
+");
 if ($publicq && sizeof($publicq) == 1 && !empty($publicq[0])) {
     if (!empty($publicq[0]['public']) && $publicq[0]['public'] != $ispublic) {
         if (!$perms->build_publish()) {
@@ -148,8 +158,8 @@ if ($config->get('db-type') === 'sqlite') {
         UPDATE builds 
         SET
             minecraft = (SELECT mcversion FROM loader_mod),
-            java = '{$_POST['java']}',
-            memory = '{$_POST['memory']}',
+            java = {$db->quote($_POST['java'])},
+            memory = {$_POST['memory']},
             `public` = {$ispublic},
             loadertype = (SELECT loadertype FROM loader_mod)
         WHERE id = {$_POST['id']}
@@ -170,8 +180,8 @@ if ($config->get('db-type') === 'sqlite') {
             ON lm.build_id = b.id
         SET
             b.minecraft = lm.mcversion,
-            b.java = '{$_POST['java']}',
-            b.memory = '{$_POST['memory']}',
+            b.java = {$db->quote($_POST['java'])},
+            b.memory = {$_POST['memory']},
             b.`public` = {$ispublic},
             b.loadertype = lm.loadertype
         WHERE b.id = {$_POST['id']};

@@ -31,15 +31,21 @@ if (!$db->beginTransaction(true)) {
     die('{"status":"error","message":"Could not start transaction"}');
 }
 
-$modsq = $db->query("SELECT 1 FROM `builds` WHERE `id` = ".$_GET['bid']);
+$modsq = $db->query("SELECT 1 FROM builds WHERE id = {$_GET['bid']}");
 if (!$modsq) {
     die("Build id does not exist");
 }
 
 $mods = $modsq[0];
 if (!$db->execute("
-    INSERT INTO build_mods (build_id,mod_id)
-    VALUES ({$_GET['bid']},{$_GET['id']})
+    INSERT INTO build_mods (
+        build_id,
+        mod_id
+    )
+    VALUES (
+        {$_GET['bid']},
+        {$_GET['id']}
+    )
 ")) {
     die('{"status":"error","message":"Could add mod to build"}');
 }

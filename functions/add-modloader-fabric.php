@@ -17,10 +17,10 @@ if (!$perms->modloaders_upload()) {
 $version = $_GET['loader'];
 $mcversion = $_GET['version'];
 
-if (strpbrk($_GET['loader'], '\\"\'') !== false) {
+if (!preg_match('/^[\w\-\.\+]+$/', $_POST['loader'])) { // version
     die('{"status":"error","message":"Malformed loader"}');
 }
-if (strpbrk($_GET['version'], '\\"\'') !== false) {
+if (!preg_match('/^[\w\-\.\+]+$/', $_POST['version'])) { // mcversion
     die('{"status":"error","message":"Malformed version"}');
 }
 
@@ -79,6 +79,7 @@ $zip->close();
 unlink("../forges/modpack-".$version."/version.json");
 rmdir("../forges/modpack-".$version);
 
+$filename = "fabric-{$version}.zip";
 $md5 = md5_file("../forges/fabric-".$version.".zip");
 $file_size = filesize("../forges/fabric-".$version.".zip");
 $url = $protocol.$config->get('host').$config->get('dir')."forges/fabric-".urlencode($version).".zip";
@@ -87,21 +88,36 @@ if (!$db->beginTransaction(true)) {
     die('{"status":"error","message":"Could not start transaction"}');
 }
 
-if (!$db->execute("INSERT INTO `mods` (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`filesize`,`type`,`loadertype`) VALUES (
-    'fabric',
-    'Fabric (alpha)',
-    '{$md5}',
-    '{$url}',
-    'https://fabricmc.net/',
-    'FabricMC Team', 
-    'Fabric is a lightweight, experimental modding toolchain for Minecraft.', 
-    '{$version}',
-    '{$mcversion}',
-    'fabric-{$version}.zip',
-    '{$file_size}',
-    'forge',
-    'fabric'
-)")) {
+if (!$db->execute("INSERT INTO mods (
+        name,
+        pretty_name,
+        md5,
+        url,
+        link,
+        author,
+        description,
+        version,
+        mcversion,
+        filename,
+        filesize,
+        type,
+        loadertype
+    ) VALUES (
+        'fabric',
+        'Fabric (alpha)',
+        {$db->quote($md5)},
+        {$db->quote($url)},
+        'https://fabricmc.net/',
+        'FabricMC Team', 
+        'Fabric is a lightweight, experimental modding toolchain for Minecraft.', 
+        {$db->quote($version)},
+        {$db->quote($mcversion)},
+        {$db->quote($filename)},
+        {$file_size},
+        'forge',
+        'fabric'
+    )
+")) {
     die('{"status":"error","message":"Loader could not be added to database"}');
 }
 

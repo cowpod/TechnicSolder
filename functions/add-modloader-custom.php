@@ -28,10 +28,10 @@ if (!isset($_POST['type'])) {
     die('type is invalid! only accepted are fabric,forge,neoforge');
 }
 
-if (strpbrk($_POST['version'], '\\"\'') !== false) {
+if (!preg_match('/^[\w\-\.\+]+$/', $_POST['version'])) {
     die('{"status":"error","message":"Malformed version"}');
 }
-if (strpbrk($_POST['mcversion'], '\\"\'') !== false) {
+if (!preg_match('/^[\w\-\.\+]+$/', $_POST['mcversion'])) {
     die('{"status":"error","message":"Malformed mcversion"}');
 }
 
@@ -66,9 +66,9 @@ if ($config->exists('protocol') && !empty($config->get('protocol'))) {
 
 require('slugify.php');
 
-$version = $db->sanitize(slugify($_POST['version']));
-$mcversion = $db->sanitize($_POST['mcversion']);
-$type = $db->sanitize($_POST['type']);
+$version = slugify($_POST['version']);
+$mcversion = $_POST['mcversion'];
+$type = $_POST['type'];
 
 if (is_dir("../forges/modpack-".$version)) {
     die('{"status":"error","message":"Folder modpack-'.$version.' already exists!"}');
@@ -98,24 +98,41 @@ $zip->close();
 unlink("../forges/modpack-".$version."/modpack.jar");
 rmdir("../forges/modpack-".$version);
 
-$md5 = md5_file("../forges/forge-".$version.".zip");
+$author = $_SESSION['name'];
+$filename = "forge-{$version}.zip";
+$md5 = md5_file("../forges/{$filename}");
+$file_size = filesize("../forges/{$filename}");
 $url = $protocol.$config->get('host').$config->get('dir')."forges/forge-".$version.".zip";
 if (!$db->execute(
-    "INSERT INTO `mods`
-    (`name`,`pretty_name`,`md5`,`url`,`link`,`author`,`description`,`version`,`mcversion`,`filename`,`type`,`loadertype`)
+    "INSERT INTO mods (
+        name,
+        pretty_name,
+        md5,
+        url,
+        link,
+        author,
+        description,
+        version,
+        mcversion,
+        filename,
+        filesize,
+        type,
+        loadertype
+    )
     VALUES (
         'customloader',
         'Custom mod loader',
-        '".$md5."',
-        '".$url."',
+        {$db->quote($md5)},
+        {$db->quote($url)},
         '',
-        '".$_SESSION['name']."',
+        {$db->quote($author)},
         'Custom mod loader',
-        '".$version."',
-        '".$mcversion."',
-        'forge-".$version.".zip',
+        {$db->quote($version)},
+        {$db->quote($mcversion)},
+        {$db->quote($filename)},
+        {$file_size}
         'forge',
-        '".$type."'
+        {$db->quote($type)}
     )"
 )){
     die('{"status":"error","message":"Mod could not be added to database"}');

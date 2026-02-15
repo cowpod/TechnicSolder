@@ -89,7 +89,7 @@ if (!empty($_POST['email']) && !empty($_POST['password'])) {
     if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
         die("Malformed email");
     }
-    $userq = $db->query("SELECT * FROM users WHERE name = '{$_POST['email']}' LIMIT 1");
+    $userq = $db->query("SELECT * FROM users WHERE name = {$db->quote($_POST['email'])} LIMIT 1");
     if ($userq && sizeof($userq) == 1) {
         $user = $userq[0];
         if (password_verify($_POST['password'], $user['pass'])) {
@@ -234,12 +234,16 @@ if (!uri("/login")) {
                 $modpacks[$modpack['id']] = $modpack;
 
                 if ($api_key && $modpack['public'] == 1) {
-                    $time = time();
-
                     // clean up old cached data
+                    $time = time();
                     $db->execute("DELETE FROM metrics WHERE time_stamp < {$time}");
 
-                    $cacheq = $db->query("SELECT info FROM metrics WHERE name = '{$db->sanitize($modpack['name'])}' AND time_stamp >= {$time}");
+                    $cacheq = $db->query("
+                        SELECT info 
+                        FROM metrics 
+                        WHERE name = {$db->quote('technic-'.$modpack['name'])}
+                        AND time_stamp >= {$time}
+                    ") ?: [];
 
                     if ($cacheq && !empty($cacheq[0]) && !empty($cacheq[0]['info'])) {
                         $decoded = @base64_decode($cacheq[0]['info']);
@@ -275,7 +279,7 @@ if (!uri("/login")) {
                                     info
                                 )
                                 VALUES (
-                                    '{$db->sanitize($modpack['name'])}',
+                                    {$db->quote('technic-'.$modpack['name'])}
                                     {$time},
                                     '{$info_data}'
                             )");
@@ -287,7 +291,7 @@ if (!uri("/login")) {
                                     info
                                 )
                                 VALUES (
-                                    '{$db->sanitize($modpack['name'])}',
+                                    {$db->quote('technic-'.$modpack['name'])},
                                     {$time},
                                     '{$info_data}'
                             )");
@@ -583,6 +587,9 @@ if (!uri("/login")) {
             </div>
             <?php
         } elseif (uri('/modpack')) {
+            if (empty($_GET['id'])) {
+                die("Missing id");
+            }
             if (!is_numeric($_GET['id'])) {
                 die("Malformed id");
             }
@@ -607,7 +614,12 @@ if (!uri("/login")) {
             $rec = false;
 
             if (!empty($packdata['latest']) && is_numeric($packdata['latest'])) {
-                $buildq = $db->query("SELECT * FROM builds WHERE modpack = {$modpack['id']} AND id = {$packdata['latest']}");
+                $buildq = $db->query("
+                    SELECT * 
+                    FROM builds 
+                    WHERE modpack = {$modpack['id']} 
+                    AND id = {$packdata['latest']}
+                ");
                 if (!empty($buildq)) {
                     $latest = true;
                     $build_latest = $buildq[0];
@@ -615,7 +627,12 @@ if (!uri("/login")) {
             }
 
             if (!empty($packdata['recommended']) && is_numeric($packdata['recommended'])) {
-                $buildq = $db->query("SELECT * FROM builds WHERE modpack = {$modpack['id']} AND id = {$packdata['recommended']}");
+                $buildq = $db->query("
+                    SELECT * 
+                    FROM builds 
+                    WHERE modpack = {$modpack['id']} 
+                    AND id = {$packdata['recommended']}
+                ");
                 if (!empty($buildq)) {
                     $rec = true;
                     $build_recommended = $buildq[0];
@@ -996,6 +1013,9 @@ if (!uri("/login")) {
             <?php
             }
         } elseif (uri('/build')) {
+            if (empty($_GET['id'])) {
+                die("Missing id");
+            }
             if (!is_numeric($_GET['id'])) {
                 die("Malformed id");
             }
@@ -1283,7 +1303,11 @@ if (!uri("/login")) {
                                             echo $mod['name'] ?>"><?php
 
                                             // get versions for mod
-                                            $modvq = $db->query("SELECT id,version,loadertype FROM mods WHERE name='{$db->sanitize($mod['name'])}'");
+                                            $modvq = $db->query("
+                                                SELECT id,version,loadertype 
+                                                FROM mods 
+                                                WHERE name = {$db->quote($mod['name'])}
+                                            ");
 
                                             if ($modvq && sizeof($modvq) > 0) {
                                                 foreach ($modvq as $mv) {
@@ -2041,6 +2065,9 @@ if (!uri("/login")) {
         </div>
         <?php
         } elseif (uri("/file")) {
+            if (empty($_GET['id'])) {
+                die("Missing id");
+            }
             if (!is_numeric($_GET['id'])) {
                 die("Malformed id");
             }
@@ -2087,11 +2114,16 @@ if (!uri("/login")) {
             </div>
             <?php
         } elseif (uri('/mod')) {
-            if (!preg_match('/^[A-Za-z0-9_-]+$/', $_GET['id'])) {
+            // todo: rename this to 'name'
+            if (empty($_GET['id'])) {
+                die("Missing id");
+            }
+            // doesn't really matter
+            if (!preg_match('/^[\w\_\-\.\+]+$/', $_GET['id'])) {
                 die("Malformed id");
             }
 
-            $mods = $db->query("SELECT * FROM mods WHERE name = '{$_GET['id']}'") ?: [];
+            $mods = $db->query("SELECT * FROM mods WHERE name = {$db->quote($_GET['id'])}") ?: [];
             if (!$mods) {
                 die("Invalid entry");
             }
@@ -2202,6 +2234,9 @@ if (!uri("/login")) {
         </div>
         <?php
         } elseif (uri("/modv")) {
+            if (empty($_GET['id'])) {
+                die("Missing id");
+            }
             if (!is_numeric($_GET['id'])) {
                 die("Malformed id");
             }

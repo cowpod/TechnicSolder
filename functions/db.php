@@ -1,19 +1,5 @@
 <?php
 define('CACHE_TTL', 86400); // one day. if we no longer purge keys on any execution, this should be lowered.
-define('DB_SANITIZE_BACKLIST', [
-    "'",    // single quote
-    '"',    // double quote
-    '\\',   // backslash
-    ';',    // semicolon
-    '--',   // SQL comment
-    '#',    // MySQL comment
-    '/*',   // Start of multiline comment
-    '*/'    // End of multiline comment
-]);
-require_once('sanitize.php');
-
-// todo on fail, check if we're in a transaction, if we are, roll back!
-// how should i return?
 
 final class Db
 {
@@ -302,18 +288,7 @@ final class Db
         }
         return $this->conn->quote($str);
     }
-    /*
-    todo: use prepared statements
-    */
-    public function sanitize(string $str): string
-    {
-        if (empty($str)) {
-            return '';
-        }
-        $utf8_str = sanitize_string_utf8($str);
-        $sql_str = str_replace(DB_SANITIZE_BACKLIST, '', $utf8_str);
-        return $sql_str;
-    }
+
     public function insert_id(): int
     {
         return $this->conn->lastInsertId();

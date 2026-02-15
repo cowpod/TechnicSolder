@@ -37,13 +37,13 @@ if (empty($_POST['loadertype'])) {
     die('{"status":"error","message":"Loader type not specified."}');
 }
 
-if (strpbrk($_POST['pretty_name'], '\\"\'') !== false) {
-    die('{"status":"error","message":"Malformed pretty_name"}');
-}
-if (strpbrk($_POST['name'], '\\"\'') !== false) {
-    die('{"status":"error","message":"Malformed name"}');
-}
-if (strpbrk($_POST['version'], '\\"\'') !== false) {
+// if (strpbrk($_POST['pretty_name'], '\\"\'') !== false) {
+//     die('{"status":"error","message":"Malformed pretty_name"}');
+// }
+// if (strpbrk($_POST['name'], '\\"\'') !== false) {
+//     die('{"status":"error","message":"Malformed name"}');
+// }
+if (!preg_match('/^[\w\-\.\+]+$/', $_POST['version'])) {
     die('{"status":"error","message":"Malformed version"}');
 }
 if (!filter_var($_POST['url'], FILTER_VALIDATE_URL)) {
@@ -55,7 +55,7 @@ if (strlen($_POST['md5']) !== 32 || !ctype_alnum($_POST['md5'])) {
 if (!is_numeric($_POST['filesize'])) {
     die('{"status":"error","message":"Malformed filesize"}');
 }
-if (strpbrk($_POST['mcversion'], '\\"\'') !== false) {
+if (!preg_match('/^[\w\-\.\+]+$/', $_POST['version'])) {
     die('{"status":"error","message":"Malformed mcversion"}');
 }
 if (!in_array($_POST['loadertype'], ['fabric','forge','neoforge'])) {
@@ -75,13 +75,10 @@ if (!isset($db)) {
     $db->connect();
 }
 
-$name = $db->sanitize($_POST['name']);
-$md5 = $db->sanitize($_POST['md5']);
-$filesize = $db->sanitize($_POST['filesize']);
-$link = isset($_POST['link']) ? $db->sanitize($_POST['link']) : '';
-$auth = isset($_POST['author']) ? $db->sanitize($_POST['author']) : '';
-$desc = isset($_POST['description']) ? $db->sanitize($_POST['description']) : '';
-$donlink = isset($_POST['donlink']) ? $db->sanitize($_POST['donlink']) : '';
+$link = isset($_POST['link']) ? $_POST['link'] : '';
+$auth = isset($_POST['author']) ? $_POST['author'] : '';
+$desc = isset($_POST['description']) ? $_POST['description'] : '';
+$donlink = isset($_POST['donlink']) ? $_POST['donlink'] : '';
 
 if (!$db->beginTransaction(true)) {
     die('{"status":"error","message":"Could not start transaction"}');
@@ -89,27 +86,48 @@ if (!$db->beginTransaction(true)) {
 
 // we use name (slug) and md5 to determine if its already installed.
 // since we have md5. otherwise we should check version,mcversion,name/slug,type,loadertype
-$existsq = $db->query("SELECT 1 FROM mods WHERE name='{$name}' AND md5='{$md5}'");
+$existsq = $db->query("
+    SELECT 1 
+    FROM mods 
+    WHERE name = {$db->quote($name)}
+    AND md5 = {$db->quote($md5)}
+");
 if ($existsq && sizeof($existsq) >= 1) {
     die('{"status":"succ","message":"Mod is already added."}');
 }
 
-if (!$db->execute("INSERT INTO `mods`
-    (`name`, `pretty_name`, `md5`, `filesize`, `url`, `link`, `author`, `donlink`, `description`, `version`, `mcversion`, `type`, `loadertype`) VALUES ( 
-        '{$name}',
-        '{$db->sanitize($_POST['pretty_name'])}',
-        '{$md5}',
-        '{$filesize}',
-        '{$db->sanitize($_POST['url'])}',
-        '{$link}',
-        '{$auth}',
-        '{$donlink}',
-        '{$desc}',
-        '{$db->sanitize($_POST['version'])}',
-        '{$db->sanitize($_POST['mcversion'])}',
+if (!$db->execute("
+    INSERT INTO mods (
+        name, 
+        pretty_name,
+        md5, 
+        filesize, 
+        url, 
+        link, 
+        author, 
+        donlink, 
+        description,
+        version, 
+        mcversion, 
+        type, 
+        loadertype
+    ) 
+    VALUES ( 
+        {$db->quote($_POST['name'])},
+        {$db->quote($_POST['pretty_name'])},
+        {$db->quote($_POST['md5'])},
+        {$_POST['filesize']},
+        {$db->quote($_POST['url'])},
+        {$db->quote($link)},
+        {$db->quote($auth)},
+        {$db->quote($donlink)},
+        {$db->quote($desc)},
+        {$db->quote($_POST['version'])},
+        {$db->quote($_POST['mcversion'])},
         'mod',
-        '{$db->sanitize($_POST['loadertype'])}'
-        )")) {
+        {$db->quote($_POST['loadertype'])}
+    )
+")) {
     die('{"status":"error","message":"Could not add mod."}');
 }
 
