@@ -2143,6 +2143,23 @@ if (!uri("/login")) {
                     break;
                 }
             }
+
+            $modusedbyq = $db->query("
+                SELECT
+                    m.version,
+                    mp.id AS modpack_id,
+                    mp.name AS modpack_name,
+                    b.id AS build_id,
+                    b.name AS build_name
+                FROM mods m
+                JOIN build_mods bm
+                ON m.id = bm.mod_id
+                JOIN builds b
+                ON b.id = bm.build_id
+                JOIN modpacks mp
+                ON b.modpack = mp.id
+                WHERE m.name = {$db->quote($_GET['id'])}
+            ") ?: [];
             ?>
         <div class="main">
             <script>document.title = 'Mod - <?php echo $_GET['id'] ?> - <?php echo addslashes($_SESSION['name']) ?>';
@@ -2230,6 +2247,26 @@ if (!uri("/login")) {
                     <input type="submit" name="submit" value="Save and close" class="btn btn-success">
                 </form>
             </div>
+            <div class="card">
+                <h3>Used in</h3>
+                <table class="table sortable table-striped">
+                    <thead>
+                        <tr>
+                            <td scope="col" data-defaultsort="AZ">Version</td>
+                            <td scope="col" data-defaultsort="AZ">Modpack</td>
+                            <td scope="col" data-defaultsort="AZ">Build</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+            <?php foreach($modusedbyq as $modusedby) { ?>
+                        <tr>
+                            <td scope="row"><?php echo $modusedby['version'] ?></td>
+                            <td><a class="btn btn-primary" href="modpack?id=<?php echo $modusedby['modpack_id'] ?>"><?php echo $modusedby['modpack_name'] ?></a></td>
+                            <td><a class="btn btn-primary" href="build?id=<?php echo $modusedby['build_id'] ?>"><?php echo $modusedby['build_name'] ?></a></td>
+                        </tr>
+            <?php } ?>
+                    </tbody>
+                </table>
             <script src="./resources/js/page_mod.js"></script>
         </div>
         <?php
