@@ -282,7 +282,7 @@ final class Db
         }
         return $ret;
     }
-    public function quote(string $str): string {
+    public function quote(null|string $str): string {
         if (empty($str)) {
             return "''";
         }
