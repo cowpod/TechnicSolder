@@ -34,39 +34,13 @@ if (!isset($db)) {
     $db->connect();
 }
 
-if (!$db->beginTransaction(true)) {
-    die('{"status":"error","message":"Could not start transaction"}');
-}
-
-$hasmodloaderq = $db->query("
-    SELECT 1
-    FROM build_mods bm
-    JOIN mods m
-        ON m.id = bm.mod_id
-    WHERE bm.build_id = {$_GET['bid']}
-    AND m.type = 'forge'
-    LIMIT 1
-");
-if (!$hasmodloaderq){
-    die('{"status":"error","message":"Build is uninitialized. You need to set the minecraft version and modloader."}');
-}
-
 if (!$db->execute("
-    DELETE FROM build_mods 
-    WHERE build_id = {$_GET['bid']}
-    AND mod_id = {$_GET['id_old']}
+    UPDATE build_mods
+    SET mod_id = {$_GET['id_new']}
+    WHERE mod_id = {$_GET['id_old']}
+    AND build_id = {$_GET['bid']}
 ")){
-    die('{"status":"error","message":"Could not delete mod from build"}');
-}
-if (!$db->execute("
-    INSERT INTO build_mods (build_id,mod_id)
-    VALUES ({$_GET['bid']}, {$_GET['id_new']})
-")){
-    die('{"status":"error","message":"Could not insert mod into build"}');
-}
-
-if (!$db->commit()) {
-    die('{"status":"error","message":"Could not commit changes"}');
+    die('{"status":"error","message":"Could update mod in build"}');
 }
 
 die('{"status":"succ","message":"Version changed sucessfully"');

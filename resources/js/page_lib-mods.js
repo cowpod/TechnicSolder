@@ -415,6 +415,7 @@ async function process_deps(vs) {
 
 async function showinstallation(id) {
     // show version ui for id 
+    $('#installation-deps').hide()
     $('#installation-message').empty();
     let firstVersion=true
     for (let vs of versions[id]) {

@@ -162,7 +162,7 @@ function add_mod_row(id,pretty_name,name,versions,mcv) {
     if (pretty_name=='' || name=='' || versions=='' || mcv=='') {
         var addbutton=`<a id="btn-add-mod-${name}" href="mod?id=${name}" class="btn btn-warning">Issue(s)</a>`;
     } else {
-        var addbutton=`<a id="btn-add-mod-${name}" onclick="add('${name}', '${pretty_name}', '${id}', '${mcv}')" class="btn btn-primary">Add</a>`;
+        var addbutton=`<a id="btn-add-mod-${name}" onclick="add('${name}', '${pretty_name.replace(/'/g, "\\'")}', '${id}', '${mcv}')" class="btn btn-primary">Add</a>`;
     }
     
     var versions_str = ``;

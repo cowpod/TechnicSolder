@@ -1,4 +1,4 @@
-var builds = (builds && builds.length>=0) ? JSON.parse(builds).reverse() : '{}';
+var builds = (builds && builds.length>=0) ? JSON.parse(builds) : [];
 
 async function fillBuildlist() {
     $("#buildlist").children().each(function(){ 
@@ -7,7 +7,7 @@ async function fillBuildlist() {
 
     for (let element of builds) {
         if ($("#mplist").val() == element['modpack']) {
-            $("#buildlist").append("<option value='"+element['id']+"'>"+element['display_name']+" - "+element['name']+"</option>")
+            $("#buildlist").append(`<option value="${element['id']}">${element['name']}</option>`)
         }
     }
 }
@@ -106,7 +106,7 @@ function remove(id) {
 
             for (let element of builds) {
                 if ($("#mplist").val() == element['modpack']) {
-                    $("#buildlist").append("<option value='"+element['id']+"'>"+element['display_name']+" - "+element['name']+"</option>")
+                    $("#buildlist").append(`<option value="${element['id']}">${element['name']}</option>`)
                 }
             }
 

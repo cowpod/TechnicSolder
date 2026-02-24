@@ -644,6 +644,9 @@ if (!uri("/login")) {
                 $mps = $db->query("SELECT `id`,`display_name` FROM `modpacks`");
                 // all builds for current modpack
                 $builds = $db->query("SELECT * FROM `builds` WHERE `modpack` = {$modpack['id']} ORDER BY `id` DESC");
+
+                // encode our array-dict as json. passed to client-side JS
+                $builds_json = @json_encode($builds) ?: '[]';
             }
 
             if ($perms->modpack_edit() && $perms->modpack_publish()) {
@@ -998,15 +1001,9 @@ if (!uri("/login")) {
                     </div>
                 </div>
                 <script>
-                    var builds = '<?php
-                    // encode our array-dict as json.
-                    $builds_json = @json_encode($builds);
-                    if ($builds_json === false) {
-                        error_log('index.php: builds could not be encoded to json');
-                        echo '[]';
-                    } else {
-                        echo addslashes($builds_json);
-                    } ?>'
+                    <?php if ($perms->build_create()) { ?>
+                    var builds = '<?php echo $builds_json ?>'
+                    <?php } ?>
                 </script>
                 <script src="./resources/js/page_modpack.js"></script>
             </div>
@@ -1339,7 +1336,7 @@ if (!uri("/login")) {
                                                 <em class="fas fa-times"></em>
                                             </button>
                                             <?php } elseif ($mod['type'] !== "forge") { ?>
-                                            <button id="remove-mod-<?php echo $mod['id'] ?>" onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo $build_mod_name ?>', '<?php echo $mod['pretty_name'] ?>', '<?php echo $mod['version'] ?>', '<?php echo $mod['mcversion'] ?>')" class="btn btn-danger">
+                                            <button id="remove-mod-<?php echo $mod['id'] ?>" onclick="remove_mod(<?php echo $build_mod_id ?>, '<?php echo $build_mod_name ?>', '<?php echo addslashes($mod['pretty_name']) ?>', '<?php echo $mod['version'] ?>', '<?php echo $mod['mcversion'] ?>')" class="btn btn-danger">
                                                 <em class="fas fa-times"></em>
                                             </button>
                                             <?php
@@ -1958,9 +1955,9 @@ if (!uri("/login")) {
         <?php
         } elseif (uri('/lib-others')) {
             $mods = $db->query("SELECT * FROM `mods` WHERE `type` = 'other' ORDER BY `id` DESC") ?: [];
-            if (!$mods) {
-                die("Invalid entry");
-            }
+            // if (!$mods) {
+            //     die("Invalid entry");
+            // }
             ?>
         <script>document.title = 'Other Files - <?php echo addslashes($_SESSION['name']) ?>';</script>
         <div class="main">
