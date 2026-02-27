@@ -2161,7 +2161,7 @@ if (!uri("/login")) {
         <div class="main">
             <script>document.title = 'Mod - <?php echo $_GET['id'] ?> - <?php echo addslashes($_SESSION['name']) ?>';
             </script>
-            <button onclick="window.location = './lib-mods'" style="width: fit-content;" class="btn btn-primary">
+            <button id="backbtn" onclick="window.location = './lib-mods'" style="width: fit-content;" class="btn btn-primary">
                 <em class="fas fa-arrow-left"></em> Back
             </button><br />
             <div class="card">
@@ -2233,15 +2233,15 @@ if (!uri("/login")) {
             </div>
             <div class="card">
                 <h3>Details</h3><hr>
-                <form method="POST" action="./functions/edit-mod.php">
+                <form id="modform" method="POST">
                     <input id="pn" required class="form-control" type="text" name="pretty_name" placeholder="Mod name" value="<?php echo $mod_name ?>" />
                     <br />
                     <input type="hidden" name="name" value="<?php echo $mod_slug ?>"/>
                     <input id="slug" disabled class="form-control" type="text" placeholder="Mod slug" value="<?php echo $mod_slug ?>" /><br />
                     <input id="author"required class="form-control" type="text" name="author" placeholder="Author" value="<?php echo $mod_author ?>"/><br/>
                     <textarea class="form-control" type="text" name="description" placeholder="Mod description"><?php echo $mod_description ?></textarea><br />
-                    <input type="submit" name="submit" value="Save" class="btn btn-success">
-                    <input type="submit" name="submit" value="Save and close" class="btn btn-success">
+                    <input id="savebtn" type="submit" name="submit" value="Save" class="btn btn-success">
+                    <input id="saveclosebtn" type="submit" name="submit" value="Save and close" class="btn btn-success">
                 </form>
             </div>
             <div class="card">
@@ -2267,7 +2267,7 @@ if (!uri("/login")) {
             <script src="./resources/js/page_mod.js"></script>
         </div>
         <?php
-        } elseif (uri("/modv")) {
+        } elseif (uri('/modv')) {
             if (empty($_GET['id'])) {
                 die("Missing id");
             }
@@ -2283,41 +2283,42 @@ if (!uri("/login")) {
         <div class="main">
             <script>document.title = 'Solder.cf - Mod - <?php echo addslashes($mod['pretty_name']) ?> - <?php echo addslashes($_SESSION['name']) ?>';</script>
             <div class="card">
-                <button onclick="window.location = './mod?id=<?php echo $mod['name'] ?>'" style="width: fit-content;" class="btn btn-primary">
+                <button id="backbtn" onclick="window.location = './mod?id=<?php echo $mod['name'] ?>'" style="width: fit-content;" class="btn btn-primary">
                     <em class="fas fa-arrow-left"></em> Back
                 </button><br />
                 <h3>Edit <?php echo $mod['pretty_name']." ".$mod['version']; ?></h3>
-                <form method="POST" action="./functions/edit-mod.php">
-                        <input required class="form-control" type="text" name="version" placeholder="Mod Version" value="<?php echo $mod['version'] ?>"><br />
-                        <div class="input-group">
-                            <input class="form-control" type="text" name="author" id="author-input" placeholder="Mod Author" value="<?php echo $mod['author'] ?>">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary" type="button" id="author-save" onclick="authorsave()">Set for all versions</button>
-                            </div>
-                        </div><br />
-                        <div class="input-group">
-                            <input class="form-control" type="url" name="link" id="link-input" placeholder="Mod Website" value="<?php echo $mod['link'] ?>">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary" type="button" id="link-save" onclick="linksave()">Set for all versions</button>
-                            </div>
-                        </div><br />
-                        <div class="input-group">
-                            <input class="form-control" type="url" name="donlink"  id="donlink-input" placeholder="Author's Website" value="<?php echo $mod['donlink'] ?>">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary" type="button" id="donlink-save" onclick="donlinksave()">Set for all versions</button>
-                            </div>
-                        </div><br />
-                        <input class="form-control" type="url" name="url" <?php if (!empty($mod['url'])) {
-                            echo 'placeholder="File URL" value="'.$mod['url'].'" required';
-                        } else {
-                            echo 'disabled placeholder="File URL (This is a local mod)"';
-                        } ?>><br />
-                        <input required class="form-control" type="text" name="md5" placeholder="File md5 Hash" value="<?php echo $mod['md5'] ?>"><br />
-                        <input required class="form-control" required type="text" name="mcversion" placeholder="Minecraft Version" value="<?php echo $mod['mcversion'] ?>"><br />
-                        <input required class="form-control" required type="text" name="loadertype" placeholder="forge/fabric/etc." value="<?php echo $mod['loadertype'] ?>"><br />
-                        <input type="hidden" id="modv-id" name="id" value="<?php echo $_GET['id'] ?>">
-                        <input type="submit" name="submit" value="Save" class="btn btn-success">
-                        <input type="submit" name="submit" value="Save and close" class="btn btn-success">
+                <form method="POST" id="modvform">
+                    <input required class="form-control" type="text" name="version" placeholder="Mod Version" value="<?php echo $mod['version'] ?>"><br />
+                    <div class="input-group">
+                        <input class="form-control" type="text" name="author" id="author-input" placeholder="Mod Author" value="<?php echo $mod['author'] ?>">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="button" id="author-save" onclick="authorsave()" title="Set for all versions">Set all</button>
+                        </div>
+                    </div><br />
+                    <div class="input-group">
+                        <input class="form-control" type="url" name="link" id="link-input" placeholder="Mod Website" value="<?php echo $mod['link'] ?>">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="button" id="link-save" onclick="linksave()" title="Set for all versions">Set all</button>
+                        </div>
+                    </div><br />
+                    <div class="input-group">
+                        <input class="form-control" type="url" name="donlink"  id="donlink-input" placeholder="Author's Website" value="<?php echo $mod['donlink'] ?>">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="button" id="donlink-save" onclick="donlinksave()" title="Set for all versions">Set all</button>
+                        </div>
+                    </div><br />
+                    <input class="form-control" type="url" name="url" <?php if (!empty($mod['url'])) {
+                        echo 'placeholder="File URL" value="'.$mod['url'].'" required';
+                    } else {
+                        echo 'disabled placeholder="File URL (This is a local mod)"';
+                    } ?>><br />
+                    <input required class="form-control" type="text" name="md5" placeholder="File md5 Hash" value="<?php echo $mod['md5'] ?>"><br />
+                    <input required class="form-control" required type="text" name="mcversion" placeholder="Minecraft Version" value="<?php echo $mod['mcversion'] ?>"><br />
+                    <input required class="form-control" required type="text" name="loadertype" placeholder="forge/fabric/etc." value="<?php echo $mod['loadertype'] ?>"><br />
+                    <input type="hidden" id="modv-id" name="id" value="<?php echo $_GET['id'] ?>">
+                    <input id="savebtn" type="submit" name="submit" value="Save" class="btn btn-success">
+                    <input id="saveclosebtn" type="submit" name="submit" value="Save and close" class="btn btn-success">
+                    <p id="errortext"></p>
                 </form>
             </div>
             <script src="./resources/js/page_modv.js"></script>
