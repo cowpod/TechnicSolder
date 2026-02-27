@@ -1268,8 +1268,6 @@ if (!uri("/login")) {
                                         <span id="warn-incompatible-<?php echo $mod['name'] ?>">: Missing version! You must set it in <a href="modv?id=<?php echo $build_mod_id ?>" target="_blank">mod details</a>.</span>
                                     <?php } elseif (empty($mod['mcversion'])) { ?>
                                         <span id="warn-incompatible-<?php echo $mod['name'] ?>">: Missing mcversion! You must set it in <a href="modv?id=<?php echo $build_mod_id ?>" target="_blank">mod details</a>.</span>
-                                    <?php } elseif (!$userModVersionOK) { ?>
-                                        <span id="warn-incompatible-<?php echo $mod['name'] ?>">: For Minecraft <?php echo $mod['mcversion'] ?>, you have <?php echo $build['minecraft'] ?>. May not be compatible!</span>
                                     <?php }
                                     ?></td>
                                     <td <?php
@@ -1324,8 +1322,12 @@ if (!uri("/login")) {
                                     <td  class="d-none d-sm-table-cell"><?php
                     if (!empty($mod)) {
                         echo $mod['mcversion'];
-                    }
-                    ?></td>
+
+                        if (!$userModVersionOK) { ?>
+                                        <span id="warn-incompatible-<?php echo $mod['name'] ?>"> - May not be compatible!</span>
+                        <?php 
+                        }
+                    } ?></td>
                                     <td class="text-right"><?php
                         if ($perms->mods_delete()) {
                             // allow deleting non-forges and invalids
