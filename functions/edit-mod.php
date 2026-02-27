@@ -1,5 +1,7 @@
 <?php
 session_start();
+header("Content-Type: application/json");
+
 if (empty($_SESSION['user'])) {
     die('{"status":"error","message":"Unauthorized request or login session has expired!"}');
 }
@@ -33,28 +35,28 @@ elseif (!empty($_POST['name']) && !preg_match('/^[\w\-]+$/',$_POST['name'])) {
 // if (array_key_exists('description',$_POST)) { 
 //     die('{"status":"error","message":"Malformed description"}');
 // }
-if (array_key_exists('author',$_POST) && !preg_match('/^[\w\s\.\-]+$/',$_POST['author'])) {
+if (array_key_exists('author',$_POST) && !empty($_POST['author'])  && !preg_match('/^[\w\s\.\-,]+$/',$_POST['author'])) {
     die('{"status":"error","message":"Malformed author"}');
 }
-if (array_key_exists('version', $_POST) && !preg_match('/^[\w\-\.]+$/',$_POST['version'])) {
+if (array_key_exists('version', $_POST) && !empty($_POST['version'])  && !preg_match('/^[\w\-\.+]+$/',$_POST['version'])) {
     die('{"status":"error","message":"Malformed version"}');
 }
-if (array_key_exists('mcversion',$_POST) && !preg_match('/^[\w\-\.]+$/',$_POST['mcversion'])) {
+if (array_key_exists('mcversion',$_POST) && !empty($_POST['mcversion'])  && !preg_match('/^[\w\-\.+,\s\[\]\(\)]+$/',$_POST['mcversion'])) {
     die('{"status":"error","message":"Malformed mcversion"}');
 }
-if (array_key_exists('link',$_POST) && !filter_var($_POST['link'],FILTER_VALIDATE_URL)) {
+if (array_key_exists('link',$_POST) && !empty($_POST['link'])  && !filter_var($_POST['link'],FILTER_VALIDATE_URL)) {
     die('{"status":"error","message":"Malformed link"}');
 }
-if (array_key_exists('donlink',$_POST) && !filter_var($_POST['donlink'], FILTER_VALIDATE_URL)) {
+if (array_key_exists('donlink',$_POST) && !empty($_POST['donlink']) && !filter_var($_POST['donlink'], FILTER_VALIDATE_URL)) {
     die('{"status":"error","message":"Malformed donlink"}');
 }
-if (array_key_exists('url',$_POST) && !filter_var($_POST['url'],FILTER_VALIDATE_URL)) {
+if (array_key_exists('url',$_POST) && !empty($_POST['url'])  && !filter_var($_POST['url'],FILTER_VALIDATE_URL)) {
     die('{"status":"error","message":"Malformed url"}');
 }
-if (array_key_exists('md5',$_POST) && !ctype_alnum($_POST['md5'])) {
+if (array_key_exists('md5',$_POST) && !empty($_POST['md5'])  && !ctype_alnum($_POST['md5'])) {
     die('{"status":"error","message":"Malformed md5"}');
 }
-if (array_key_exists('loadertype',$_POST) && !ctype_alpha($_POST['loadertype'])) {
+if (array_key_exists('loadertype',$_POST) && !empty($_POST['loadertype'])  && !ctype_alpha($_POST['loadertype'])) {
     die('{"status":"error","message":"Malformed loadertype"}');
 }
 

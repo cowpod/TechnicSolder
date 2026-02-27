@@ -30,10 +30,10 @@ if (!isset($_GET['type'])) {
 if (!filter_var($_GET['dl'], FILTER_VALIDATE_URL)) {
     die('{"status":"error","message":"Malformed dl"}');
 }
-if (!preg_match('/^[\w\-\.\+]+$/', $_POST['version'])) {
+if (!preg_match('/^[\w\-\.+]+$/', $_POST['version'])) {
     die('{"status":"error","message":"Malformed version"}');
 }
-if (!preg_match('/^[\w\-\.\+]+$/', $_POST['mcversion'])) {
+if (!preg_match('/^[\w\-\.+,\s\[\]\(\)]+$/', $_POST['mcversion'])) {
     die('{"status":"error","message":"Malformed mcversion"}');
 }
 

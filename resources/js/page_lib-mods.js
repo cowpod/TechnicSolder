@@ -67,6 +67,7 @@ async function send_mod(file) {
             pretty_name = pretty_name.find(v => v != null);
         }
 
+        let i = 0
         $('#table-available-mods').append(`
             <tr id="mod-row-${name[i]}">
                 <td scope="row" data-value="${pretty_name}">${pretty_name}</td>
