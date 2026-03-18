@@ -33,26 +33,52 @@ if (!$db->beginTransaction(true)) {
 }
 
 // delete mods for builds for modpack
-if (!$db->execute("
-    DELETE bm
-    FROM build_mods bm
-    JOIN builds b
-        ON b.id = bm.build_id
-    JOIN modpacks m
-        ON m.id = b.modpack
-    WHERE m.id = {$_GET['id']}
-")) {
-    die('{"status":"error","message":"Could not delete mods for builds for modpack"}');
-}
-// delete clients for builds for modpack
-if (!$db->execute("
-    DELETE bc
-    FROM build_clients bc
-    JOIN builds b
-        ON b.id = bc.build_id
-    WHERE b.modpack = {$_GET['id']}
-")) {
-    die('{"status":"error","message":"Could not delete clients for builds for  modpack"}');
+if ($config->get('db-type') === 'sqlite') {
+    if (!$db->execute("
+        DELETE FROM build_mods
+        WHERE build_id IN (
+            SELECT b.id
+            FROM builds b
+            JOIN modpacks m
+                ON m.id = b.modpack
+            WHERE m.id = {$_GET['id']}
+        )
+    ")) {
+        die('{"status":"error","message":"Could not delete mods for builds for modpack"}');
+    }
+    // delete clients for builds for modpack
+    if (!$db->execute("
+        DELETE FROM build_clients
+        WHERE build_id IN (
+            SELECT id
+            FROM builds
+            WHERE modpack = {$_GET['id']}
+        )
+    ")) {
+        die('{"status":"error","message":"Could not delete clients for builds for  modpack"}');
+    }
+} else {
+    if (!$db->execute("
+        DELETE bm
+        FROM build_mods bm
+        JOIN builds b
+            ON b.id = bm.build_id
+        JOIN modpacks m
+            ON m.id = b.modpack
+        WHERE m.id = {$_GET['id']}
+    ")) {
+        die('{"status":"error","message":"Could not delete mods for builds for modpack"}');
+    }
+    // delete clients for builds for modpack
+    if (!$db->execute("
+        DELETE bc
+        FROM build_clients bc
+        JOIN builds b
+            ON b.id = bc.build_id
+        WHERE b.modpack = {$_GET['id']}
+    ")) {
+        die('{"status":"error","message":"Could not delete clients for builds for  modpack"}');
+    }
 }
 
 // delete builds for modpack
